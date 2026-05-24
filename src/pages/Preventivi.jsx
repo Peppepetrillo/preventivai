@@ -1,6 +1,5 @@
 import {
   useState,
-  useRef,
 } from "react";
 
 import AnimatedButton from "../components/AnimatedButton";
@@ -17,110 +16,62 @@ export default function Preventivi() {
   const [clienteSelezionato, setClienteSelezionato] =
     useState("");
 
-  const [ricerca, setRicerca] =
-    useState("");
+  const [mostraAltro, setMostraAltro] =
+    useState(false);
 
   const [lavorazioni, setLavorazioni] =
     useState([]);
 
-  const lavorazioniRef =
-    useRef(null);
-
-  const [categorieAperte, setCategorieAperte] =
-    useState({
-
-      Rapidi: true,
-
-      Impianto: false,
-
-      Illuminazione: false,
-
-      Domotica: false,
-
-      Extra: false,
-
-    });
-
-  const listino = [
+  const listinoRapido = [
 
     {
-      id: 1,
       nome: "Punto luce",
       prezzo: 40,
-      categoria: "Impianto",
     },
 
     {
-      id: 2,
-      nome: "Punto TV",
+      nome: "Presa",
       prezzo: 50,
-      categoria: "Impianto",
     },
 
     {
-      id: 3,
-      nome: "Punto Ethernet",
-      prezzo: 60,
-      categoria: "Impianto",
-    },
-
-    {
-      id: 4,
-      nome: "Presa USB A+C",
-      prezzo: 50,
-      categoria: "Impianto",
-    },
-
-    {
-      id: 5,
       nome: "Faretto",
       prezzo: 7,
-      categoria: "Illuminazione",
     },
 
     {
-      id: 6,
       nome: "Strip LED",
       prezzo: 15,
-      categoria: "Illuminazione",
-    },
-
-    {
-      id: 7,
-      nome: "Gateway Living Now",
-      prezzo: 200,
-      categoria: "Domotica",
-    },
-
-    {
-      id: 8,
-      nome: "Videocitofono",
-      prezzo: 700,
-      categoria: "Extra",
     },
 
   ];
 
-  function toggleCategoria(
-    categoria
-  ) {
+  const listinoAltro = [
 
-    setCategorieAperte({
+    {
+      nome: "Punto TV",
+      prezzo: 50,
+    },
 
-      ...categorieAperte,
+    {
+      nome: "Punto Ethernet",
+      prezzo: 60,
+    },
 
-      [categoria]:
-        !categorieAperte[
-          categoria
-        ],
+    {
+      nome: "Gateway Living Now",
+      prezzo: 200,
+    },
 
-    });
+    {
+      nome: "Videocitofono",
+      prezzo: 700,
+    },
 
-  }
+  ];
 
   function aggiungiLavorazione(
-    voce,
-    quantita = 1
+    voce
   ) {
 
     const esistente =
@@ -146,8 +97,7 @@ export default function Preventivi() {
                 ...item,
 
                 quantita:
-                  item.quantita +
-                  quantita,
+                  item.quantita + 1,
 
               };
 
@@ -166,35 +116,24 @@ export default function Preventivi() {
 
     }
 
-    const nuovaLavorazione = {
-
-      id: Date.now(),
-
-      nome: voce.nome,
-
-      prezzo:
-        voce.prezzo,
-
-      quantita,
-
-    };
-
     setLavorazioni([
+
       ...lavorazioni,
-      nuovaLavorazione,
+
+      {
+
+        id: Date.now(),
+
+        nome: voce.nome,
+
+        prezzo:
+          voce.prezzo,
+
+        quantita: 1,
+
+      },
+
     ]);
-
-    setTimeout(() => {
-
-      lavorazioniRef.current?.scrollIntoView({
-
-        behavior: "smooth",
-
-        block: "start",
-
-      });
-
-    }, 100);
 
   }
 
@@ -237,21 +176,6 @@ export default function Preventivi() {
 
   }
 
-  function eliminaLavorazione(
-    index
-  ) {
-
-    const nuovaLista =
-      lavorazioni.filter(
-        (_, i) => i !== index
-      );
-
-    setLavorazioni(
-      nuovaLista
-    );
-
-  }
-
   const totale =
     lavorazioni.reduce(
       (acc, item) =>
@@ -270,7 +194,7 @@ export default function Preventivi() {
         )
       ) || [];
 
-    const nuovoPreventivo = {
+    archivio.push({
 
       id: Date.now(),
 
@@ -284,11 +208,7 @@ export default function Preventivi() {
       data:
         new Date().toLocaleString(),
 
-    };
-
-    archivio.push(
-      nuovoPreventivo
-    );
+    });
 
     localStorage.setItem(
       "archivioPreventivi",
@@ -303,16 +223,9 @@ export default function Preventivi() {
 
   }
 
-  const categorie = [
-    "Impianto",
-    "Illuminazione",
-    "Domotica",
-    "Extra",
-  ];
-
   return (
 
-    <div className="min-h-screen bg-[#060816] text-white px-4 pt-5 pb-52">
+    <div className="min-h-screen bg-[#060816] text-white px-4 pt-5 pb-64">
 
       <h1 className="text-5xl font-black mb-6">
 
@@ -329,7 +242,7 @@ export default function Preventivi() {
             e.target.value
           )
         }
-        className="w-full bg-white/5 border border-white/10 rounded-[32px] h-20 px-6 text-[18px] outline-none mb-6"
+        className="w-full h-20 rounded-[34px] bg-white/5 border border-white/10 px-6 text-[20px] outline-none mb-8"
       >
 
         <option value="">
@@ -356,197 +269,128 @@ export default function Preventivi() {
 
       </select>
 
-      <input
-        type="text"
-        placeholder="Cerca lavorazione..."
-        value={ricerca}
-        onChange={(e) =>
-          setRicerca(
-            e.target.value
-          )
-        }
-        className="w-full bg-white/5 border border-white/10 rounded-[32px] h-20 px-6 text-[18px] outline-none mb-8"
-      />
+      <div className="space-y-4 mb-10">
 
-      <div className="mb-8">
-
-        <button
-          onClick={() =>
-            toggleCategoria(
-              "Rapidi"
-            )
-          }
-          className="w-full h-20 rounded-[32px] bg-yellow-500/20 border border-yellow-500/20 text-3xl font-black mb-4"
-        >
-
-          ⚡ RAPIDI
-
-        </button>
-
-        {categorieAperte[
-          "Rapidi"
-        ] && (
-
-          <div className="grid grid-cols-1 gap-4">
+        {listinoRapido.map(
+          (
+            voce,
+            index
+          ) => (
 
             <button
+              key={index}
               onClick={() =>
-                aggiungiLavorazione({
-                  nome: "Punto luce",
-                  prezzo: 40,
-                })
+                aggiungiLavorazione(
+                  voce
+                )
               }
-              className="h-24 rounded-[34px] bg-blue-600 text-2xl font-black active:scale-95"
+              className="w-full min-h-[120px] rounded-[40px] bg-blue-600 active:scale-95 px-6"
             >
 
-              Punto luce
+              <div className="flex items-center justify-between">
 
-            </button>
+                <div className="text-left">
 
-            <button
-              onClick={() =>
-                aggiungiLavorazione({
-                  nome: "Presa USB A+C",
-                  prezzo: 50,
-                })
-              }
-              className="h-24 rounded-[34px] bg-blue-600 text-2xl font-black active:scale-95"
-            >
+                  <h2 className="text-3xl font-black">
 
-              Presa
+                    {voce.nome}
 
-            </button>
+                  </h2>
 
-            <button
-              onClick={() =>
-                aggiungiLavorazione({
-                  nome: "Faretto",
-                  prezzo: 7,
-                })
-              }
-              className="h-24 rounded-[34px] bg-blue-600 text-2xl font-black active:scale-95"
-            >
+                  <p className="text-2xl mt-2">
 
-              Faretto
+                    € {voce.prezzo}
 
-            </button>
-
-          </div>
-
-        )}
-
-      </div>
-
-      <div className="space-y-5 mb-10">
-
-        {categorie.map(
-          (categoria) => (
-
-            <div key={categoria}>
-
-              <button
-                onClick={() =>
-                  toggleCategoria(
-                    categoria
-                  )
-                }
-                className="w-full h-20 rounded-[32px] bg-white/5 border border-white/10 flex items-center justify-between px-6"
-              >
-
-                <span className="text-3xl font-black">
-
-                  {categoria}
-
-                </span>
-
-                <span className="text-4xl">
-
-                  {categorieAperte[
-                    categoria
-                  ]
-                    ? "−"
-                    : "+"}
-
-                </span>
-
-              </button>
-
-              {categorieAperte[
-                categoria
-              ] && (
-
-                <div className="space-y-4 mt-4">
-
-                  {listino
-                    .filter(
-                      (
-                        voce
-                      ) =>
-                        voce.categoria ===
-                          categoria &&
-                        voce.nome
-                          .toLowerCase()
-                          .includes(
-                            ricerca.toLowerCase()
-                          )
-                    )
-                    .map(
-                      (
-                        voce
-                      ) => (
-
-                        <button
-                          key={voce.id}
-                          onClick={() =>
-                            aggiungiLavorazione(
-                              voce
-                            )
-                          }
-                          className="w-full min-h-[120px] rounded-[36px] bg-white/5 border border-white/10 p-6 active:scale-95"
-                        >
-
-                          <div className="flex flex-col items-start">
-
-                            <span className="text-3xl font-black text-left">
-
-                              {voce.nome}
-
-                            </span>
-
-                            <span className="text-green-400 text-2xl mt-3 font-bold">
-
-                              € {voce.prezzo}
-
-                            </span>
-
-                          </div>
-
-                        </button>
-
-                      )
-                    )}
+                  </p>
 
                 </div>
 
-              )}
+                <div className="text-6xl font-black">
 
-            </div>
+                  +
+
+                </div>
+
+              </div>
+
+            </button>
 
           )
         )}
 
       </div>
 
-      <div
-        ref={lavorazioniRef}
-        className="space-y-5 pb-32"
+      <button
+        onClick={() =>
+          setMostraAltro(
+            !mostraAltro
+          )
+        }
+        className="w-full h-20 rounded-[36px] bg-white/5 border border-white/10 text-2xl font-black mb-6"
       >
 
-        <h2 className="text-4xl font-black">
+        {mostraAltro
+          ? "Chiudi altre lavorazioni"
+          : "Altre lavorazioni"}
 
-          Lavorazioni
+      </button>
 
-        </h2>
+      {mostraAltro && (
+
+        <div className="space-y-4 mb-10">
+
+          {listinoAltro.map(
+            (
+              voce,
+              index
+            ) => (
+
+              <button
+                key={index}
+                onClick={() =>
+                  aggiungiLavorazione(
+                    voce
+                  )
+                }
+                className="w-full min-h-[110px] rounded-[36px] bg-white/5 border border-white/10 px-6 active:scale-95"
+              >
+
+                <div className="flex items-center justify-between">
+
+                  <div className="text-left">
+
+                    <h2 className="text-3xl font-black">
+
+                      {voce.nome}
+
+                    </h2>
+
+                    <p className="text-green-400 text-2xl mt-2">
+
+                      € {voce.prezzo}
+
+                    </p>
+
+                  </div>
+
+                  <div className="text-5xl font-black">
+
+                    +
+
+                  </div>
+
+                </div>
+
+              </button>
+
+            )
+          )}
+
+        </div>
+
+      )}
+
+      <div className="space-y-5 pb-40">
 
         {lavorazioni.map(
           (
@@ -556,59 +400,36 @@ export default function Preventivi() {
 
             <div
               key={item.id}
-              className="bg-white/5 border border-white/10 rounded-[36px] p-6"
+              className="bg-white/5 border border-white/10 rounded-[40px] p-6"
             >
 
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-center">
 
                 <div>
 
-                  <h3 className="text-3xl font-black">
+                  <h2 className="text-3xl font-black">
 
                     {item.nome}
 
-                  </h3>
+                  </h2>
 
-                  <input
-                    type="number"
-                    value={item.prezzo}
-                    onChange={(e) => {
+                  <p className="text-green-400 text-2xl mt-2">
 
-                      const nuovaLista =
-                        [...lavorazioni];
+                    € {item.prezzo}
 
-                      nuovaLista[index]
-                        .prezzo =
-                        Number(
-                          e.target.value
-                        );
-
-                      setLavorazioni(
-                        nuovaLista
-                      );
-
-                    }}
-                    className="mt-4 w-40 h-16 bg-black/20 border border-white/10 rounded-3xl px-5 text-[20px] outline-none"
-                  />
+                  </p>
 
                 </div>
 
-                <button
-                  onClick={() =>
-                    eliminaLavorazione(
-                      index
-                    )
-                  }
-                  className="w-20 h-20 rounded-[30px] bg-red-500/20 text-red-400 text-4xl"
-                >
+                <div className="text-5xl font-black">
 
-                  ✕
+                  x{item.quantita}
 
-                </button>
+                </div>
 
               </div>
 
-              <div className="flex items-center justify-center gap-6 mt-8">
+              <div className="flex gap-4 mt-8">
 
                 <button
                   onClick={() =>
@@ -616,18 +437,12 @@ export default function Preventivi() {
                       index
                     )
                   }
-                  className="w-24 h-24 rounded-[34px] bg-white/10 text-5xl"
+                  className="flex-1 h-24 rounded-[34px] bg-white/10 text-5xl font-black"
                 >
 
                   −
 
                 </button>
-
-                <div className="text-6xl font-black min-w-[90px] text-center">
-
-                  {item.quantita}
-
-                </div>
 
                 <button
                   onClick={() =>
@@ -635,7 +450,7 @@ export default function Preventivi() {
                       index
                     )
                   }
-                  className="w-24 h-24 rounded-[34px] bg-blue-600 text-5xl"
+                  className="flex-1 h-24 rounded-[34px] bg-blue-600 text-5xl font-black"
                 >
 
                   +
@@ -651,9 +466,9 @@ export default function Preventivi() {
 
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-[#060816] p-4 border-t border-white/10">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#060816] border-t border-white/10 p-4">
 
-        <div className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[36px] p-6 mb-4">
+        <div className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[40px] p-6 mb-4">
 
           <p className="text-2xl">
 
@@ -673,7 +488,7 @@ export default function Preventivi() {
           onClick={
             salvaPreventivo
           }
-          className="w-full h-20 bg-blue-600 rounded-[36px] text-3xl font-black"
+          className="w-full h-24 rounded-[40px] bg-blue-600 text-3xl font-black"
         >
 
           SALVA PREVENTIVO
