@@ -29,6 +29,19 @@ export default function Preventivi() {
   const lavorazioniRef =
     useRef(null);
 
+  const [categorieAperte, setCategorieAperte] =
+    useState({
+
+      Impianto: true,
+
+      Illuminazione: false,
+
+      Domotica: false,
+
+      Extra: false,
+
+    });
+
   const [listino] =
     useState([
 
@@ -139,25 +152,105 @@ export default function Preventivi() {
 
     ]);
 
-  function aggiungiLavorazione(
-    voce
+  function toggleCategoria(
+    categoria
   ) {
 
+    setCategorieAperte({
+
+      ...categorieAperte,
+
+      [categoria]:
+        !categorieAperte[
+          categoria
+        ],
+
+    });
+
+  }
+
+  function aggiungiLavorazione(
+    voce,
+    quantita = 1
+  ) {
+  
+    const esistente =
+      lavorazioni.find(
+        (item) =>
+          item.nome ===
+          voce.nome
+      );
+  
+    if (esistente) {
+  
+      const nuovaLista =
+        lavorazioni.map(
+          (item) => {
+  
+            if (
+              item.nome ===
+              voce.nome
+            ) {
+  
+              return {
+  
+                ...item,
+  
+                quantita:
+                  item.quantita +
+                  quantita,
+  
+              };
+  
+            }
+  
+            return item;
+  
+          }
+        );
+  
+      setLavorazioni(
+        nuovaLista
+      );
+  
+      return;
+  
+    }
+  
     const nuovaLavorazione = {
-
+  
       id: Date.now(),
-
+  
       nome: voce.nome,
-
+  
       categoria:
         voce.categoria,
-
+  
       prezzo:
         voce.prezzo,
-
-      quantita: 1,
-
+  
+      quantita,
+  
     };
+  
+    setLavorazioni([
+      ...lavorazioni,
+      nuovaLavorazione,
+    ]);
+  
+    setTimeout(() => {
+  
+      lavorazioniRef.current?.scrollIntoView({
+  
+        behavior: "smooth",
+  
+        block: "start",
+  
+      });
+  
+    }, 100);
+  
+  };
 
     setLavorazioni([
       ...lavorazioni,
@@ -308,6 +401,13 @@ export default function Preventivi() {
         )
     );
 
+  const categorie = [
+    "Impianto",
+    "Illuminazione",
+    "Domotica",
+    "Extra",
+  ];
+
   return (
 
     <div className="min-h-screen px-4 pt-6 pb-40 text-white bg-[#060816]">
@@ -356,35 +456,81 @@ export default function Preventivi() {
 
         </select>
 
-        <select
-          value={stato}
-          onChange={(e) =>
-            setStato(
-              e.target.value
-            )
-          }
-          className="w-full bg-black/20 border border-white/10 rounded-3xl p-5 text-[16px] outline-none"
-        >
-
-          <option>
-            Bozza
-          </option>
-
-          <option>
-            Inviato
-          </option>
-
-          <option>
-            Accettato
-          </option>
-
-          <option>
-            Completato
-          </option>
-
-        </select>
-
       </div>
+
+      <div className="mb-8">
+
+<p className="text-xl font-bold mb-4">
+
+  ⚡ Rapidi
+
+</p>
+
+<div className="grid grid-cols-2 gap-3">
+
+  <button
+    onClick={() =>
+      aggiungiLavorazione({
+        nome: "Punto luce",
+        prezzo: 40,
+        categoria: "Impianto",
+      })
+    }
+    className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
+  >
+
+    Punto luce
+
+  </button>
+
+  <button
+    onClick={() =>
+      aggiungiLavorazione({
+        nome: "Presa USB A+C",
+        prezzo: 50,
+        categoria: "Impianto",
+      })
+    }
+    className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
+  >
+
+    Presa
+
+  </button>
+
+  <button
+    onClick={() =>
+      aggiungiLavorazione({
+        nome: "Faretto",
+        prezzo: 7,
+        categoria: "Illuminazione",
+      })
+    }
+    className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
+  >
+
+    Faretto
+
+  </button>
+
+  <button
+    onClick={() =>
+      aggiungiLavorazione({
+        nome: "Strip LED Beghelli",
+        prezzo: 15,
+        categoria: "Illuminazione",
+      })
+    }
+    className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
+  >
+
+    Strip LED
+
+  </button>
+
+</div>
+
+</div>
 
       <input
         type="text"
@@ -400,46 +546,136 @@ export default function Preventivi() {
 
       <div className="space-y-5 mb-10">
 
-        {listinoFiltrato.map(
-          (voce) => (
+        {categorie.map(
+          (categoria) => (
 
-            <div
-              key={voce.id}
-              className="bg-white/5 border border-white/10 rounded-[34px] p-6 active:scale-[0.98] transition-all"
-            >
+            <div key={categoria}>
 
-              <div className="flex flex-col gap-5">
+              <button
+                onClick={() =>
+                  toggleCategoria(
+                    categoria
+                  )
+                }
+                className="w-full bg-white/5 border border-white/10 rounded-[32px] p-6 flex items-center justify-between"
+              >
 
-                <div>
+                <span className="text-2xl font-black">
 
-                  <h3 className="text-2xl font-bold leading-tight">
+                  {categoria}
 
-                    {voce.nome}
+                </span>
 
-                  </h3>
+                <span className="text-3xl">
 
-                  <p className="text-green-400 mt-3 text-xl font-semibold">
+                  {categorieAperte[
+                    categoria
+                  ]
+                    ? "−"
+                    : "+"}
 
-                    € {voce.prezzo}
+                </span>
 
-                  </p>
+              </button>
+
+              {categorieAperte[
+                categoria
+              ] && (
+
+                <div className="space-y-4 mt-4">
+
+                  {listinoFiltrato
+                    .filter(
+                      (
+                        voce
+                      ) =>
+                        voce.categoria ===
+                        categoria
+                    )
+                    .map(
+                      (
+                        voce
+                      ) => (
+
+                        <div
+                          key={voce.id}
+                          className="bg-white/5 border border-white/10 rounded-[34px] p-6"
+                        >
+
+                          <div className="flex flex-col gap-5">
+
+                            <div>
+
+                              <h3 className="text-2xl font-bold leading-tight">
+
+                                {voce.nome}
+
+                              </h3>
+
+                              <p className="text-green-400 mt-3 text-xl font-semibold">
+
+                                € {voce.prezzo}
+
+                              </p>
+
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-3">
+
+  <button
+    onClick={() =>
+      aggiungiLavorazione(
+        voce,
+        1
+      )
+    }
+    className="h-14 rounded-3xl bg-blue-600 text-lg font-bold active:scale-95"
+  >
+
+    +1
+
+  </button>
+
+  <button
+    onClick={() =>
+      aggiungiLavorazione(
+        voce,
+        5
+      )
+    }
+    className="h-14 rounded-3xl bg-blue-500 text-lg font-bold active:scale-95"
+  >
+
+    +5
+
+  </button>
+
+  <button
+    onClick={() =>
+      aggiungiLavorazione(
+        voce,
+        10
+      )
+    }
+    className="h-14 rounded-3xl bg-blue-400 text-lg font-bold active:scale-95"
+  >
+
+    +10
+
+  </button>
+
+</div>
+
+                          </div>
+
+                        </div>
+
+                      )
+                    )}
 
                 </div>
 
-                <button
-                  onClick={() =>
-                    aggiungiLavorazione(
-                      voce
-                    )
-                  }
-                  className="w-full h-16 rounded-3xl bg-blue-600 text-xl font-bold active:scale-95 transition-all"
-                >
-
-                  AGGIUNGI
-
-                </button>
-
-              </div>
+              )}
 
             </div>
 
@@ -577,7 +813,7 @@ export default function Preventivi() {
 
       </AnimatedButton>
 
-      <div className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[36px] p-7">
+      <div className="sticky bottom-5 bg-gradient-to-r from-green-500 to-emerald-400 rounded-[36px] p-7 shadow-2xl">
 
         <p className="text-xl opacity-90">
 
