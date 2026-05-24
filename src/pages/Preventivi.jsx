@@ -23,16 +23,15 @@ export default function Preventivi() {
   const [lavorazioni, setLavorazioni] =
     useState([]);
 
-  const [stato, setStato] =
-    useState("Bozza");
-
   const lavorazioniRef =
     useRef(null);
 
   const [categorieAperte, setCategorieAperte] =
     useState({
 
-      Impianto: true,
+      Rapidi: true,
+
+      Impianto: false,
 
       Illuminazione: false,
 
@@ -42,115 +41,65 @@ export default function Preventivi() {
 
     });
 
-  const [listino] =
-    useState([
+  const listino = [
 
-      {
-        id: 1,
-        nome: "Punto luce",
-        prezzo: 40,
-        categoria: "Impianto",
-      },
+    {
+      id: 1,
+      nome: "Punto luce",
+      prezzo: 40,
+      categoria: "Impianto",
+    },
 
-      {
-        id: 2,
-        nome: "Punto TV",
-        prezzo: 50,
-        categoria: "Impianto",
-      },
+    {
+      id: 2,
+      nome: "Punto TV",
+      prezzo: 50,
+      categoria: "Impianto",
+    },
 
-      {
-        id: 3,
-        nome: "Punto Ethernet",
-        prezzo: 60,
-        categoria: "Impianto",
-      },
+    {
+      id: 3,
+      nome: "Punto Ethernet",
+      prezzo: 60,
+      categoria: "Impianto",
+    },
 
-      {
-        id: 4,
-        nome: "Presa USB A+C",
-        prezzo: 50,
-        categoria: "Impianto",
-      },
+    {
+      id: 4,
+      nome: "Presa USB A+C",
+      prezzo: 50,
+      categoria: "Impianto",
+    },
 
-      {
-        id: 5,
-        nome: "Faretto",
-        prezzo: 7,
-        categoria: "Illuminazione",
-      },
+    {
+      id: 5,
+      nome: "Faretto",
+      prezzo: 7,
+      categoria: "Illuminazione",
+    },
 
-      {
-        id: 6,
-        nome: "Strip LED Beghelli",
-        prezzo: 15,
-        categoria: "Illuminazione",
-      },
+    {
+      id: 6,
+      nome: "Strip LED",
+      prezzo: 15,
+      categoria: "Illuminazione",
+    },
 
-      {
-        id: 7,
-        nome: "Faretto emergenza",
-        prezzo: 25,
-        categoria: "Illuminazione",
-      },
+    {
+      id: 7,
+      nome: "Gateway Living Now",
+      prezzo: 200,
+      categoria: "Domotica",
+    },
 
-      {
-        id: 8,
-        nome: "Gateway Living Now",
-        prezzo: 200,
-        categoria: "Domotica",
-      },
+    {
+      id: 8,
+      nome: "Videocitofono",
+      prezzo: 700,
+      categoria: "Extra",
+    },
 
-      {
-        id: 9,
-        nome: "Punto luce connesso",
-        prezzo: 60,
-        categoria: "Domotica",
-      },
-
-      {
-        id: 10,
-        nome: "Tapparella connessa",
-        prezzo: 80,
-        categoria: "Domotica",
-      },
-
-      {
-        id: 11,
-        nome: "Videocitofono Urmet WiFi",
-        prezzo: 700,
-        categoria: "Extra",
-      },
-
-      {
-        id: 12,
-        nome: "Montaggio antenna",
-        prezzo: 250,
-        categoria: "Extra",
-      },
-
-      {
-        id: 13,
-        nome: "Kit emergenza strip LED",
-        prezzo: 100,
-        categoria: "Extra",
-      },
-
-      {
-        id: 14,
-        nome: "Allarme perimetrale",
-        prezzo: 2000,
-        categoria: "Extra",
-      },
-
-      {
-        id: 15,
-        nome: "Quadro elettrico",
-        prezzo: 700,
-        categoria: "Extra",
-      },
-
-    ]);
+  ];
 
   function toggleCategoria(
     categoria
@@ -222,9 +171,6 @@ export default function Preventivi() {
       id: Date.now(),
 
       nome: voce.nome,
-
-      categoria:
-        voce.categoria,
 
       prezzo:
         voce.prezzo,
@@ -324,23 +270,9 @@ export default function Preventivi() {
         )
       ) || [];
 
-    const numeroProgressivo =
-      archivio.length + 1;
-
-    const anno =
-      new Date().getFullYear();
-
-    const numeroPreventivo =
-      `PREV-${anno}-${String(
-        numeroProgressivo
-      ).padStart(3, "0")}`;
-
     const nuovoPreventivo = {
 
       id: Date.now(),
-
-      numero:
-        numeroPreventivo,
 
       cliente:
         clienteSelezionato,
@@ -348,8 +280,6 @@ export default function Preventivi() {
       lavorazioni,
 
       totale,
-
-      stato,
 
       data:
         new Date().toLocaleString(),
@@ -368,19 +298,10 @@ export default function Preventivi() {
     );
 
     alert(
-      `Preventivo ${numeroPreventivo} salvato 😄🔥`
+      "Preventivo salvato 😄🔥"
     );
 
   }
-
-  const listinoFiltrato =
-    listino.filter((voce) =>
-      voce.nome
-        .toLowerCase()
-        .includes(
-          ricerca.toLowerCase()
-        )
-    );
 
   const categorie = [
     "Impianto",
@@ -391,127 +312,49 @@ export default function Preventivi() {
 
   return (
 
-    <div className="min-h-screen px-4 pt-6 pb-40 text-white bg-[#060816]">
+    <div className="min-h-screen bg-[#060816] text-white px-4 pt-5 pb-52">
 
-      <h1 className="text-5xl font-black mb-8 tracking-tight">
+      <h1 className="text-5xl font-black mb-6">
 
         Preventivi
 
       </h1>
 
-      <div className="bg-white/5 border border-white/10 rounded-[34px] p-5 mb-8 space-y-5">
+      <select
+        value={
+          clienteSelezionato
+        }
+        onChange={(e) =>
+          setClienteSelezionato(
+            e.target.value
+          )
+        }
+        className="w-full bg-white/5 border border-white/10 rounded-[32px] h-20 px-6 text-[18px] outline-none mb-6"
+      >
 
-        <select
-          value={
-            clienteSelezionato
-          }
-          onChange={(e) =>
-            setClienteSelezionato(
-              e.target.value
-            )
-          }
-          className="w-full bg-black/20 border border-white/10 rounded-3xl p-5 text-[16px] outline-none"
-        >
+        <option value="">
+          Seleziona Cliente
+        </option>
 
-          <option value="">
-            Seleziona Cliente
-          </option>
+        {clienti.map(
+          (
+            cliente,
+            index
+          ) => (
 
-          {clienti.map(
-            (
-              cliente,
-              index
-            ) => (
+            <option
+              key={index}
+              value={
+                cliente.nome
+              }
+            >
+              {cliente.nome}
+            </option>
 
-              <option
-                key={index}
-                value={
-                  cliente.nome
-                }
-              >
-                {cliente.nome}
-              </option>
+          )
+        )}
 
-            )
-          )}
-
-        </select>
-
-      </div>
-
-      <div className="mb-8">
-
-        <p className="text-xl font-bold mb-4">
-
-          ⚡ Rapidi
-
-        </p>
-
-        <div className="grid grid-cols-2 gap-3">
-
-          <button
-            onClick={() =>
-              aggiungiLavorazione({
-                nome: "Punto luce",
-                prezzo: 40,
-                categoria: "Impianto",
-              })
-            }
-            className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
-          >
-
-            Punto luce
-
-          </button>
-
-          <button
-            onClick={() =>
-              aggiungiLavorazione({
-                nome: "Presa USB A+C",
-                prezzo: 50,
-                categoria: "Impianto",
-              })
-            }
-            className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
-          >
-
-            Presa
-
-          </button>
-
-          <button
-            onClick={() =>
-              aggiungiLavorazione({
-                nome: "Faretto",
-                prezzo: 7,
-                categoria: "Illuminazione",
-              })
-            }
-            className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
-          >
-
-            Faretto
-
-          </button>
-
-          <button
-            onClick={() =>
-              aggiungiLavorazione({
-                nome: "Strip LED Beghelli",
-                prezzo: 15,
-                categoria: "Illuminazione",
-              })
-            }
-            className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
-          >
-
-            Strip LED
-
-          </button>
-
-        </div>
-
-      </div>
+      </select>
 
       <input
         type="text"
@@ -522,8 +365,77 @@ export default function Preventivi() {
             e.target.value
           )
         }
-        className="w-full bg-white/5 border border-white/10 rounded-3xl p-5 text-[16px] outline-none mb-8"
+        className="w-full bg-white/5 border border-white/10 rounded-[32px] h-20 px-6 text-[18px] outline-none mb-8"
       />
+
+      <div className="mb-8">
+
+        <button
+          onClick={() =>
+            toggleCategoria(
+              "Rapidi"
+            )
+          }
+          className="w-full h-20 rounded-[32px] bg-yellow-500/20 border border-yellow-500/20 text-3xl font-black mb-4"
+        >
+
+          ⚡ RAPIDI
+
+        </button>
+
+        {categorieAperte[
+          "Rapidi"
+        ] && (
+
+          <div className="grid grid-cols-1 gap-4">
+
+            <button
+              onClick={() =>
+                aggiungiLavorazione({
+                  nome: "Punto luce",
+                  prezzo: 40,
+                })
+              }
+              className="h-24 rounded-[34px] bg-blue-600 text-2xl font-black active:scale-95"
+            >
+
+              Punto luce
+
+            </button>
+
+            <button
+              onClick={() =>
+                aggiungiLavorazione({
+                  nome: "Presa USB A+C",
+                  prezzo: 50,
+                })
+              }
+              className="h-24 rounded-[34px] bg-blue-600 text-2xl font-black active:scale-95"
+            >
+
+              Presa
+
+            </button>
+
+            <button
+              onClick={() =>
+                aggiungiLavorazione({
+                  nome: "Faretto",
+                  prezzo: 7,
+                })
+              }
+              className="h-24 rounded-[34px] bg-blue-600 text-2xl font-black active:scale-95"
+            >
+
+              Faretto
+
+            </button>
+
+          </div>
+
+        )}
+
+      </div>
 
       <div className="space-y-5 mb-10">
 
@@ -538,16 +450,16 @@ export default function Preventivi() {
                     categoria
                   )
                 }
-                className="w-full bg-white/5 border border-white/10 rounded-[32px] p-6 flex items-center justify-between"
+                className="w-full h-20 rounded-[32px] bg-white/5 border border-white/10 flex items-center justify-between px-6"
               >
 
-                <span className="text-2xl font-black">
+                <span className="text-3xl font-black">
 
                   {categoria}
 
                 </span>
 
-                <span className="text-3xl">
+                <span className="text-4xl">
 
                   {categorieAperte[
                     categoria
@@ -565,91 +477,51 @@ export default function Preventivi() {
 
                 <div className="space-y-4 mt-4">
 
-                  {listinoFiltrato
+                  {listino
                     .filter(
                       (
                         voce
                       ) =>
                         voce.categoria ===
-                        categoria
+                          categoria &&
+                        voce.nome
+                          .toLowerCase()
+                          .includes(
+                            ricerca.toLowerCase()
+                          )
                     )
                     .map(
                       (
                         voce
                       ) => (
 
-                        <div
+                        <button
                           key={voce.id}
-                          className="bg-white/5 border border-white/10 rounded-[34px] p-6"
+                          onClick={() =>
+                            aggiungiLavorazione(
+                              voce
+                            )
+                          }
+                          className="w-full min-h-[120px] rounded-[36px] bg-white/5 border border-white/10 p-6 active:scale-95"
                         >
 
-                          <div className="flex flex-col gap-5">
+                          <div className="flex flex-col items-start">
 
-                            <div>
+                            <span className="text-3xl font-black text-left">
 
-                              <h3 className="text-2xl font-bold leading-tight">
+                              {voce.nome}
 
-                                {voce.nome}
+                            </span>
 
-                              </h3>
+                            <span className="text-green-400 text-2xl mt-3 font-bold">
 
-                              <p className="text-green-400 mt-3 text-xl font-semibold">
+                              € {voce.prezzo}
 
-                                € {voce.prezzo}
-
-                              </p>
-
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-3">
-
-                              <button
-                                onClick={() =>
-                                  aggiungiLavorazione(
-                                    voce,
-                                    1
-                                  )
-                                }
-                                className="h-14 rounded-3xl bg-blue-600 text-lg font-bold active:scale-95"
-                              >
-
-                                +1
-
-                              </button>
-
-                              <button
-                                onClick={() =>
-                                  aggiungiLavorazione(
-                                    voce,
-                                    5
-                                  )
-                                }
-                                className="h-14 rounded-3xl bg-blue-500 text-lg font-bold active:scale-95"
-                              >
-
-                                +5
-
-                              </button>
-
-                              <button
-                                onClick={() =>
-                                  aggiungiLavorazione(
-                                    voce,
-                                    10
-                                  )
-                                }
-                                className="h-14 rounded-3xl bg-blue-400 text-lg font-bold active:scale-95"
-                              >
-
-                                +10
-
-                              </button>
-
-                            </div>
+                            </span>
 
                           </div>
 
-                        </div>
+                        </button>
 
                       )
                     )}
@@ -667,10 +539,10 @@ export default function Preventivi() {
 
       <div
         ref={lavorazioniRef}
-        className="space-y-5 mb-8"
+        className="space-y-5 pb-32"
       >
 
-        <h2 className="text-3xl font-black">
+        <h2 className="text-4xl font-black">
 
           Lavorazioni
 
@@ -684,44 +556,40 @@ export default function Preventivi() {
 
             <div
               key={item.id}
-              className="bg-white/5 border border-white/10 rounded-[34px] p-6"
+              className="bg-white/5 border border-white/10 rounded-[36px] p-6"
             >
 
-              <div className="flex items-start justify-between mb-5">
+              <div className="flex justify-between items-start">
 
-                <div className="flex-1">
+                <div>
 
-                  <h3 className="text-2xl font-bold leading-tight">
+                  <h3 className="text-3xl font-black">
 
                     {item.nome}
 
                   </h3>
 
-                  <div className="mt-4">
+                  <input
+                    type="number"
+                    value={item.prezzo}
+                    onChange={(e) => {
 
-                    <input
-                      type="number"
-                      value={item.prezzo}
-                      onChange={(e) => {
+                      const nuovaLista =
+                        [...lavorazioni];
 
-                        const nuovaLista =
-                          [...lavorazioni];
-
-                        nuovaLista[index]
-                          .prezzo =
-                          Number(
-                            e.target.value
-                          );
-
-                        setLavorazioni(
-                          nuovaLista
+                      nuovaLista[index]
+                        .prezzo =
+                        Number(
+                          e.target.value
                         );
 
-                      }}
-                      className="w-36 bg-black/20 border border-white/10 rounded-2xl p-4 text-[16px] outline-none"
-                    />
+                      setLavorazioni(
+                        nuovaLista
+                      );
 
-                  </div>
+                    }}
+                    className="mt-4 w-40 h-16 bg-black/20 border border-white/10 rounded-3xl px-5 text-[20px] outline-none"
+                  />
 
                 </div>
 
@@ -731,7 +599,7 @@ export default function Preventivi() {
                       index
                     )
                   }
-                  className="min-w-[60px] h-[60px] rounded-3xl bg-red-500/20 text-red-400 text-3xl active:scale-95"
+                  className="w-20 h-20 rounded-[30px] bg-red-500/20 text-red-400 text-4xl"
                 >
 
                   ✕
@@ -740,7 +608,7 @@ export default function Preventivi() {
 
               </div>
 
-              <div className="flex items-center justify-center gap-5 mt-6">
+              <div className="flex items-center justify-center gap-6 mt-8">
 
                 <button
                   onClick={() =>
@@ -748,14 +616,14 @@ export default function Preventivi() {
                       index
                     )
                   }
-                  className="w-16 h-16 rounded-3xl bg-white/10 text-3xl active:scale-95"
+                  className="w-24 h-24 rounded-[34px] bg-white/10 text-5xl"
                 >
 
                   −
 
                 </button>
 
-                <div className="text-4xl font-black min-w-[60px] text-center">
+                <div className="text-6xl font-black min-w-[90px] text-center">
 
                   {item.quantita}
 
@@ -767,7 +635,7 @@ export default function Preventivi() {
                       index
                     )
                   }
-                  className="w-16 h-16 rounded-3xl bg-blue-600 text-3xl active:scale-95"
+                  className="w-24 h-24 rounded-[34px] bg-blue-600 text-5xl"
                 >
 
                   +
@@ -783,30 +651,34 @@ export default function Preventivi() {
 
       </div>
 
-      <AnimatedButton
-        onClick={
-          salvaPreventivo
-        }
-        className="w-full h-16 bg-blue-600 rounded-[34px] text-2xl font-black mb-6"
-      >
+      <div className="fixed bottom-0 left-0 right-0 bg-[#060816] p-4 border-t border-white/10">
 
-        SALVA PREVENTIVO
+        <div className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[36px] p-6 mb-4">
 
-      </AnimatedButton>
+          <p className="text-2xl">
 
-      <div className="sticky bottom-5 bg-gradient-to-r from-green-500 to-emerald-400 rounded-[36px] p-7 shadow-2xl">
+            Totale
 
-        <p className="text-xl opacity-90">
+          </p>
 
-          Totale
+          <h2 className="text-6xl font-black mt-2">
 
-        </p>
+            € {totale}
 
-        <h2 className="text-6xl font-black mt-3">
+          </h2>
 
-          € {totale}
+        </div>
 
-        </h2>
+        <AnimatedButton
+          onClick={
+            salvaPreventivo
+          }
+          className="w-full h-20 bg-blue-600 rounded-[36px] text-3xl font-black"
+        >
+
+          SALVA PREVENTIVO
+
+        </AnimatedButton>
 
       </div>
 
