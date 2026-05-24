@@ -156,7 +156,7 @@ export default function Preventivi() {
             >
               <div className="flex items-center justify-between gap-4">
                 <div className="text-left flex-1">
-                  <h2 className="text-[24px] font-black leading-tight text-white">
+                  <h2 style={{ fontSize: "24px", fontWeight: 900, color: "white", lineHeight: 1.2, margin: 0 }}>
                     {voce.nome}
                   </h2>
                   <p className="text-[#3b9cff] text-[16px] mt-2 font-semibold">
@@ -207,7 +207,7 @@ export default function Preventivi() {
               >
                 <div className="flex items-center justify-between">
                   <div className="text-left">
-                    <h2 className="text-[20px] font-black text-white">{voce.nome}</h2>
+                    <h2 style={{ fontSize: "20px", fontWeight: 900, color: "white", margin: 0 }}>{voce.nome}</h2>
                     <p className="text-[#3b9cff] text-[15px] mt-1">
                       € {voce.prezzo}
                     </p>
