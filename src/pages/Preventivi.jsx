@@ -1,6 +1,4 @@
-import {
-  useState,
-} from "react";
+import { useState } from "react";
 
 import AnimatedButton from "../components/AnimatedButton";
 
@@ -225,11 +223,11 @@ export default function Preventivi() {
 
   return (
 
-    <div className="min-h-screen bg-[#050816] text-white pb-72">
+    <div className="min-h-screen bg-[#050816] text-white pb-44">
 
       <div className="px-5 pt-5">
 
-        <h1 className="text-[58px] leading-none font-black tracking-tight mb-6">
+        <h1 className="text-[44px] font-black tracking-tight mb-6">
 
           Preventivi
 
@@ -244,7 +242,7 @@ export default function Preventivi() {
               e.target.value
             )
           }
-          className="w-full h-20 rounded-[34px] bg-[#1f2027] border border-white/10 px-6 text-[22px] outline-none mb-8"
+          className="w-full h-16 rounded-[24px] bg-[#1b1d28] border border-white/10 px-5 text-[18px] outline-none mb-6"
         >
 
           <option value="">
@@ -271,7 +269,7 @@ export default function Preventivi() {
 
         </select>
 
-        <div className="space-y-5">
+        <div className="space-y-4">
 
           {listinoRapido.map(
             (
@@ -286,20 +284,20 @@ export default function Preventivi() {
                     voce
                   )
                 }
-                className="w-full bg-[#1f2027] rounded-[42px] px-6 py-6 active:scale-[0.98] transition-all border border-white/5"
+                className="w-full bg-[#171923] rounded-[30px] px-5 py-5 active:scale-[0.98] transition-all border border-white/5"
               >
 
                 <div className="flex items-center justify-between">
 
                   <div className="text-left">
 
-                    <h2 className="text-[54px] leading-none font-black">
+                    <h2 className="text-[30px] font-black leading-none">
 
                       {voce.nome}
 
                     </h2>
 
-                    <p className="text-[#1e90ff] text-[28px] mt-5 font-semibold">
+                    <p className="text-[#2491ff] text-[20px] mt-3 font-semibold">
 
                       € {voce.prezzo}
 
@@ -307,9 +305,9 @@ export default function Preventivi() {
 
                   </div>
 
-                  <div className="w-[145px] h-[145px] rounded-[38px] bg-[#1e90ff] flex items-center justify-center shrink-0">
+                  <div className="w-[84px] h-[84px] rounded-[24px] bg-[#2491ff] flex items-center justify-center shrink-0">
 
-                    <span className="text-[95px] leading-none font-light text-white">
+                    <span className="text-[58px] leading-none font-light text-white">
 
                       +
 
@@ -332,7 +330,7 @@ export default function Preventivi() {
               !mostraAltro
             )
           }
-          className="w-full h-20 rounded-[34px] bg-[#1f2027] border border-white/10 text-[26px] font-bold mt-6"
+          className="w-full h-16 rounded-[24px] bg-[#171923] border border-white/10 text-[18px] font-bold mt-5"
         >
 
           {mostraAltro
@@ -343,7 +341,7 @@ export default function Preventivi() {
 
         {mostraAltro && (
 
-          <div className="space-y-4 mt-5">
+          <div className="space-y-3 mt-4">
 
             {listinoAltro.map(
               (
@@ -358,20 +356,20 @@ export default function Preventivi() {
                       voce
                     )
                   }
-                  className="w-full bg-[#1f2027] rounded-[38px] px-6 py-5 active:scale-[0.98]"
+                  className="w-full bg-[#171923] rounded-[28px] px-5 py-4 active:scale-[0.98]"
                 >
 
                   <div className="flex items-center justify-between">
 
                     <div className="text-left">
 
-                      <h2 className="text-[38px] font-black leading-tight">
+                      <h2 className="text-[24px] font-black">
 
                         {voce.nome}
 
                       </h2>
 
-                      <p className="text-[#1e90ff] text-[24px] mt-3">
+                      <p className="text-[#2491ff] text-[18px] mt-2">
 
                         € {voce.prezzo}
 
@@ -379,7 +377,7 @@ export default function Preventivi() {
 
                     </div>
 
-                    <div className="text-[70px] text-[#1e90ff]">
+                    <div className="text-[52px] text-[#2491ff] leading-none">
 
                       +
 
@@ -396,7 +394,7 @@ export default function Preventivi() {
 
         )}
 
-        <div className="space-y-5 mt-8 pb-40">
+        <div className="space-y-4 mt-7 pb-36">
 
           {lavorazioni.map(
             (
@@ -406,20 +404,20 @@ export default function Preventivi() {
 
               <div
                 key={item.id}
-                className="bg-[#02051b] border-2 border-white rounded-[44px] p-6"
+                className="bg-[#10131c] border border-white/10 rounded-[30px] p-5"
               >
 
-                <div className="flex items-start justify-between">
+                <div className="flex items-center justify-between">
 
                   <div>
 
-                    <h2 className="text-[58px] leading-none font-black">
+                    <h2 className="text-[28px] font-black leading-none">
 
                       {item.nome}
 
                     </h2>
 
-                    <p className="text-white text-[32px] mt-6">
+                    <p className="text-white/80 text-[18px] mt-3">
 
                       € {item.prezzo}
 
@@ -427,7 +425,7 @@ export default function Preventivi() {
 
                   </div>
 
-                  <div className="text-[56px] font-black text-white">
+                  <div className="text-[34px] font-black">
 
                     x{item.quantita}
 
@@ -435,7 +433,7 @@ export default function Preventivi() {
 
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-8">
+                <div className="grid grid-cols-2 gap-3 mt-5">
 
                   <button
                     onClick={() =>
@@ -443,7 +441,7 @@ export default function Preventivi() {
                         index
                       )
                     }
-                    className="h-28 rounded-[34px] bg-[#23242b] text-[70px] font-light"
+                    className="h-20 rounded-[24px] bg-[#232632] text-[52px] font-light"
                   >
 
                     −
@@ -456,7 +454,7 @@ export default function Preventivi() {
                         index
                       )
                     }
-                    className="h-28 rounded-[34px] bg-[#1e90ff] text-[70px] font-light"
+                    className="h-20 rounded-[24px] bg-[#2491ff] text-[52px] font-light"
                   >
 
                     +
@@ -474,34 +472,38 @@ export default function Preventivi() {
 
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-[#050816] border-t border-white/10 px-4 pt-4 pb-6">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#050816]/95 backdrop-blur-xl border-t border-white/10 px-4 pt-3 pb-5">
 
-        <div className="bg-gradient-to-r from-green-700 to-green-500 rounded-[42px] p-6 mb-4">
+        <div className="flex gap-3">
 
-          <p className="text-[28px]">
+          <div className="flex-1 bg-gradient-to-r from-green-600 to-green-500 rounded-[26px] px-5 py-4">
 
-            Totale
+            <p className="text-[14px] opacity-80">
 
-          </p>
+              Totale
 
-          <h2 className="text-[76px] leading-none font-black mt-3">
+            </p>
 
-            € {totale}
+            <h2 className="text-[34px] font-black leading-none mt-2">
 
-          </h2>
+              € {totale}
+
+            </h2>
+
+          </div>
+
+          <AnimatedButton
+            onClick={
+              salvaPreventivo
+            }
+            className="w-[140px] rounded-[26px] bg-[#2491ff] text-[20px] font-black"
+          >
+
+            SALVA
+
+          </AnimatedButton>
 
         </div>
-
-        <AnimatedButton
-          onClick={
-            salvaPreventivo
-          }
-          className="w-full h-24 rounded-[42px] bg-[#1e90ff] text-[34px] font-black"
-        >
-
-          SALVA PREVENTIVO
-
-        </AnimatedButton>
 
       </div>
 
