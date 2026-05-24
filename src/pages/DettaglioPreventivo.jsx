@@ -1,0 +1,521 @@
+import { useParams } from "react-router-dom";
+import { useState } from "react";
+import jsPDF from "jspdf";
+
+export default function DettaglioPreventivo() {
+
+  const { id } = useParams();
+
+  const archivio =
+    JSON.parse(
+      localStorage.getItem(
+        "archivioPreventivi"
+      )
+    ) || [];
+
+  const indicePreventivo =
+    archivio.findIndex(
+      (p) => p.id === Number(id)
+    );
+
+  const preventivo =
+    archivio[indicePreventivo];
+
+  const datiAzienda =
+    JSON.parse(
+      localStorage.getItem(
+        "datiAzienda"
+      )
+    ) || {};
+
+  if (!preventivo) {
+
+    return (
+
+      <div className="min-h-screen flex items-center justify-center text-white">
+
+        Preventivo non trovato
+
+      </div>
+
+    );
+
+  }
+
+  const [cliente, setCliente] =
+    useState(
+      preventivo.cliente || ""
+    );
+
+  const [stato, setStato] =
+    useState(
+      preventivo.stato || "Bozza"
+    );
+
+  const [lavorazioni, setLavorazioni] =
+    useState(
+      preventivo.lavorazioni || []
+    );
+
+  const totale =
+    lavorazioni.reduce(
+      (acc, item) =>
+        acc +
+        item.prezzo *
+          item.quantita,
+      0
+    );
+
+  function aggiornaQuantita(
+    index,
+    valore
+  ) {
+
+    const nuovaLista =
+      [...lavorazioni];
+
+    nuovaLista[index].quantita =
+      Number(valore);
+
+    setLavorazioni(
+      nuovaLista
+    );
+
+  }
+
+  function aggiornaPrezzo(
+    index,
+    valore
+  ) {
+
+    const nuovaLista =
+      [...lavorazioni];
+
+    nuovaLista[index].prezzo =
+      Number(valore);
+
+    setLavorazioni(
+      nuovaLista
+    );
+
+  }
+
+  function eliminaLavorazione(
+    index
+  ) {
+
+    const nuovaLista =
+      lavorazioni.filter(
+        (_, i) => i !== index
+      );
+
+    setLavorazioni(
+      nuovaLista
+    );
+
+  }
+
+  function salvaModifiche() {
+
+    archivio[indicePreventivo] = {
+
+      ...preventivo,
+
+      cliente,
+
+      stato,
+
+      lavorazioni,
+
+      totale,
+
+    };
+
+    localStorage.setItem(
+      "archivioPreventivi",
+      JSON.stringify(archivio)
+    );
+
+    alert(
+      "Preventivo aggiornato!"
+    );
+
+  }
+
+  function duplicaPreventivo() {
+
+    const nuovoPreventivo = {
+
+      ...preventivo,
+
+      id: Date.now(),
+
+      cliente:
+        cliente + " COPIA",
+
+      stato: "Bozza",
+
+      data:
+        new Date().toLocaleDateString(),
+
+    };
+
+    archivio.push(
+      nuovoPreventivo
+    );
+
+    localStorage.setItem(
+      "archivioPreventivi",
+      JSON.stringify(archivio)
+    );
+
+    alert(
+      "Preventivo duplicato!"
+    );
+
+  }
+
+  function generaPDF() {
+
+    const doc = new jsPDF();
+
+    try {
+
+      if (datiAzienda.logo) {
+
+        doc.addImage(
+          datiAzienda.logo,
+          20,
+          15,
+          40,
+          40
+        );
+
+      }
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+    doc.setFontSize(24);
+
+    doc.text(
+      datiAzienda.nomeAzienda || "",
+      70,
+      25
+    );
+
+    doc.setFontSize(11);
+
+    doc.text(
+      `Tel: ${datiAzienda.telefono || ""}`,
+      70,
+      35
+    );
+
+    doc.text(
+      `Email: ${datiAzienda.email || ""}`,
+      70,
+      42
+    );
+
+    doc.text(
+      `P.IVA: ${datiAzienda.partitaIva || ""}`,
+      70,
+      49
+    );
+
+    doc.text(
+      `${datiAzienda.indirizzo || ""}`,
+      70,
+      56
+    );
+
+    doc.line(
+      20,
+      65,
+      190,
+      65
+    );
+
+    doc.setFontSize(22);
+
+    doc.text(
+      "PREVENTIVO",
+      20,
+      80
+    );
+
+    doc.setFontSize(14);
+
+    doc.text(
+      `Cliente: ${cliente}`,
+      20,
+      95
+    );
+
+    doc.text(
+      `Data: ${preventivo.data}`,
+      20,
+      105
+    );
+
+    doc.text(
+      `Stato: ${stato}`,
+      20,
+      115
+    );
+
+    let y = 135;
+
+    doc.setFontSize(18);
+
+    doc.text(
+      "Lavorazioni",
+      20,
+      y
+    );
+
+    y += 15;
+
+    doc.setFontSize(13);
+
+    lavorazioni.forEach(
+      (item) => {
+
+        doc.text(
+          item.nome,
+          20,
+          y
+        );
+
+        doc.text(
+          `${item.quantita} x €${item.prezzo}`,
+          120,
+          y
+        );
+
+        doc.text(
+          `€ ${
+            item.quantita *
+            item.prezzo
+          }`,
+          170,
+          y
+        );
+
+        y += 10;
+
+      }
+    );
+
+    y += 20;
+
+    doc.setFontSize(24);
+
+    doc.text(
+      `Totale: € ${totale}`,
+      20,
+      y
+    );
+
+    doc.save(
+      `preventivo-${cliente}.pdf`
+    );
+
+  }
+
+  return (
+
+    <div className="min-h-screen px-5 pt-8 pb-32 text-white">
+
+      <div className="mb-8">
+
+        <h1 className="text-4xl font-black tracking-tight">
+          Dettaglio Preventivo
+        </h1>
+
+        <p className="text-slate-400 mt-2">
+          Gestisci preventivo e lavorazioni
+        </p>
+
+      </div>
+
+      <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[32px] p-5 shadow-2xl mb-8 space-y-5">
+
+        <div>
+
+          <p className="text-slate-400 text-sm mb-2">
+            Cliente
+          </p>
+
+          <input
+            type="text"
+            value={cliente}
+            onChange={(e) =>
+              setCliente(
+                e.target.value
+              )
+            }
+            className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+          />
+
+        </div>
+
+        <div>
+
+          <p className="text-slate-400 text-sm mb-2">
+            Stato
+          </p>
+
+          <select
+            value={stato}
+            onChange={(e) =>
+              setStato(
+                e.target.value
+              )
+            }
+            className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+          >
+
+            <option>
+              Bozza
+            </option>
+
+            <option>
+              Inviato
+            </option>
+
+            <option>
+              Accettato
+            </option>
+
+            <option>
+              Completato
+            </option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+      <div className="space-y-4 mb-8">
+
+        {lavorazioni.map(
+          (
+            item,
+            index
+          ) => (
+
+            <div
+              key={item.id}
+              className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[28px] p-5 shadow-xl"
+            >
+
+              <div className="flex items-start justify-between mb-4">
+
+                <div>
+
+                  <h2 className="text-xl font-bold">
+                    {item.nome}
+                  </h2>
+
+                  <p className="text-slate-400 mt-1">
+                    Prezzo unitario
+                  </p>
+
+                </div>
+
+                <button
+                  onClick={() =>
+                    eliminaLavorazione(
+                      index
+                    )
+                  }
+                  className="text-red-400 text-xl"
+                >
+                  ✕
+                </button>
+
+              </div>
+
+              <div className="space-y-4">
+
+                <input
+                  type="number"
+                  value={item.prezzo}
+                  onChange={(e) =>
+                    aggiornaPrezzo(
+                      index,
+                      e.target.value
+                    )
+                  }
+                  className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+                />
+
+                <input
+                  type="number"
+                  value={item.quantita}
+                  onChange={(e) =>
+                    aggiornaQuantita(
+                      index,
+                      e.target.value
+                    )
+                  }
+                  className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+                />
+
+              </div>
+
+            </div>
+
+          )
+        )}
+
+      </div>
+
+      <div className="space-y-4 mb-8">
+
+        <button
+          onClick={salvaModifiche}
+          className="w-full bg-blue-600 rounded-[28px] p-5 text-xl font-bold shadow-2xl"
+        >
+          Salva Modifiche
+        </button>
+
+        <button
+          onClick={duplicaPreventivo}
+          className="w-full bg-orange-500 rounded-[28px] p-5 text-xl font-bold shadow-2xl"
+        >
+          Duplica Preventivo
+        </button>
+
+        <button
+          onClick={generaPDF}
+          className="w-full bg-emerald-500 rounded-[28px] p-5 text-xl font-bold shadow-2xl"
+        >
+          Scarica PDF
+        </button>
+
+      </div>
+
+      <div className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[32px] p-6 shadow-2xl">
+
+        <p className="text-lg opacity-90">
+          Totale
+        </p>
+
+        <h2 className="text-5xl font-black mt-2">
+          € {totale}
+        </h2>
+
+      </div>
+
+    </div>
+
+  );
+
+}
