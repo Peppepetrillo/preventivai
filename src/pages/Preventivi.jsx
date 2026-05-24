@@ -156,7 +156,7 @@ export default function Preventivi() {
             >
               <div className="flex items-center justify-between gap-4">
                 <div className="text-left flex-1">
-                  <h2 className="text-[24px] font-black leading-tight">
+                  <h2 className="text-[24px] font-black leading-tight text-white">
                     {voce.nome}
                   </h2>
                   <p className="text-[#3b9cff] text-[16px] mt-2 font-semibold">
@@ -207,7 +207,7 @@ export default function Preventivi() {
               >
                 <div className="flex items-center justify-between">
                   <div className="text-left">
-                    <h2 className="text-[20px] font-black">{voce.nome}</h2>
+                    <h2 className="text-[20px] font-black text-white">{voce.nome}</h2>
                     <p className="text-[#3b9cff] text-[15px] mt-1">
                       € {voce.prezzo}
                     </p>
@@ -290,25 +290,23 @@ export default function Preventivi() {
 
       {/* FOOTER FISSO */}
       <div className="fixed bottom-[85px] left-0 right-0 px-4 z-50">
-        <div className="flex gap-3">
+        <div className="flex gap-3 h-[72px]">
 
           {/* TOTALE */}
-          <div className="flex-1 bg-gradient-to-r from-green-700 to-green-500 rounded-[22px] px-4 py-3 shadow-2xl flex items-center justify-between">
+          <div className="flex-1 bg-gradient-to-r from-green-700 to-green-500 rounded-[22px] px-4 shadow-2xl flex items-center justify-between">
             <div>
-              <p className="text-[13px] opacity-70 font-semibold">Totale</p>
-              <h2 className="text-[30px] font-black leading-none mt-1">
+              <p className="text-[12px] opacity-70 font-semibold">Totale</p>
+              <h2 className="text-[28px] font-black leading-none">
                 € {totale}
               </h2>
             </div>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" opacity="0.7">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" opacity="0.7">
               <rect x="4" y="2" width="16" height="20" rx="2" />
               <line x1="8" y1="6" x2="16" y2="6" />
               <line x1="8" y1="10" x2="10" y2="10" />
               <line x1="12" y1="10" x2="14" y2="10" />
-              <line x1="16" y1="10" x2="16" y2="10" />
               <line x1="8" y1="14" x2="10" y2="14" />
               <line x1="12" y1="14" x2="14" y2="14" />
-              <line x1="16" y1="14" x2="16" y2="14" />
               <line x1="8" y1="18" x2="10" y2="18" />
               <line x1="12" y1="18" x2="14" y2="18" />
             </svg>
@@ -319,12 +317,12 @@ export default function Preventivi() {
             onClick={salvaPreventivo}
             className="flex-1 rounded-[22px] bg-[#2491ff] text-white font-black shadow-2xl flex items-center justify-center gap-2 active:scale-[0.97] transition-all"
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
               <polyline points="17 21 17 13 7 13 7 21" />
               <polyline points="7 3 7 8 15 8" />
             </svg>
-            <span className="text-[16px]">SALVA<br />PREVENTIVO</span>
+            <span className="text-[15px] leading-tight text-center">SALVA<br />PREVENTIVO</span>
           </button>
 
         </div>
