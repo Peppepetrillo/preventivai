@@ -1,10 +1,13 @@
 import { useParams } from "react-router-dom";
+
 import { useState } from "react";
+
 import jsPDF from "jspdf";
 
 export default function DettaglioPreventivo() {
 
-  const { id } = useParams();
+  const { id } =
+    useParams();
 
   const archivio =
     JSON.parse(
@@ -15,7 +18,8 @@ export default function DettaglioPreventivo() {
 
   const indicePreventivo =
     archivio.findIndex(
-      (p) => p.id === Number(id)
+      (p) =>
+        p.id === Number(id)
     );
 
   const preventivo =
@@ -24,7 +28,7 @@ export default function DettaglioPreventivo() {
   const datiAzienda =
     JSON.parse(
       localStorage.getItem(
-        "datiAzienda"
+        "datiDitta"
       )
     ) || {};
 
@@ -74,7 +78,8 @@ export default function DettaglioPreventivo() {
     const nuovaLista =
       [...lavorazioni];
 
-    nuovaLista[index].quantita =
+    nuovaLista[index]
+      .quantita =
       Number(valore);
 
     setLavorazioni(
@@ -91,7 +96,8 @@ export default function DettaglioPreventivo() {
     const nuovaLista =
       [...lavorazioni];
 
-    nuovaLista[index].prezzo =
+    nuovaLista[index]
+      .prezzo =
       Number(valore);
 
     setLavorazioni(
@@ -133,11 +139,13 @@ export default function DettaglioPreventivo() {
 
     localStorage.setItem(
       "archivioPreventivi",
-      JSON.stringify(archivio)
+      JSON.stringify(
+        archivio
+      )
     );
 
     alert(
-      "Preventivo aggiornato!"
+      "Preventivo aggiornato 😄🔥"
     );
 
   }
@@ -166,81 +174,72 @@ export default function DettaglioPreventivo() {
 
     localStorage.setItem(
       "archivioPreventivi",
-      JSON.stringify(archivio)
+      JSON.stringify(
+        archivio
+      )
     );
 
     alert(
-      "Preventivo duplicato!"
+      "Preventivo duplicato 😄🔥"
     );
 
   }
 
   function generaPDF() {
 
-    const doc = new jsPDF();
+    const doc =
+      new jsPDF();
 
-    try {
+    doc.setFillColor(
+      10,
+      18,
+      40
+    );
 
-      if (datiAzienda.logo) {
+    doc.rect(
+      0,
+      0,
+      210,
+      40,
+      "F"
+    );
 
-        doc.addImage(
-          datiAzienda.logo,
-          20,
-          15,
-          40,
-          40
-        );
+    doc.setTextColor(
+      255,
+      255,
+      255
+    );
 
-      }
-
-    } catch (error) {
-
-      console.log(error);
-
-    }
-
-    doc.setFontSize(24);
+    doc.setFontSize(28);
 
     doc.text(
-      datiAzienda.nomeAzienda || "",
-      70,
+      datiAzienda.nomeDitta ||
+      "PreventivAI",
+      20,
       25
     );
 
     doc.setFontSize(11);
 
     doc.text(
-      `Tel: ${datiAzienda.telefono || ""}`,
-      70,
-      35
+      `Telefono: ${datiAzienda.telefono || ""}`,
+      20,
+      50
     );
 
     doc.text(
       `Email: ${datiAzienda.email || ""}`,
-      70,
-      42
-    );
-
-    doc.text(
-      `P.IVA: ${datiAzienda.partitaIva || ""}`,
-      70,
-      49
-    );
-
-    doc.text(
-      `${datiAzienda.indirizzo || ""}`,
-      70,
-      56
-    );
-
-    doc.line(
       20,
-      65,
-      190,
-      65
+      57
     );
 
-    doc.setFontSize(22);
+    doc.setTextColor(
+      0,
+      0,
+      0
+    );
+
+    doc.setFontSize(24);
 
     doc.text(
       "PREVENTIVO",
@@ -248,7 +247,7 @@ export default function DettaglioPreventivo() {
       80
     );
 
-    doc.setFontSize(14);
+    doc.setFontSize(13);
 
     doc.text(
       `Cliente: ${cliente}`,
@@ -259,49 +258,88 @@ export default function DettaglioPreventivo() {
     doc.text(
       `Data: ${preventivo.data}`,
       20,
-      105
+      103
     );
 
     doc.text(
       `Stato: ${stato}`,
       20,
-      115
+      111
     );
 
-    let y = 135;
+    let y = 130;
 
-    doc.setFontSize(18);
+    doc.setFillColor(
+      230,
+      230,
+      230
+    );
+
+    doc.rect(
+      20,
+      y,
+      170,
+      10,
+      "F"
+    );
+
+    doc.setFontSize(12);
 
     doc.text(
-      "Lavorazioni",
-      20,
-      y
+      "Descrizione",
+      22,
+      y + 7
     );
 
-    y += 15;
+    doc.text(
+      "Qtà",
+      115,
+      y + 7
+    );
 
-    doc.setFontSize(13);
+    doc.text(
+      "Prezzo",
+      140,
+      y + 7
+    );
+
+    doc.text(
+      "Totale",
+      170,
+      y + 7
+    );
+
+    y += 18;
 
     lavorazioni.forEach(
       (item) => {
 
+        const totaleRiga =
+          item.quantita *
+          item.prezzo;
+
         doc.text(
           item.nome,
-          20,
+          22,
           y
         );
 
         doc.text(
-          `${item.quantita} x €${item.prezzo}`,
-          120,
+          String(
+            item.quantita
+          ),
+          118,
           y
         );
 
         doc.text(
-          `€ ${
-            item.quantita *
-            item.prezzo
-          }`,
+          `€ ${item.prezzo}`,
+          140,
+          y
+        );
+
+        doc.text(
+          `€ ${totaleRiga}`,
           170,
           y
         );
@@ -313,12 +351,34 @@ export default function DettaglioPreventivo() {
 
     y += 20;
 
-    doc.setFontSize(24);
+    doc.setFillColor(
+      16,
+      185,
+      129
+    );
+
+    doc.roundedRect(
+      20,
+      y,
+      170,
+      20,
+      5,
+      5,
+      "F"
+    );
+
+    doc.setTextColor(
+      255,
+      255,
+      255
+    );
+
+    doc.setFontSize(22);
 
     doc.text(
-      `Totale: € ${totale}`,
-      20,
-      y
+      `TOTALE: € ${totale}`,
+      25,
+      y + 13
     );
 
     doc.save(
@@ -329,26 +389,32 @@ export default function DettaglioPreventivo() {
 
   return (
 
-    <div className="min-h-screen px-5 pt-8 pb-32 text-white">
+    <div className="min-h-screen px-5 pt-8 pb-32 text-white bg-[#060816]">
 
       <div className="mb-8">
 
         <h1 className="text-4xl font-black tracking-tight">
+
           Dettaglio Preventivo
+
         </h1>
 
         <p className="text-slate-400 mt-2">
+
           Gestisci preventivo e lavorazioni
+
         </p>
 
       </div>
 
-      <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[32px] p-5 shadow-2xl mb-8 space-y-5">
+      <div className="bg-white/5 border border-white/10 rounded-[32px] p-5 mb-8 space-y-5">
 
         <div>
 
           <p className="text-slate-400 text-sm mb-2">
+
             Cliente
+
           </p>
 
           <input
@@ -367,7 +433,9 @@ export default function DettaglioPreventivo() {
         <div>
 
           <p className="text-slate-400 text-sm mb-2">
+
             Stato
+
           </p>
 
           <select
@@ -412,7 +480,7 @@ export default function DettaglioPreventivo() {
 
             <div
               key={item.id}
-              className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[28px] p-5 shadow-xl"
+              className="bg-white/5 border border-white/10 rounded-[28px] p-5"
             >
 
               <div className="flex items-start justify-between mb-4">
@@ -420,12 +488,10 @@ export default function DettaglioPreventivo() {
                 <div>
 
                   <h2 className="text-xl font-bold">
-                    {item.nome}
-                  </h2>
 
-                  <p className="text-slate-400 mt-1">
-                    Prezzo unitario
-                  </p>
+                    {item.nome}
+
+                  </h2>
 
                 </div>
 
@@ -480,36 +546,52 @@ export default function DettaglioPreventivo() {
       <div className="space-y-4 mb-8">
 
         <button
-          onClick={salvaModifiche}
-          className="w-full bg-blue-600 rounded-[28px] p-5 text-xl font-bold shadow-2xl"
+          onClick={
+            salvaModifiche
+          }
+          className="w-full bg-blue-600 rounded-[28px] p-5 text-xl font-bold"
         >
+
           Salva Modifiche
+
         </button>
 
         <button
-          onClick={duplicaPreventivo}
-          className="w-full bg-orange-500 rounded-[28px] p-5 text-xl font-bold shadow-2xl"
+          onClick={
+            duplicaPreventivo
+          }
+          className="w-full bg-orange-500 rounded-[28px] p-5 text-xl font-bold"
         >
+
           Duplica Preventivo
+
         </button>
 
         <button
-          onClick={generaPDF}
-          className="w-full bg-emerald-500 rounded-[28px] p-5 text-xl font-bold shadow-2xl"
+          onClick={
+            generaPDF
+          }
+          className="w-full bg-emerald-500 rounded-[28px] p-5 text-xl font-bold"
         >
+
           Scarica PDF
+
         </button>
 
       </div>
 
-      <div className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[32px] p-6 shadow-2xl">
+      <div className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[32px] p-6">
 
         <p className="text-lg opacity-90">
+
           Totale
+
         </p>
 
         <h2 className="text-5xl font-black mt-2">
+
           € {totale}
+
         </h2>
 
       </div>

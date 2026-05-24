@@ -16,17 +16,11 @@ export default function Preventivi() {
   const [clienteSelezionato, setClienteSelezionato] =
     useState("");
 
-  const [listino, setListino] =
-    useState([]);
-
   const [ricerca, setRicerca] =
     useState("");
 
   const [lavorazioni, setLavorazioni] =
     useState([]);
-
-  const [categorieAperte, setCategorieAperte] =
-    useState({});
 
   const [stato, setStato] =
     useState("Bozza");
@@ -34,110 +28,119 @@ export default function Preventivi() {
   const lavorazioniRef =
     useRef(null);
 
-  useEffect(() => {
+  const [listino] =
+    useState([
 
-    const datiListino =
-      JSON.parse(
-        localStorage.getItem(
-          "listinoCompleto"
-        )
-      ) || [];
+      {
+        id: 1,
+        nome: "Punto luce",
+        prezzo: 40,
+        categoria: "Impianto",
+      },
 
-    setListino(datiListino);
+      {
+        id: 2,
+        nome: "Punto TV",
+        prezzo: 50,
+        categoria: "Impianto",
+      },
 
-    const categorie = {};
+      {
+        id: 3,
+        nome: "Punto Ethernet",
+        prezzo: 60,
+        categoria: "Impianto",
+      },
 
-    datiListino.forEach(
-      (voce) => {
+      {
+        id: 4,
+        nome: "Presa USB A+C",
+        prezzo: 50,
+        categoria: "Impianto",
+      },
 
-        categorie[
-          voce.categoria
-        ] = true;
+      {
+        id: 5,
+        nome: "Faretto",
+        prezzo: 7,
+        categoria: "Illuminazione",
+      },
 
-      }
-    );
+      {
+        id: 6,
+        nome: "Strip LED Beghelli",
+        prezzo: 15,
+        categoria: "Illuminazione",
+      },
 
-    setCategorieAperte(
-      categorie
-    );
+      {
+        id: 7,
+        nome: "Faretto emergenza",
+        prezzo: 25,
+        categoria: "Illuminazione",
+      },
 
-  }, []);
+      {
+        id: 8,
+        nome: "Gateway Living Now",
+        prezzo: 200,
+        categoria: "Domotica",
+      },
 
-  function toggleCategoria(
-    categoria
-  ) {
+      {
+        id: 9,
+        nome: "Punto luce connesso",
+        prezzo: 60,
+        categoria: "Domotica",
+      },
 
-    setCategorieAperte({
+      {
+        id: 10,
+        nome: "Tapparella connessa",
+        prezzo: 80,
+        categoria: "Domotica",
+      },
 
-      ...categorieAperte,
+      {
+        id: 11,
+        nome: "Videocitofono Urmet WiFi",
+        prezzo: 700,
+        categoria: "Extra",
+      },
 
-      [categoria]:
-        !categorieAperte[
-          categoria
-        ],
+      {
+        id: 12,
+        nome: "Montaggio antenna",
+        prezzo: 250,
+        categoria: "Extra",
+      },
 
-    });
+      {
+        id: 13,
+        nome: "Kit emergenza strip LED",
+        prezzo: 100,
+        categoria: "Extra",
+      },
 
-  }
+      {
+        id: 14,
+        nome: "Allarme perimetrale",
+        prezzo: 2000,
+        categoria: "Extra",
+      },
+
+      {
+        id: 15,
+        nome: "Quadro elettrico",
+        prezzo: 700,
+        categoria: "Extra",
+      },
+
+    ]);
 
   function aggiungiLavorazione(
     voce
   ) {
-
-    const esistente =
-      lavorazioni.find(
-        (item) =>
-          item.nome ===
-          voce.nome
-      );
-
-    if (esistente) {
-
-      const nuovaLista =
-        lavorazioni.map(
-          (item) => {
-
-            if (
-              item.nome ===
-              voce.nome
-            ) {
-
-              return {
-
-                ...item,
-
-                quantita:
-                  item.quantita +
-                  1,
-
-              };
-
-            }
-
-            return item;
-
-          }
-        );
-
-      setLavorazioni(
-        nuovaLista
-      );
-
-      setTimeout(() => {
-
-        lavorazioniRef.current?.scrollIntoView({
-
-          behavior: "smooth",
-
-          block: "start",
-
-        });
-
-      }, 100);
-
-      return;
-
-    }
 
     const nuovaLavorazione = {
 
@@ -304,224 +307,100 @@ export default function Preventivi() {
         )
     );
 
-  const categorie =
-    [...new Set(
-      listinoFiltrato.map(
-        (voce) =>
-          voce.categoria
-      )
-    )];
-
   return (
 
-    <div className="min-h-screen px-5 pt-8 pb-32 text-white">
+    <div className="min-h-screen px-5 pt-8 pb-32 text-white bg-[#060816]">
 
-      <div className="sticky top-0 z-40 backdrop-blur-2xl bg-black/20 border-b border-white/5 mb-8 pb-5 pt-2">
+      <h1 className="text-4xl font-black mb-8">
 
-        <h1 className="text-4xl font-black tracking-tight">
-          Nuovo Preventivo
-        </h1>
+        Nuovo Preventivo
 
-        <p className="text-slate-400 mt-2">
-          Crea rapidamente un preventivo professionale
-        </p>
+      </h1>
 
-      </div>
+      <div className="bg-white/5 border border-white/10 rounded-[30px] p-5 mb-8 space-y-5">
 
-      <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[30px] p-5 mb-8 space-y-5 shadow-2xl">
-
-        <div>
-
-          <p className="text-slate-400 mb-2 text-sm">
-            Cliente
-          </p>
-
-          <select
-            value={
-              clienteSelezionato
-            }
-            onChange={(e) =>
-              setClienteSelezionato(
-                e.target.value
-              )
-            }
-            className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
-          >
-
-            <option value="">
-              Seleziona Cliente
-            </option>
-
-            {clienti.map(
-              (
-                cliente,
-                index
-              ) => (
-
-                <option
-                  key={index}
-                  value={
-                    cliente.nome
-                  }
-                >
-                  {cliente.nome}
-                </option>
-
-              )
-            )}
-
-          </select>
-
-        </div>
-
-        <div>
-
-          <p className="text-slate-400 mb-2 text-sm">
-            Stato Preventivo
-          </p>
-
-          <select
-            value={stato}
-            onChange={(e) =>
-              setStato(
-                e.target.value
-              )
-            }
-            className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
-          >
-
-            <option>
-              Bozza
-            </option>
-
-            <option>
-              Inviato
-            </option>
-
-            <option>
-              Accettato
-            </option>
-
-            <option>
-              Completato
-            </option>
-
-          </select>
-
-        </div>
-
-      </div>
-
-      <div className="mb-8">
-
-        <input
-          type="text"
-          placeholder="Cerca lavorazione..."
-          value={ricerca}
+        <select
+          value={
+            clienteSelezionato
+          }
           onChange={(e) =>
-            setRicerca(
+            setClienteSelezionato(
               e.target.value
             )
           }
-          className="w-full bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-4 outline-none shadow-xl"
-        />
+          className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+        >
+
+          <option value="">
+            Seleziona Cliente
+          </option>
+
+          {clienti.map(
+            (
+              cliente,
+              index
+            ) => (
+
+              <option
+                key={index}
+                value={
+                  cliente.nome
+                }
+              >
+                {cliente.nome}
+              </option>
+
+            )
+          )}
+
+        </select>
 
       </div>
 
-      <div className="space-y-5 mb-10">
+      <input
+        type="text"
+        placeholder="Cerca lavorazione..."
+        value={ricerca}
+        onChange={(e) =>
+          setRicerca(
+            e.target.value
+          )
+        }
+        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none mb-8"
+      />
 
-        {categorie.map(
-          (categoria) => (
+      <div className="space-y-4 mb-10">
 
-            <div key={categoria}>
+        {listinoFiltrato.map(
+          (voce) => (
+
+            <div
+              key={voce.id}
+              className="bg-white/5 border border-white/10 rounded-[24px] p-5 flex items-center justify-between"
+            >
+
+              <div>
+
+                <h3 className="text-lg font-semibold">
+                  {voce.nome}
+                </h3>
+
+                <p className="text-green-400 mt-2">
+                  € {voce.prezzo}
+                </p>
+
+              </div>
 
               <button
                 onClick={() =>
-                  toggleCategoria(
-                    categoria
+                  aggiungiLavorazione(
+                    voce
                   )
                 }
-                className="w-full bg-white/5 border border-white/10 backdrop-blur-xl rounded-[26px] p-5 flex items-center justify-between shadow-xl"
+                className="w-12 h-12 rounded-2xl bg-blue-600 text-2xl"
               >
-
-                <span className="text-xl font-bold">
-                  {categoria}
-                </span>
-
-                <span className="text-2xl text-slate-400">
-
-                  {categorieAperte[
-                    categoria
-                  ]
-                    ? "−"
-                    : "+"}
-
-                </span>
-
+                +
               </button>
-
-              {categorieAperte[
-                categoria
-              ] && (
-
-                <div className="space-y-3 mt-4">
-
-                  {listinoFiltrato
-                    .filter(
-                      (
-                        voce
-                      ) =>
-                        voce.categoria ===
-                        categoria
-                    )
-                    .map(
-                      (
-                        voce
-                      ) => (
-
-                        <div
-                          key={
-                            voce.id
-                          }
-                          className="bg-white/[0.04] border border-white/10 rounded-[24px] p-5 flex items-center justify-between"
-                        >
-
-                          <div>
-
-                            <h3 className="text-lg font-semibold">
-                              {
-                                voce.nome
-                              }
-                            </h3>
-
-                            <p className="text-green-400 mt-2">
-                              €
-                              {
-                                voce.prezzo
-                              }
-                            </p>
-
-                          </div>
-
-                          <button
-                            onClick={() =>
-                              aggiungiLavorazione(
-                                voce
-                              )
-                            }
-                            className="w-12 h-12 rounded-2xl bg-blue-600 text-2xl"
-                          >
-                            +
-                          </button>
-
-                        </div>
-
-                      )
-                    )}
-
-                </div>
-
-              )}
 
             </div>
 
@@ -547,7 +426,7 @@ export default function Preventivi() {
 
             <div
               key={item.id}
-              className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[28px] p-5 shadow-xl"
+              className="bg-white/5 border border-white/10 rounded-[28px] p-5"
             >
 
               <div className="flex items-start justify-between mb-4">
@@ -558,9 +437,31 @@ export default function Preventivi() {
                     {item.nome}
                   </h3>
 
-                  <p className="text-slate-400 mt-1">
-                    € {item.prezzo}
-                  </p>
+                  <div className="mt-3">
+
+                    <input
+                      type="number"
+                      value={item.prezzo}
+                      onChange={(e) => {
+
+                        const nuovaLista =
+                          [...lavorazioni];
+
+                        nuovaLista[index]
+                          .prezzo =
+                          Number(
+                            e.target.value
+                          );
+
+                        setLavorazioni(
+                          nuovaLista
+                        );
+
+                      }}
+                      className="w-28 bg-black/20 border border-white/10 rounded-xl p-3 outline-none"
+                    />
+
+                  </div>
 
                 </div>
 
@@ -620,12 +521,12 @@ export default function Preventivi() {
         onClick={
           salvaPreventivo
         }
-        className="w-full bg-blue-600 rounded-[28px] p-5 text-xl font-bold shadow-2xl mb-6"
+        className="w-full bg-blue-600 rounded-[28px] p-5 text-xl font-bold mb-6"
       >
         Salva Preventivo
       </AnimatedButton>
 
-      <div className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[32px] p-6 shadow-2xl">
+      <div className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[32px] p-6">
 
         <p className="text-lg opacity-90">
           Totale

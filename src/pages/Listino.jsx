@@ -1,429 +1,204 @@
 import {
-  useEffect,
   useState,
 } from "react";
-
-import {
-  Plus,
-  Euro,
-  List,
-} from "lucide-react";
-
-import PageWrapper from "../components/PageWrapper";
 
 export default function Listino() {
 
   const [listino, setListino] =
-    useState([]);
+    useState([
 
-  const [nome, setNome] =
-    useState("");
+      {
+        id: 1,
+        nome: "Punto luce",
+        prezzo: 40,
+      },
 
-  const [prezzo, setPrezzo] =
-    useState("");
+      {
+        id: 2,
+        nome: "Punto TV",
+        prezzo: 50,
+      },
 
-  const [categoria, setCategoria] =
-    useState("");
+      {
+        id: 3,
+        nome: "Punto Ethernet",
+        prezzo: 60,
+      },
 
-  const [modificaVoce, setModificaVoce] =
-    useState(null);
+      {
+        id: 4,
+        nome: "Presa USB A+C",
+        prezzo: 50,
+      },
 
-  useEffect(() => {
+      {
+        id: 5,
+        nome: "Faretto",
+        prezzo: 7,
+      },
 
-    const dati =
-      JSON.parse(
-        localStorage.getItem(
-          "listinoCompleto"
-        )
-      ) || [];
+      {
+        id: 6,
+        nome: "Strip LED Beghelli",
+        prezzo: 15,
+      },
 
-    setListino(dati);
+      {
+        id: 7,
+        nome: "Faretto emergenza",
+        prezzo: 25,
+      },
 
-  }, []);
+      {
+        id: 8,
+        nome: "Gateway Living Now",
+        prezzo: 200,
+      },
 
-  function salvaListino(
-    nuovoListino
-  ) {
+      {
+        id: 9,
+        nome: "Punto luce connesso",
+        prezzo: 60,
+      },
 
-    setListino(
-      nuovoListino
-    );
+      {
+        id: 10,
+        nome: "Tapparella connessa",
+        prezzo: 80,
+      },
 
-    localStorage.setItem(
-      "listinoCompleto",
-      JSON.stringify(
-        nuovoListino
-      )
-    );
+      {
+        id: 11,
+        nome: "Videocitofono Urmet WiFi",
+        prezzo: 700,
+      },
 
-  }
+      {
+        id: 12,
+        nome: "Montaggio antenna",
+        prezzo: 250,
+      },
 
-  function aggiungiVoce() {
+      {
+        id: 13,
+        nome: "Kit emergenza strip LED",
+        prezzo: 100,
+      },
 
-    if (
-      !nome ||
-      !prezzo ||
-      !categoria
-    ) return;
+      {
+        id: 14,
+        nome: "Allarme perimetrale",
+        prezzo: 2000,
+      },
 
-    const nuovaVoce = {
+      {
+        id: 15,
+        nome: "Quadro elettrico",
+        prezzo: 700,
+      },
 
-      id: Date.now(),
-
-      nome,
-
-      prezzo:
-        Number(prezzo),
-
-      categoria,
-
-    };
-
-    salvaListino([
-      ...listino,
-      nuovaVoce,
     ]);
 
-    setNome("");
-    setPrezzo("");
-    setCategoria("");
+  function modificaPrezzo(
+    id,
+    nuovoPrezzo
+  ) {
 
-  }
-
-  function salvaModifica() {
-
-    const nuovoListino =
+    const aggiornato =
       listino.map(
-        (voce) => {
+        (item) => {
 
           if (
-            voce.id ===
-            modificaVoce.id
+            item.id === id
           ) {
 
             return {
 
-              ...voce,
-
-              nome:
-                modificaVoce.nome,
+              ...item,
 
               prezzo:
-                Number(
-                  modificaVoce.prezzo
-                ),
-
-              categoria:
-                modificaVoce.categoria,
+                nuovoPrezzo,
 
             };
 
           }
 
-          return voce;
+          return item;
 
         }
       );
 
-    salvaListino(
-      nuovoListino
+    setListino(
+      aggiornato
     );
 
-    setModificaVoce(
-      null
+    localStorage.setItem(
+      "listino",
+      JSON.stringify(
+        aggiornato
+      )
     );
 
   }
 
   return (
 
-    <PageWrapper>
+    <div className="min-h-screen bg-[#060816] text-white p-5">
 
-      <div className="min-h-screen px-5 pt-8 pb-32 text-white">
+      <h1 className="text-4xl font-black mb-8">
 
-        <div className="sticky top-0 z-40 backdrop-blur-2xl bg-black/20 border-b border-white/5 mb-8 pb-5 pt-2">
+        Listino
 
-          <h1 className="text-4xl font-black tracking-tight">
-            Listino
-          </h1>
+      </h1>
 
-          <p className="text-slate-400 mt-2">
-            Gestisci lavorazioni e prezzi
-          </p>
+      <div className="space-y-4">
 
-        </div>
+        {listino.map((item) => (
 
-        <div className="bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl rounded-[32px] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.35)] mb-8 space-y-5">
-
-          <div>
-
-            <p className="text-slate-400 text-sm mb-2">
-              Nome lavorazione
-            </p>
-
-            <input
-              type="text"
-              placeholder="Punto luce"
-              value={nome}
-              onChange={(e) =>
-                setNome(
-                  e.target.value
-                )
-              }
-              className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
-            />
-
-          </div>
-
-          <div>
-
-            <p className="text-slate-400 text-sm mb-2">
-              Prezzo
-            </p>
-
-            <input
-              type="number"
-              placeholder="50"
-              value={prezzo}
-              onChange={(e) =>
-                setPrezzo(
-                  e.target.value
-                )
-              }
-              className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
-            />
-
-          </div>
-
-          <div>
-
-            <p className="text-slate-400 text-sm mb-2">
-              Categoria
-            </p>
-
-            <input
-              type="text"
-              placeholder="Illuminazione"
-              value={categoria}
-              onChange={(e) =>
-                setCategoria(
-                  e.target.value
-                )
-              }
-              className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
-            />
-
-          </div>
-
-          <button
-            onClick={
-              aggiungiVoce
-            }
-            className="w-full bg-blue-600 rounded-[26px] p-5 text-lg font-bold shadow-2xl flex items-center justify-center gap-2"
+          <div
+            key={item.id}
+            className="bg-white/5 rounded-3xl p-5 border border-white/10"
           >
 
-            <Plus size={22} />
+            <div className="flex items-center justify-between gap-4">
 
-            Aggiungi Voce
+              <h2 className="text-xl font-bold">
 
-          </button>
+                {item.nome}
 
-        </div>
+              </h2>
 
-        <div className="space-y-5">
+              <div className="flex items-center gap-3">
 
-          {listino.map(
-            (voce) => (
+                <input
+                  type="number"
+                  value={item.prezzo}
+                  onChange={(e) =>
+                    modificaPrezzo(
+                      item.id,
+                      e.target.value
+                    )
+                  }
+                  className="w-24 bg-black/20 border border-white/10 rounded-xl p-3 text-center outline-none"
+                />
 
-              <div
-                key={voce.id}
-                onClick={() =>
-                  setModificaVoce({
-                    ...voce,
-                  })
-                }
-                className="bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl rounded-[30px] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.35)] active:scale-[0.98] transition-all duration-200"
-              >
+                <div className="text-2xl font-black">
 
-                <div className="flex items-start gap-4">
-
-                  <div className="bg-blue-600 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl">
-
-                    <List size={24} />
-
-                  </div>
-
-                  <div>
-
-                    <h2 className="text-2xl font-bold">
-
-                      {voce.nome}
-
-                    </h2>
-
-                    <div className="flex items-center gap-2 text-green-400 mt-3">
-
-                      <Euro size={16} />
-
-                      <span className="font-semibold">
-
-                        {voce.prezzo}
-
-                      </span>
-
-                    </div>
-
-                    <p className="text-slate-400 mt-2">
-
-                      {voce.categoria}
-
-                    </p>
-
-                  </div>
+                  €
 
                 </div>
 
               </div>
 
-            )
-          )}
-
-        </div>
-
-        {modificaVoce && (
-
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.9)",
-              zIndex: 9999,
-              padding: 20,
-              overflow: "auto",
-            }}
-          >
-
-            <div
-              style={{
-                background: "#111",
-                padding: 20,
-                borderRadius: 20,
-                marginTop: 100,
-              }}
-            >
-
-              <h2
-                style={{
-                  fontSize: 28,
-                  marginBottom: 20,
-                }}
-              >
-                Modifica Voce
-              </h2>
-
-              <input
-                type="text"
-                value={modificaVoce.nome}
-                onChange={(e) =>
-                  setModificaVoce({
-
-                    ...modificaVoce,
-
-                    nome:
-                      e.target.value,
-
-                  })
-                }
-                style={{
-                  width: "100%",
-                  padding: 15,
-                  marginBottom: 15,
-                  borderRadius: 12,
-                  background: "#222",
-                }}
-              />
-
-              <input
-                type="number"
-                value={modificaVoce.prezzo}
-                onChange={(e) =>
-                  setModificaVoce({
-
-                    ...modificaVoce,
-
-                    prezzo:
-                      e.target.value,
-
-                  })
-                }
-                style={{
-                  width: "100%",
-                  padding: 15,
-                  marginBottom: 15,
-                  borderRadius: 12,
-                  background: "#222",
-                }}
-              />
-
-              <input
-                type="text"
-                value={modificaVoce.categoria}
-                onChange={(e) =>
-                  setModificaVoce({
-
-                    ...modificaVoce,
-
-                    categoria:
-                      e.target.value,
-
-                  })
-                }
-                style={{
-                  width: "100%",
-                  padding: 15,
-                  marginBottom: 15,
-                  borderRadius: 12,
-                  background: "#222",
-                }}
-              />
-
-              <button
-                onClick={salvaModifica}
-                style={{
-                  width: "100%",
-                  padding: 18,
-                  borderRadius: 14,
-                  background: "#2563eb",
-                  fontWeight: "bold",
-                  marginBottom: 10,
-                }}
-              >
-                Salva
-              </button>
-
-              <button
-                onClick={() =>
-                  setModificaVoce(null)
-                }
-                style={{
-                  width: "100%",
-                  padding: 18,
-                  borderRadius: 14,
-                  background: "#333",
-                }}
-              >
-                Chiudi
-              </button>
-
             </div>
 
           </div>
 
-        )}
+        ))}
 
       </div>
 
-    </PageWrapper>
+    </div>
 
   );
 

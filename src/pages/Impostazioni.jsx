@@ -1,8 +1,18 @@
-import { useEffect, useState } from "react";
+import {
+  useState,
+  useEffect,
+} from "react";
+
+import {
+  Download,
+  Building2,
+} from "lucide-react";
+
+import PageWrapper from "../components/PageWrapper";
 
 export default function Impostazioni() {
 
-  const [nomeAzienda, setNomeAzienda] =
+  const [nomeDitta, setNomeDitta] =
     useState("");
 
   const [telefono, setTelefono] =
@@ -11,189 +21,183 @@ export default function Impostazioni() {
   const [email, setEmail] =
     useState("");
 
-  const [partitaIva, setPartitaIva] =
-    useState("");
-
-  const [indirizzo, setIndirizzo] =
-    useState("");
-
-  const [logo, setLogo] =
-    useState("");
-
   useEffect(() => {
 
-    const datiAzienda =
+    const dati =
       JSON.parse(
         localStorage.getItem(
-          "datiAzienda"
+          "datiDitta"
         )
-      );
+      ) || {};
 
-    if (datiAzienda) {
+    setNomeDitta(
+      dati.nomeDitta || ""
+    );
 
-      setNomeAzienda(
-        datiAzienda.nomeAzienda || ""
-      );
+    setTelefono(
+      dati.telefono || ""
+    );
 
-      setTelefono(
-        datiAzienda.telefono || ""
-      );
-
-      setEmail(
-        datiAzienda.email || ""
-      );
-
-      setPartitaIva(
-        datiAzienda.partitaIva || ""
-      );
-
-      setIndirizzo(
-        datiAzienda.indirizzo || ""
-      );
-
-      setLogo(
-        datiAzienda.logo || ""
-      );
-
-    }
+    setEmail(
+      dati.email || ""
+    );
 
   }, []);
 
-  function caricaLogo(e) {
+  function salvaDati() {
 
-    const file =
-      e.target.files[0];
+    localStorage.setItem(
+      "datiDitta",
+      JSON.stringify({
 
-    if (!file) return;
+        nomeDitta,
 
-    const reader =
-      new FileReader();
+        telefono,
 
-    reader.onloadend = () => {
+        email,
 
-      setLogo(
-        reader.result
-      );
+      })
+    );
 
-    };
-
-    reader.readAsDataURL(
-      file
+    alert(
+      "Dati salvati 😄🔥"
     );
 
   }
 
-  function salvaImpostazioni() {
+  function esportaBackup() {
 
-    const dati = {
+    const clienti =
+      JSON.parse(
+        localStorage.getItem(
+          "clienti"
+        )
+      ) || [];
 
-      nomeAzienda,
+    if (
+      clienti.length === 0
+    ) {
 
-      telefono,
+      alert(
+        "Nessun cliente da esportare"
+      );
 
-      email,
+      return;
 
-      partitaIva,
+    }
 
-      indirizzo,
+    const intestazione =
+      [
+        "Nome",
+        "Telefono",
+        "Email",
+      ];
 
-      logo,
+    const righe =
+      clienti.map(
+        (cliente) => [
 
-    };
+          cliente.nome,
 
-    localStorage.setItem(
-      "datiAzienda",
-      JSON.stringify(dati)
-    );
+          cliente.telefono,
 
-    alert(
-      "Dati azienda salvati!"
-    );
+          cliente.email,
+
+        ]
+      );
+
+    const csvContent =
+      [
+        intestazione,
+        ...righe,
+      ]
+        .map(
+          (riga) =>
+            riga.join(",")
+        )
+        .join("\n");
+
+    const blob =
+      new Blob(
+        [csvContent],
+        {
+          type:
+            "text/csv;charset=utf-8;",
+        }
+      );
+
+    const url =
+      URL.createObjectURL(
+        blob
+      );
+
+    const link =
+      document.createElement(
+        "a"
+      );
+
+    link.href = url;
+
+    link.download =
+      "preventivai-backup.csv";
+
+    link.click();
 
   }
 
   return (
 
-    <div className="min-h-screen px-5 pt-8 pb-32 text-white">
+    <PageWrapper>
 
-      <div className="mb-8">
+      <div className="min-h-screen px-5 pt-8 pb-32 text-white">
 
-        <h1 className="text-4xl font-black tracking-tight">
+        <h1 className="text-4xl font-black mb-8">
+
           Impostazioni
+
         </h1>
 
-        <p className="text-slate-400 mt-2">
-          Gestisci branding e dati azienda
-        </p>
+        <div className="bg-white/[0.03] border border-white/[0.08] rounded-[30px] p-5 backdrop-blur-2xl mb-5">
 
-      </div>
+          <div className="flex items-center gap-4 mb-5">
 
-      <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[32px] p-6 shadow-2xl">
+            <Building2 size={28} />
 
-        <div className="flex flex-col items-center mb-8">
+            <div>
 
-          {logo ? (
+              <h2 className="text-2xl font-bold">
 
-            <img
-              src={logo}
-              alt="Logo"
-              className="w-28 h-28 rounded-3xl object-cover border border-white/10 shadow-2xl"
-            />
+                Dati Azienda
 
-          ) : (
+              </h2>
 
-            <div className="w-28 h-28 rounded-3xl bg-blue-600 flex items-center justify-center text-5xl shadow-2xl">
+              <p className="text-slate-400 mt-1">
 
-              ⚡
+                Informazioni utilizzate nei PDF
+
+              </p>
 
             </div>
 
-          )}
+          </div>
 
-          <label className="mt-5 cursor-pointer bg-white/10 hover:bg-white/15 transition-all duration-300 px-5 py-3 rounded-2xl border border-white/10">
-
-            Carica Logo
-
-            <input
-              type="file"
-              accept="image/*"
-              onChange={caricaLogo}
-              className="hidden"
-            />
-
-          </label>
-
-        </div>
-
-        <div className="space-y-5">
-
-          <div>
-
-            <p className="text-slate-400 mb-2 text-sm">
-              Nome Azienda
-            </p>
+          <div className="space-y-4">
 
             <input
               type="text"
-              value={nomeAzienda}
+              placeholder="Nome ditta"
+              value={nomeDitta}
               onChange={(e) =>
-                setNomeAzienda(
+                setNomeDitta(
                   e.target.value
                 )
               }
               className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
             />
 
-          </div>
-
-          <div>
-
-            <p className="text-slate-400 mb-2 text-sm">
-              Telefono
-            </p>
-
             <input
               type="text"
+              placeholder="Telefono"
               value={telefono}
               onChange={(e) =>
                 setTelefono(
@@ -203,16 +207,9 @@ export default function Impostazioni() {
               className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
             />
 
-          </div>
-
-          <div>
-
-            <p className="text-slate-400 mb-2 text-sm">
-              Email
-            </p>
-
             <input
               type="email"
+              placeholder="Email"
               value={email}
               onChange={(e) =>
                 setEmail(
@@ -222,58 +219,61 @@ export default function Impostazioni() {
               className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
             />
 
-          </div>
-
-          <div>
-
-            <p className="text-slate-400 mb-2 text-sm">
-              Partita IVA
-            </p>
-
-            <input
-              type="text"
-              value={partitaIva}
-              onChange={(e) =>
-                setPartitaIva(
-                  e.target.value
-                )
+            <button
+              onClick={
+                salvaDati
               }
-              className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
-            />
+              className="w-full bg-blue-600 rounded-2xl p-5 text-lg font-bold"
+            >
 
-          </div>
+              Salva Dati
 
-          <div>
-
-            <p className="text-slate-400 mb-2 text-sm">
-              Indirizzo
-            </p>
-
-            <input
-              type="text"
-              value={indirizzo}
-              onChange={(e) =>
-                setIndirizzo(
-                  e.target.value
-                )
-              }
-              className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
-            />
+            </button>
 
           </div>
 
         </div>
 
-        <button
-          onClick={salvaImpostazioni}
-          className="w-full mt-8 bg-blue-600 hover:bg-blue-500 transition-all duration-300 rounded-[28px] p-5 text-xl font-bold shadow-2xl"
-        >
-          Salva Impostazioni
-        </button>
+        <div className="bg-white/[0.03] border border-white/[0.08] rounded-[30px] p-5 backdrop-blur-2xl">
+
+          <div className="flex items-center gap-4 mb-5">
+
+            <Download size={28} />
+
+            <div>
+
+              <h2 className="text-2xl font-bold">
+
+                Backup CSV
+
+              </h2>
+
+              <p className="text-slate-400 mt-1">
+
+                Esporta tutti i clienti
+
+              </p>
+
+            </div>
+
+          </div>
+
+          <button
+            onClick={
+              esportaBackup
+            }
+            className="w-full bg-blue-600 rounded-2xl p-5 text-lg font-bold"
+          >
+
+            Esporta Backup
+
+          </button>
+
+        </div>
 
       </div>
 
-    </div>
+    </PageWrapper>
 
   );
 
