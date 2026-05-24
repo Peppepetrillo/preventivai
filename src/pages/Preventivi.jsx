@@ -227,7 +227,7 @@ export default function Preventivi() {
 
       <div className="px-5 pt-5">
 
-        <h1 className="text-[44px] font-black tracking-tight mb-6">
+        <h1 className="text-[42px] font-black tracking-tight mb-6">
 
           Preventivi
 
@@ -291,13 +291,13 @@ export default function Preventivi() {
 
                   <div className="text-left">
 
-                    <h2 className="text-[30px] font-black leading-none">
+                    <h2 className="text-[28px] font-black leading-none">
 
                       {voce.nome}
 
                     </h2>
 
-                    <p className="text-[#2491ff] text-[20px] mt-3 font-semibold">
+                    <p className="text-[#2491ff] text-[18px] mt-3 font-semibold">
 
                       € {voce.prezzo}
 
@@ -305,9 +305,9 @@ export default function Preventivi() {
 
                   </div>
 
-                  <div className="w-[84px] h-[84px] rounded-[24px] bg-[#2491ff] flex items-center justify-center shrink-0">
+                  <div className="w-[72px] h-[72px] rounded-[22px] bg-[#2491ff] flex items-center justify-center shrink-0">
 
-                    <span className="text-[58px] leading-none font-light text-white">
+                    <span className="text-[48px] leading-none font-light text-white">
 
                       +
 
@@ -377,7 +377,7 @@ export default function Preventivi() {
 
                     </div>
 
-                    <div className="text-[52px] text-[#2491ff] leading-none">
+                    <div className="text-[46px] text-[#2491ff] leading-none">
 
                       +
 
@@ -394,7 +394,7 @@ export default function Preventivi() {
 
         )}
 
-        <div className="space-y-4 mt-7 pb-36">
+        <div className="space-y-4 mt-7 pb-40">
 
           {lavorazioni.map(
             (
@@ -411,7 +411,7 @@ export default function Preventivi() {
 
                   <div>
 
-                    <h2 className="text-[28px] font-black leading-none">
+                    <h2 className="text-[26px] font-black leading-none">
 
                       {item.nome}
 
@@ -425,7 +425,7 @@ export default function Preventivi() {
 
                   </div>
 
-                  <div className="text-[34px] font-black">
+                  <div className="text-[30px] font-black">
 
                     x{item.quantita}
 
@@ -441,7 +441,7 @@ export default function Preventivi() {
                         index
                       )
                     }
-                    className="h-20 rounded-[24px] bg-[#232632] text-[52px] font-light"
+                    className="h-16 rounded-[22px] bg-[#232632] text-[42px] font-light"
                   >
 
                     −
@@ -454,7 +454,7 @@ export default function Preventivi() {
                         index
                       )
                     }
-                    className="h-20 rounded-[24px] bg-[#2491ff] text-[52px] font-light"
+                    className="h-16 rounded-[22px] bg-[#2491ff] text-[42px] font-light"
                   >
 
                     +
@@ -472,11 +472,11 @@ export default function Preventivi() {
 
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-[#050816]/95 backdrop-blur-xl border-t border-white/10 px-4 pt-3 pb-5">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#050816]/95 backdrop-blur-xl border-t border-white/10 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
 
         <div className="flex gap-3">
 
-          <div className="flex-1 bg-gradient-to-r from-green-600 to-green-500 rounded-[26px] px-5 py-4">
+          <div className="flex-1 bg-gradient-to-r from-green-600 to-green-500 rounded-[24px] px-5 py-4">
 
             <p className="text-[14px] opacity-80">
 
@@ -484,7 +484,7 @@ export default function Preventivi() {
 
             </p>
 
-            <h2 className="text-[34px] font-black leading-none mt-2">
+            <h2 className="text-[30px] font-black leading-none mt-2">
 
               € {totale}
 
@@ -496,7 +496,7 @@ export default function Preventivi() {
             onClick={
               salvaPreventivo
             }
-            className="w-[140px] rounded-[26px] bg-[#2491ff] text-[20px] font-black"
+            className="w-[130px] rounded-[24px] bg-[#2491ff] text-[18px] font-black"
           >
 
             SALVA
