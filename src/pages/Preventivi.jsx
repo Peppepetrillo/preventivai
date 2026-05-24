@@ -1,5 +1,4 @@
 import {
-  useEffect,
   useState,
   useRef,
 } from "react";
@@ -10,7 +9,9 @@ export default function Preventivi() {
 
   const clienti =
     JSON.parse(
-      localStorage.getItem("clienti")
+      localStorage.getItem(
+        "clienti"
+      )
     ) || [];
 
   const [clienteSelezionato, setClienteSelezionato] =
@@ -293,7 +294,7 @@ export default function Preventivi() {
     );
 
     alert(
-      `Preventivo ${numeroPreventivo} salvato!`
+      `Preventivo ${numeroPreventivo} salvato 😄🔥`
     );
 
   }
@@ -309,15 +310,15 @@ export default function Preventivi() {
 
   return (
 
-    <div className="min-h-screen px-5 pt-8 pb-32 text-white bg-[#060816]">
+    <div className="min-h-screen px-4 pt-6 pb-40 text-white bg-[#060816]">
 
-      <h1 className="text-4xl font-black mb-8">
+      <h1 className="text-5xl font-black mb-8 tracking-tight">
 
-        Nuovo Preventivo
+        Preventivi
 
       </h1>
 
-      <div className="bg-white/5 border border-white/10 rounded-[30px] p-5 mb-8 space-y-5">
+      <div className="bg-white/5 border border-white/10 rounded-[34px] p-5 mb-8 space-y-5">
 
         <select
           value={
@@ -328,7 +329,7 @@ export default function Preventivi() {
               e.target.value
             )
           }
-          className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+          className="w-full bg-black/20 border border-white/10 rounded-3xl p-5 text-[16px] outline-none"
         >
 
           <option value="">
@@ -355,6 +356,34 @@ export default function Preventivi() {
 
         </select>
 
+        <select
+          value={stato}
+          onChange={(e) =>
+            setStato(
+              e.target.value
+            )
+          }
+          className="w-full bg-black/20 border border-white/10 rounded-3xl p-5 text-[16px] outline-none"
+        >
+
+          <option>
+            Bozza
+          </option>
+
+          <option>
+            Inviato
+          </option>
+
+          <option>
+            Accettato
+          </option>
+
+          <option>
+            Completato
+          </option>
+
+        </select>
+
       </div>
 
       <input
@@ -366,41 +395,51 @@ export default function Preventivi() {
             e.target.value
           )
         }
-        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none mb-8"
+        className="w-full bg-white/5 border border-white/10 rounded-3xl p-5 text-[16px] outline-none mb-8"
       />
 
-      <div className="space-y-4 mb-10">
+      <div className="space-y-5 mb-10">
 
         {listinoFiltrato.map(
           (voce) => (
 
             <div
               key={voce.id}
-              className="bg-white/5 border border-white/10 rounded-[24px] p-5 flex items-center justify-between"
+              className="bg-white/5 border border-white/10 rounded-[34px] p-6 active:scale-[0.98] transition-all"
             >
 
-              <div>
+              <div className="flex flex-col gap-5">
 
-                <h3 className="text-lg font-semibold">
-                  {voce.nome}
-                </h3>
+                <div>
 
-                <p className="text-green-400 mt-2">
-                  € {voce.prezzo}
-                </p>
+                  <h3 className="text-2xl font-bold leading-tight">
+
+                    {voce.nome}
+
+                  </h3>
+
+                  <p className="text-green-400 mt-3 text-xl font-semibold">
+
+                    € {voce.prezzo}
+
+                  </p>
+
+                </div>
+
+                <button
+                  onClick={() =>
+                    aggiungiLavorazione(
+                      voce
+                    )
+                  }
+                  className="w-full h-16 rounded-3xl bg-blue-600 text-xl font-bold active:scale-95 transition-all"
+                >
+
+                  AGGIUNGI
+
+                </button>
 
               </div>
-
-              <button
-                onClick={() =>
-                  aggiungiLavorazione(
-                    voce
-                  )
-                }
-                className="w-12 h-12 rounded-2xl bg-blue-600 text-2xl"
-              >
-                +
-              </button>
 
             </div>
 
@@ -411,11 +450,13 @@ export default function Preventivi() {
 
       <div
         ref={lavorazioniRef}
-        className="space-y-4 mb-8"
+        className="space-y-5 mb-8"
       >
 
-        <h2 className="text-2xl font-bold">
+        <h2 className="text-3xl font-black">
+
           Lavorazioni
+
         </h2>
 
         {lavorazioni.map(
@@ -426,18 +467,20 @@ export default function Preventivi() {
 
             <div
               key={item.id}
-              className="bg-white/5 border border-white/10 rounded-[28px] p-5"
+              className="bg-white/5 border border-white/10 rounded-[34px] p-6"
             >
 
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-5">
 
-                <div>
+                <div className="flex-1">
 
-                  <h3 className="text-xl font-bold">
+                  <h3 className="text-2xl font-bold leading-tight">
+
                     {item.nome}
+
                   </h3>
 
-                  <div className="mt-3">
+                  <div className="mt-4">
 
                     <input
                       type="number"
@@ -458,7 +501,7 @@ export default function Preventivi() {
                         );
 
                       }}
-                      className="w-28 bg-black/20 border border-white/10 rounded-xl p-3 outline-none"
+                      className="w-36 bg-black/20 border border-white/10 rounded-2xl p-4 text-[16px] outline-none"
                     />
 
                   </div>
@@ -471,14 +514,16 @@ export default function Preventivi() {
                       index
                     )
                   }
-                  className="text-red-400"
+                  className="min-w-[60px] h-[60px] rounded-3xl bg-red-500/20 text-red-400 text-3xl active:scale-95"
                 >
+
                   ✕
+
                 </button>
 
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center gap-5 mt-6">
 
                 <button
                   onClick={() =>
@@ -486,12 +531,14 @@ export default function Preventivi() {
                       index
                     )
                   }
-                  className="w-12 h-12 rounded-2xl bg-white/10"
+                  className="w-16 h-16 rounded-3xl bg-white/10 text-3xl active:scale-95"
                 >
+
                   −
+
                 </button>
 
-                <div className="text-2xl font-bold">
+                <div className="text-4xl font-black min-w-[60px] text-center">
 
                   {item.quantita}
 
@@ -503,9 +550,11 @@ export default function Preventivi() {
                       index
                     )
                   }
-                  className="w-12 h-12 rounded-2xl bg-blue-600"
+                  className="w-16 h-16 rounded-3xl bg-blue-600 text-3xl active:scale-95"
                 >
+
                   +
+
                 </button>
 
               </div>
@@ -521,19 +570,25 @@ export default function Preventivi() {
         onClick={
           salvaPreventivo
         }
-        className="w-full bg-blue-600 rounded-[28px] p-5 text-xl font-bold mb-6"
+        className="w-full h-16 bg-blue-600 rounded-[34px] text-2xl font-black mb-6"
       >
-        Salva Preventivo
+
+        SALVA PREVENTIVO
+
       </AnimatedButton>
 
-      <div className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[32px] p-6">
+      <div className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[36px] p-7">
 
-        <p className="text-lg opacity-90">
+        <p className="text-xl opacity-90">
+
           Totale
+
         </p>
 
-        <h2 className="text-5xl font-black mt-2">
+        <h2 className="text-6xl font-black mt-3">
+
           € {totale}
+
         </h2>
 
       </div>
