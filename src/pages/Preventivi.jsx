@@ -290,13 +290,13 @@ export default function Preventivi() {
 
       {/* FOOTER FISSO */}
       <div className="fixed bottom-[85px] left-0 right-0 px-4 z-50">
-        <div className="flex gap-3 h-[72px]">
+        <div style={{ display: "flex", gap: "12px", alignItems: "stretch" }}>
 
           {/* TOTALE */}
-          <div className="flex-1 bg-gradient-to-r from-green-700 to-green-500 rounded-[22px] px-4 shadow-2xl flex items-center justify-between">
+          <div style={{ flex: 1, background: "linear-gradient(to right, #15803d, #22c55e)", borderRadius: "22px", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 25px 50px rgba(0,0,0,0.5)" }}>
             <div>
-              <p className="text-[12px] opacity-70 font-semibold">Totale</p>
-              <h2 className="text-[28px] font-black leading-none">
+              <p style={{ fontSize: "12px", opacity: 0.7, fontWeight: 600, margin: 0 }}>Totale</p>
+              <h2 style={{ fontSize: "28px", fontWeight: 900, lineHeight: 1, margin: 0 }}>
                 € {totale}
               </h2>
             </div>
@@ -315,14 +315,14 @@ export default function Preventivi() {
           {/* SALVA */}
           <button
             onClick={salvaPreventivo}
-            className="flex-1 rounded-[22px] bg-[#2491ff] text-white font-black shadow-2xl flex items-center justify-center gap-2 active:scale-[0.97] transition-all"
+            style={{ flex: 1, borderRadius: "22px", background: "#2491ff", color: "white", fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "14px 12px", border: "none", cursor: "pointer" }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
               <polyline points="17 21 17 13 7 13 7 21" />
               <polyline points="7 3 7 8 15 8" />
             </svg>
-            <span className="text-[15px] leading-tight text-center">SALVA<br />PREVENTIVO</span>
+            <span style={{ fontSize: "15px", lineHeight: 1.2, textAlign: "center" }}>SALVA<br />PREVENTIVO</span>
           </button>
 
         </div>
