@@ -225,121 +225,55 @@ export default function Preventivi() {
 
   return (
 
-    <div className="min-h-screen bg-[#060816] text-white px-4 pt-5 pb-64">
+    <div className="min-h-screen bg-[#050816] text-white pb-72">
 
-      <h1 className="text-5xl font-black mb-6">
+      <div className="px-5 pt-5">
 
-        Preventivi
+        <h1 className="text-[58px] leading-none font-black tracking-tight mb-6">
 
-      </h1>
+          Preventivi
 
-      <select
-        value={
-          clienteSelezionato
-        }
-        onChange={(e) =>
-          setClienteSelezionato(
-            e.target.value
-          )
-        }
-        className="w-full h-20 rounded-[34px] bg-white/5 border border-white/10 px-6 text-[20px] outline-none mb-8"
-      >
+        </h1>
 
-        <option value="">
-          Seleziona Cliente
-        </option>
+        <select
+          value={
+            clienteSelezionato
+          }
+          onChange={(e) =>
+            setClienteSelezionato(
+              e.target.value
+            )
+          }
+          className="w-full h-20 rounded-[34px] bg-[#1f2027] border border-white/10 px-6 text-[22px] outline-none mb-8"
+        >
 
-        {clienti.map(
-          (
-            cliente,
-            index
-          ) => (
+          <option value="">
+            Seleziona Cliente
+          </option>
 
-            <option
-              key={index}
-              value={
-                cliente.nome
-              }
-            >
-              {cliente.nome}
-            </option>
+          {clienti.map(
+            (
+              cliente,
+              index
+            ) => (
 
-          )
-        )}
+              <option
+                key={index}
+                value={
+                  cliente.nome
+                }
+              >
+                {cliente.nome}
+              </option>
 
-      </select>
+            )
+          )}
 
-      <div className="space-y-4 mb-10">
+        </select>
 
-        {listinoRapido.map(
-          (
-            voce,
-            index
-          ) => (
+        <div className="space-y-5">
 
-            <button
-              key={index}
-              onClick={() =>
-                aggiungiLavorazione(
-                  voce
-                )
-              }
-              className="w-full min-h-[120px] rounded-[40px] bg-blue-600 active:scale-95 px-6"
-            >
-
-              <div className="flex items-center justify-between">
-
-                <div className="text-left">
-
-                  <h2 className="text-3xl font-black">
-
-                    {voce.nome}
-
-                  </h2>
-
-                  <p className="text-2xl mt-2">
-
-                    € {voce.prezzo}
-
-                  </p>
-
-                </div>
-
-                <div className="text-6xl font-black">
-
-                  +
-
-                </div>
-
-              </div>
-
-            </button>
-
-          )
-        )}
-
-      </div>
-
-      <button
-        onClick={() =>
-          setMostraAltro(
-            !mostraAltro
-          )
-        }
-        className="w-full h-20 rounded-[36px] bg-white/5 border border-white/10 text-2xl font-black mb-6"
-      >
-
-        {mostraAltro
-          ? "Chiudi altre lavorazioni"
-          : "Altre lavorazioni"}
-
-      </button>
-
-      {mostraAltro && (
-
-        <div className="space-y-4 mb-10">
-
-          {listinoAltro.map(
+          {listinoRapido.map(
             (
               voce,
               index
@@ -352,20 +286,20 @@ export default function Preventivi() {
                     voce
                   )
                 }
-                className="w-full min-h-[110px] rounded-[36px] bg-white/5 border border-white/10 px-6 active:scale-95"
+                className="w-full bg-[#1f2027] rounded-[42px] px-6 py-6 active:scale-[0.98] transition-all border border-white/5"
               >
 
                 <div className="flex items-center justify-between">
 
                   <div className="text-left">
 
-                    <h2 className="text-3xl font-black">
+                    <h2 className="text-[54px] leading-none font-black">
 
                       {voce.nome}
 
                     </h2>
 
-                    <p className="text-green-400 text-2xl mt-2">
+                    <p className="text-[#1e90ff] text-[28px] mt-5 font-semibold">
 
                       € {voce.prezzo}
 
@@ -373,9 +307,13 @@ export default function Preventivi() {
 
                   </div>
 
-                  <div className="text-5xl font-black">
+                  <div className="w-[145px] h-[145px] rounded-[38px] bg-[#1e90ff] flex items-center justify-center shrink-0">
 
-                    +
+                    <span className="text-[95px] leading-none font-light text-white">
+
+                      +
+
+                    </span>
 
                   </div>
 
@@ -388,95 +326,165 @@ export default function Preventivi() {
 
         </div>
 
-      )}
+        <button
+          onClick={() =>
+            setMostraAltro(
+              !mostraAltro
+            )
+          }
+          className="w-full h-20 rounded-[34px] bg-[#1f2027] border border-white/10 text-[26px] font-bold mt-6"
+        >
 
-      <div className="space-y-5 pb-40">
+          {mostraAltro
+            ? "Chiudi altre lavorazioni"
+            : "Altre lavorazioni"}
 
-        {lavorazioni.map(
-          (
-            item,
-            index
-          ) => (
+        </button>
 
-            <div
-              key={item.id}
-              className="bg-white/5 border border-white/10 rounded-[40px] p-6"
-            >
+        {mostraAltro && (
 
-              <div className="flex justify-between items-center">
+          <div className="space-y-4 mt-5">
 
-                <div>
-
-                  <h2 className="text-3xl font-black">
-
-                    {item.nome}
-
-                  </h2>
-
-                  <p className="text-green-400 text-2xl mt-2">
-
-                    € {item.prezzo}
-
-                  </p>
-
-                </div>
-
-                <div className="text-5xl font-black">
-
-                  x{item.quantita}
-
-                </div>
-
-              </div>
-
-              <div className="flex gap-4 mt-8">
+            {listinoAltro.map(
+              (
+                voce,
+                index
+              ) => (
 
                 <button
+                  key={index}
                   onClick={() =>
-                    diminuisciQuantita(
-                      index
+                    aggiungiLavorazione(
+                      voce
                     )
                   }
-                  className="flex-1 h-24 rounded-[34px] bg-white/10 text-5xl font-black"
+                  className="w-full bg-[#1f2027] rounded-[38px] px-6 py-5 active:scale-[0.98]"
                 >
 
-                  −
+                  <div className="flex items-center justify-between">
+
+                    <div className="text-left">
+
+                      <h2 className="text-[38px] font-black leading-tight">
+
+                        {voce.nome}
+
+                      </h2>
+
+                      <p className="text-[#1e90ff] text-[24px] mt-3">
+
+                        € {voce.prezzo}
+
+                      </p>
+
+                    </div>
+
+                    <div className="text-[70px] text-[#1e90ff]">
+
+                      +
+
+                    </div>
+
+                  </div>
 
                 </button>
 
-                <button
-                  onClick={() =>
-                    aumentaQuantita(
-                      index
-                    )
-                  }
-                  className="flex-1 h-24 rounded-[34px] bg-blue-600 text-5xl font-black"
-                >
+              )
+            )}
 
-                  +
+          </div>
 
-                </button>
-
-              </div>
-
-            </div>
-
-          )
         )}
+
+        <div className="space-y-5 mt-8 pb-40">
+
+          {lavorazioni.map(
+            (
+              item,
+              index
+            ) => (
+
+              <div
+                key={item.id}
+                className="bg-[#02051b] border-2 border-white rounded-[44px] p-6"
+              >
+
+                <div className="flex items-start justify-between">
+
+                  <div>
+
+                    <h2 className="text-[58px] leading-none font-black">
+
+                      {item.nome}
+
+                    </h2>
+
+                    <p className="text-white text-[32px] mt-6">
+
+                      € {item.prezzo}
+
+                    </p>
+
+                  </div>
+
+                  <div className="text-[56px] font-black text-white">
+
+                    x{item.quantita}
+
+                  </div>
+
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-8">
+
+                  <button
+                    onClick={() =>
+                      diminuisciQuantita(
+                        index
+                      )
+                    }
+                    className="h-28 rounded-[34px] bg-[#23242b] text-[70px] font-light"
+                  >
+
+                    −
+
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      aumentaQuantita(
+                        index
+                      )
+                    }
+                    className="h-28 rounded-[34px] bg-[#1e90ff] text-[70px] font-light"
+                  >
+
+                    +
+
+                  </button>
+
+                </div>
+
+              </div>
+
+            )
+          )}
+
+        </div>
 
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-[#060816] border-t border-white/10 p-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#050816] border-t border-white/10 px-4 pt-4 pb-6">
 
-        <div className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[40px] p-6 mb-4">
+        <div className="bg-gradient-to-r from-green-700 to-green-500 rounded-[42px] p-6 mb-4">
 
-          <p className="text-2xl">
+          <p className="text-[28px]">
 
             Totale
 
           </p>
 
-          <h2 className="text-6xl font-black mt-2">
+          <h2 className="text-[76px] leading-none font-black mt-3">
 
             € {totale}
 
@@ -488,7 +496,7 @@ export default function Preventivi() {
           onClick={
             salvaPreventivo
           }
-          className="w-full h-24 rounded-[40px] bg-blue-600 text-3xl font-black"
+          className="w-full h-24 rounded-[42px] bg-[#1e90ff] text-[34px] font-black"
         >
 
           SALVA PREVENTIVO
