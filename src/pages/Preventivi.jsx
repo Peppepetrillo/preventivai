@@ -173,84 +173,65 @@ export default function Preventivi() {
     voce,
     quantita = 1
   ) {
-  
+
     const esistente =
       lavorazioni.find(
         (item) =>
           item.nome ===
           voce.nome
       );
-  
+
     if (esistente) {
-  
+
       const nuovaLista =
         lavorazioni.map(
           (item) => {
-  
+
             if (
               item.nome ===
               voce.nome
             ) {
-  
+
               return {
-  
+
                 ...item,
-  
+
                 quantita:
                   item.quantita +
                   quantita,
-  
+
               };
-  
+
             }
-  
+
             return item;
-  
+
           }
         );
-  
+
       setLavorazioni(
         nuovaLista
       );
-  
+
       return;
-  
+
     }
-  
+
     const nuovaLavorazione = {
-  
+
       id: Date.now(),
-  
+
       nome: voce.nome,
-  
+
       categoria:
         voce.categoria,
-  
+
       prezzo:
         voce.prezzo,
-  
+
       quantita,
-  
+
     };
-  
-    setLavorazioni([
-      ...lavorazioni,
-      nuovaLavorazione,
-    ]);
-  
-    setTimeout(() => {
-  
-      lavorazioniRef.current?.scrollIntoView({
-  
-        behavior: "smooth",
-  
-        block: "start",
-  
-      });
-  
-    }, 100);
-  
-  };
 
     setLavorazioni([
       ...lavorazioni,
@@ -460,77 +441,77 @@ export default function Preventivi() {
 
       <div className="mb-8">
 
-<p className="text-xl font-bold mb-4">
+        <p className="text-xl font-bold mb-4">
 
-  ⚡ Rapidi
+          ⚡ Rapidi
 
-</p>
+        </p>
 
-<div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3">
 
-  <button
-    onClick={() =>
-      aggiungiLavorazione({
-        nome: "Punto luce",
-        prezzo: 40,
-        categoria: "Impianto",
-      })
-    }
-    className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
-  >
+          <button
+            onClick={() =>
+              aggiungiLavorazione({
+                nome: "Punto luce",
+                prezzo: 40,
+                categoria: "Impianto",
+              })
+            }
+            className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
+          >
 
-    Punto luce
+            Punto luce
 
-  </button>
+          </button>
 
-  <button
-    onClick={() =>
-      aggiungiLavorazione({
-        nome: "Presa USB A+C",
-        prezzo: 50,
-        categoria: "Impianto",
-      })
-    }
-    className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
-  >
+          <button
+            onClick={() =>
+              aggiungiLavorazione({
+                nome: "Presa USB A+C",
+                prezzo: 50,
+                categoria: "Impianto",
+              })
+            }
+            className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
+          >
 
-    Presa
+            Presa
 
-  </button>
+          </button>
 
-  <button
-    onClick={() =>
-      aggiungiLavorazione({
-        nome: "Faretto",
-        prezzo: 7,
-        categoria: "Illuminazione",
-      })
-    }
-    className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
-  >
+          <button
+            onClick={() =>
+              aggiungiLavorazione({
+                nome: "Faretto",
+                prezzo: 7,
+                categoria: "Illuminazione",
+              })
+            }
+            className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
+          >
 
-    Faretto
+            Faretto
 
-  </button>
+          </button>
 
-  <button
-    onClick={() =>
-      aggiungiLavorazione({
-        nome: "Strip LED Beghelli",
-        prezzo: 15,
-        categoria: "Illuminazione",
-      })
-    }
-    className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
-  >
+          <button
+            onClick={() =>
+              aggiungiLavorazione({
+                nome: "Strip LED Beghelli",
+                prezzo: 15,
+                categoria: "Illuminazione",
+              })
+            }
+            className="h-16 rounded-3xl bg-yellow-500/20 border border-yellow-500/20 text-lg font-bold"
+          >
 
-    Strip LED
+            Strip LED
 
-  </button>
+          </button>
 
-</div>
+        </div>
 
-</div>
+      </div>
 
       <input
         type="text"
@@ -622,49 +603,49 @@ export default function Preventivi() {
 
                             <div className="grid grid-cols-3 gap-3">
 
-  <button
-    onClick={() =>
-      aggiungiLavorazione(
-        voce,
-        1
-      )
-    }
-    className="h-14 rounded-3xl bg-blue-600 text-lg font-bold active:scale-95"
-  >
+                              <button
+                                onClick={() =>
+                                  aggiungiLavorazione(
+                                    voce,
+                                    1
+                                  )
+                                }
+                                className="h-14 rounded-3xl bg-blue-600 text-lg font-bold active:scale-95"
+                              >
 
-    +1
+                                +1
 
-  </button>
+                              </button>
 
-  <button
-    onClick={() =>
-      aggiungiLavorazione(
-        voce,
-        5
-      )
-    }
-    className="h-14 rounded-3xl bg-blue-500 text-lg font-bold active:scale-95"
-  >
+                              <button
+                                onClick={() =>
+                                  aggiungiLavorazione(
+                                    voce,
+                                    5
+                                  )
+                                }
+                                className="h-14 rounded-3xl bg-blue-500 text-lg font-bold active:scale-95"
+                              >
 
-    +5
+                                +5
 
-  </button>
+                              </button>
 
-  <button
-    onClick={() =>
-      aggiungiLavorazione(
-        voce,
-        10
-      )
-    }
-    className="h-14 rounded-3xl bg-blue-400 text-lg font-bold active:scale-95"
-  >
+                              <button
+                                onClick={() =>
+                                  aggiungiLavorazione(
+                                    voce,
+                                    10
+                                  )
+                                }
+                                className="h-14 rounded-3xl bg-blue-400 text-lg font-bold active:scale-95"
+                              >
 
-    +10
+                                +10
 
-  </button>
+                              </button>
 
-</div>
+                            </div>
 
                           </div>
 
