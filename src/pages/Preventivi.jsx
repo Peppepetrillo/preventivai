@@ -1,65 +1,113 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Calculator,
+  ClipboardList,
+  FileCheck2,
+  Plus,
+  Search,
+  Trash2,
+  UserPlus,
+} from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import { listinoBase } from "../data/listinoBase";
+import { leggiStorage, salvaStorage } from "../utils/storage";
+import {
+  calcolaTotali,
+  creaNumeroPreventivo,
+  formatEuro,
+} from "../utils/preventivi";
 
 export default function Preventivi() {
+  const navigate = useNavigate();
 
-  const [clienti] = useState(() => {
-    return JSON.parse(localStorage.getItem("clienti")) || [];
-  });
-
-  const [listino, setListino] = useState([]);
+  const [clienti] = useState(() => leggiStorage("clienti", []));
+  const [listino, setListino] = useState(() =>
+    leggiStorage("listinoLocale", listinoBase)
+  );
   const [clienteSelezionato, setClienteSelezionato] = useState("");
-  const [mostraAltro, setMostraAltro] = useState(false);
+  const [ricerca, setRicerca] = useState("");
   const [lavorazioni, setLavorazioni] = useState([]);
+  const [sconto, setSconto] = useState(0);
+  const [iva, setIva] = useState(22);
+  const [note, setNote] = useState("");
   const [caricamento, setCaricamento] = useState(true);
 
   useEffect(() => {
     async function caricaListino() {
-      const { data, error } = await supabase
-        .from("listino")
-        .select("*")
-        .order("id");
+      try {
+        const richiesta = supabase.from("listino").select("*").order("id");
+        const timeout = new Promise((resolve) => {
+          setTimeout(() => resolve({ data: null, error: true }), 2500);
+        });
+        const { data, error } = await Promise.race([richiesta, timeout]);
 
-      if (!error && data) setListino(data);
-      setCaricamento(false);
+        if (!error && data?.length) {
+          const listinoNormalizzato = data.map((voce) => ({
+            ...voce,
+            categoria: voce.categoria || "Lavorazioni",
+            unita: voce.unita || "cad",
+          }));
+          setListino(listinoNormalizzato);
+          salvaStorage("listinoLocale", listinoNormalizzato);
+        }
+      } finally {
+        setCaricamento(false);
+      }
     }
+
     caricaListino();
   }, []);
 
-  const listinoRapido = listino.slice(0, 4);
-  const listinoAltro = listino.slice(4);
+  const vociFiltrate = useMemo(() => {
+    const testo = ricerca.trim().toLowerCase();
+    if (!testo) return listino;
+
+    return listino.filter((voce) =>
+      `${voce.nome} ${voce.categoria || ""}`.toLowerCase().includes(testo)
+    );
+  }, [listino, ricerca]);
+
+  const totali = calcolaTotali(lavorazioni, sconto, iva);
 
   function aggiungiLavorazione(voce) {
     const esistente = lavorazioni.find((item) => item.nome === voce.nome);
+
     if (esistente) {
       setLavorazioni(
         lavorazioni.map((item) =>
           item.nome === voce.nome
-            ? { ...item, quantita: item.quantita + 1 }
+            ? { ...item, quantita: Number(item.quantita || 0) + 1 }
             : item
         )
       );
       return;
     }
+
     setLavorazioni([
       ...lavorazioni,
-      { id: Date.now(), nome: voce.nome, prezzo: voce.prezzo, quantita: 1 },
+      {
+        id: `${voce.id ?? voce.nome}-${new Date().getTime()}`,
+        nome: voce.nome,
+        categoria: voce.categoria || "Lavorazioni",
+        prezzo: Number(voce.prezzo || 0),
+        quantita: 1,
+        unita: voce.unita || "cad",
+      },
     ]);
   }
 
-  function aumentaQuantita(index) {
+  function aggiornaLavorazione(index, campo, valore) {
     setLavorazioni(
       lavorazioni.map((item, i) =>
-        i === index ? { ...item, quantita: item.quantita + 1 } : item
-      )
-    );
-  }
-
-  function diminuisciQuantita(index) {
-    setLavorazioni(
-      lavorazioni.map((item, i) =>
-        i === index && item.quantita > 1
-          ? { ...item, quantita: item.quantita - 1 }
+        i === index
+          ? {
+              ...item,
+              [campo]:
+                campo === "prezzo" || campo === "quantita"
+                  ? Number(valore)
+                  : valore,
+            }
           : item
       )
     );
@@ -69,29 +117,35 @@ export default function Preventivi() {
     setLavorazioni(lavorazioni.filter((_, i) => i !== index));
   }
 
-  const totale = lavorazioni.reduce(
-    (acc, item) => acc + item.prezzo * item.quantita,
-    0
-  );
-
   function salvaPreventivo() {
-    if (!clienteSelezionato || lavorazioni.length === 0) {
-      alert("Seleziona un cliente e aggiungi almeno una lavorazione.");
+    if (!clienteSelezionato) {
+      alert("Seleziona un cliente prima di salvare il preventivo.");
       return;
     }
-    const archivio =
-      JSON.parse(localStorage.getItem("archivioPreventivi")) || [];
-    archivio.push({
-      id: Date.now(),
+
+    if (lavorazioni.length === 0) {
+      alert("Aggiungi almeno una lavorazione al preventivo.");
+      return;
+    }
+
+    const archivio = leggiStorage("archivioPreventivi", []);
+    const id = new Date().getTime();
+    const preventivo = {
+      id,
+      numero: creaNumeroPreventivo(archivio.length + 1),
       cliente: clienteSelezionato,
       lavorazioni,
-      totale,
-      data: new Date().toLocaleString(),
-    });
-    localStorage.setItem("archivioPreventivi", JSON.stringify(archivio));
-    alert("Preventivo salvato 😄🔥");
-    setLavorazioni([]);
-    setClienteSelezionato("");
+      sconto: Number(sconto || 0),
+      iva: Number(iva || 0),
+      note,
+      stato: "Bozza",
+      data: new Date().toLocaleDateString("it-IT"),
+      ...totali,
+    };
+
+    salvaStorage("archivioPreventivi", [...archivio, preventivo]);
+    window.dispatchEvent(new Event("preventivi-aggiornati"));
+    navigate(`/preventivo/${id}`);
   }
 
   if (caricamento) {
@@ -103,231 +157,248 @@ export default function Preventivi() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-white pb-[220px]">
+    <div className="min-h-screen bg-[#070b14] text-white pb-[230px]">
+      <div className="px-5 pt-6 pb-4 sticky top-0 z-30 bg-[#070b14]/95 backdrop-blur-xl border-b border-white/5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-[#3b9cff] text-sm font-bold uppercase">
+              Nuovo documento
+            </p>
+            <h1 className="text-4xl font-black tracking-tight">
+              Preventivo
+            </h1>
+          </div>
 
-      {/* HEADER */}
-      <div className="px-4 pt-5 flex items-center gap-4 mb-6">
-        <button className="w-10 h-10 flex flex-col justify-center gap-[6px]">
-          <span className="block w-6 h-[2px] bg-white rounded-full" />
-          <span className="block w-6 h-[2px] bg-white rounded-full" />
-          <span className="block w-4 h-[2px] bg-white rounded-full" />
-        </button>
-        <h1 className="text-[38px] font-black tracking-tight leading-none">
-          Preventivi
-        </h1>
+          <div className="w-12 h-12 rounded-2xl bg-[#2491ff] flex items-center justify-center">
+            <ClipboardList size={24} />
+          </div>
+        </div>
       </div>
 
-      <div className="px-4">
-
-        {/* SELECT CLIENTE */}
-        <div className="relative mb-5">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#3b9cff]">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-            </svg>
+      <div className="px-5 pt-5 space-y-6">
+        <section className="bg-[#111723] border border-white/10 rounded-[26px] p-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <h2 className="text-xl font-black">Cliente</h2>
+            <Link
+              to="/clienti"
+              className="text-[#3b9cff] text-sm font-bold flex items-center gap-1"
+            >
+              <UserPlus size={16} />
+              Nuovo
+            </Link>
           </div>
+
           <select
             value={clienteSelezionato}
-            onChange={(e) => setClienteSelezionato(e.target.value)}
-            className="w-full h-14 rounded-2xl bg-[#161b26] border border-white/10 pl-10 pr-10 text-[16px] outline-none appearance-none"
+            onChange={(event) => setClienteSelezionato(event.target.value)}
+            className="w-full h-14 rounded-2xl bg-black/25 border border-white/10 px-4 text-base outline-none"
           >
-            <option value="">Seleziona Cliente</option>
-            {clienti.map((cliente, index) => (
-              <option key={index} value={cliente.nome}>
+            <option value="">Seleziona cliente</option>
+            {clienti.map((cliente) => (
+              <option key={cliente.id || cliente.nome} value={cliente.nome}>
                 {cliente.nome}
               </option>
             ))}
           </select>
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M6 9l6 6 6-6" />
-            </svg>
+        </section>
+
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xl font-black">Listino elettricista</h2>
+            <span className="text-white/40 text-sm">{vociFiltrate.length} voci</span>
           </div>
-        </div>
 
-        {/* LISTINO RAPIDO */}
-        <div className="space-y-3">
-          {listinoRapido.map((voce, index) => (
-            <button
-              key={index}
-              onClick={() => aggiungiLavorazione(voce)}
-              className="w-full bg-[#161b26] rounded-[26px] p-4 active:scale-[0.98] transition-all border border-white/5"
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div className="text-left flex-1">
-                  <h2 style={{ fontSize: "24px", fontWeight: 900, color: "white", lineHeight: 1.2, margin: 0 }}>
-                    {voce.nome}
-                  </h2>
-                  <p className="text-[#3b9cff] text-[16px] mt-2 font-semibold">
-                    € {voce.prezzo}
-                  </p>
-                </div>
-                <div className="w-[72px] h-[72px] rounded-[22px] bg-[#2491ff] flex items-center justify-center shrink-0">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {/* ALTRE LAVORAZIONI */}
-        <button
-          onClick={() => setMostraAltro(!mostraAltro)}
-          className="w-full h-14 rounded-2xl bg-[#161b26] border border-white/10 text-[16px] font-bold mt-4 flex items-center justify-between px-4"
-        >
-          <div className="flex items-center gap-3 text-[#3b9cff]">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="8" y1="6" x2="21" y2="6" />
-              <line x1="8" y1="12" x2="21" y2="12" />
-              <line x1="8" y1="18" x2="21" y2="18" />
-              <circle cx="3" cy="6" r="1" fill="currentColor" />
-              <circle cx="3" cy="12" r="1" fill="currentColor" />
-              <circle cx="3" cy="18" r="1" fill="currentColor" />
-            </svg>
-            <span className="text-white">Altre lavorazioni</span>
+          <div className="relative mb-3">
+            <Search
+              size={19}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-[#3b9cff]"
+            />
+            <input
+              value={ricerca}
+              onChange={(event) => setRicerca(event.target.value)}
+              placeholder="Cerca lavorazione..."
+              className="w-full h-14 rounded-2xl bg-[#111723] border border-white/10 pl-11 pr-4 outline-none"
+            />
           </div>
-          <svg
-            width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"
-            className={`transition-transform ${mostraAltro ? "rotate-90" : ""}`}
-          >
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </button>
 
-        {mostraAltro && (
-          <div className="space-y-3 mt-3">
-            {listinoAltro.map((voce, index) => (
+          <div className="grid gap-3">
+            {vociFiltrate.map((voce) => (
               <button
-                key={index}
+                key={voce.id || voce.nome}
                 onClick={() => aggiungiLavorazione(voce)}
-                className="w-full bg-[#161b26] rounded-[24px] p-4 active:scale-[0.98] border border-white/5"
+                className="w-full bg-[#161b26] border border-white/5 rounded-[22px] p-4 text-left active:scale-[0.99] transition"
               >
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <h2 style={{ fontSize: "20px", fontWeight: 900, color: "white", margin: 0 }}>{voce.nome}</h2>
-                    <p className="text-[#3b9cff] text-[15px] mt-1">
-                      € {voce.prezzo}
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-white/45 text-xs font-bold uppercase">
+                      {voce.categoria || "Lavorazioni"}
+                    </p>
+                    <h3 className="text-lg font-black leading-tight mt-1">
+                      {voce.nome}
+                    </h3>
+                    <p className="text-[#3b9cff] font-bold mt-2">
+                      {formatEuro(voce.prezzo)} / {voce.unita || "cad"}
                     </p>
                   </div>
-                  <div className="w-[56px] h-[56px] rounded-[18px] bg-[#2491ff] flex items-center justify-center shrink-0">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
+
+                  <div className="w-12 h-12 rounded-2xl bg-[#2491ff] flex items-center justify-center shrink-0">
+                    <Plus size={24} />
                   </div>
                 </div>
               </button>
             ))}
           </div>
-        )}
+        </section>
 
-        {/* LAVORAZIONI AGGIUNTE */}
-        <div className="mt-6">
-          <p className="text-[15px] text-white/60 font-semibold mb-3">
-            Lavorazioni aggiunte
-          </p>
+        <section>
+          <h2 className="text-xl font-black mb-3">Lavorazioni aggiunte</h2>
 
           {lavorazioni.length === 0 ? (
-            <div className="bg-[#111723] border border-white/10 rounded-[26px] p-8 flex flex-col items-center justify-center gap-3">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" opacity="0.3">
-                <rect x="2" y="7" width="20" height="14" rx="2" />
-                <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-                <line x1="12" y1="12" x2="12" y2="16" />
-                <line x1="10" y1="14" x2="14" y2="14" />
-              </svg>
-              <p className="text-white/30 text-[15px] text-center leading-snug">
-                Nessuna lavorazione aggiunta<br />
-                Aggiungi voci dal listino qui sopra
+            <div className="bg-[#111723] border border-dashed border-white/15 rounded-[26px] p-8 text-center">
+              <Calculator size={36} className="mx-auto text-white/25 mb-3" />
+              <p className="text-white/45">
+                Tocca una voce del listino per comporre il preventivo.
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {lavorazioni.map((item, index) => (
                 <div
                   key={item.id}
-                  className="bg-[#111723] border border-white/10 rounded-[26px] p-4"
+                  className="bg-[#111723] border border-white/10 rounded-[24px] p-4"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between gap-3 mb-4">
                     <div>
-                      <h2 className="text-[22px] font-black leading-tight">
-                        {item.nome}
-                      </h2>
-                      <p className="text-white/70 text-[16px] mt-1">
-                        € {item.prezzo}
+                      <input
+                        value={item.nome}
+                        onChange={(event) =>
+                          aggiornaLavorazione(index, "nome", event.target.value)
+                        }
+                        className="w-full bg-transparent text-xl font-black outline-none"
+                      />
+                      <p className="text-white/45 text-sm mt-1">
+                        {item.categoria}
                       </p>
                     </div>
-                    <div className="text-[28px] font-black">x{item.quantita}</div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3 mt-4">
+
                     <button
                       onClick={() => rimuoviLavorazione(index)}
-                      className="h-14 rounded-2xl bg-red-600/40 text-[22px] flex items-center justify-center"
+                      className="w-11 h-11 rounded-2xl bg-red-500/20 text-red-200 flex items-center justify-center shrink-0"
+                      aria-label="Elimina lavorazione"
                     >
-                      🗑️
+                      <Trash2 size={19} />
                     </button>
-                    <button
-                      onClick={() => diminuisciQuantita(index)}
-                      className="h-14 rounded-2xl bg-[#232632] text-[34px]"
-                    >
-                      −
-                    </button>
-                    <button
-                      onClick={() => aumentaQuantita(index)}
-                      className="h-14 rounded-2xl bg-[#2491ff] text-[34px]"
-                    >
-                      +
-                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-[1fr_1fr_72px] gap-3">
+                    <label className="block">
+                      <span className="text-xs text-white/45">Quantita</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={item.quantita}
+                        onChange={(event) =>
+                          aggiornaLavorazione(index, "quantita", event.target.value)
+                        }
+                        className="mt-1 w-full bg-black/25 border border-white/10 rounded-2xl p-3 outline-none"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="text-xs text-white/45">Prezzo</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={item.prezzo}
+                        onChange={(event) =>
+                          aggiornaLavorazione(index, "prezzo", event.target.value)
+                        }
+                        className="mt-1 w-full bg-black/25 border border-white/10 rounded-2xl p-3 outline-none"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="text-xs text-white/45">Unita</span>
+                      <input
+                        value={item.unita}
+                        onChange={(event) =>
+                          aggiornaLavorazione(index, "unita", event.target.value)
+                        }
+                        className="mt-1 w-full bg-black/25 border border-white/10 rounded-2xl p-3 outline-none"
+                      />
+                    </label>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-      </div>
+        <section className="bg-[#111723] border border-white/10 rounded-[26px] p-4 space-y-4">
+          <h2 className="text-xl font-black">Condizioni</h2>
 
-      {/* FOOTER FISSO */}
-      <div className="fixed bottom-[85px] left-0 right-0 px-4 z-50">
-        <div style={{ display: "flex", gap: "12px", alignItems: "stretch" }}>
+          <div className="grid grid-cols-2 gap-3">
+            <label>
+              <span className="text-sm text-white/50">Sconto %</span>
+              <input
+                type="number"
+                min="0"
+                value={sconto}
+                onChange={(event) => setSconto(Number(event.target.value))}
+                className="mt-2 w-full bg-black/25 border border-white/10 rounded-2xl p-4 outline-none"
+              />
+            </label>
 
-          {/* TOTALE */}
-          <div style={{ flex: 1, background: "linear-gradient(to right, #15803d, #22c55e)", borderRadius: "22px", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 25px 50px rgba(0,0,0,0.5)" }}>
-            <div>
-              <p style={{ fontSize: "12px", opacity: 0.7, fontWeight: 600, margin: 0 }}>Totale</p>
-              <h2 style={{ fontSize: "28px", fontWeight: 900, lineHeight: 1, margin: 0 }}>
-                € {totale}
-              </h2>
-            </div>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" opacity="0.7">
-              <rect x="4" y="2" width="16" height="20" rx="2" />
-              <line x1="8" y1="6" x2="16" y2="6" />
-              <line x1="8" y1="10" x2="10" y2="10" />
-              <line x1="12" y1="10" x2="14" y2="10" />
-              <line x1="8" y1="14" x2="10" y2="14" />
-              <line x1="12" y1="14" x2="14" y2="14" />
-              <line x1="8" y1="18" x2="10" y2="18" />
-              <line x1="12" y1="18" x2="14" y2="18" />
-            </svg>
+            <label>
+              <span className="text-sm text-white/50">IVA %</span>
+              <input
+                type="number"
+                min="0"
+                value={iva}
+                onChange={(event) => setIva(Number(event.target.value))}
+                className="mt-2 w-full bg-black/25 border border-white/10 rounded-2xl p-4 outline-none"
+              />
+            </label>
           </div>
 
-          {/* SALVA */}
-          <button
-            onClick={salvaPreventivo}
-            style={{ flex: 1, borderRadius: "22px", background: "#2491ff", color: "white", fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "14px 12px", border: "none", cursor: "pointer" }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-              <polyline points="17 21 17 13 7 13 7 21" />
-              <polyline points="7 3 7 8 15 8" />
-            </svg>
-            <span style={{ fontSize: "15px", lineHeight: 1.2, textAlign: "center" }}>SALVA<br />PREVENTIVO</span>
-          </button>
-
-        </div>
+          <label className="block">
+            <span className="text-sm text-white/50">Note per il cliente</span>
+            <textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              rows="4"
+              placeholder="Esempio: validita offerta 30 giorni, materiali inclusi, tempi stimati..."
+              className="mt-2 w-full bg-black/25 border border-white/10 rounded-2xl p-4 outline-none resize-none"
+            />
+          </label>
+        </section>
       </div>
 
+      <div className="fixed bottom-[86px] left-0 right-0 px-4 z-40">
+        <div className="max-w-xl mx-auto bg-[#0d1320]/95 backdrop-blur-2xl border border-white/10 rounded-[26px] p-3 shadow-[0_20px_70px_rgba(0,0,0,0.55)]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="px-2">
+              <p className="text-white/45 text-xs font-bold uppercase">
+                Totale IVA incl.
+              </p>
+              <h2 className="text-3xl font-black leading-tight">
+                {formatEuro(totali.totale)}
+              </h2>
+              <p className="text-white/45 text-xs">
+                Imponibile {formatEuro(totali.imponibile)}
+              </p>
+            </div>
+
+            <button
+              onClick={salvaPreventivo}
+              className="h-16 px-5 rounded-[22px] bg-[#2491ff] text-white font-black flex items-center gap-2"
+            >
+              <FileCheck2 size={21} />
+              Salva
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

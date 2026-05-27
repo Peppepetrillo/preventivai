@@ -1,5 +1,4 @@
 import {
-  useEffect,
   useState,
 } from "react";
 
@@ -11,6 +10,7 @@ import {
 } from "lucide-react";
 
 import PageWrapper from "../components/PageWrapper";
+import { leggiStorage } from "../utils/storage";
 
 import {
   motion,
@@ -26,7 +26,9 @@ export default function Clienti() {
     useNavigate();
 
   const [clienti, setClienti] =
-    useState([]);
+    useState(() =>
+      leggiStorage("clienti", [])
+    );
 
   const [nome, setNome] =
     useState("");
@@ -36,19 +38,6 @@ export default function Clienti() {
 
   const [email, setEmail] =
     useState("");
-
-  useEffect(() => {
-
-    const dati =
-      JSON.parse(
-        localStorage.getItem(
-          "clienti"
-        )
-      ) || [];
-
-    setClienti(dati);
-
-  }, []);
 
   function salvaClienti(
     nuoviClienti
@@ -73,7 +62,7 @@ export default function Clienti() {
 
     const nuovoCliente = {
 
-      id: Date.now(),
+      id: new Date().getTime(),
 
       nome,
 

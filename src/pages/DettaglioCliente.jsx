@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { leggiStorage } from "../utils/storage";
 
 export default function DettaglioCliente() {
 
@@ -6,11 +7,7 @@ export default function DettaglioCliente() {
     useParams();
 
   const clienti =
-    JSON.parse(
-      localStorage.getItem(
-        "clienti"
-      )
-    ) || [];
+    leggiStorage("clienti", []);
 
   const cliente =
     clienti.find(
@@ -19,11 +16,7 @@ export default function DettaglioCliente() {
     );
 
   const archivio =
-    JSON.parse(
-      localStorage.getItem(
-        "archivioPreventivi"
-      )
-    ) || [];
+    leggiStorage("archivioPreventivi", []);
 
   const preventiviCliente =
     archivio.filter(
@@ -35,7 +28,7 @@ export default function DettaglioCliente() {
   const totaleLavori =
     preventiviCliente.reduce(
       (acc, item) =>
-        acc + item.totale,
+        acc + Number(item.totale || 0),
       0
     );
 

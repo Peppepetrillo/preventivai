@@ -17,29 +17,18 @@ import {
 } from "framer-motion";
 
 import PageWrapper from "../components/PageWrapper";
+import { leggiStorage } from "../utils/storage";
 
 export default function Dashboard() {
 
   const datiAzienda =
-    JSON.parse(
-      localStorage.getItem(
-        "datiAzienda"
-      )
-    ) || {};
+    leggiStorage("datiAzienda", {});
 
   const preventivi =
-    JSON.parse(
-      localStorage.getItem(
-        "archivioPreventivi"
-      )
-    ) || [];
+    leggiStorage("archivioPreventivi", []);
 
   const clienti =
-    JSON.parse(
-      localStorage.getItem(
-        "clienti"
-      )
-    ) || [];
+    leggiStorage("clienti", []);
 
   const totalePreventivi =
     preventivi.reduce(

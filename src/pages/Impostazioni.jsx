@@ -1,6 +1,5 @@
 import {
   useState,
-  useEffect,
 } from "react";
 
 import {
@@ -9,19 +8,16 @@ import {
 } from "lucide-react";
 
 import PageWrapper from "../components/PageWrapper";
+import { leggiStorage } from "../utils/storage";
 
 export default function Impostazioni() {
 
-  const [nomeDitta, setNomeDitta] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [email, setEmail] = useState("");
+  const datiSalvati =
+    leggiStorage("datiAzienda", {});
 
-  useEffect(() => {
-    const dati = JSON.parse(localStorage.getItem("datiAzienda")) || {};
-    setNomeDitta(dati.nomeDitta || "");
-    setTelefono(dati.telefono || "");
-    setEmail(dati.email || "");
-  }, []);
+  const [nomeDitta, setNomeDitta] = useState(datiSalvati.nomeDitta || "");
+  const [telefono, setTelefono] = useState(datiSalvati.telefono || "");
+  const [email, setEmail] = useState(datiSalvati.email || "");
 
   function salvaDati() {
     localStorage.setItem(
@@ -32,7 +28,7 @@ export default function Impostazioni() {
   }
 
   function esportaBackup() {
-    const clienti = JSON.parse(localStorage.getItem("clienti")) || [];
+    const clienti = leggiStorage("clienti", []);
 
     if (clienti.length === 0) {
       alert("Nessun cliente da esportare");
