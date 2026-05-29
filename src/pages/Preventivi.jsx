@@ -157,11 +157,11 @@ export default function Preventivi() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-white pb-[230px]">
-      <div className="px-5 pt-6 pb-4 sticky top-0 z-30 bg-[#070b14]/95 backdrop-blur-xl border-b border-white/5">
+    <div className="min-h-screen text-white pb-[230px]">
+      <div className="px-5 pt-6 pb-4 sticky top-0 z-30 bg-slate-950/[0.92] backdrop-blur-xl border-b border-white/10">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-[#3b9cff] text-sm font-bold uppercase">
+            <p className="section-label">
               Nuovo documento
             </p>
             <h1 className="text-4xl font-black tracking-tight">
@@ -169,19 +169,19 @@ export default function Preventivi() {
             </h1>
           </div>
 
-          <div className="w-12 h-12 rounded-2xl bg-[#2491ff] flex items-center justify-center">
+          <div className="w-12 h-12 rounded-[14px] bg-yellow-400 text-slate-950 flex items-center justify-center">
             <ClipboardList size={24} />
           </div>
         </div>
       </div>
 
       <div className="px-5 pt-5 space-y-6">
-        <section className="bg-[#111723] border border-white/10 rounded-[26px] p-4">
+        <section className="pro-panel p-4">
           <div className="flex items-center justify-between gap-3 mb-3">
             <h2 className="text-xl font-black">Cliente</h2>
             <Link
               to="/clienti"
-              className="text-[#3b9cff] text-sm font-bold flex items-center gap-1"
+              className="text-yellow-300 text-sm font-bold flex items-center gap-1"
             >
               <UserPlus size={16} />
               Nuovo
@@ -191,7 +191,7 @@ export default function Preventivi() {
           <select
             value={clienteSelezionato}
             onChange={(event) => setClienteSelezionato(event.target.value)}
-            className="w-full h-14 rounded-2xl bg-black/25 border border-white/10 px-4 text-base outline-none"
+            className="input-pro h-14"
           >
             <option value="">Seleziona cliente</option>
             {clienti.map((cliente) => (
@@ -211,13 +211,13 @@ export default function Preventivi() {
           <div className="relative mb-3">
             <Search
               size={19}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-[#3b9cff]"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-yellow-300"
             />
             <input
               value={ricerca}
               onChange={(event) => setRicerca(event.target.value)}
               placeholder="Cerca lavorazione..."
-              className="w-full h-14 rounded-2xl bg-[#111723] border border-white/10 pl-11 pr-4 outline-none"
+              className="w-full h-14 rounded-[14px] bg-slate-950/50 border border-white/10 pl-11 pr-4 outline-none"
             />
           </div>
 
@@ -226,7 +226,7 @@ export default function Preventivi() {
               <button
                 key={voce.id || voce.nome}
                 onClick={() => aggiungiLavorazione(voce)}
-                className="w-full bg-[#161b26] border border-white/5 rounded-[22px] p-4 text-left active:scale-[0.99] transition"
+                className="w-full pro-panel p-4 text-left active:scale-[0.99] transition hover:border-yellow-300/40"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
@@ -236,12 +236,12 @@ export default function Preventivi() {
                     <h3 className="text-lg font-black leading-tight mt-1">
                       {voce.nome}
                     </h3>
-                    <p className="text-[#3b9cff] font-bold mt-2">
+                    <p className="text-yellow-300 font-bold mt-2">
                       {formatEuro(voce.prezzo)} / {voce.unita || "cad"}
                     </p>
                   </div>
 
-                  <div className="w-12 h-12 rounded-2xl bg-[#2491ff] flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-[14px] bg-yellow-400 text-slate-950 flex items-center justify-center shrink-0">
                     <Plus size={24} />
                   </div>
                 </div>
@@ -254,7 +254,7 @@ export default function Preventivi() {
           <h2 className="text-xl font-black mb-3">Lavorazioni aggiunte</h2>
 
           {lavorazioni.length === 0 ? (
-            <div className="bg-[#111723] border border-dashed border-white/15 rounded-[26px] p-8 text-center">
+            <div className="pro-panel border-dashed p-8 text-center">
               <Calculator size={36} className="mx-auto text-white/25 mb-3" />
               <p className="text-white/45">
                 Tocca una voce del listino per comporre il preventivo.
@@ -265,7 +265,7 @@ export default function Preventivi() {
               {lavorazioni.map((item, index) => (
                 <div
                   key={item.id}
-                  className="bg-[#111723] border border-white/10 rounded-[24px] p-4"
+                  className="pro-panel p-4"
                 >
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div>
@@ -300,7 +300,7 @@ export default function Preventivi() {
                         onChange={(event) =>
                           aggiornaLavorazione(index, "quantita", event.target.value)
                         }
-                        className="mt-1 w-full bg-black/25 border border-white/10 rounded-2xl p-3 outline-none"
+                        className="mt-1 input-pro p-3"
                       />
                     </label>
 
@@ -313,7 +313,7 @@ export default function Preventivi() {
                         onChange={(event) =>
                           aggiornaLavorazione(index, "prezzo", event.target.value)
                         }
-                        className="mt-1 w-full bg-black/25 border border-white/10 rounded-2xl p-3 outline-none"
+                        className="mt-1 input-pro p-3"
                       />
                     </label>
 
@@ -324,7 +324,7 @@ export default function Preventivi() {
                         onChange={(event) =>
                           aggiornaLavorazione(index, "unita", event.target.value)
                         }
-                        className="mt-1 w-full bg-black/25 border border-white/10 rounded-2xl p-3 outline-none"
+                        className="mt-1 input-pro p-3"
                       />
                     </label>
                   </div>
@@ -334,7 +334,7 @@ export default function Preventivi() {
           )}
         </section>
 
-        <section className="bg-[#111723] border border-white/10 rounded-[26px] p-4 space-y-4">
+        <section className="pro-panel p-4 space-y-4">
           <h2 className="text-xl font-black">Condizioni</h2>
 
           <div className="grid grid-cols-2 gap-3">
@@ -345,7 +345,7 @@ export default function Preventivi() {
                 min="0"
                 value={sconto}
                 onChange={(event) => setSconto(Number(event.target.value))}
-                className="mt-2 w-full bg-black/25 border border-white/10 rounded-2xl p-4 outline-none"
+                className="mt-2 input-pro"
               />
             </label>
 
@@ -356,7 +356,7 @@ export default function Preventivi() {
                 min="0"
                 value={iva}
                 onChange={(event) => setIva(Number(event.target.value))}
-                className="mt-2 w-full bg-black/25 border border-white/10 rounded-2xl p-4 outline-none"
+                className="mt-2 input-pro"
               />
             </label>
           </div>
@@ -368,7 +368,7 @@ export default function Preventivi() {
               onChange={(event) => setNote(event.target.value)}
               rows="4"
               placeholder="Esempio: validita offerta 30 giorni, materiali inclusi, tempi stimati..."
-              className="mt-2 w-full bg-black/25 border border-white/10 rounded-2xl p-4 outline-none resize-none"
+              className="mt-2 input-pro resize-none"
             />
           </label>
         </section>
@@ -391,7 +391,7 @@ export default function Preventivi() {
 
             <button
               onClick={salvaPreventivo}
-              className="h-16 px-5 rounded-[22px] bg-[#2491ff] text-white font-black flex items-center gap-2"
+              className="h-16 px-5 btn-primary flex items-center gap-2"
             >
               <FileCheck2 size={21} />
               Salva

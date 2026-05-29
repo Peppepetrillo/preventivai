@@ -87,11 +87,13 @@ export default function Clienti() {
 
     <PageWrapper>
 
-      <div className="min-h-screen px-5 pt-8 pb-32 text-white">
+      <div className="pro-page text-white">
 
-        <div className="sticky top-0 z-40 backdrop-blur-2xl bg-black/20 border-b border-white/5 mb-8 pb-5 pt-2">
+        <div className="pro-panel-strong mb-6 p-5">
 
-          <h1 className="text-4xl font-black tracking-tight">
+          <p className="section-label">Rubrica lavori</p>
+
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1">
             Clienti
           </h1>
 
@@ -110,7 +112,7 @@ export default function Clienti() {
             opacity: 1,
             y: 0,
           }}
-          className="bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl rounded-[32px] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.35)] mb-8 space-y-5"
+          className="pro-panel p-5 mb-8 space-y-5"
         >
 
           <div>
@@ -128,7 +130,7 @@ export default function Clienti() {
                   e.target.value
                 )
               }
-              className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+              className="input-pro"
             />
 
           </div>
@@ -148,7 +150,7 @@ export default function Clienti() {
                   e.target.value
                 )
               }
-              className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+              className="input-pro"
             />
 
           </div>
@@ -168,7 +170,7 @@ export default function Clienti() {
                   e.target.value
                 )
               }
-              className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+              className="input-pro"
             />
 
           </div>
@@ -177,7 +179,7 @@ export default function Clienti() {
             onClick={
               aggiungiCliente
             }
-            className="w-full bg-blue-600 rounded-[26px] p-5 text-lg font-bold shadow-2xl flex items-center justify-center gap-2"
+            className="w-full btn-primary p-5 text-lg flex items-center justify-center gap-2"
           >
 
             <Plus size={22} />
@@ -211,14 +213,14 @@ export default function Clienti() {
                     `/cliente/${cliente.id}`
                   )
                 }
-                className="bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl rounded-[30px] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.35)]"
+                className="pro-panel p-5 hover:border-yellow-300/40 transition"
               >
 
                 <div className="flex items-start justify-between">
 
                   <div className="flex items-start gap-4">
 
-                    <div className="bg-blue-600 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl">
+                    <div className="bg-yellow-400 text-slate-950 w-14 h-14 rounded-[14px] flex items-center justify-center shadow-xl">
 
                       <Users size={24} />
 

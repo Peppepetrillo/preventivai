@@ -57,20 +57,21 @@ export default function ArchivioPreventivi() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 text-white p-5 pb-32">
+    <div className="pro-page text-white">
 
-      <div className="mb-8">
-        <h1 className="text-4xl font-black mb-3">
+      <div className="mb-6 pro-panel-strong p-5">
+        <p className="section-label">Documenti salvati</p>
+        <h1 className="text-3xl sm:text-4xl font-black mt-1">
           Archivio Preventivi
         </h1>
 
-        <p className="text-slate-400">
-          Tutti i preventivi salvati
+        <p className="text-slate-400 mt-2">
+          Cerca preventivi, controlla gli stati e riapri i lavori al volo.
         </p>
       </div>
 
-      <div className="bg-slate-900 border border-slate-700 rounded-3xl p-4 flex items-center gap-3 mb-8">
-        <Search size={22} className="text-slate-400" />
+      <div className="pro-panel p-4 flex items-center gap-3 mb-6">
+        <Search size={22} className="text-yellow-300" />
 
         <input
           type="text"
@@ -84,7 +85,7 @@ export default function ArchivioPreventivi() {
       <div className="space-y-5">
 
         {preventiviFiltrati.length === 0 && (
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-8 text-center text-slate-400">
+          <div className="pro-panel p-8 text-center text-slate-400">
             Nessun preventivo trovato
           </div>
         )}
@@ -94,7 +95,7 @@ export default function ArchivioPreventivi() {
           <Link
             key={preventivo.id}
             to={`/preventivo/${preventivo.id}`}
-            className="block bg-slate-900 border border-slate-700 rounded-[32px] p-6 shadow-xl hover:scale-[1.02] transition-all duration-300"
+            className="block pro-panel p-5 hover:border-yellow-300/45 transition"
           >
 
             <div className="flex items-start justify-between">
@@ -125,13 +126,13 @@ export default function ArchivioPreventivi() {
                   </p>
                 </div>
 
-                <p className="text-green-400 text-2xl font-bold mt-4">
-                  € {preventivo.totale || 0}
+                <p className="text-emerald-300 text-2xl font-black mt-4">
+                  € {Number(preventivo.totale || 0).toLocaleString("it-IT")}
                 </p>
 
               </div>
 
-              <div className="bg-blue-600 p-4 rounded-2xl shadow-lg shrink-0">
+              <div className="bg-yellow-400 text-slate-950 p-4 rounded-[14px] shadow-lg shrink-0">
                 <FileText size={26} />
               </div>
 

@@ -24,7 +24,7 @@ export default function Impostazioni() {
       "datiAzienda",
       JSON.stringify({ nomeDitta, telefono, email })
     );
-    alert("Dati salvati 😄🔥");
+    alert("Dati azienda salvati.");
   }
 
   function esportaBackup() {
@@ -56,11 +56,15 @@ export default function Impostazioni() {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen px-5 pt-8 pb-32 text-white">
+      <div className="pro-page text-white">
 
-        <h1 className="text-4xl font-black mb-8">Impostazioni</h1>
+        <div className="pro-panel-strong p-5 mb-6">
+          <p className="section-label">Configurazione</p>
+          <h1 className="text-3xl sm:text-4xl font-black mt-1">Impostazioni</h1>
+          <p className="text-slate-400 mt-2">Dati aziendali, PDF e backup.</p>
+        </div>
 
-        <div className="bg-white/[0.03] border border-white/[0.08] rounded-[30px] p-5 backdrop-blur-2xl mb-5">
+        <div className="pro-panel p-5 mb-5">
           <div className="flex items-center gap-4 mb-5">
             <Building2 size={28} />
             <div>
@@ -75,32 +79,32 @@ export default function Impostazioni() {
               placeholder="Nome ditta"
               value={nomeDitta}
               onChange={(e) => setNomeDitta(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+              className="input-pro"
             />
             <input
               type="text"
               placeholder="Telefono"
               value={telefono}
               onChange={(e) => setTelefono(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+              className="input-pro"
             />
             <input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+              className="input-pro"
             />
             <button
               onClick={salvaDati}
-              className="w-full bg-blue-600 rounded-2xl p-5 text-lg font-bold"
+              className="w-full btn-primary p-5 text-lg"
             >
               Salva Dati
             </button>
           </div>
         </div>
 
-        <div className="bg-white/[0.03] border border-white/[0.08] rounded-[30px] p-5 backdrop-blur-2xl">
+        <div className="pro-panel p-5">
           <div className="flex items-center gap-4 mb-5">
             <Download size={28} />
             <div>
@@ -110,7 +114,7 @@ export default function Impostazioni() {
           </div>
           <button
             onClick={esportaBackup}
-            className="w-full bg-blue-600 rounded-2xl p-5 text-lg font-bold"
+            className="w-full btn-secondary p-5 text-lg"
           >
             Esporta Backup
           </button>

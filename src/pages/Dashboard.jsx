@@ -8,6 +8,9 @@ import {
   CheckCircle,
   Clock3,
   Wallet,
+  ClipboardCheck,
+  HardHat,
+  Zap,
 } from "lucide-react";
 
 import { Link } from "react-router-dom";
@@ -54,17 +57,17 @@ export default function Dashboard() {
     {
       titolo: "Nuovo Preventivo",
       testo:
-        "Crea preventivi professionali in pochi secondi.",
+        "Componi materiale, manodopera e condizioni.",
       link: "/preventivi",
       icon: FileText,
     },
 
     {
-      titolo: "Clienti",
+      titolo: "Sopralluogo",
       testo:
-        "Gestisci clienti e lavori salvati.",
-      link: "/clienti",
-      icon: Users,
+        "Raccogli misure, punti luce e note in campo.",
+      link: "/sopralluogo",
+      icon: ClipboardCheck,
     },
 
     {
@@ -76,19 +79,19 @@ export default function Dashboard() {
     },
 
     {
-      titolo: "Listino",
+      titolo: "Clienti",
       testo:
-        "Modifica prezzi e lavorazioni.",
-      link: "/listino",
-      icon: List,
+        "Contatti, storico lavori e importi.",
+      link: "/clienti",
+      icon: Users,
     },
 
     {
-      titolo: "Impostazioni",
+      titolo: "Listino",
       testo:
-        "Logo, dati azienda e PDF.",
-      link: "/impostazioni",
-      icon: Settings,
+        "Prezzi aggiornati per interventi e materiali.",
+      link: "/listino",
+      icon: List,
     },
 
   ];
@@ -109,26 +112,28 @@ export default function Dashboard() {
         transition={{
           duration: 0.4,
         }}
-        className="min-h-screen px-5 pt-8 pb-32 text-white"
+        className="pro-page text-white"
       >
 
-        <div className="mb-10">
+        <div className="mb-7 pro-panel-strong p-5 overflow-hidden relative">
 
-          <div className="flex items-center gap-4">
+          <div className="absolute right-[-40px] top-[-50px] w-36 h-36 rounded-full bg-yellow-400/12 blur-2xl" />
+
+          <div className="flex items-start justify-between gap-4 relative">
 
             {datiAzienda.logo ? (
 
               <img
                 src={datiAzienda.logo}
                 alt="Logo"
-                className="w-16 h-16 rounded-2xl object-cover border border-slate-700 shadow-lg"
+                className="w-16 h-16 rounded-[16px] object-cover border border-slate-700 shadow-lg"
               />
 
             ) : (
 
-              <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-2xl font-black shadow-xl">
+              <div className="w-16 h-16 rounded-[16px] bg-yellow-400 text-slate-950 flex items-center justify-center shadow-xl">
 
-                ⚡
+                <Zap size={31} />
 
               </div>
 
@@ -136,26 +141,36 @@ export default function Dashboard() {
 
             <div>
 
-              <h1 className="text-4xl font-black tracking-tight">
+              <p className="section-label">Gestionale elettrico</p>
 
-                {datiAzienda.nomeAzienda ||
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1">
+
+                {datiAzienda.nomeDitta ||
                   "PreventivAI"}
 
               </h1>
 
-              <p className="text-slate-400 mt-1">
+              <p className="text-slate-300 mt-1 max-w-xl">
 
-                Gestionale smart per elettricisti
+                Preventivi, sopralluoghi, clienti e listino in un unico banco lavoro.
 
               </p>
 
             </div>
 
+            <Link
+              to="/impostazioni"
+              className="hidden sm:flex w-12 h-12 rounded-[14px] border border-white/10 bg-white/5 items-center justify-center text-slate-300"
+              aria-label="Impostazioni"
+            >
+              <Settings size={20} />
+            </Link>
+
           </div>
 
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
 
           {[
 
@@ -165,7 +180,7 @@ export default function Dashboard() {
                 "text-green-400",
               label: "Totale",
               value:
-                `€${totalePreventivi}`,
+                `€ ${totalePreventivi.toLocaleString("it-IT")}`,
             },
 
             {
@@ -223,10 +238,10 @@ export default function Dashboard() {
                   whileTap={{
                     scale: 0.97,
                   }}
-                  className="bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl rounded-[28px] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.35)]"
+                  className="pro-panel p-4"
                 >
 
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-3">
 
                     <Icon
                       size={24}
@@ -235,7 +250,7 @@ export default function Dashboard() {
                       }
                     />
 
-                    <span className="text-slate-500 text-sm">
+                    <span className="text-slate-400 text-sm">
 
                       {stat.label}
 
@@ -243,7 +258,7 @@ export default function Dashboard() {
 
                   </div>
 
-                  <h2 className="text-3xl font-black">
+                  <h2 className="text-2xl font-black">
 
                     {stat.value}
 
@@ -258,7 +273,7 @@ export default function Dashboard() {
 
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-3 lg:grid-cols-2">
 
           {cards.map(
             (
@@ -292,14 +307,14 @@ export default function Dashboard() {
 
                   <Link
                     to={card.link}
-                    className="bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl rounded-[28px] p-5 shadow-[0_10px_40px_rgba(0,0,0,0.35)]"
+                    className="pro-panel p-4 block hover:border-yellow-300/45 transition"
                   >
 
                     <div className="flex items-center justify-between">
 
                       <div className="flex items-center gap-4">
 
-                        <div className="bg-white/10 p-4 rounded-2xl">
+                        <div className="bg-yellow-400/12 text-yellow-200 p-3 rounded-[14px]">
 
                           <Icon size={24} />
 
@@ -307,13 +322,13 @@ export default function Dashboard() {
 
                         <div>
 
-                          <h2 className="text-xl font-bold">
+                          <h2 className="text-lg font-black">
 
                             {card.titolo}
 
                           </h2>
 
-                          <p className="text-slate-400 mt-1 text-sm">
+                          <p className="text-slate-400 mt-1 text-sm leading-snug">
 
                             {card.testo}
 
@@ -325,7 +340,7 @@ export default function Dashboard() {
 
                       <ArrowRight
                         size={20}
-                        className="text-slate-500"
+                        className="text-yellow-300"
                       />
 
                     </div>
@@ -339,6 +354,24 @@ export default function Dashboard() {
             }
           )}
 
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="pro-panel p-4">
+            <HardHat size={22} className="text-yellow-300 mb-3" />
+            <p className="font-black">Pronto per cantiere</p>
+            <p className="text-sm text-slate-400 mt-1">Schede compatte, leggibili da telefono.</p>
+          </div>
+          <div className="pro-panel p-4">
+            <FileText size={22} className="text-sky-300 mb-3" />
+            <p className="font-black">PDF ordinati</p>
+            <p className="text-sm text-slate-400 mt-1">Dati azienda già collegati ai documenti.</p>
+          </div>
+          <div className="pro-panel p-4">
+            <Wallet size={22} className="text-emerald-300 mb-3" />
+            <p className="font-black">Numeri sotto mano</p>
+            <p className="text-sm text-slate-400 mt-1">Valore lavori, stati e clienti sempre visibili.</p>
+          </div>
         </div>
 
       </motion.div>

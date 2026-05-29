@@ -12,6 +12,7 @@ import Listino from "./pages/Listino";
 import Impostazioni from "./pages/Impostazioni";
 import DettaglioPreventivo from "./pages/DettaglioPreventivo";
 import DettaglioCliente from "./pages/DettaglioCliente";
+import Sopralluogo from "./pages/Sopralluogo";
 
 import BottomNav from "./components/BottomNav";
 
@@ -21,7 +22,7 @@ export default function App() {
 
     <BrowserRouter>
 
-      <div className="min-h-screen bg-[#060816]">
+      <div className="app-shell">
 
         <Routes>
 
@@ -50,6 +51,11 @@ export default function App() {
           <Route
             path="/listino"
             element={<Listino />}
+          />
+
+          <Route
+            path="/sopralluogo"
+            element={<Sopralluogo />}
           />
 
           <Route

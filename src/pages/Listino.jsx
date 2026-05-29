@@ -69,35 +69,35 @@ export default function Listino() {
 
   if (caricamento) {
     return (
-      <div className="min-h-screen bg-[#060816] text-white flex items-center justify-center">
+      <div className="min-h-screen text-white flex items-center justify-center">
         <p className="text-white/50 text-lg">Caricamento listino...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#060816] text-white p-5 pb-32">
-      <div className="mb-8">
-        <p className="text-[#3b9cff] text-sm font-bold uppercase">
+    <div className="pro-page text-white">
+      <div className="mb-6 pro-panel-strong p-5">
+        <p className="section-label">
           Prezzi base
         </p>
-        <h1 className="text-4xl font-black">Listino</h1>
+        <h1 className="text-3xl sm:text-4xl font-black mt-1">Listino</h1>
         <p className="text-slate-400 mt-2">
-          Voci usate per creare rapidamente i preventivi.
+          Voci, unita e prezzi che alimentano i preventivi.
         </p>
       </div>
 
       {messaggio && (
-        <div className="bg-blue-500/15 border border-blue-400/20 rounded-2xl p-4 mb-5 text-blue-100">
+        <div className="pro-panel p-4 mb-5 text-yellow-100 border-yellow-300/30">
           {messaggio}
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-2">
         {listino.map((item) => (
           <div
             key={item.id}
-            className="bg-white/5 rounded-[26px] p-5 border border-white/10"
+            className="pro-panel p-5"
           >
             <p className="text-white/40 text-xs font-bold uppercase mb-2">
               {item.categoria || "Lavorazioni"}
@@ -120,7 +120,7 @@ export default function Listino() {
                   onChange={(event) =>
                     aggiornaVoce(item.id, "prezzo", event.target.value)
                   }
-                  className="mt-2 w-full bg-black/20 border border-white/10 rounded-2xl p-3 outline-none"
+                  className="mt-2 input-pro p-3"
                 />
               </label>
 
@@ -131,13 +131,13 @@ export default function Listino() {
                   onChange={(event) =>
                     aggiornaVoce(item.id, "unita", event.target.value)
                   }
-                  className="mt-2 w-full bg-black/20 border border-white/10 rounded-2xl p-3 outline-none"
+                  className="mt-2 input-pro p-3"
                 />
               </label>
 
               <button
                 onClick={() => salvaPrezzo(item.id, item.prezzo)}
-                className="h-[50px] rounded-2xl bg-[#2491ff] flex items-center justify-center"
+                className="h-[50px] rounded-[14px] bg-yellow-400 text-slate-950 flex items-center justify-center"
                 aria-label="Salva prezzo"
               >
                 <Save size={19} />

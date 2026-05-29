@@ -3,7 +3,8 @@ import {
   FileText,
   Archive,
   Settings,
-  List,
+  ClipboardCheck,
+  Users,
 } from "lucide-react";
 
 import {
@@ -37,13 +38,19 @@ export default function BottomNav() {
     },
 
     {
-      nome: "Listino",
-      path: "/listino",
-      icon: List,
+      nome: "Clienti",
+      path: "/clienti",
+      icon: Users,
     },
 
     {
-      nome: "Impostazioni",
+      nome: "Sopralluogo",
+      path: "/sopralluogo",
+      icon: ClipboardCheck,
+    },
+
+    {
+      nome: "Altro",
       path: "/impostazioni",
       icon: Settings,
     },
@@ -52,9 +59,9 @@ export default function BottomNav() {
 
   return (
 
-    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 w-[92%] max-w-xl z-50 safe-bottom">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[94%] max-w-2xl z-50 safe-bottom">
 
-      <div className="bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[32px] px-3 py-3 shadow-[0_10px_40px_rgba(0,0,0,0.45)]">
+      <div className="bg-slate-950/[0.82] backdrop-blur-2xl border border-white/10 rounded-[20px] px-2 py-2 shadow-[0_18px_50px_rgba(0,0,0,0.42)]">
 
         <div className="flex items-center justify-around">
 
@@ -76,9 +83,9 @@ export default function BottomNav() {
               >
 
                 <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                  className={`w-12 h-12 rounded-[14px] flex items-center justify-center transition-all duration-300 ${
                     attivo
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105"
+                      ? "bg-yellow-400 text-slate-950 shadow-lg shadow-yellow-500/25 scale-105"
                       : "text-slate-400"
                   }`}
                 >
@@ -89,7 +96,7 @@ export default function BottomNav() {
 
                 <span className={`text-[11px] mt-1 transition-all duration-300 ${
                   attivo
-                    ? "text-white"
+                    ? "text-yellow-200"
                     : "text-slate-500"
                 }`}>
 
