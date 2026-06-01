@@ -292,7 +292,7 @@ export default function Preventivi() {
 
                   <div className="grid grid-cols-[1fr_1fr_72px] gap-3">
                     <label className="block">
-                      <span className="text-xs text-white/45">Quantita</span>
+                      <span className="text-xs text-white/45">Quantità</span>
                       <input
                         type="number"
                         min="0"
@@ -318,7 +318,7 @@ export default function Preventivi() {
                     </label>
 
                     <label className="block">
-                      <span className="text-xs text-white/45">Unita</span>
+                      <span className="text-xs text-white/45">Unità</span>
                       <input
                         value={item.unita}
                         onChange={(event) =>
@@ -367,7 +367,7 @@ export default function Preventivi() {
               value={note}
               onChange={(event) => setNote(event.target.value)}
               rows="4"
-              placeholder="Esempio: validita offerta 30 giorni, materiali inclusi, tempi stimati..."
+              placeholder="Esempio: validità offerta 30 giorni, materiali inclusi, tempi stimati..."
               className="mt-2 input-pro resize-none"
             />
           </label>

@@ -125,7 +125,7 @@ export default function Listino() {
               </label>
 
               <label>
-                <span className="text-sm text-white/45">Unita</span>
+                <span className="text-sm text-white/45">Unità</span>
                 <input
                   value={item.unita || "cad"}
                   onChange={(event) =>

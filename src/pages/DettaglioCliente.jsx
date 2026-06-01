@@ -1,5 +1,7 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, FileText, Mail, Phone, Wallet } from "lucide-react";
 import { leggiStorage } from "../utils/storage";
+import { formatEuro } from "../utils/preventivi";
 
 export default function DettaglioCliente() {
 
@@ -36,7 +38,7 @@ export default function DettaglioCliente() {
 
     return (
 
-      <div className="min-h-screen flex items-center justify-center text-white bg-[#060816]">
+      <div className="min-h-screen flex items-center justify-center text-white">
 
         Cliente non trovato
 
@@ -48,11 +50,25 @@ export default function DettaglioCliente() {
 
   return (
 
-    <div className="min-h-screen px-5 pt-8 pb-32 text-white bg-[#060816]">
+    <div className="pro-page text-white">
 
-      <div className="mb-8">
+      <Link
+        to="/clienti"
+        className="text-slate-400 flex items-center gap-2 mb-5"
+      >
+        <ArrowLeft size={18} />
+        Clienti
+      </Link>
 
-        <h1 className="text-4xl font-black">
+      <div className="pro-panel-strong p-5 mb-6">
+
+        <p className="section-label">
+
+          Scheda cliente
+
+        </p>
+
+        <h1 className="text-3xl sm:text-4xl font-black mt-1">
 
           {cliente.nome}
 
@@ -60,57 +76,65 @@ export default function DettaglioCliente() {
 
         <p className="text-slate-400 mt-2">
 
-          Scheda cliente
+          Contatti, preventivi collegati e totale lavori.
 
         </p>
 
       </div>
 
-      <div className="bg-white/5 border border-white/10 rounded-[30px] p-5 mb-8">
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px] mb-6">
 
-        <h2 className="text-2xl font-bold mb-4">
+        <div className="pro-panel p-5">
 
-          Informazioni
+          <h2 className="text-xl font-black mb-4">
 
-        </h2>
+            Informazioni
 
-        <div className="space-y-3">
+          </h2>
 
-          <p>
+          <div className="space-y-3">
 
-            📞 {cliente.telefono || "-"}
+            <div className="flex items-center gap-3 text-slate-300">
+
+              <Phone size={18} className="text-yellow-300" />
+              <span>{cliente.telefono || "-"}</span>
+
+            </div>
+
+            <div className="flex items-center gap-3 text-slate-300">
+
+              <Mail size={18} className="text-yellow-300" />
+              <span>{cliente.email || "-"}</span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div className="pro-panel p-5">
+
+          <Wallet size={24} className="text-emerald-300 mb-4" />
+
+          <p className="text-slate-400">
+
+            Totale lavori
 
           </p>
 
-          <p>
+          <h2 className="text-4xl font-black mt-2">
 
-            ✉️ {cliente.email || "-"}
+            {formatEuro(totaleLavori)}
 
-          </p>
+          </h2>
 
         </div>
 
       </div>
 
-      <div className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[30px] p-6 mb-8">
-
-        <p className="text-lg opacity-90">
-
-          Totale lavori
-
-        </p>
-
-        <h2 className="text-5xl font-black mt-2">
-
-          € {totaleLavori}
-
-        </h2>
-
-      </div>
-
       <div>
 
-        <h2 className="text-2xl font-bold mb-5">
+        <h2 className="text-2xl font-black mb-5">
 
           Preventivi Cliente
 
@@ -118,29 +142,50 @@ export default function DettaglioCliente() {
 
         <div className="space-y-4">
 
+          {preventiviCliente.length === 0 && (
+
+            <div className="pro-panel p-6 text-slate-400 text-center">
+
+              Nessun preventivo collegato a questo cliente.
+
+            </div>
+
+          )}
+
           {preventiviCliente.map(
             (preventivo) => (
 
-              <div
+              <Link
                 key={preventivo.id}
-                className="bg-white/5 border border-white/10 rounded-[28px] p-5"
+                to={`/preventivo/${preventivo.id}`}
+                className="pro-panel p-5 block hover:border-yellow-300/40 transition"
               >
 
                 <div className="flex items-center justify-between">
 
-                  <div>
+                  <div className="flex items-center gap-3">
 
-                    <h3 className="text-xl font-bold">
+                    <div className="w-12 h-12 rounded-[14px] bg-yellow-400 text-slate-950 flex items-center justify-center">
 
-                      {preventivo.numero}
+                      <FileText size={21} />
 
-                    </h3>
+                    </div>
 
-                    <p className="text-slate-400 mt-1">
+                    <div>
 
-                      {preventivo.data}
+                      <h3 className="text-xl font-black">
 
-                    </p>
+                        {preventivo.numero || "PREV-000"}
+
+                      </h3>
+
+                      <p className="text-slate-400 mt-1">
+
+                        {preventivo.data}
+
+                      </p>
+
+                    </div>
 
                   </div>
 
@@ -152,9 +197,9 @@ export default function DettaglioCliente() {
 
                     </p>
 
-                    <h2 className="text-2xl font-black mt-1">
+                    <h2 className="text-2xl font-black mt-1 text-emerald-300">
 
-                      € {preventivo.totale}
+                      {formatEuro(preventivo.totale)}
 
                     </h2>
 
@@ -162,7 +207,7 @@ export default function DettaglioCliente() {
 
                 </div>
 
-              </div>
+              </Link>
 
             )
           )}

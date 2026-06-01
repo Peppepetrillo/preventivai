@@ -78,7 +78,7 @@ export default function DettaglioPreventivo() {
       ...datiAggiornati(),
       id: new Date().getTime(),
       numero: creaNumeroPreventivo(archivio.length + 1),
-      cliente: `${cliente} COPIA`,
+      cliente: `${cliente} - copia`,
       stato: "Bozza",
       data: new Date().toLocaleDateString("it-IT"),
     };
@@ -205,38 +205,42 @@ export default function DettaglioPreventivo() {
 
   if (!preventivo) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white bg-[#060816]">
+      <div className="min-h-screen flex items-center justify-center text-white">
         Preventivo non trovato
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen px-5 pt-6 pb-32 text-white bg-[#060816]">
-      <div className="mb-6">
-        <Link
-          to="/archivio"
-          className="text-slate-400 flex items-center gap-2 mb-5"
-        >
-          <ArrowLeft size={18} />
-          Archivio
-        </Link>
+    <div className="pro-page text-white">
+      <Link
+        to="/archivio"
+        className="text-slate-400 flex items-center gap-2 mb-5"
+      >
+        <ArrowLeft size={18} />
+        Archivio
+      </Link>
 
-        <p className="text-[#3b9cff] text-sm font-bold uppercase">
+      <div className="mb-6 pro-panel-strong p-5">
+
+        <p className="section-label">
           {preventivo.numero || `PREV-${preventivo.id}`}
         </p>
-        <h1 className="text-4xl font-black tracking-tight">
+        <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1">
           Dettaglio preventivo
         </h1>
+        <p className="text-slate-400 mt-2">
+          Modifica lavorazioni, stato, condizioni e documento PDF.
+        </p>
       </div>
 
-      <section className="bg-white/5 border border-white/10 rounded-[26px] p-5 mb-5 space-y-4">
+      <section className="pro-panel p-5 mb-5 space-y-4">
         <label className="block">
           <span className="text-sm text-slate-400">Cliente</span>
           <input
             value={cliente}
             onChange={(event) => setCliente(event.target.value)}
-            className="mt-2 w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+            className="mt-2 input-pro"
           />
         </label>
 
@@ -245,7 +249,7 @@ export default function DettaglioPreventivo() {
           <select
             value={stato}
             onChange={(event) => setStato(event.target.value)}
-            className="mt-2 w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+            className="mt-2 input-pro"
           >
             <option>Bozza</option>
             <option>Inviato</option>
@@ -259,7 +263,7 @@ export default function DettaglioPreventivo() {
         {lavorazioni.map((item, index) => (
           <div
             key={`${item.nome}-${index}`}
-            className="bg-white/5 border border-white/10 rounded-[26px] p-5"
+            className="pro-panel p-5"
           >
             <div className="flex items-start justify-between gap-3 mb-4">
               <input
@@ -272,7 +276,7 @@ export default function DettaglioPreventivo() {
 
               <button
                 onClick={() => eliminaLavorazione(index)}
-                className="w-11 h-11 rounded-2xl bg-red-500/20 text-red-200 flex items-center justify-center shrink-0"
+                className="w-11 h-11 rounded-[14px] bg-red-500/20 text-red-200 flex items-center justify-center shrink-0"
                 aria-label="Elimina lavorazione"
               >
                 <Trash2 size={18} />
@@ -281,7 +285,7 @@ export default function DettaglioPreventivo() {
 
             <div className="grid grid-cols-[1fr_1fr_72px] gap-3">
               <label>
-                <span className="text-xs text-slate-400">Quantita</span>
+                <span className="text-xs text-slate-400">Quantità</span>
                 <input
                   type="number"
                   min="0"
@@ -289,7 +293,7 @@ export default function DettaglioPreventivo() {
                   onChange={(event) =>
                     aggiornaLavorazione(index, "quantita", event.target.value)
                   }
-                  className="mt-1 w-full bg-black/20 border border-white/10 rounded-2xl p-3 outline-none"
+                  className="mt-1 input-pro p-3"
                 />
               </label>
 
@@ -302,18 +306,18 @@ export default function DettaglioPreventivo() {
                   onChange={(event) =>
                     aggiornaLavorazione(index, "prezzo", event.target.value)
                   }
-                  className="mt-1 w-full bg-black/20 border border-white/10 rounded-2xl p-3 outline-none"
+                  className="mt-1 input-pro p-3"
                 />
               </label>
 
               <label>
-                <span className="text-xs text-slate-400">Unita</span>
+                <span className="text-xs text-slate-400">Unità</span>
                 <input
                   value={item.unita || "cad"}
                   onChange={(event) =>
                     aggiornaLavorazione(index, "unita", event.target.value)
                   }
-                  className="mt-1 w-full bg-black/20 border border-white/10 rounded-2xl p-3 outline-none"
+                  className="mt-1 input-pro p-3"
                 />
               </label>
             </div>
@@ -321,7 +325,7 @@ export default function DettaglioPreventivo() {
         ))}
       </section>
 
-      <section className="bg-white/5 border border-white/10 rounded-[26px] p-5 mb-5 space-y-4">
+      <section className="pro-panel p-5 mb-5 space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <label>
             <span className="text-sm text-slate-400">Sconto %</span>
@@ -330,7 +334,7 @@ export default function DettaglioPreventivo() {
               min="0"
               value={sconto}
               onChange={(event) => setSconto(Number(event.target.value))}
-              className="mt-2 w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+              className="mt-2 input-pro"
             />
           </label>
 
@@ -341,7 +345,7 @@ export default function DettaglioPreventivo() {
               min="0"
               value={iva}
               onChange={(event) => setIva(Number(event.target.value))}
-              className="mt-2 w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none"
+              className="mt-2 input-pro"
             />
           </label>
         </div>
@@ -352,17 +356,17 @@ export default function DettaglioPreventivo() {
             value={note}
             onChange={(event) => setNote(event.target.value)}
             rows="4"
-            className="mt-2 w-full bg-black/20 border border-white/10 rounded-2xl p-4 outline-none resize-none"
+            className="mt-2 input-pro resize-none"
           />
         </label>
       </section>
 
-      <section className="bg-gradient-to-r from-green-500 to-emerald-400 rounded-[26px] p-6 mb-5">
-        <p className="text-lg opacity-90">Totale IVA incl.</p>
+      <section className="pro-panel-strong p-6 mb-5">
+        <p className="text-lg text-slate-300">Totale IVA incl.</p>
         <h2 className="text-5xl font-black mt-2">
           {formatEuro(totali.totale)}
         </h2>
-        <div className="grid grid-cols-2 gap-2 text-sm mt-4 opacity-90">
+        <div className="grid grid-cols-2 gap-2 text-sm mt-4 text-slate-400">
           <p>Imponibile {formatEuro(totali.imponibile)}</p>
           <p>IVA {formatEuro(totali.importoIva)}</p>
         </div>
@@ -371,7 +375,7 @@ export default function DettaglioPreventivo() {
       <div className="grid grid-cols-1 gap-3">
         <button
           onClick={salvaModifiche}
-          className="w-full bg-blue-600 rounded-2xl p-5 text-lg font-bold flex items-center justify-center gap-2"
+          className="w-full btn-primary p-5 text-lg flex items-center justify-center gap-2"
         >
           <Save size={20} />
           Salva modifiche
@@ -379,7 +383,7 @@ export default function DettaglioPreventivo() {
 
         <button
           onClick={generaPDF}
-          className="w-full bg-white/10 border border-white/10 rounded-2xl p-5 text-lg font-bold flex items-center justify-center gap-2"
+          className="w-full btn-secondary p-5 text-lg flex items-center justify-center gap-2"
         >
           <Download size={20} />
           Genera PDF
@@ -387,7 +391,7 @@ export default function DettaglioPreventivo() {
 
         <button
           onClick={duplicaPreventivo}
-          className="w-full bg-white/10 border border-white/10 rounded-2xl p-5 text-lg font-bold flex items-center justify-center gap-2"
+          className="w-full btn-secondary p-5 text-lg flex items-center justify-center gap-2"
         >
           <Copy size={20} />
           Duplica preventivo

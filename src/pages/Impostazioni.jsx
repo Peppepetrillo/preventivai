@@ -42,8 +42,11 @@ export default function Impostazioni() {
       cliente.email,
     ]);
 
+    const formattaCampoCsv = (valore) =>
+      `"${String(valore || "").replaceAll("\"", "\"\"")}"`;
+
     const csvContent = [intestazione, ...righe]
-      .map((riga) => riga.join(","))
+      .map((riga) => riga.map(formattaCampoCsv).join(","))
       .join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -99,7 +102,7 @@ export default function Impostazioni() {
               onClick={salvaDati}
               className="w-full btn-primary p-5 text-lg"
             >
-              Salva Dati
+              Salva dati
             </button>
           </div>
         </div>
@@ -116,7 +119,7 @@ export default function Impostazioni() {
             onClick={esportaBackup}
             className="w-full btn-secondary p-5 text-lg"
           >
-            Esporta Backup
+            Esporta backup
           </button>
         </div>
 

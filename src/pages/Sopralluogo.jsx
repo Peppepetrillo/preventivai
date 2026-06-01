@@ -72,8 +72,12 @@ export default function Sopralluogo() {
   }
 
   async function copiaRiepilogo() {
-    await navigator.clipboard.writeText(generaRiepilogo());
-    setMessaggio("Riepilogo copiato.");
+    try {
+      await navigator.clipboard.writeText(generaRiepilogo());
+      setMessaggio("Riepilogo copiato.");
+    } catch {
+      setMessaggio("Copia non disponibile in questo browser. Il riepilogo resta visibile.");
+    }
   }
 
   function salvaSopralluogo() {

@@ -71,8 +71,15 @@ export default function BottomNav() {
               item.icon;
 
             const attivo =
-              location.pathname ===
-              item.path;
+              location.pathname === item.path ||
+              (
+                item.path === "/archivio" &&
+                location.pathname.startsWith("/preventivo/")
+              ) ||
+              (
+                item.path === "/clienti" &&
+                location.pathname.startsWith("/cliente/")
+              );
 
             return (
 
