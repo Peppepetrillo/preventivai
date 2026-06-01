@@ -123,7 +123,21 @@ export default function DettaglioPreventivo() {
 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
-    doc.text(datiAzienda.nomeDitta || "PreventivAI", 18, 24);
+
+    let intestazioneX = 18;
+    if (datiAzienda.logo) {
+      try {
+        const formatoLogo = datiAzienda.logo.includes("image/jpeg")
+          ? "JPEG"
+          : "PNG";
+        doc.addImage(datiAzienda.logo, formatoLogo, 16, 8, 22, 22);
+        intestazioneX = 44;
+      } catch {
+        intestazioneX = 18;
+      }
+    }
+
+    doc.text(datiAzienda.nomeDitta || "PreventivAI", intestazioneX, 24);
 
     doc.setFontSize(10);
     doc.text(`Tel. ${datiAzienda.telefono || "-"}`, 145, 16);

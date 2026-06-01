@@ -43,13 +43,18 @@ export default function Preventivi() {
         const { data, error } = await Promise.race([richiesta, timeout]);
 
         if (!error && data?.length) {
+          const listinoLocale = leggiStorage("listinoLocale", []);
+          const vociLocali = listinoLocale.filter((voce) =>
+            String(voce.id || "").startsWith("locale-")
+          );
           const listinoNormalizzato = data.map((voce) => ({
             ...voce,
             categoria: voce.categoria || "Lavorazioni",
             unita: voce.unita || "cad",
           }));
-          setListino(listinoNormalizzato);
-          salvaStorage("listinoLocale", listinoNormalizzato);
+          const listinoAggiornato = [...listinoNormalizzato, ...vociLocali];
+          setListino(listinoAggiornato);
+          salvaStorage("listinoLocale", listinoAggiornato);
         }
       } finally {
         setCaricamento(false);
