@@ -8,7 +8,6 @@ import {
   CheckCircle,
   Clock3,
   Wallet,
-  ClipboardCheck,
   HardHat,
   Zap,
 } from "lucide-react";
@@ -60,14 +59,6 @@ export default function Dashboard() {
         "Componi materiale, manodopera e condizioni.",
       link: "/preventivi",
       icon: FileText,
-    },
-
-    {
-      titolo: "Sopralluogo",
-      testo:
-        "Raccogli misure, punti luce e note in campo.",
-      link: "/sopralluogo",
-      icon: ClipboardCheck,
     },
 
     {
@@ -152,7 +143,7 @@ export default function Dashboard() {
 
               <p className="text-slate-300 mt-1 max-w-xl">
 
-                Preventivi, sopralluoghi, clienti e listino in un unico banco lavoro.
+                Preventivi, clienti, archivio e listino in un unico banco lavoro.
 
               </p>
 

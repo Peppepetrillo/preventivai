@@ -3,7 +3,7 @@ import {
   FileText,
   Archive,
   Settings,
-  ClipboardCheck,
+  List,
   Users,
 } from "lucide-react";
 
@@ -44,9 +44,9 @@ export default function BottomNav() {
     },
 
     {
-      nome: "Sopralluogo",
-      path: "/sopralluogo",
-      icon: ClipboardCheck,
+      nome: "Listino",
+      path: "/listino",
+      icon: List,
     },
 
     {
