@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Copy, Download, Save, Trash2 } from "lucide-react";
 import jsPDF from "jspdf";
 import { leggiStorage, salvaStorage } from "../utils/storage";
@@ -11,6 +11,7 @@ import {
 
 export default function DettaglioPreventivo() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const archivio = leggiStorage("archivioPreventivi", []);
   const indicePreventivo = archivio.findIndex(
@@ -86,6 +87,24 @@ export default function DettaglioPreventivo() {
     salvaStorage("archivioPreventivi", [...archivio, nuovoPreventivo]);
     window.dispatchEvent(new Event("preventivi-aggiornati"));
     alert("Preventivo duplicato.");
+  }
+
+  function eliminaPreventivo() {
+    const conferma = window.confirm(
+      `Eliminare definitivamente il preventivo ${
+        preventivo.numero || `PREV-${preventivo.id}`
+      }?`
+    );
+
+    if (!conferma) return;
+
+    const archivioAggiornato = archivio.filter(
+      (item) => String(item.id) !== String(preventivo.id)
+    );
+
+    salvaStorage("archivioPreventivi", archivioAggiornato);
+    window.dispatchEvent(new Event("preventivi-aggiornati"));
+    navigate("/archivio");
   }
 
   function scriviRigaPDF(doc, colonne, y) {
@@ -395,6 +414,14 @@ export default function DettaglioPreventivo() {
         >
           <Copy size={20} />
           Duplica preventivo
+        </button>
+
+        <button
+          onClick={eliminaPreventivo}
+          className="w-full rounded-[14px] border border-red-400/25 bg-red-500/10 p-5 text-lg font-black text-red-100 flex items-center justify-center gap-2"
+        >
+          <Trash2 size={20} />
+          Elimina preventivo
         </button>
       </div>
     </div>
