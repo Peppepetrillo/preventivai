@@ -30,7 +30,7 @@ export default defineConfig({
           "PreventivAI",
 
         description:
-          "Gestionale smart per elettricisti",
+          "Gestionale locale per preventivi da elettricista",
 
         theme_color:
           "#020617",
@@ -39,6 +39,11 @@ export default defineConfig({
           "#020617",
 
         display: "standalone",
+
+        display_override: [
+          "standalone",
+          "minimal-ui",
+        ],
 
         orientation:
           "portrait",
@@ -59,6 +64,13 @@ export default defineConfig({
             src: "/icon-512.png",
             sizes: "512x512",
             type: "image/png",
+          },
+
+          {
+            src: "/icon-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
           },
 
         ],

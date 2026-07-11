@@ -1,13 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Plus, Save } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
-import { listinoBase } from "../data/listinoBase";
-import { leggiStorage, salvaStorage } from "../utils/storage";
-import { formatEuro } from "../utils/preventivi";
+import { leggiListino, salvaListino } from "../repositories/listinoRepository";
+import { formatEuro, normalizzaNumero } from "../utils/preventivi";
 
 export default function Listino() {
   const [listino, setListino] = useState(() =>
-    leggiStorage("listinoLocale", listinoBase)
+    leggiListino()
   );
   const [nuovaVoce, setNuovaVoce] = useState({
     categoria: "Materiali",
@@ -15,52 +13,20 @@ export default function Listino() {
     prezzo: "",
     unita: "cad",
   });
-  const [caricamento, setCaricamento] = useState(true);
   const [messaggio, setMessaggio] = useState("");
-
-  useEffect(() => {
-    async function caricaListino() {
-      try {
-        const richiesta = supabase.from("listino").select("*").order("id");
-        const timeout = new Promise((resolve) => {
-          setTimeout(() => resolve({ data: null, error: true }), 2500);
-        });
-        const { data, error } = await Promise.race([richiesta, timeout]);
-
-        if (!error && data?.length) {
-          const listinoLocale = leggiStorage("listinoLocale", []);
-          const vociLocali = listinoLocale.filter((voce) =>
-            String(voce.id || "").startsWith("locale-")
-          );
-          const listinoNormalizzato = data.map((voce) => ({
-            ...voce,
-            categoria: voce.categoria || "Lavorazioni",
-            unita: voce.unita || "cad",
-          }));
-          const listinoAggiornato = [...listinoNormalizzato, ...vociLocali];
-          setListino(listinoAggiornato);
-          salvaStorage("listinoLocale", listinoAggiornato);
-        }
-      } finally {
-        setCaricamento(false);
-      }
-    }
-
-    caricaListino();
-  }, []);
 
   function aggiornaVoce(id, campo, valore) {
     const listinoAggiornato = listino.map((item) =>
       item.id === id
         ? {
             ...item,
-            [campo]: campo === "prezzo" ? Number(valore) : valore,
+            [campo]: campo === "prezzo" ? normalizzaNumero(valore) : valore,
           }
         : item
     );
 
     setListino(listinoAggiornato);
-    salvaStorage("listinoLocale", listinoAggiornato);
+    salvaListino(listinoAggiornato);
   }
 
   function aggiornaNuovaVoce(campo, valore) {
@@ -80,13 +46,13 @@ export default function Listino() {
       id: `locale-${new Date().getTime()}`,
       categoria: nuovaVoce.categoria.trim() || "Materiali",
       nome: nuovaVoce.nome.trim(),
-      prezzo: Number(nuovaVoce.prezzo || 0),
+      prezzo: normalizzaNumero(nuovaVoce.prezzo),
       unita: nuovaVoce.unita.trim() || "cad",
     };
 
     const listinoAggiornato = [voce, ...listino];
     setListino(listinoAggiornato);
-    salvaStorage("listinoLocale", listinoAggiornato);
+    salvaListino(listinoAggiornato);
     setNuovaVoce({
       categoria: "Materiali",
       nome: "",
@@ -96,33 +62,9 @@ export default function Listino() {
     setMessaggio("Voce aggiunta al listino locale.");
   }
 
-  async function salvaPrezzo(id, prezzo) {
-    if (String(id).startsWith("locale-")) {
-      salvaStorage("listinoLocale", listino);
-      setMessaggio("Voce locale aggiornata.");
-      return;
-    }
-
-    setMessaggio("Salvataggio listino...");
-
-    const { error } = await supabase
-      .from("listino")
-      .update({ prezzo: Number(prezzo || 0) })
-      .eq("id", id);
-
-    setMessaggio(
-      error
-        ? "Salvato in locale. Supabase non ha confermato la modifica."
-        : "Listino aggiornato."
-    );
-  }
-
-  if (caricamento) {
-    return (
-      <div className="min-h-screen text-white flex items-center justify-center">
-        <p className="text-white/50 text-lg">Caricamento listino...</p>
-      </div>
-    );
+  function salvaPrezzo() {
+    salvaListino(listino);
+    setMessaggio("Listino aggiornato in locale.");
   }
 
   return (
@@ -239,7 +181,7 @@ export default function Listino() {
               </label>
 
               <button
-                onClick={() => salvaPrezzo(item.id, item.prezzo)}
+                onClick={salvaPrezzo}
                 className="h-[50px] rounded-[14px] bg-yellow-400 text-slate-950 flex items-center justify-center"
                 aria-label="Salva prezzo"
               >

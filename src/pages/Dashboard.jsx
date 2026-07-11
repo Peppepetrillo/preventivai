@@ -19,23 +19,27 @@ import {
 } from "framer-motion";
 
 import PageWrapper from "../components/PageWrapper";
-import { leggiStorage } from "../utils/storage";
+import { ROUTES } from "../app/routes";
+import { normalizzaNumero } from "../utils/preventivi";
+import { leggiClienti } from "../repositories/clientiRepository";
+import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
+import { leggiPreventivi } from "../repositories/preventiviRepository";
 
 export default function Dashboard() {
 
   const datiAzienda =
-    leggiStorage("datiAzienda", {});
+    leggiDatiAzienda();
 
   const preventivi =
-    leggiStorage("archivioPreventivi", []);
+    leggiPreventivi();
 
   const clienti =
-    leggiStorage("clienti", []);
+    leggiClienti();
 
   const totalePreventivi =
     preventivi.reduce(
       (acc, item) =>
-        acc + Number(item.totale || 0),
+        acc + normalizzaNumero(item.totale),
       0
     );
 
@@ -57,7 +61,7 @@ export default function Dashboard() {
       titolo: "Nuovo Preventivo",
       testo:
         "Componi materiale, manodopera e condizioni.",
-      link: "/preventivi",
+      link: ROUTES.preventivi,
       icon: FileText,
     },
 
@@ -65,7 +69,7 @@ export default function Dashboard() {
       titolo: "Archivio",
       testo:
         "Consulta tutti i preventivi creati.",
-      link: "/archivio",
+      link: ROUTES.archivio,
       icon: Archive,
     },
 
@@ -73,15 +77,23 @@ export default function Dashboard() {
       titolo: "Clienti",
       testo:
         "Contatti, storico lavori e importi.",
-      link: "/clienti",
+      link: ROUTES.clienti,
       icon: Users,
+    },
+
+    {
+      titolo: "Cantieri",
+      testo:
+        "Stato lavori, checklist e materiali.",
+      link: ROUTES.cantieri,
+      icon: HardHat,
     },
 
     {
       titolo: "Listino",
       testo:
         "Prezzi aggiornati per interventi e materiali.",
-      link: "/listino",
+      link: ROUTES.listino,
       icon: List,
     },
 
@@ -150,7 +162,7 @@ export default function Dashboard() {
             </div>
 
             <Link
-              to="/impostazioni"
+              to={ROUTES.impostazioni}
               className="hidden sm:flex w-12 h-12 rounded-[14px] border border-white/10 bg-white/5 items-center justify-center text-slate-300"
               aria-label="Impostazioni"
             >

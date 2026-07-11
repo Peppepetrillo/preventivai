@@ -1,68 +1,71 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
+  Bot,
   Calculator,
   ClipboardList,
   FileCheck2,
+  Mic,
+  MicOff,
   Plus,
   Search,
+  Sparkles,
   Trash2,
   UserPlus,
 } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
-import { listinoBase } from "../data/listinoBase";
-import { leggiStorage, salvaStorage } from "../utils/storage";
 import {
   calcolaTotali,
-  creaNumeroPreventivo,
+  calcolaSaldo,
   formatEuro,
+  normalizzaNumero,
 } from "../utils/preventivi";
+import { ROUTES, routePreventivo } from "../app/routes";
+import { leggiClienti } from "../repositories/clientiRepository";
+import { leggiListino } from "../repositories/listinoRepository";
+import {
+  leggiPreventivi,
+  salvaNuovoPreventivo,
+} from "../repositories/preventiviRepository";
+import {
+  aggiornaCampoLavorazione,
+  creaLavorazioneDaVoce,
+  creaPreventivo,
+  incrementaLavorazione,
+} from "../features/preventivi/preventiviDomain";
+import { generaBozzaPreventivoAI } from "../features/preventivi/assistentePreventivi";
+import { useRiconoscimentoVocale } from "../hooks/useRiconoscimentoVocale";
 
 export default function Preventivi() {
   const navigate = useNavigate();
 
-  const [clienti] = useState(() => leggiStorage("clienti", []));
-  const [listino, setListino] = useState(() =>
-    leggiStorage("listinoLocale", listinoBase)
-  );
+  const [clienti] = useState(() => leggiClienti());
+  const [listino] = useState(() => leggiListino());
   const [clienteSelezionato, setClienteSelezionato] = useState("");
   const [ricerca, setRicerca] = useState("");
   const [lavorazioni, setLavorazioni] = useState([]);
   const [sconto, setSconto] = useState(0);
   const [iva, setIva] = useState(22);
+  const [validita, setValidita] = useState(30);
+  const [pagamento, setPagamento] = useState("Bonifico bancario");
+  const [acconto, setAcconto] = useState(0);
   const [note, setNote] = useState("");
-  const [caricamento, setCaricamento] = useState(true);
+  const [messaggio, setMessaggio] = useState("");
+  const [testoAssistente, setTestoAssistente] = useState("");
+  const [bozzaAssistente, setBozzaAssistente] = useState(null);
+  const [assistenteInElaborazione, setAssistenteInElaborazione] = useState(false);
 
-  useEffect(() => {
-    async function caricaListino() {
-      try {
-        const richiesta = supabase.from("listino").select("*").order("id");
-        const timeout = new Promise((resolve) => {
-          setTimeout(() => resolve({ data: null, error: true }), 2500);
-        });
-        const { data, error } = await Promise.race([richiesta, timeout]);
-
-        if (!error && data?.length) {
-          const listinoLocale = leggiStorage("listinoLocale", []);
-          const vociLocali = listinoLocale.filter((voce) =>
-            String(voce.id || "").startsWith("locale-")
-          );
-          const listinoNormalizzato = data.map((voce) => ({
-            ...voce,
-            categoria: voce.categoria || "Lavorazioni",
-            unita: voce.unita || "cad",
-          }));
-          const listinoAggiornato = [...listinoNormalizzato, ...vociLocali];
-          setListino(listinoAggiornato);
-          salvaStorage("listinoLocale", listinoAggiornato);
-        }
-      } finally {
-        setCaricamento(false);
-      }
-    }
-
-    caricaListino();
+  const aggiornaTestoDaVoce = useCallback((testo) => {
+    setTestoAssistente(testo);
   }, []);
+
+  const {
+    supportato: voceSupportata,
+    inAscolto,
+    avvia,
+    ferma,
+  } = useRiconoscimentoVocale({
+    onTesto: aggiornaTestoDaVoce,
+  });
 
   const vociFiltrate = useMemo(() => {
     const testo = ricerca.trim().toLowerCase();
@@ -74,6 +77,56 @@ export default function Preventivi() {
   }, [listino, ricerca]);
 
   const totali = calcolaTotali(lavorazioni, sconto, iva);
+  const saldo = calcolaSaldo(totali.totale, acconto);
+
+  async function generaBozzaConAssistente() {
+    if (!testoAssistente.trim()) {
+      setMessaggio("Scrivi o detta una richiesta prima di usare l'assistente.");
+      return;
+    }
+
+    setAssistenteInElaborazione(true);
+    setMessaggio("");
+
+    try {
+      const bozza = await generaBozzaPreventivoAI({
+        testo: testoAssistente,
+        clienti,
+        listino,
+      });
+
+      setBozzaAssistente(bozza);
+      setMessaggio(
+        bozza.avvisi?.length
+          ? bozza.avvisi.join(" ")
+          : "Bozza AI pronta: controlla i dati e applicala al preventivo."
+      );
+    } catch {
+      setMessaggio("Assistente AI non disponibile. Riprova tra poco.");
+    } finally {
+      setAssistenteInElaborazione(false);
+    }
+  }
+
+  function applicaBozzaAssistente() {
+    if (!bozzaAssistente) return;
+
+    if (bozzaAssistente.cliente) {
+      setClienteSelezionato(bozzaAssistente.cliente);
+    }
+
+    if (bozzaAssistente.lavorazioni?.length) {
+      setLavorazioni(bozzaAssistente.lavorazioni);
+    }
+
+    setSconto(normalizzaNumero(bozzaAssistente.sconto));
+    setIva(normalizzaNumero(bozzaAssistente.iva, 22));
+    setValidita(normalizzaNumero(bozzaAssistente.validita, 30));
+    setPagamento(bozzaAssistente.pagamento || "Bonifico bancario");
+    setAcconto(normalizzaNumero(bozzaAssistente.acconto));
+    setNote(bozzaAssistente.note || testoAssistente);
+    setMessaggio("Bozza AI applicata. Verifica il preventivo prima di salvarlo.");
+  }
 
   function aggiungiLavorazione(voce) {
     const esistente = lavorazioni.find((item) => item.nome === voce.nome);
@@ -82,7 +135,7 @@ export default function Preventivi() {
       setLavorazioni(
         lavorazioni.map((item) =>
           item.nome === voce.nome
-            ? { ...item, quantita: Number(item.quantita || 0) + 1 }
+            ? incrementaLavorazione(item)
             : item
         )
       );
@@ -91,14 +144,7 @@ export default function Preventivi() {
 
     setLavorazioni([
       ...lavorazioni,
-      {
-        id: `${voce.id ?? voce.nome}-${new Date().getTime()}`,
-        nome: voce.nome,
-        categoria: voce.categoria || "Lavorazioni",
-        prezzo: Number(voce.prezzo || 0),
-        quantita: 1,
-        unita: voce.unita || "cad",
-      },
+      creaLavorazioneDaVoce(voce),
     ]);
   }
 
@@ -106,13 +152,7 @@ export default function Preventivi() {
     setLavorazioni(
       lavorazioni.map((item, i) =>
         i === index
-          ? {
-              ...item,
-              [campo]:
-                campo === "prezzo" || campo === "quantita"
-                  ? Number(valore)
-                  : valore,
-            }
+          ? aggiornaCampoLavorazione(item, campo, valore)
           : item
       )
     );
@@ -124,41 +164,30 @@ export default function Preventivi() {
 
   function salvaPreventivo() {
     if (!clienteSelezionato) {
-      alert("Seleziona un cliente prima di salvare il preventivo.");
+      setMessaggio("Seleziona un cliente prima di salvare il preventivo.");
       return;
     }
 
     if (lavorazioni.length === 0) {
-      alert("Aggiungi almeno una lavorazione al preventivo.");
+      setMessaggio("Aggiungi almeno una lavorazione al preventivo.");
       return;
     }
 
-    const archivio = leggiStorage("archivioPreventivi", []);
-    const id = new Date().getTime();
-    const preventivo = {
-      id,
-      numero: creaNumeroPreventivo(archivio.length + 1),
+    const archivio = leggiPreventivi();
+    const preventivo = creaPreventivo({
+      archivio,
       cliente: clienteSelezionato,
       lavorazioni,
-      sconto: Number(sconto || 0),
-      iva: Number(iva || 0),
+      sconto: normalizzaNumero(sconto),
+      iva: normalizzaNumero(iva),
+      validita: normalizzaNumero(validita, 30),
+      pagamento: pagamento.trim(),
+      acconto: normalizzaNumero(acconto),
       note,
-      stato: "Bozza",
-      data: new Date().toLocaleDateString("it-IT"),
-      ...totali,
-    };
+    });
 
-    salvaStorage("archivioPreventivi", [...archivio, preventivo]);
-    window.dispatchEvent(new Event("preventivi-aggiornati"));
-    navigate(`/preventivo/${id}`);
-  }
-
-  if (caricamento) {
-    return (
-      <div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center">
-        <p className="text-white/50 text-lg">Caricamento listino...</p>
-      </div>
-    );
+    salvaNuovoPreventivo(preventivo);
+    navigate(routePreventivo(preventivo.id));
   }
 
   return (
@@ -181,11 +210,114 @@ export default function Preventivi() {
       </div>
 
       <div className="px-5 pt-5 space-y-6">
+        {messaggio && (
+          <div className="pro-panel p-4 text-yellow-100 border-yellow-300/30">
+            {messaggio}
+          </div>
+        )}
+
+        <section className="pro-panel-strong p-4 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-[14px] bg-yellow-400 text-slate-950 flex items-center justify-center">
+                <Bot size={22} />
+              </div>
+              <div>
+                <p className="section-label">Assistente AI</p>
+                <h2 className="text-xl font-black">Crea da testo o voce</h2>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={inAscolto ? ferma : avvia}
+              disabled={!voceSupportata}
+              className={`w-12 h-12 rounded-[14px] flex items-center justify-center ${
+                inAscolto
+                  ? "bg-red-500/20 text-red-100"
+                  : "bg-white/10 text-yellow-200 disabled:text-slate-600"
+              }`}
+              aria-label={inAscolto ? "Ferma dettatura" : "Avvia dettatura"}
+            >
+              {inAscolto ? <MicOff size={21} /> : <Mic size={21} />}
+            </button>
+          </div>
+
+          <textarea
+            value={testoAssistente}
+            onChange={(event) => setTestoAssistente(event.target.value)}
+            rows="4"
+            placeholder="Esempio: preventivo per Mario Rossi con 4 punti luce, 6 prese, quadro elettrico, sconto 5%, acconto 200 euro, pagamento con bonifico."
+            className="input-pro resize-none"
+          />
+
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <p className="text-sm text-slate-400">
+              {voceSupportata
+                ? inAscolto
+                  ? "Sto ascoltando..."
+                  : "Puoi dettare o scrivere la richiesta."
+                : "Dettatura non supportata da questo browser."}
+            </p>
+
+            <button
+              type="button"
+              onClick={generaBozzaConAssistente}
+              disabled={assistenteInElaborazione}
+              className="btn-primary px-5 py-4 flex items-center justify-center gap-2"
+            >
+              <Sparkles size={19} />
+              {assistenteInElaborazione ? "Genero..." : "Genera bozza"}
+            </button>
+          </div>
+
+          {bozzaAssistente && (
+            <div className="rounded-[16px] border border-yellow-300/25 bg-yellow-400/10 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-black">
+                    {bozzaAssistente.riepilogo?.vociTrovate || 0} lavorazioni trovate
+                  </p>
+                  <p className="text-sm text-slate-300 mt-1">
+                    Totale stimato {formatEuro(bozzaAssistente.riepilogo?.totale || 0)}
+                    {" · "}
+                    Saldo {formatEuro(bozzaAssistente.riepilogo?.saldo || 0)}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={applicaBozzaAssistente}
+                  className="btn-secondary px-5 py-3"
+                >
+                  Applica bozza
+                </button>
+              </div>
+
+              {bozzaAssistente.lavorazioni?.length > 0 && (
+                <div className="mt-4 grid gap-2">
+                  {bozzaAssistente.lavorazioni.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-3 text-sm"
+                    >
+                      <span className="text-slate-200">{item.nome}</span>
+                      <span className="text-yellow-200 font-bold">
+                        {item.quantita} {item.unita}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+
         <section className="pro-panel p-4">
           <div className="flex items-center justify-between gap-3 mb-3">
             <h2 className="text-xl font-black">Cliente</h2>
             <Link
-              to="/clienti"
+              to={ROUTES.clienti}
               className="text-yellow-300 text-sm font-bold flex items-center gap-1"
             >
               <UserPlus size={16} />
@@ -349,7 +481,7 @@ export default function Preventivi() {
                 type="number"
                 min="0"
                 value={sconto}
-                onChange={(event) => setSconto(Number(event.target.value))}
+                onChange={(event) => setSconto(normalizzaNumero(event.target.value))}
                 className="mt-2 input-pro"
               />
             </label>
@@ -360,10 +492,51 @@ export default function Preventivi() {
                 type="number"
                 min="0"
                 value={iva}
-                onChange={(event) => setIva(Number(event.target.value))}
+                onChange={(event) => setIva(normalizzaNumero(event.target.value))}
                 className="mt-2 input-pro"
               />
             </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-3">
+            <label>
+              <span className="text-sm text-white/50">Validità giorni</span>
+              <input
+                type="number"
+                min="0"
+                value={validita}
+                onChange={(event) => setValidita(normalizzaNumero(event.target.value))}
+                className="mt-2 input-pro"
+              />
+            </label>
+
+            <label>
+              <span className="text-sm text-white/50">Pagamento</span>
+              <input
+                value={pagamento}
+                onChange={(event) => setPagamento(event.target.value)}
+                placeholder="Esempio: 50% acconto, saldo a fine lavori"
+                className="mt-2 input-pro"
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label>
+              <span className="text-sm text-white/50">Acconto</span>
+              <input
+                type="number"
+                min="0"
+                value={acconto}
+                onChange={(event) => setAcconto(normalizzaNumero(event.target.value))}
+                className="mt-2 input-pro"
+              />
+            </label>
+
+            <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
+              <span className="text-sm text-white/50">Saldo previsto</span>
+              <p className="text-2xl font-black mt-1">{formatEuro(saldo)}</p>
+            </div>
           </div>
 
           <label className="block">
@@ -390,7 +563,7 @@ export default function Preventivi() {
                 {formatEuro(totali.totale)}
               </h2>
               <p className="text-white/45 text-xs">
-                Imponibile {formatEuro(totali.imponibile)}
+                Saldo {formatEuro(saldo)}
               </p>
             </div>
 

@@ -1,35 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, FileText } from "lucide-react";
-import { leggiStorage } from "../utils/storage";
+import { useArchivioPreventivi } from "../hooks/useArchivioPreventivi";
+import { formatEuro } from "../utils/preventivi";
 
 export default function ArchivioPreventivi() {
 
-  const [preventivi, setPreventivi] = useState([]);
+  const preventivi = useArchivioPreventivi();
   const [ricerca, setRicerca] = useState("");
-
-  useEffect(() => {
-
-    function aggiornaArchivio() {
-      const archivio = leggiStorage("archivioPreventivi", []);
-      setPreventivi([...archivio].reverse());
-    }
-
-    aggiornaArchivio();
-
-    window.addEventListener(
-      "preventivi-aggiornati",
-      aggiornaArchivio
-    );
-
-    return () => {
-      window.removeEventListener(
-        "preventivi-aggiornati",
-        aggiornaArchivio
-      );
-    };
-
-  }, []);
 
   const preventiviFiltrati = preventivi.filter((preventivo) =>
     (preventivo.cliente || "")
@@ -127,7 +105,7 @@ export default function ArchivioPreventivi() {
                 </div>
 
                 <p className="text-emerald-300 text-2xl font-black mt-4">
-                  € {Number(preventivo.totale || 0).toLocaleString("it-IT")}
+                  {formatEuro(preventivo.totale)}
                 </p>
 
               </div>

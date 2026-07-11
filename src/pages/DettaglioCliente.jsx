@@ -1,15 +1,20 @@
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, FileText, Mail, Phone, Wallet } from "lucide-react";
-import { leggiStorage } from "../utils/storage";
-import { formatEuro } from "../utils/preventivi";
+import { useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, FileText, Save, Trash2, Wallet } from "lucide-react";
+import { ROUTES, routePreventivo } from "../app/routes";
+import { leggiClienti, salvaClienti } from "../repositories/clientiRepository";
+import { leggiPreventivi, salvaPreventivi } from "../repositories/preventiviRepository";
+import { formatEuro, normalizzaNumero } from "../utils/preventivi";
 
 export default function DettaglioCliente() {
 
   const { id } =
     useParams();
+  const navigate =
+    useNavigate();
 
   const clienti =
-    leggiStorage("clienti", []);
+    leggiClienti();
 
   const cliente =
     clienti.find(
@@ -18,7 +23,16 @@ export default function DettaglioCliente() {
     );
 
   const archivio =
-    leggiStorage("archivioPreventivi", []);
+    leggiPreventivi();
+
+  const [nome, setNome] =
+    useState(cliente?.nome || "");
+  const [telefono, setTelefono] =
+    useState(cliente?.telefono || "");
+  const [email, setEmail] =
+    useState(cliente?.email || "");
+  const [messaggio, setMessaggio] =
+    useState("");
 
   const preventiviCliente =
     archivio.filter(
@@ -30,7 +44,7 @@ export default function DettaglioCliente() {
   const totaleLavori =
     preventiviCliente.reduce(
       (acc, item) =>
-        acc + Number(item.totale || 0),
+        acc + normalizzaNumero(item.totale),
       0
     );
 
@@ -48,12 +62,61 @@ export default function DettaglioCliente() {
 
   }
 
+  function salvaCliente() {
+    const nomePulito = nome.trim();
+
+    if (!nomePulito) {
+      setMessaggio("Inserisci il nome del cliente.");
+      return;
+    }
+
+    const clientiAggiornati =
+      clienti.map((item) =>
+        String(item.id) === id
+          ? {
+              ...item,
+              nome: nomePulito,
+              telefono: telefono.trim(),
+              email: email.trim(),
+            }
+          : item
+      );
+
+    const archivioAggiornato =
+      archivio.map((preventivo) =>
+        preventivo.cliente === cliente.nome
+          ? {
+              ...preventivo,
+              cliente: nomePulito,
+            }
+          : preventivo
+      );
+
+    salvaClienti(clientiAggiornati);
+    salvaPreventivi(archivioAggiornato);
+    setMessaggio("Cliente aggiornato sul dispositivo.");
+  }
+
+  function eliminaCliente() {
+    const conferma = window.confirm(
+      `Eliminare il cliente ${cliente.nome}? I preventivi già creati resteranno nell'archivio.`
+    );
+
+    if (!conferma) return;
+
+    const clientiAggiornati =
+      clienti.filter((item) => String(item.id) !== id);
+
+    salvaClienti(clientiAggiornati);
+    navigate(ROUTES.clienti);
+  }
+
   return (
 
     <div className="pro-page text-white">
 
       <Link
-        to="/clienti"
+        to={ROUTES.clienti}
         className="text-slate-400 flex items-center gap-2 mb-5"
       >
         <ArrowLeft size={18} />
@@ -82,6 +145,12 @@ export default function DettaglioCliente() {
 
       </div>
 
+      {messaggio && (
+        <div className="pro-panel p-4 mb-5 text-yellow-100 border-yellow-300/30">
+          {messaggio}
+        </div>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-[1fr_320px] mb-6">
 
         <div className="pro-panel p-5">
@@ -92,20 +161,52 @@ export default function DettaglioCliente() {
 
           </h2>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
 
-            <div className="flex items-center gap-3 text-slate-300">
+            <label className="block">
+              <span className="text-sm text-slate-400">Nome cliente</span>
+              <input
+                value={nome}
+                onChange={(event) => setNome(event.target.value)}
+                className="mt-2 input-pro"
+              />
+            </label>
 
-              <Phone size={18} className="text-yellow-300" />
-              <span>{cliente.telefono || "-"}</span>
+            <label className="block">
+              <span className="text-sm text-slate-400">Telefono</span>
+              <input
+                value={telefono}
+                onChange={(event) => setTelefono(event.target.value)}
+                className="mt-2 input-pro"
+              />
+            </label>
 
-            </div>
+            <label className="block">
+              <span className="text-sm text-slate-400">Email</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className="mt-2 input-pro"
+              />
+            </label>
 
-            <div className="flex items-center gap-3 text-slate-300">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                onClick={salvaCliente}
+                className="btn-primary p-4 flex items-center justify-center gap-2"
+              >
+                <Save size={19} />
+                Salva cliente
+              </button>
 
-              <Mail size={18} className="text-yellow-300" />
-              <span>{cliente.email || "-"}</span>
-
+              <button
+                onClick={eliminaCliente}
+                className="rounded-[14px] border border-red-400/25 bg-red-500/10 p-4 font-black text-red-100 flex items-center justify-center gap-2"
+              >
+                <Trash2 size={19} />
+                Elimina
+              </button>
             </div>
 
           </div>
@@ -157,7 +258,7 @@ export default function DettaglioCliente() {
 
               <Link
                 key={preventivo.id}
-                to={`/preventivo/${preventivo.id}`}
+                to={routePreventivo(preventivo.id)}
                 className="pro-panel p-5 block hover:border-yellow-300/40 transition"
               >
 

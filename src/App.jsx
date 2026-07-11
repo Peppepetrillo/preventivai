@@ -1,85 +1,117 @@
 import {
-  BrowserRouter,
+  lazy,
+  Suspense,
+} from "react";
+
+import {
+  HashRouter,
   Routes,
   Route,
 } from "react-router-dom";
 
-import Dashboard from "./pages/Dashboard";
-import Preventivi from "./pages/Preventivi";
-import ArchivioPreventivi from "./pages/ArchivioPreventivi";
-import Clienti from "./pages/Clienti";
-import Listino from "./pages/Listino";
-import Impostazioni from "./pages/Impostazioni";
-import DettaglioPreventivo from "./pages/DettaglioPreventivo";
-import DettaglioCliente from "./pages/DettaglioCliente";
-
 import BottomNav from "./components/BottomNav";
+import AppLock from "./components/AppLock";
+import { ROUTES } from "./app/routes";
+
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Preventivi = lazy(() => import("./pages/Preventivi"));
+const ArchivioPreventivi = lazy(() => import("./pages/ArchivioPreventivi"));
+const Cantieri = lazy(() => import("./pages/Cantieri"));
+const Clienti = lazy(() => import("./pages/Clienti"));
+const Listino = lazy(() => import("./pages/Listino"));
+const Impostazioni = lazy(() => import("./pages/Impostazioni"));
+const DettaglioPreventivo = lazy(() => import("./pages/DettaglioPreventivo"));
+const DettaglioCliente = lazy(() => import("./pages/DettaglioCliente"));
+
+function LoadingPage() {
+  return (
+    <div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center px-5">
+      <div className="pro-panel-strong p-6 text-center">
+        <p className="section-label">PreventivAI</p>
+        <h1 className="text-3xl font-black mt-1">Caricamento...</h1>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
 
   return (
 
-    <BrowserRouter>
+    <AppLock>
+
+    <HashRouter>
 
       <div className="app-shell">
 
-        <Routes>
+        <Suspense fallback={<LoadingPage />}>
 
-          <Route
-            path="/"
-            element={<Dashboard />}
-          />
+          <Routes>
 
-          <Route
-            path="/preventivi"
-            element={<Preventivi />}
-          />
+            <Route
+              path={ROUTES.dashboard}
+              element={<Dashboard />}
+            />
 
-          <Route
-            path="/archivio"
-            element={
-              <ArchivioPreventivi />
-            }
-          />
+            <Route
+              path={ROUTES.preventivi}
+              element={<Preventivi />}
+            />
 
-          <Route
-            path="/clienti"
-            element={<Clienti />}
-          />
+            <Route
+              path={ROUTES.archivio}
+              element={
+                <ArchivioPreventivi />
+              }
+            />
 
-          <Route
-            path="/listino"
-            element={<Listino />}
-          />
+            <Route
+              path={ROUTES.cantieri}
+              element={<Cantieri />}
+            />
 
-          <Route
-            path="/impostazioni"
-            element={
-              <Impostazioni />
-            }
-          />
+            <Route
+              path={ROUTES.clienti}
+              element={<Clienti />}
+            />
 
-          <Route
-            path="/preventivo/:id"
-            element={
-              <DettaglioPreventivo />
-            }
-          />
+            <Route
+              path={ROUTES.listino}
+              element={<Listino />}
+            />
 
-          <Route
-            path="/cliente/:id"
-            element={
-              <DettaglioCliente />
-            }
-          />
+            <Route
+              path={ROUTES.impostazioni}
+              element={
+                <Impostazioni />
+              }
+            />
 
-        </Routes>
+            <Route
+              path={ROUTES.dettaglioPreventivo}
+              element={
+                <DettaglioPreventivo />
+              }
+            />
+
+            <Route
+              path={ROUTES.dettaglioCliente}
+              element={
+                <DettaglioCliente />
+              }
+            />
+
+          </Routes>
+
+        </Suspense>
 
         <BottomNav />
 
       </div>
 
-    </BrowserRouter>
+    </HashRouter>
+
+    </AppLock>
 
   );
 

@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 
 import PageWrapper from "../components/PageWrapper";
-import { leggiStorage } from "../utils/storage";
+import { routeCliente } from "../app/routes";
+import { leggiClienti, salvaClienti as salvaClientiRepository } from "../repositories/clientiRepository";
 
 import {
   motion,
@@ -27,7 +28,7 @@ export default function Clienti() {
 
   const [clienti, setClienti] =
     useState(() =>
-      leggiStorage("clienti", [])
+      leggiClienti()
     );
 
   const [nome, setNome] =
@@ -47,12 +48,7 @@ export default function Clienti() {
       nuoviClienti
     );
 
-    localStorage.setItem(
-      "clienti",
-      JSON.stringify(
-        nuoviClienti
-      )
-    );
+    salvaClientiRepository(nuoviClienti);
 
   }
 
@@ -210,7 +206,7 @@ export default function Clienti() {
                 }}
                 onClick={() =>
                   navigate(
-                    `/cliente/${cliente.id}`
+                    routeCliente(cliente.id)
                   )
                 }
                 className="pro-panel p-5 hover:border-yellow-300/40 transition"

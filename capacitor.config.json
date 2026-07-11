@@ -1,0 +1,8 @@
+{
+  "appId": "com.preventivai.app",
+  "appName": "PreventivAI",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

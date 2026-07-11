@@ -5,29 +5,44 @@ import {
 import {
   Download,
   Building2,
+  Cloud,
   ImagePlus,
+  LockKeyhole,
+  LogOut,
+  Upload,
   X,
 } from "lucide-react";
 
 import PageWrapper from "../components/PageWrapper";
-import { leggiStorage } from "../utils/storage";
+import {
+  creaBackupCompleto,
+  nomeFileBackup,
+  ripristinaBackupCompleto,
+} from "../utils/backup";
+import {
+  leggiDatiAzienda,
+  leggiPinAccesso,
+  salvaDatiAzienda,
+  salvaPinAccesso,
+} from "../repositories/impostazioniRepository";
+import { useCloudAuth } from "../contexts/cloudAuthContext";
 
 export default function Impostazioni() {
+  const cloudAuth = useCloudAuth();
 
   const datiSalvati =
-    leggiStorage("datiAzienda", {});
+    leggiDatiAzienda();
 
   const [nomeDitta, setNomeDitta] = useState(datiSalvati.nomeDitta || "");
   const [telefono, setTelefono] = useState(datiSalvati.telefono || "");
   const [email, setEmail] = useState(datiSalvati.email || "");
   const [logo, setLogo] = useState(datiSalvati.logo || "");
+  const [pinAccesso, setPinAccesso] = useState(leggiPinAccesso());
+  const [messaggio, setMessaggio] = useState("");
 
   function salvaDati() {
-    localStorage.setItem(
-      "datiAzienda",
-      JSON.stringify({ nomeDitta, telefono, email, logo })
-    );
-    alert("Dati azienda salvati.");
+    salvaDatiAzienda({ nomeDitta, telefono, email, logo });
+    setMessaggio("Dati azienda salvati sul dispositivo.");
   }
 
   function caricaLogo(event) {
@@ -36,45 +51,66 @@ export default function Impostazioni() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Seleziona un file immagine.");
+      setMessaggio("Seleziona un file immagine valido.");
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
       setLogo(String(reader.result || ""));
+      setMessaggio("Logo caricato. Ricorda di salvare i dati azienda.");
     };
     reader.readAsDataURL(file);
   }
 
   function esportaBackup() {
-    const clienti = leggiStorage("clienti", []);
-
-    if (clienti.length === 0) {
-      alert("Nessun cliente da esportare");
-      return;
-    }
-
-    const intestazione = ["Nome", "Telefono", "Email"];
-    const righe = clienti.map((cliente) => [
-      cliente.nome,
-      cliente.telefono,
-      cliente.email,
-    ]);
-
-    const formattaCampoCsv = (valore) =>
-      `"${String(valore || "").replaceAll("\"", "\"\"")}"`;
-
-    const csvContent = [intestazione, ...righe]
-      .map((riga) => riga.map(formattaCampoCsv).join(","))
-      .join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const backup = creaBackupCompleto();
+    const contenuto = JSON.stringify(backup, null, 2);
+    const blob = new Blob([contenuto], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "preventivai-backup.csv";
+    link.download = nomeFileBackup();
     link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importaBackup(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const backup = JSON.parse(String(reader.result || ""));
+        await ripristinaBackupCompleto(backup);
+        setMessaggio("Backup ripristinato. Ricarico l'app...");
+        window.location.reload();
+      } catch {
+        setMessaggio("Il file selezionato non è un backup valido di PreventivAI.");
+      } finally {
+        event.target.value = "";
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function salvaPin() {
+    const pinPulito = pinAccesso.trim();
+
+    if (pinPulito && pinPulito.length < 4) {
+      setMessaggio("Usa un PIN di almeno 4 cifre.");
+      return;
+    }
+
+    salvaPinAccesso(pinPulito);
+    sessionStorage.removeItem("preventivai-sbloccata");
+    setMessaggio(
+      pinPulito
+        ? "PIN app aggiornato. Verrà richiesto alla prossima apertura."
+        : "PIN app rimosso."
+    );
   }
 
   return (
@@ -85,6 +121,55 @@ export default function Impostazioni() {
           <p className="section-label">Configurazione</p>
           <h1 className="text-3xl sm:text-4xl font-black mt-1">Impostazioni</h1>
           <p className="text-slate-400 mt-2">Dati aziendali, PDF e backup.</p>
+        </div>
+
+        {messaggio && (
+          <div className="pro-panel p-4 mb-5 text-yellow-100 border-yellow-300/30">
+            {messaggio}
+          </div>
+        )}
+
+        <div className="pro-panel p-5 mb-5">
+          <div className="flex items-center gap-4 mb-5">
+            <Cloud size={28} />
+            <div>
+              <h2 className="text-2xl font-bold">Cloud Supabase</h2>
+              <p className="text-slate-400 mt-1">
+                Account, sincronizzazione e sessione.
+              </p>
+            </div>
+          </div>
+
+          {cloudAuth.configurato ? (
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+              <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
+                <p className="text-sm text-slate-400">Account</p>
+                <p className="font-black mt-1">
+                  {cloudAuth.utente?.email || "Non autenticato"}
+                </p>
+                <p className="text-sm text-slate-400 mt-2">
+                  Stato: {cloudAuth.sincronizzazione}
+                </p>
+                {cloudAuth.errore && (
+                  <p className="text-sm text-yellow-100 mt-2">
+                    {cloudAuth.errore}
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={cloudAuth.esci}
+                className="rounded-[14px] border border-red-400/25 bg-red-500/10 px-5 py-4 font-black text-red-100 flex items-center justify-center gap-2"
+              >
+                <LogOut size={19} />
+                Esci
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4 text-slate-400">
+              Configura `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` per attivare il cloud.
+            </div>
+          )}
         </div>
 
         <div className="pro-panel p-5 mb-5">
@@ -175,20 +260,67 @@ export default function Impostazioni() {
           </div>
         </div>
 
+        <div className="pro-panel p-5 mb-5">
+          <div className="flex items-center gap-4 mb-5">
+            <LockKeyhole size={28} />
+            <div>
+              <h2 className="text-2xl font-bold">Blocco app</h2>
+              <p className="text-slate-400 mt-1">
+                Proteggi clienti e preventivi con un PIN locale.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <input
+              type="password"
+              inputMode="numeric"
+              placeholder="PIN di accesso"
+              value={pinAccesso}
+              onChange={(event) => setPinAccesso(event.target.value)}
+              className="input-pro"
+            />
+
+            <button
+              onClick={salvaPin}
+              className="btn-primary px-5 py-4"
+            >
+              Salva PIN
+            </button>
+          </div>
+        </div>
+
         <div className="pro-panel p-5">
           <div className="flex items-center gap-4 mb-5">
             <Download size={28} />
             <div>
-              <h2 className="text-2xl font-bold">Backup CSV</h2>
-              <p className="text-slate-400 mt-1">Esporta tutti i clienti</p>
+              <h2 className="text-2xl font-bold">Backup dati</h2>
+              <p className="text-slate-400 mt-1">
+                Esporta o ripristina clienti, preventivi, listino e dati azienda.
+              </p>
             </div>
           </div>
-          <button
-            onClick={esportaBackup}
-            className="w-full btn-secondary p-5 text-lg"
-          >
-            Esporta backup
-          </button>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              onClick={esportaBackup}
+              className="w-full btn-secondary p-5 text-lg flex items-center justify-center gap-2"
+            >
+              <Download size={20} />
+              Esporta backup
+            </button>
+
+            <label className="w-full btn-secondary p-5 text-lg flex items-center justify-center gap-2 cursor-pointer">
+              <Upload size={20} />
+              Importa backup
+              <input
+                type="file"
+                accept="application/json,.json"
+                onChange={importaBackup}
+                className="hidden"
+              />
+            </label>
+          </div>
         </div>
 
       </div>

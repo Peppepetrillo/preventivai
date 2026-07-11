@@ -2,6 +2,7 @@ import {
   Home,
   FileText,
   Archive,
+  HardHat,
   Settings,
   List,
   Users,
@@ -12,6 +13,8 @@ import {
   useLocation,
 } from "react-router-dom";
 
+import { ROUTES } from "../app/routes";
+
 export default function BottomNav() {
 
   const location =
@@ -21,37 +24,43 @@ export default function BottomNav() {
 
     {
       nome: "Home",
-      path: "/",
+      path: ROUTES.dashboard,
       icon: Home,
     },
 
     {
       nome: "Preventivi",
-      path: "/preventivi",
+      path: ROUTES.preventivi,
       icon: FileText,
     },
 
     {
       nome: "Archivio",
-      path: "/archivio",
+      path: ROUTES.archivio,
       icon: Archive,
     },
 
     {
+      nome: "Cantieri",
+      path: ROUTES.cantieri,
+      icon: HardHat,
+    },
+
+    {
       nome: "Clienti",
-      path: "/clienti",
+      path: ROUTES.clienti,
       icon: Users,
     },
 
     {
       nome: "Listino",
-      path: "/listino",
+      path: ROUTES.listino,
       icon: List,
     },
 
     {
       nome: "Altro",
-      path: "/impostazioni",
+      path: ROUTES.impostazioni,
       icon: Settings,
     },
 
@@ -73,11 +82,11 @@ export default function BottomNav() {
             const attivo =
               location.pathname === item.path ||
               (
-                item.path === "/archivio" &&
+                item.path === ROUTES.archivio &&
                 location.pathname.startsWith("/preventivo/")
               ) ||
               (
-                item.path === "/clienti" &&
+                item.path === ROUTES.clienti &&
                 location.pathname.startsWith("/cliente/")
               );
 
