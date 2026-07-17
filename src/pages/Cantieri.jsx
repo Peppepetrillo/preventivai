@@ -1,4 +1,3 @@
-import { useMemo, useState } from "react";
 import {
   Camera,
   CheckCircle,
@@ -12,203 +11,38 @@ import {
   Trash2,
 } from "lucide-react";
 import PageWrapper from "../components/PageWrapper";
+import NuovoCantiereForm from "../features/cantieri/components/NuovoCantiereForm";
 import {
   calcolaAvanzamentoChecklist,
-  creaCantiere,
-  creaFoto,
-  creaMateriale,
-  creaVoceChecklist,
   STATI_CANTIERE,
-  aggiornaCantiere,
 } from "../features/cantieri/cantieriDomain";
-import { leggiCantieri, salvaCantieri } from "../repositories/cantieriRepository";
-
-const FORM_CANTIERE_INIZIALE = {
-  nome: "",
-  cliente: "",
-  indirizzo: "",
-};
-
-const FORM_MATERIALE_INIZIALE = {
-  nome: "",
-  quantita: "",
-  unita: "cad",
-};
+import { useCantieri } from "../features/cantieri/hooks/useCantieri";
 
 export default function Cantieri() {
-  const [cantieri, setCantieri] = useState(() => leggiCantieri());
-  const [cantiereSelezionatoId, setCantiereSelezionatoId] = useState(
-    () => cantieri[0]?.id || ""
-  );
-  const [nuovoCantiere, setNuovoCantiere] = useState(FORM_CANTIERE_INIZIALE);
-  const [nuovaChecklist, setNuovaChecklist] = useState("");
-  const [nuovoMateriale, setNuovoMateriale] = useState(FORM_MATERIALE_INIZIALE);
-  const [messaggio, setMessaggio] = useState("");
-
-  const cantiereSelezionato = useMemo(
-    () =>
-      cantieri.find(
-        (cantiere) => String(cantiere.id) === String(cantiereSelezionatoId)
-      ) || cantieri[0],
-    [cantieri, cantiereSelezionatoId]
-  );
-
-  const avanzamento = cantiereSelezionato
-    ? calcolaAvanzamentoChecklist(cantiereSelezionato.checklist || [])
-    : 0;
-
-  function salvaListaCantieri(cantieriAggiornati) {
-    setCantieri(cantieriAggiornati);
-    salvaCantieri(cantieriAggiornati);
-  }
-
-  function aggiornaCampoNuovoCantiere(campo, valore) {
-    setNuovoCantiere({
-      ...nuovoCantiere,
-      [campo]: valore,
-    });
-  }
-
-  function aggiungiCantiere() {
-    if (!nuovoCantiere.nome.trim()) {
-      setMessaggio("Inserisci il nome del cantiere.");
-      return;
-    }
-
-    const cantiere = creaCantiere(nuovoCantiere);
-    const cantieriAggiornati = [cantiere, ...cantieri];
-
-    salvaListaCantieri(cantieriAggiornati);
-    setCantiereSelezionatoId(cantiere.id);
-    setNuovoCantiere(FORM_CANTIERE_INIZIALE);
-    setMessaggio("Cantiere creato sul dispositivo.");
-  }
-
-  function aggiornaSelezionato(modifiche) {
-    if (!cantiereSelezionato) return;
-
-    salvaListaCantieri(
-      cantieri.map((cantiere) =>
-        String(cantiere.id) === String(cantiereSelezionato.id)
-          ? aggiornaCantiere(cantiere, modifiche)
-          : cantiere
-      )
-    );
-  }
-
-  function eliminaCantiere() {
-    if (!cantiereSelezionato) return;
-
-    const conferma = window.confirm(
-      `Eliminare il cantiere ${cantiereSelezionato.nome}?`
-    );
-
-    if (!conferma) return;
-
-    const cantieriAggiornati = cantieri.filter(
-      (cantiere) => String(cantiere.id) !== String(cantiereSelezionato.id)
-    );
-
-    salvaListaCantieri(cantieriAggiornati);
-    setCantiereSelezionatoId(cantieriAggiornati[0]?.id || "");
-    setMessaggio("Cantiere eliminato.");
-  }
-
-  function aggiungiChecklist() {
-    if (!cantiereSelezionato || !nuovaChecklist.trim()) return;
-
-    aggiornaSelezionato({
-      checklist: [
-        ...(cantiereSelezionato.checklist || []),
-        creaVoceChecklist(nuovaChecklist),
-      ],
-    });
-    setNuovaChecklist("");
-  }
-
-  function aggiornaChecklist(voceId, modifiche) {
-    aggiornaSelezionato({
-      checklist: (cantiereSelezionato.checklist || []).map((voce) =>
-        String(voce.id) === String(voceId)
-          ? {
-              ...voce,
-              ...modifiche,
-            }
-          : voce
-      ),
-    });
-  }
-
-  function eliminaChecklist(voceId) {
-    aggiornaSelezionato({
-      checklist: (cantiereSelezionato.checklist || []).filter(
-        (voce) => String(voce.id) !== String(voceId)
-      ),
-    });
-  }
-
-  function aggiornaCampoMateriale(campo, valore) {
-    setNuovoMateriale({
-      ...nuovoMateriale,
-      [campo]: valore,
-    });
-  }
-
-  function aggiungiMateriale() {
-    if (!cantiereSelezionato || !nuovoMateriale.nome.trim()) return;
-
-    aggiornaSelezionato({
-      materiali: [
-        ...(cantiereSelezionato.materiali || []),
-        creaMateriale(nuovoMateriale),
-      ],
-    });
-    setNuovoMateriale(FORM_MATERIALE_INIZIALE);
-  }
-
-  function eliminaMateriale(materialeId) {
-    aggiornaSelezionato({
-      materiali: (cantiereSelezionato.materiali || []).filter(
-        (materiale) => String(materiale.id) !== String(materialeId)
-      ),
-    });
-  }
-
-  function aggiungiFoto(event) {
-    const file = event.target.files?.[0];
-
-    if (!file || !cantiereSelezionato) return;
-
-    if (!file.type.startsWith("image/")) {
-      setMessaggio("Seleziona una foto valida.");
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      aggiornaSelezionato({
-        foto: [
-          ...(cantiereSelezionato.foto || []),
-          creaFoto({
-            nome: file.name,
-            src: String(reader.result || ""),
-          }),
-        ],
-      });
-      setMessaggio("Foto aggiunta al cantiere.");
-      event.target.value = "";
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function eliminaFoto(fotoId) {
-    aggiornaSelezionato({
-      foto: (cantiereSelezionato.foto || []).filter(
-        (foto) => String(foto.id) !== String(fotoId)
-      ),
-    });
-  }
+  const {
+    cantieri,
+    cantiereSelezionato,
+    nuovoCantiere,
+    nuovaChecklist,
+    nuovoMateriale,
+    messaggio,
+    avanzamento,
+    setCantiereSelezionatoId,
+    setNuovaChecklist,
+    aggiornaCampoNuovoCantiere,
+    aggiungiCantiere,
+    aggiornaSelezionato,
+    eliminaCantiere,
+    aggiungiChecklist,
+    aggiornaChecklist,
+    eliminaChecklist,
+    aggiornaCampoMateriale,
+    aggiungiMateriale,
+    eliminaMateriale,
+    aggiungiFoto,
+    eliminaFoto,
+    apriFoto,
+  } = useCantieri();
 
   return (
     <PageWrapper>
@@ -227,46 +61,11 @@ export default function Cantieri() {
           </div>
         )}
 
-        <section className="pro-panel p-5 mb-5">
-          <div className="flex items-center gap-3 mb-4">
-            <HardHat size={24} className="text-yellow-300" />
-            <h2 className="text-xl font-black">Nuovo cantiere</h2>
-          </div>
-
-          <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto]">
-            <input
-              value={nuovoCantiere.nome}
-              onChange={(event) =>
-                aggiornaCampoNuovoCantiere("nome", event.target.value)
-              }
-              placeholder="Nome cantiere"
-              className="input-pro"
-            />
-            <input
-              value={nuovoCantiere.cliente}
-              onChange={(event) =>
-                aggiornaCampoNuovoCantiere("cliente", event.target.value)
-              }
-              placeholder="Cliente"
-              className="input-pro"
-            />
-            <input
-              value={nuovoCantiere.indirizzo}
-              onChange={(event) =>
-                aggiornaCampoNuovoCantiere("indirizzo", event.target.value)
-              }
-              placeholder="Indirizzo"
-              className="input-pro"
-            />
-            <button
-              onClick={aggiungiCantiere}
-              className="btn-primary px-5 py-4 flex items-center justify-center gap-2"
-            >
-              <Plus size={19} />
-              Crea
-            </button>
-          </div>
-        </section>
+        <NuovoCantiereForm
+          cantiere={nuovoCantiere}
+          onAggiornaCampo={aggiornaCampoNuovoCantiere}
+          onCreaCantiere={aggiungiCantiere}
+        />
 
         <div className="grid gap-5 xl:grid-cols-[340px_1fr]">
           <aside className="space-y-3">
@@ -561,9 +360,10 @@ export default function Cantieri() {
                           className="overflow-hidden rounded-[14px] border border-white/10 bg-black/[0.14]"
                         >
                           <img
-                            src={foto.src}
+                            src={foto.miniatura || foto.src}
                             alt={foto.nome}
-                            className="h-36 w-full object-cover"
+                            className="h-36 w-full object-cover cursor-pointer"
+                            onClick={() => apriFoto(foto)}
                           />
                           <div className="flex items-center justify-between gap-3 p-3">
                             <div className="min-w-0">

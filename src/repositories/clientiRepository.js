@@ -1,15 +1,17 @@
 import { STORAGE_FALLBACKS, STORAGE_KEYS } from "../app/storageKeys";
-import { leggiDatoLocale, salvaDatoLocale } from "./localStorageRepository";
+import { creaRepositoryLocale } from "./localStorageRepository";
+
+const clientiRepository = creaRepositoryLocale(
+  STORAGE_KEYS.clienti,
+  STORAGE_FALLBACKS[STORAGE_KEYS.clienti]
+);
 
 export function leggiClienti() {
-  return leggiDatoLocale(
-    STORAGE_KEYS.clienti,
-    STORAGE_FALLBACKS[STORAGE_KEYS.clienti]
-  );
+  return clientiRepository.leggi();
 }
 
 export function salvaClienti(clienti) {
-  return salvaDatoLocale(STORAGE_KEYS.clienti, clienti);
+  return clientiRepository.salva(clienti);
 }
 
 export function trovaCliente(id) {

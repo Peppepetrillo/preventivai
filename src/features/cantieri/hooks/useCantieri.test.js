@@ -1,0 +1,54 @@
+import { act, renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { STORAGE_KEYS } from "../../../app/storageKeys";
+import { useCantieri } from "./useCantieri";
+
+vi.mock("../../../services/cloudSyncService", () => ({
+  creaUrlFirmatoFotoCantiere: vi.fn(),
+  eliminaFotoCantiereStorage: vi.fn(),
+  salvaDatoCloud: vi.fn(),
+}));
+
+describe("useCantieri", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("crea un cantiere e lo salva mantenendolo selezionato", () => {
+    const { result } = renderHook(() => useCantieri());
+
+    act(() => {
+      result.current.aggiornaCampoNuovoCantiere("nome", "Ristrutturazione");
+    });
+
+    act(() => {
+      result.current.aggiungiCantiere();
+    });
+
+    expect(result.current.cantieri).toHaveLength(1);
+    expect(result.current.cantiereSelezionato.nome).toBe("Ristrutturazione");
+    expect(result.current.messaggio).toBe("Cantiere creato sul dispositivo.");
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.cantieri))).toHaveLength(1);
+  });
+
+  it("aggiunge una voce checklist al cantiere selezionato", () => {
+    const { result } = renderHook(() => useCantieri());
+
+    act(() => {
+      result.current.aggiornaCampoNuovoCantiere("nome", "Cantiere Test");
+    });
+    act(() => {
+      result.current.aggiungiCantiere();
+    });
+    act(() => {
+      result.current.setNuovaChecklist("Misurare pareti");
+    });
+    act(() => {
+      result.current.aggiungiChecklist();
+    });
+
+    expect(result.current.cantiereSelezionato.checklist).toHaveLength(1);
+    expect(result.current.cantiereSelezionato.checklist[0].testo).toBe("Misurare pareti");
+    expect(result.current.nuovaChecklist).toBe("");
+  });
+});

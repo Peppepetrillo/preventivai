@@ -1,24 +1,28 @@
 import { STORAGE_FALLBACKS, STORAGE_KEYS } from "../app/storageKeys";
-import { leggiDatoLocale, salvaDatoLocale } from "./localStorageRepository";
+import { creaRepositoryLocale } from "./localStorageRepository";
+
+const datiAziendaRepository = creaRepositoryLocale(
+  STORAGE_KEYS.datiAzienda,
+  STORAGE_FALLBACKS[STORAGE_KEYS.datiAzienda]
+);
+
+const pinAccessoRepository = creaRepositoryLocale(
+  STORAGE_KEYS.pinAccesso,
+  STORAGE_FALLBACKS[STORAGE_KEYS.pinAccesso]
+);
 
 export function leggiDatiAzienda() {
-  return leggiDatoLocale(
-    STORAGE_KEYS.datiAzienda,
-    STORAGE_FALLBACKS[STORAGE_KEYS.datiAzienda]
-  );
+  return datiAziendaRepository.leggi();
 }
 
 export function salvaDatiAzienda(datiAzienda) {
-  return salvaDatoLocale(STORAGE_KEYS.datiAzienda, datiAzienda);
+  return datiAziendaRepository.salva(datiAzienda);
 }
 
 export function leggiPinAccesso() {
-  return leggiDatoLocale(
-    STORAGE_KEYS.pinAccesso,
-    STORAGE_FALLBACKS[STORAGE_KEYS.pinAccesso]
-  );
+  return pinAccessoRepository.leggi();
 }
 
 export function salvaPinAccesso(pinAccesso) {
-  return salvaDatoLocale(STORAGE_KEYS.pinAccesso, pinAccesso);
+  return pinAccessoRepository.salva(pinAccesso);
 }

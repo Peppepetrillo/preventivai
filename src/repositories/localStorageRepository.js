@@ -10,3 +10,14 @@ export function salvaDatoLocale(chiave, valore) {
   salvaDatoCloud(chiave, valore);
   return risultato;
 }
+
+export function creaRepositoryLocale(chiave, fallback) {
+  return {
+    leggi() {
+      return leggiDatoLocale(chiave, fallback);
+    },
+    salva(valore) {
+      return salvaDatoLocale(chiave, valore);
+    },
+  };
+}

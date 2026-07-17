@@ -1,13 +1,15 @@
 import { STORAGE_FALLBACKS, STORAGE_KEYS } from "../app/storageKeys";
-import { leggiDatoLocale, salvaDatoLocale } from "./localStorageRepository";
+import { creaRepositoryLocale } from "./localStorageRepository";
+
+const listinoRepository = creaRepositoryLocale(
+  STORAGE_KEYS.listino,
+  STORAGE_FALLBACKS[STORAGE_KEYS.listino]
+);
 
 export function leggiListino() {
-  return leggiDatoLocale(
-    STORAGE_KEYS.listino,
-    STORAGE_FALLBACKS[STORAGE_KEYS.listino]
-  );
+  return listinoRepository.leggi();
 }
 
 export function salvaListino(listino) {
-  return salvaDatoLocale(STORAGE_KEYS.listino, listino);
+  return listinoRepository.salva(listino);
 }
