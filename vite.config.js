@@ -39,6 +39,8 @@ export default defineConfig({
         description:
           "Gestionale locale per preventivi da elettricista",
 
+        lang: "it",
+
         theme_color:
           "#020617",
 

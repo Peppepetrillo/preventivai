@@ -1,4 +1,5 @@
 export const STATI_CANTIERE = [
+  "Da iniziare",
   "Da avviare",
   "In corso",
   "In pausa",
@@ -11,13 +12,40 @@ export function creaCantiere({ nome, cliente, indirizzo }) {
     nome: nome.trim(),
     cliente: cliente.trim(),
     indirizzo: indirizzo.trim(),
-    stato: "Da avviare",
+    stato: "Da iniziare",
     checklist: [],
     materiali: [],
     foto: [],
     note: "",
     creatoIl: new Date().toLocaleDateString("it-IT"),
     aggiornatoIl: new Date().toLocaleDateString("it-IT"),
+  };
+}
+
+export function creaCantiereDaPreventivo(preventivo) {
+  const data = new Date().toLocaleDateString("it-IT");
+  const riferimento = preventivo.numero || `PREV-${preventivo.id}`;
+  const lavorazioni = preventivo.lavorazioni || [];
+
+  return {
+    id: new Date().getTime(),
+    nome: `Cantiere ${riferimento}`,
+    cliente: String(preventivo.cliente || "").trim(),
+    indirizzo: "",
+    stato: "Da iniziare",
+    preventivoId: preventivo.id,
+    preventivoNumero: riferimento,
+    lavorazioniOrigine: lavorazioni.map((lavorazione) => ({ ...lavorazione })),
+    checklist: lavorazioni.map((lavorazione, index) => ({
+      id: `${preventivo.id}-check-${index}`,
+      testo: `Eseguire ${lavorazione.nome}`,
+      completata: false,
+    })),
+    materiali: [],
+    foto: [],
+    note: `Creato dal preventivo ${riferimento}.`,
+    creatoIl: data,
+    aggiornatoIl: data,
   };
 }
 

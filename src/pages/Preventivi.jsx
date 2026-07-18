@@ -5,6 +5,7 @@ import {
   Calculator,
   ClipboardList,
   FileCheck2,
+  Layers,
   Mic,
   MicOff,
   Plus,
@@ -33,6 +34,10 @@ import {
   incrementaLavorazione,
 } from "../features/preventivi/preventiviDomain";
 import { generaBozzaPreventivoAI } from "../features/preventivi/assistentePreventivi";
+import {
+  aggiungiKitALavorazioni,
+  KIT_LISTINO,
+} from "../features/preventivi/kitListinoDomain";
 import { useRiconoscimentoVocale } from "../hooks/useRiconoscimentoVocale";
 
 export default function Preventivi() {
@@ -146,6 +151,11 @@ export default function Preventivi() {
       ...lavorazioni,
       creaLavorazioneDaVoce(voce),
     ]);
+  }
+
+  function aggiungiKit(kit) {
+    setLavorazioni(aggiungiKitALavorazioni(lavorazioni, listino, kit.id));
+    setMessaggio(`${kit.nome} aggiunto al preventivo.`);
   }
 
   function aggiornaLavorazione(index, campo, valore) {
@@ -337,6 +347,41 @@ export default function Preventivi() {
               </option>
             ))}
           </select>
+        </section>
+
+        <section className="pro-panel p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 rounded-[14px] bg-yellow-400/12 text-yellow-200 flex items-center justify-center">
+              <Layers size={22} />
+            </div>
+            <div>
+              <p className="section-label">Kit Rapidi</p>
+              <h2 className="text-xl font-black">Aggiungi gruppi pronti</h2>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {KIT_LISTINO.map((kit) => (
+              <button
+                key={kit.id}
+                type="button"
+                onClick={() => aggiungiKit(kit)}
+                className="pro-panel p-4 text-left hover:border-yellow-300/40 transition"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-black">{kit.nome}</h3>
+                    <p className="text-sm text-slate-400 mt-1">
+                      {kit.voci.length} lavorazioni
+                    </p>
+                  </div>
+                  <div className="w-11 h-11 rounded-[14px] bg-yellow-400 text-slate-950 flex items-center justify-center shrink-0">
+                    <Plus size={22} />
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
         </section>
 
         <section>

@@ -10,7 +10,9 @@ import {
   Save,
   Trash2,
 } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import PageWrapper from "../components/PageWrapper";
+import { routePreventivo } from "../app/routes";
 import NuovoCantiereForm from "../features/cantieri/components/NuovoCantiereForm";
 import {
   calcolaAvanzamentoChecklist,
@@ -19,6 +21,7 @@ import {
 import { useCantieri } from "../features/cantieri/hooks/useCantieri";
 
 export default function Cantieri() {
+  const location = useLocation();
   const {
     cantieri,
     cantiereSelezionato,
@@ -39,10 +42,13 @@ export default function Cantieri() {
     aggiornaCampoMateriale,
     aggiungiMateriale,
     eliminaMateriale,
+    completaLavoro,
     aggiungiFoto,
     eliminaFoto,
     apriFoto,
-  } = useCantieri();
+  } = useCantieri({
+    cantiereInizialeId: location.state?.cantiereId || "",
+  });
 
   return (
     <PageWrapper>
@@ -130,17 +136,28 @@ export default function Cantieri() {
               <section className="pro-panel-strong p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
-                    <p className="section-label">Scheda cantiere</p>
+                    <p className="section-label">Cantiere operativo</p>
                     <h2 className="text-3xl font-black mt-1">
                       {cantiereSelezionato.nome}
                     </h2>
-                    <div className="flex flex-wrap gap-3 text-slate-400 mt-3">
+                    <div className="flex flex-wrap gap-3 text-slate-400 mt-3 text-sm">
+                      <span className="rounded-full bg-yellow-400/10 px-3 py-1 font-bold text-yellow-100">
+                        {cantiereSelezionato.stato}
+                      </span>
                       <span>{cantiereSelezionato.cliente || "Cliente non indicato"}</span>
                       {cantiereSelezionato.indirizzo && (
                         <span className="flex items-center gap-1">
                           <MapPin size={16} />
                           {cantiereSelezionato.indirizzo}
                         </span>
+                      )}
+                      {cantiereSelezionato.preventivoId && (
+                        <Link
+                          to={routePreventivo(cantiereSelezionato.preventivoId)}
+                          className="text-yellow-200 font-bold"
+                        >
+                          {cantiereSelezionato.preventivoNumero || "Apri preventivo"}
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -157,6 +174,27 @@ export default function Cantieri() {
                         <option key={stato}>{stato}</option>
                       ))}
                     </select>
+
+                    <button
+                      onClick={completaLavoro}
+                      disabled={cantiereSelezionato.stato === "Completato"}
+                      className="btn-primary px-5 py-4 flex items-center justify-center gap-2 disabled:opacity-45"
+                    >
+                      <CheckCircle size={19} />
+                      Lavoro completato
+                    </button>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                    {cantiereSelezionato.preventivoId && (
+                      <Link
+                        to={routePreventivo(cantiereSelezionato.preventivoId)}
+                        className="btn-secondary px-5 py-4 flex items-center justify-center gap-2"
+                      >
+                        <ClipboardList size={19} />
+                        Apri Preventivo
+                      </Link>
+                    )}
 
                     <button
                       onClick={eliminaCantiere}
@@ -182,79 +220,79 @@ export default function Cantieri() {
                 </div>
               </section>
 
-              <section className="grid gap-5 lg:grid-cols-2">
-                <div className="pro-panel p-5">
-                  <div className="flex items-center gap-3 mb-4">
-                    <ClipboardList size={22} className="text-yellow-300" />
-                    <h3 className="text-xl font-black">Checklist</h3>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-[1fr_auto] mb-4">
-                    <input
-                      value={nuovaChecklist}
-                      onChange={(event) => setNuovaChecklist(event.target.value)}
-                      placeholder="Aggiungi attività"
-                      className="input-pro"
-                    />
-                    <button
-                      onClick={aggiungiChecklist}
-                      className="btn-primary px-5 py-4 flex items-center justify-center gap-2"
-                    >
-                      <Plus size={19} />
-                      Aggiungi
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {(cantiereSelezionato.checklist || []).length === 0 && (
-                      <p className="text-slate-400 text-center py-5">
-                        Nessuna attività inserita.
-                      </p>
-                    )}
-
-                    {(cantiereSelezionato.checklist || []).map((voce) => (
-                      <div
-                        key={voce.id}
-                        className="flex items-center gap-3 rounded-[14px] border border-white/10 bg-black/[0.14] p-3"
-                      >
-                        <button
-                          onClick={() =>
-                            aggiornaChecklist(voce.id, {
-                              completata: !voce.completata,
-                            })
-                          }
-                          className="text-yellow-300"
-                          aria-label="Cambia stato attività"
-                        >
-                          {voce.completata ? (
-                            <CheckCircle size={22} />
-                          ) : (
-                            <Circle size={22} />
-                          )}
-                        </button>
-                        <input
-                          value={voce.testo}
-                          onChange={(event) =>
-                            aggiornaChecklist(voce.id, {
-                              testo: event.target.value,
-                            })
-                          }
-                          className={`min-w-0 flex-1 bg-transparent outline-none ${
-                            voce.completata ? "text-slate-500 line-through" : ""
-                          }`}
-                        />
-                        <button
-                          onClick={() => eliminaChecklist(voce.id)}
-                          className="w-10 h-10 rounded-[12px] bg-red-500/10 text-red-100 flex items-center justify-center"
-                          aria-label="Elimina attività"
-                        >
-                          <Trash2 size={17} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+              <section className="pro-panel p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <ClipboardList size={22} className="text-yellow-300" />
+                  <h3 className="text-xl font-black">Checklist</h3>
                 </div>
 
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto] mb-4">
+                  <input
+                    value={nuovaChecklist}
+                    onChange={(event) => setNuovaChecklist(event.target.value)}
+                    placeholder="Aggiungi attività"
+                    className="input-pro"
+                  />
+                  <button
+                    onClick={aggiungiChecklist}
+                    className="btn-primary px-5 py-4 flex items-center justify-center gap-2"
+                  >
+                    <Plus size={19} />
+                    Aggiungi
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {(cantiereSelezionato.checklist || []).length === 0 && (
+                    <p className="text-slate-400 text-center py-5">
+                      Nessuna attività inserita.
+                    </p>
+                  )}
+
+                  {(cantiereSelezionato.checklist || []).map((voce) => (
+                    <div
+                      key={voce.id}
+                      className="flex items-center gap-3 rounded-[14px] border border-white/10 bg-black/[0.14] p-3"
+                    >
+                      <button
+                        onClick={() =>
+                          aggiornaChecklist(voce.id, {
+                            completata: !voce.completata,
+                          })
+                        }
+                        className="text-yellow-300"
+                        aria-label="Cambia stato attività"
+                      >
+                        {voce.completata ? (
+                          <CheckCircle size={22} />
+                        ) : (
+                          <Circle size={22} />
+                        )}
+                      </button>
+                      <input
+                        value={voce.testo}
+                        onChange={(event) =>
+                          aggiornaChecklist(voce.id, {
+                            testo: event.target.value,
+                          })
+                        }
+                        className={`min-w-0 flex-1 bg-transparent outline-none ${
+                          voce.completata ? "text-slate-500 line-through" : ""
+                        }`}
+                      />
+                      <button
+                        onClick={() => eliminaChecklist(voce.id)}
+                        className="w-10 h-10 rounded-[12px] bg-red-500/10 text-red-100 flex items-center justify-center"
+                        aria-label="Elimina attività"
+                      >
+                        <Trash2 size={17} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="grid gap-5 lg:grid-cols-2">
                 <div className="pro-panel p-5">
                   <div className="flex items-center gap-3 mb-4">
                     <Package size={22} className="text-yellow-300" />

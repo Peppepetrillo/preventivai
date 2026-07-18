@@ -51,4 +51,39 @@ describe("useCantieri", () => {
     expect(result.current.cantiereSelezionato.checklist[0].testo).toBe("Misurare pareti");
     expect(result.current.nuovaChecklist).toBe("");
   });
+
+  it("seleziona il cantiere iniziale quando viene passato un id", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.cantieri,
+      JSON.stringify([
+        { id: "primo", nome: "Primo", checklist: [] },
+        { id: "secondo", nome: "Secondo", checklist: [] },
+      ])
+    );
+
+    const { result } = renderHook(() =>
+      useCantieri({
+        cantiereInizialeId: "secondo",
+      })
+    );
+
+    expect(result.current.cantiereSelezionato.nome).toBe("Secondo");
+  });
+
+  it("segna il lavoro come completato", () => {
+    const { result } = renderHook(() => useCantieri());
+
+    act(() => {
+      result.current.aggiornaCampoNuovoCantiere("nome", "Quadro elettrico");
+    });
+    act(() => {
+      result.current.aggiungiCantiere();
+    });
+    act(() => {
+      result.current.completaLavoro();
+    });
+
+    expect(result.current.cantiereSelezionato.stato).toBe("Completato");
+    expect(result.current.messaggio).toBe("Lavoro completato.");
+  });
 });

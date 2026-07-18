@@ -16,9 +16,11 @@ import { ROUTES } from "./app/routes";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Preventivi = lazy(() => import("./pages/Preventivi"));
 const ArchivioPreventivi = lazy(() => import("./pages/ArchivioPreventivi"));
+const Incassi = lazy(() => import("./pages/Incassi"));
 const Cantieri = lazy(() => import("./pages/Cantieri"));
 const Clienti = lazy(() => import("./pages/Clienti"));
 const Listino = lazy(() => import("./pages/Listino"));
+const Sopralluogo = lazy(() => import("./pages/Sopralluogo"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
 const DettaglioPreventivo = lazy(() => import("./pages/DettaglioPreventivo"));
 const DettaglioCliente = lazy(() => import("./pages/DettaglioCliente"));
@@ -66,6 +68,11 @@ export default function App() {
             />
 
             <Route
+              path={ROUTES.incassi}
+              element={<Incassi />}
+            />
+
+            <Route
               path={ROUTES.cantieri}
               element={<Cantieri />}
             />
@@ -78,6 +85,11 @@ export default function App() {
             <Route
               path={ROUTES.listino}
               element={<Listino />}
+            />
+
+            <Route
+              path={ROUTES.sopralluogo}
+              element={<Sopralluogo />}
             />
 
             <Route

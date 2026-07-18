@@ -3,6 +3,7 @@ import {
   creaProssimoNumeroPreventivo,
   normalizzaNumero,
 } from "../../utils/preventivi";
+import { normalizzaPreventivoIncasso } from "./incassiDomain";
 
 export function creaLavorazioneDaVoce(voce) {
   return {
@@ -44,7 +45,7 @@ export function preparaDatiPreventivo({
   acconto = 0,
   note,
 }) {
-  return {
+  return normalizzaPreventivoIncasso({
     ...preventivo,
     cliente,
     stato: stato || "Bozza",
@@ -56,7 +57,7 @@ export function preparaDatiPreventivo({
     acconto: normalizzaNumero(acconto),
     note,
     ...calcolaTotali(lavorazioni, sconto, iva),
-  };
+  });
 }
 
 export function creaPreventivo({
@@ -72,7 +73,7 @@ export function creaPreventivo({
 }) {
   const id = new Date().getTime();
 
-  return {
+  return normalizzaPreventivoIncasso({
     id,
     numero: creaProssimoNumeroPreventivo(archivio),
     cliente,
@@ -86,7 +87,7 @@ export function creaPreventivo({
     stato: "Bozza",
     data: new Date().toLocaleDateString("it-IT"),
     ...calcolaTotali(lavorazioni, sconto, iva),
-  };
+  });
 }
 
 export function duplicaPreventivo({

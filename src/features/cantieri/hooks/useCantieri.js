@@ -27,10 +27,10 @@ const FORM_MATERIALE_INIZIALE = {
   unita: "cad",
 };
 
-export function useCantieri() {
+export function useCantieri({ cantiereInizialeId = "" } = {}) {
   const [cantieri, setCantieri] = useState(() => leggiCantieri());
   const [cantiereSelezionatoId, setCantiereSelezionatoId] = useState(
-    () => cantieri[0]?.id || ""
+    () => cantiereInizialeId || cantieri[0]?.id || ""
   );
   const [nuovoCantiere, setNuovoCantiere] = useState(FORM_CANTIERE_INIZIALE);
   const [nuovaChecklist, setNuovaChecklist] = useState("");
@@ -168,6 +168,13 @@ export function useCantieri() {
     });
   }
 
+  function completaLavoro() {
+    if (!cantiereSelezionato) return;
+
+    aggiornaSelezionato({ stato: "Completato" });
+    setMessaggio("Lavoro completato.");
+  }
+
   async function aggiungiFoto(event) {
     const file = event.target.files?.[0];
 
@@ -238,6 +245,7 @@ export function useCantieri() {
     aggiornaCampoMateriale,
     aggiungiMateriale,
     eliminaMateriale,
+    completaLavoro,
     aggiungiFoto,
     eliminaFoto,
     apriFoto,

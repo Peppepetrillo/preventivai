@@ -1,11 +1,11 @@
 import {
   Home,
   FileText,
-  Archive,
   HardHat,
   Settings,
   List,
   Users,
+  Wallet,
 } from "lucide-react";
 
 import {
@@ -35,9 +35,9 @@ export default function BottomNav() {
     },
 
     {
-      nome: "Archivio",
-      path: ROUTES.archivio,
-      icon: Archive,
+      nome: "Incassi",
+      path: ROUTES.incassi,
+      icon: Wallet,
     },
 
     {
@@ -81,6 +81,10 @@ export default function BottomNav() {
 
             const attivo =
               location.pathname === item.path ||
+              (
+                item.path === ROUTES.incassi &&
+                location.pathname.startsWith("/preventivo/")
+              ) ||
               (
                 item.path === ROUTES.archivio &&
                 location.pathname.startsWith("/preventivo/")

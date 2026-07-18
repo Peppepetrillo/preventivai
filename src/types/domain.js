@@ -36,6 +36,10 @@
  * @property {number} validita
  * @property {string} pagamento
  * @property {number} acconto
+ * @property {number=} incassato
+ * @property {string=} dataUltimoIncasso
+ * @property {string=} noteIncasso
+ * @property {string=} statoIncasso
  * @property {string} note
  * @property {string} stato
  * @property {string} data

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Copy, Download, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, Download, HardHat, Save, Trash2, Wallet } from "lucide-react";
 import { ROUTES, routePreventivo } from "../app/routes";
 import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
 import {
@@ -14,6 +14,13 @@ import {
   duplicaPreventivo as duplicaDatiPreventivo,
   preparaDatiPreventivo,
 } from "../features/preventivi/preventiviDomain";
+import {
+  calcolaDaIncassare,
+  normalizzaPreventivoIncasso,
+  registraIncasso,
+  segnaPreventivoSaldato,
+} from "../features/preventivi/incassiDomain";
+import { creaCantierePerPreventivo } from "../features/cantieri/services/preventivoCantiereService";
 import { generaPdfPreventivo } from "../services/preventiviPdfService";
 import {
   calcolaTotali,
@@ -46,10 +53,24 @@ export default function DettaglioPreventivo() {
   );
   const [acconto, setAcconto] = useState(preventivo?.acconto || 0);
   const [note, setNote] = useState(preventivo?.note || "");
+  const [cantiereId, setCantiereId] = useState(preventivo?.cantiereId || "");
+  const [incassato, setIncassato] = useState(
+    () => normalizzaPreventivoIncasso(preventivo || {}).incassato || 0
+  );
+  const [noteIncasso, setNoteIncasso] = useState(preventivo?.noteIncasso || "");
+  const [nuovoIncasso, setNuovoIncasso] = useState("");
   const [messaggio, setMessaggio] = useState("");
 
   const totali = calcolaTotali(lavorazioni, sconto, iva);
   const saldo = calcolaSaldo(totali.totale, acconto);
+  const preventivoIncasso = normalizzaPreventivoIncasso({
+    ...preventivo,
+    totale: totali.totale,
+    incassato,
+    noteIncasso,
+  });
+  const daIncassare = calcolaDaIncassare(preventivoIncasso);
+  const preventivoCollegatoACantiere = Boolean(cantiereId || preventivo?.cantiereId);
 
   function aggiornaLavorazione(index, campo, valore) {
     setLavorazioni(
@@ -67,7 +88,12 @@ export default function DettaglioPreventivo() {
 
   function datiAggiornati() {
     return preparaDatiPreventivo({
-      preventivo,
+      preventivo: {
+        ...preventivo,
+        cantiereId: cantiereId || preventivo?.cantiereId,
+        incassato,
+        noteIncasso,
+      },
       cliente,
       stato: stato || "Bozza",
       lavorazioni,
@@ -78,6 +104,62 @@ export default function DettaglioPreventivo() {
       acconto: normalizzaNumero(acconto),
       note,
     });
+  }
+
+  function aggiornaIncassoPreventivo(prossimoPreventivo) {
+    setIncassato(prossimoPreventivo.incassato);
+    setNoteIncasso(prossimoPreventivo.noteIncasso || "");
+    salvaPreventivi(
+      archivio.map((item, index) =>
+        index === indicePreventivo
+          ? preparaDatiPreventivo({
+              preventivo: prossimoPreventivo,
+              cliente,
+              stato: stato || "Bozza",
+              lavorazioni,
+              sconto: normalizzaNumero(sconto),
+              iva: normalizzaNumero(iva),
+              validita: normalizzaNumero(validita, 30),
+              pagamento: pagamento.trim(),
+              acconto: normalizzaNumero(acconto),
+              note,
+            })
+          : item
+      )
+    );
+  }
+
+  function registraNuovoIncasso() {
+    const importo = normalizzaNumero(nuovoIncasso);
+
+    if (importo <= 0) {
+      setMessaggio("Inserisci un importo da incassare.");
+      return;
+    }
+
+    aggiornaIncassoPreventivo(
+      registraIncasso(
+        {
+          ...datiAggiornati(),
+          incassato,
+          noteIncasso,
+        },
+        importo
+      )
+    );
+    setNuovoIncasso("");
+    setMessaggio("Incasso registrato.");
+  }
+
+  function segnaSaldato() {
+    aggiornaIncassoPreventivo(
+      segnaPreventivoSaldato({
+        ...datiAggiornati(),
+        incassato,
+        noteIncasso,
+      })
+    );
+    setMessaggio("Preventivo segnato come saldato.");
   }
 
   function salvaModifiche() {
@@ -132,6 +214,28 @@ export default function DettaglioPreventivo() {
     } catch {
       setMessaggio("Non è stato possibile generare il PDF.");
     }
+  }
+
+  function creaCantiereCollegato() {
+    try {
+      const risultato = creaCantierePerPreventivo(datiAggiornati());
+      setCantiereId(risultato.cantiere.id);
+      setMessaggio(
+        risultato.creato
+          ? "Cantiere creato e collegato al preventivo."
+          : "Questo preventivo è già collegato a un cantiere."
+      );
+    } catch (errore) {
+      setMessaggio(errore.message || "Non è stato possibile creare il cantiere.");
+    }
+  }
+
+  function apriCantiereCollegato() {
+    navigate(ROUTES.cantieri, {
+      state: {
+        cantiereId: cantiereId || preventivo?.cantiereId,
+      },
+    });
   }
 
   if (!preventivo) {
@@ -194,6 +298,41 @@ export default function DettaglioPreventivo() {
             <option>Completato</option>
           </select>
         </label>
+      </section>
+
+      <section className="pro-panel p-5 mb-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="section-label">Workflow operativo</p>
+            <h2 className="text-xl font-black mt-1">Preventivo → Cantiere</h2>
+            <p className="text-sm text-slate-400 mt-2">
+              {preventivoCollegatoACantiere
+                ? "Preventivo già collegato a un cantiere."
+                : stato === "Accettato"
+                  ? "Crea la scheda cantiere partendo dalle lavorazioni del preventivo."
+                  : "Imposta lo stato su Accettato per creare il cantiere."}
+            </p>
+          </div>
+
+          {preventivoCollegatoACantiere ? (
+            <button
+              onClick={apriCantiereCollegato}
+              className="btn-secondary px-5 py-4 flex items-center justify-center gap-2"
+            >
+              <HardHat size={19} />
+              Apri Cantiere
+            </button>
+          ) : (
+            <button
+              onClick={creaCantiereCollegato}
+              disabled={stato !== "Accettato"}
+              className="btn-primary px-5 py-4 flex items-center justify-center gap-2 disabled:opacity-45"
+            >
+              <HardHat size={19} />
+              Crea Cantiere
+            </button>
+          )}
+        </div>
       </section>
 
       <section className="space-y-4 mb-5">
@@ -347,6 +486,53 @@ export default function DettaglioPreventivo() {
           <p>Imponibile {formatEuro(totali.imponibile)}</p>
           <p>Saldo {formatEuro(saldo)}</p>
         </div>
+      </section>
+
+      <section className="pro-panel p-5 mb-5 space-y-4">
+        <div className="flex items-center gap-3">
+          <Wallet size={22} className="text-emerald-300" />
+          <h2 className="text-xl font-black">Incasso</h2>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
+            <p className="text-sm text-slate-400">Totale</p>
+            <p className="text-2xl font-black mt-1">{formatEuro(totali.totale)}</p>
+          </div>
+          <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
+            <p className="text-sm text-slate-400">Incassato</p>
+            <p className="text-2xl font-black mt-1">{formatEuro(incassato)}</p>
+          </div>
+          <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
+            <p className="text-sm text-slate-400">Da incassare</p>
+            <p className="text-2xl font-black mt-1">{formatEuro(daIncassare)}</p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
+          <input
+            type="number"
+            min="0"
+            value={nuovoIncasso}
+            onChange={(event) => setNuovoIncasso(event.target.value)}
+            placeholder="Nuovo incasso"
+            className="input-pro"
+          />
+          <button onClick={registraNuovoIncasso} className="btn-primary px-5 py-4">
+            Nuovo incasso
+          </button>
+          <button onClick={segnaSaldato} className="btn-secondary px-5 py-4">
+            Segna saldato
+          </button>
+        </div>
+
+        <textarea
+          value={noteIncasso}
+          onChange={(event) => setNoteIncasso(event.target.value)}
+          rows="2"
+          placeholder="Note incasso"
+          className="input-pro resize-none"
+        />
       </section>
 
       <div className="grid grid-cols-1 gap-3">
