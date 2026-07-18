@@ -20,6 +20,7 @@ import {
   formatEuro,
   normalizzaNumero,
 } from "../utils/preventivi";
+import { selezionaZeroAlFocus } from "../utils/inputNumerici";
 import { ROUTES, routePreventivo } from "../app/routes";
 import { leggiClienti } from "../repositories/clientiRepository";
 import { leggiListino } from "../repositories/listinoRepository";
@@ -479,6 +480,7 @@ export default function Preventivi() {
                         type="number"
                         min="0"
                         value={item.quantita}
+                        onFocus={selezionaZeroAlFocus}
                         onChange={(event) =>
                           aggiornaLavorazione(index, "quantita", event.target.value)
                         }
@@ -492,6 +494,7 @@ export default function Preventivi() {
                         type="number"
                         min="0"
                         value={item.prezzo}
+                        onFocus={selezionaZeroAlFocus}
                         onChange={(event) =>
                           aggiornaLavorazione(index, "prezzo", event.target.value)
                         }
@@ -526,6 +529,7 @@ export default function Preventivi() {
                 type="number"
                 min="0"
                 value={sconto}
+                onFocus={selezionaZeroAlFocus}
                 onChange={(event) => setSconto(normalizzaNumero(event.target.value))}
                 className="mt-2 input-pro"
               />
@@ -537,6 +541,7 @@ export default function Preventivi() {
                 type="number"
                 min="0"
                 value={iva}
+                onFocus={selezionaZeroAlFocus}
                 onChange={(event) => setIva(normalizzaNumero(event.target.value))}
                 className="mt-2 input-pro"
               />
@@ -550,6 +555,7 @@ export default function Preventivi() {
                 type="number"
                 min="0"
                 value={validita}
+                onFocus={selezionaZeroAlFocus}
                 onChange={(event) => setValidita(normalizzaNumero(event.target.value))}
                 className="mt-2 input-pro"
               />
@@ -573,6 +579,7 @@ export default function Preventivi() {
                 type="number"
                 min="0"
                 value={acconto}
+                onFocus={selezionaZeroAlFocus}
                 onChange={(event) => setAcconto(normalizzaNumero(event.target.value))}
                 className="mt-2 input-pro"
               />

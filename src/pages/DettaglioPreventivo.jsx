@@ -20,7 +20,10 @@ import {
   registraIncasso,
   segnaPreventivoSaldato,
 } from "../features/preventivi/incassiDomain";
-import { creaCantierePerPreventivo } from "../features/cantieri/services/preventivoCantiereService";
+import {
+  creaCantierePerPreventivo,
+  trovaCantiereCollegato,
+} from "../features/cantieri/services/preventivoCantiereService";
 import { generaPdfPreventivo } from "../services/preventiviPdfService";
 import {
   calcolaTotali,
@@ -28,6 +31,7 @@ import {
   formatEuro,
   normalizzaNumero,
 } from "../utils/preventivi";
+import { selezionaZeroAlFocus } from "../utils/inputNumerici";
 
 export default function DettaglioPreventivo() {
   const { id } = useParams();
@@ -70,7 +74,15 @@ export default function DettaglioPreventivo() {
     noteIncasso,
   });
   const daIncassare = calcolaDaIncassare(preventivoIncasso);
-  const preventivoCollegatoACantiere = Boolean(cantiereId || preventivo?.cantiereId);
+  const cantiereCollegato = trovaCantiereCollegato({
+    ...preventivo,
+    cantiereId: cantiereId || preventivo?.cantiereId,
+  });
+  const cantiereCollegatoId =
+    cantiereId ||
+    preventivo?.cantiereId ||
+    cantiereCollegato?.id;
+  const preventivoCollegatoACantiere = Boolean(cantiereCollegatoId);
 
   function aggiornaLavorazione(index, campo, valore) {
     setLavorazioni(
@@ -216,15 +228,20 @@ export default function DettaglioPreventivo() {
     }
   }
 
-  function creaCantiereCollegato() {
+  function iniziaCantiereCollegato() {
     try {
       const risultato = creaCantierePerPreventivo(datiAggiornati());
       setCantiereId(risultato.cantiere.id);
       setMessaggio(
         risultato.creato
           ? "Cantiere creato e collegato al preventivo."
-          : "Questo preventivo è già collegato a un cantiere."
+          : "Apro il cantiere già collegato."
       );
+      navigate(ROUTES.cantieri, {
+        state: {
+          cantiereId: risultato.cantiere.id,
+        },
+      });
     } catch (errore) {
       setMessaggio(errore.message || "Non è stato possibile creare il cantiere.");
     }
@@ -233,7 +250,7 @@ export default function DettaglioPreventivo() {
   function apriCantiereCollegato() {
     navigate(ROUTES.cantieri, {
       state: {
-        cantiereId: cantiereId || preventivo?.cantiereId,
+        cantiereId: cantiereCollegatoId,
       },
     });
   }
@@ -309,7 +326,7 @@ export default function DettaglioPreventivo() {
               {preventivoCollegatoACantiere
                 ? "Preventivo già collegato a un cantiere."
                 : stato === "Accettato"
-                  ? "Crea la scheda cantiere partendo dalle lavorazioni del preventivo."
+                  ? "Avvia la scheda cantiere usando cliente e lavorazioni del preventivo."
                   : "Imposta lo stato su Accettato per creare il cantiere."}
             </p>
           </div>
@@ -320,16 +337,16 @@ export default function DettaglioPreventivo() {
               className="btn-secondary px-5 py-4 flex items-center justify-center gap-2"
             >
               <HardHat size={19} />
-              Apri Cantiere
+              🚧 Apri Cantiere
             </button>
           ) : (
             <button
-              onClick={creaCantiereCollegato}
+              onClick={iniziaCantiereCollegato}
               disabled={stato !== "Accettato"}
               className="btn-primary px-5 py-4 flex items-center justify-center gap-2 disabled:opacity-45"
             >
               <HardHat size={19} />
-              Crea Cantiere
+              🚧 Inizia Cantiere
             </button>
           )}
         </div>
@@ -366,6 +383,7 @@ export default function DettaglioPreventivo() {
                   type="number"
                   min="0"
                   value={item.quantita}
+                  onFocus={selezionaZeroAlFocus}
                   onChange={(event) =>
                     aggiornaLavorazione(index, "quantita", event.target.value)
                   }
@@ -379,6 +397,7 @@ export default function DettaglioPreventivo() {
                   type="number"
                   min="0"
                   value={item.prezzo}
+                  onFocus={selezionaZeroAlFocus}
                   onChange={(event) =>
                     aggiornaLavorazione(index, "prezzo", event.target.value)
                   }
@@ -409,6 +428,7 @@ export default function DettaglioPreventivo() {
               type="number"
               min="0"
               value={sconto}
+              onFocus={selezionaZeroAlFocus}
               onChange={(event) => setSconto(normalizzaNumero(event.target.value))}
               className="mt-2 input-pro"
             />
@@ -420,6 +440,7 @@ export default function DettaglioPreventivo() {
               type="number"
               min="0"
               value={iva}
+              onFocus={selezionaZeroAlFocus}
               onChange={(event) => setIva(normalizzaNumero(event.target.value))}
               className="mt-2 input-pro"
             />
@@ -433,6 +454,7 @@ export default function DettaglioPreventivo() {
               type="number"
               min="0"
               value={validita}
+              onFocus={selezionaZeroAlFocus}
               onChange={(event) => setValidita(normalizzaNumero(event.target.value))}
               className="mt-2 input-pro"
             />
@@ -455,6 +477,7 @@ export default function DettaglioPreventivo() {
               type="number"
               min="0"
               value={acconto}
+              onFocus={selezionaZeroAlFocus}
               onChange={(event) => setAcconto(normalizzaNumero(event.target.value))}
               className="mt-2 input-pro"
             />
@@ -514,6 +537,7 @@ export default function DettaglioPreventivo() {
             type="number"
             min="0"
             value={nuovoIncasso}
+            onFocus={selezionaZeroAlFocus}
             onChange={(event) => setNuovoIncasso(event.target.value)}
             placeholder="Nuovo incasso"
             className="input-pro"

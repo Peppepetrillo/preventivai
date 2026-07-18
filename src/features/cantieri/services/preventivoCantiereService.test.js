@@ -68,6 +68,30 @@ describe("preventivoCantiereService", () => {
     expect(cantieri).toHaveLength(1);
   });
 
+  it("riconosce cantieri legacy collegati solo tramite preventivoId", () => {
+    const cantiereLegacy = {
+      id: 900,
+      cliente: "Mario Rossi",
+      preventivoId: preventivoAccettato.id,
+      stato: "Da iniziare",
+      checklist: [],
+      materiali: [],
+      foto: [],
+    };
+
+    localStorage.setItem(STORAGE_KEYS.preventivi, JSON.stringify([preventivoAccettato]));
+    localStorage.setItem(STORAGE_KEYS.cantieri, JSON.stringify([cantiereLegacy]));
+
+    const risultato = creaCantierePerPreventivo(preventivoAccettato);
+    const cantieri = JSON.parse(localStorage.getItem(STORAGE_KEYS.cantieri));
+    const preventivi = JSON.parse(localStorage.getItem(STORAGE_KEYS.preventivi));
+
+    expect(risultato.creato).toBe(false);
+    expect(risultato.cantiere.id).toBe(cantiereLegacy.id);
+    expect(cantieri).toHaveLength(1);
+    expect(preventivi[0].cantiereId).toBe(cantiereLegacy.id);
+  });
+
   it("blocca la creazione se il preventivo non è accettato", () => {
     const preventivoBozza = {
       ...preventivoAccettato,

@@ -19,6 +19,7 @@ import {
   STATI_CANTIERE,
 } from "../features/cantieri/cantieriDomain";
 import { useCantieri } from "../features/cantieri/hooks/useCantieri";
+import { selezionaZeroAlFocus } from "../utils/inputNumerici";
 
 export default function Cantieri() {
   const location = useLocation();
@@ -312,6 +313,7 @@ export default function Cantieri() {
                       type="number"
                       min="0"
                       value={nuovoMateriale.quantita}
+                      onFocus={selezionaZeroAlFocus}
                       onChange={(event) =>
                         aggiornaCampoMateriale("quantita", event.target.value)
                       }

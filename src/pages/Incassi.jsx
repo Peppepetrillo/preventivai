@@ -5,6 +5,7 @@ import PageWrapper from "../components/PageWrapper";
 import { routePreventivo } from "../app/routes";
 import { leggiPreventivi, salvaPreventivi } from "../repositories/preventiviRepository";
 import { formatEuro, normalizzaNumero } from "../utils/preventivi";
+import { selezionaZeroAlFocus } from "../utils/inputNumerici";
 import {
   calcolaDaIncassare,
   normalizzaPreventivoIncasso,
@@ -118,6 +119,7 @@ export default function Incassi() {
                       type="number"
                       min="0"
                       value={importi[preventivo.id] || ""}
+                      onFocus={selezionaZeroAlFocus}
                       onChange={(event) => aggiornaImporto(preventivo.id, event.target.value)}
                       placeholder="Importo"
                       className="input-pro"

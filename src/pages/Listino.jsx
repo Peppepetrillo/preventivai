@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Save } from "lucide-react";
 import { leggiListino, salvaListino } from "../repositories/listinoRepository";
 import { formatEuro, normalizzaNumero } from "../utils/preventivi";
+import { selezionaZeroAlFocus } from "../utils/inputNumerici";
 
 export default function Listino() {
   const [listino, setListino] = useState(() =>
@@ -115,6 +116,7 @@ export default function Listino() {
             type="number"
             min="0"
             value={nuovaVoce.prezzo}
+            onFocus={selezionaZeroAlFocus}
             onChange={(event) =>
               aggiornaNuovaVoce("prezzo", event.target.value)
             }
@@ -162,6 +164,7 @@ export default function Listino() {
                 <input
                   type="number"
                   value={item.prezzo}
+                  onFocus={selezionaZeroAlFocus}
                   onChange={(event) =>
                     aggiornaVoce(item.id, "prezzo", event.target.value)
                   }
