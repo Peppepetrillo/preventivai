@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import PageWrapper from "../components/PageWrapper";
+import NumericInput from "../components/NumericInput";
 import { routePreventivo } from "../app/routes";
 import NuovoCantiereForm from "../features/cantieri/components/NuovoCantiereForm";
 import {
@@ -19,7 +20,6 @@ import {
   STATI_CANTIERE,
 } from "../features/cantieri/cantieriDomain";
 import { useCantieri } from "../features/cantieri/hooks/useCantieri";
-import { selezionaZeroAlFocus } from "../utils/inputNumerici";
 
 export default function Cantieri() {
   const location = useLocation();
@@ -309,13 +309,12 @@ export default function Cantieri() {
                       placeholder="Materiale"
                       className="input-pro"
                     />
-                    <input
-                      type="number"
+                    <NumericInput
                       min="0"
                       value={nuovoMateriale.quantita}
-                      onFocus={selezionaZeroAlFocus}
+                      inputMode="decimal"
                       onChange={(event) =>
-                        aggiornaCampoMateriale("quantita", event.target.value)
+                        aggiornaCampoMateriale("quantita", event)
                       }
                       placeholder="Q.tà"
                       className="input-pro"

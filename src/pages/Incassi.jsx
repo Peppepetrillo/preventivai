@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle, FileText, Plus, Wallet } from "lucide-react";
 import PageWrapper from "../components/PageWrapper";
+import NumericInput from "../components/NumericInput";
 import { routePreventivo } from "../app/routes";
 import { leggiPreventivi, salvaPreventivi } from "../repositories/preventiviRepository";
 import { formatEuro, normalizzaNumero } from "../utils/preventivi";
-import { selezionaZeroAlFocus } from "../utils/inputNumerici";
 import {
   calcolaDaIncassare,
   normalizzaPreventivoIncasso,
@@ -115,12 +115,11 @@ export default function Incassi() {
                   </div>
 
                   <div className="grid gap-2 sm:grid-cols-[130px_auto_auto]">
-                    <input
-                      type="number"
+                    <NumericInput
                       min="0"
                       value={importi[preventivo.id] || ""}
-                      onFocus={selezionaZeroAlFocus}
-                      onChange={(event) => aggiornaImporto(preventivo.id, event.target.value)}
+                      inputMode="decimal"
+                      onChange={(event) => aggiornaImporto(preventivo.id, event)}
                       placeholder="Importo"
                       className="input-pro"
                     />

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Plus, Save } from "lucide-react";
+import NumericInput from "../components/NumericInput";
 import { leggiListino, salvaListino } from "../repositories/listinoRepository";
 import { formatEuro, normalizzaNumero } from "../utils/preventivi";
-import { selezionaZeroAlFocus } from "../utils/inputNumerici";
 
 export default function Listino() {
   const [listino, setListino] = useState(() =>
@@ -112,13 +112,12 @@ export default function Listino() {
             placeholder="Categoria"
             className="input-pro"
           />
-          <input
-            type="number"
+          <NumericInput
             min="0"
             value={nuovaVoce.prezzo}
-            onFocus={selezionaZeroAlFocus}
+            inputMode="decimal"
             onChange={(event) =>
-              aggiornaNuovaVoce("prezzo", event.target.value)
+              aggiornaNuovaVoce("prezzo", event)
             }
             placeholder="Prezzo"
             className="input-pro"
@@ -161,12 +160,11 @@ export default function Listino() {
             <div className="grid grid-cols-[1fr_82px_46px] gap-3 items-end">
               <label>
                 <span className="text-sm text-white/45">Prezzo</span>
-                <input
-                  type="number"
+                <NumericInput
                   value={item.prezzo}
-                  onFocus={selezionaZeroAlFocus}
+                  inputMode="decimal"
                   onChange={(event) =>
-                    aggiornaVoce(item.id, "prezzo", event.target.value)
+                    aggiornaVoce(item.id, "prezzo", event)
                   }
                   className="mt-2 input-pro p-3"
                 />

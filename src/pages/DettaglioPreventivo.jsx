@@ -31,7 +31,7 @@ import {
   formatEuro,
   normalizzaNumero,
 } from "../utils/preventivi";
-import { selezionaZeroAlFocus } from "../utils/inputNumerici";
+import NumericInput from "../components/NumericInput";
 
 export default function DettaglioPreventivo() {
   const { id } = useParams();
@@ -379,13 +379,12 @@ export default function DettaglioPreventivo() {
             <div className="grid grid-cols-[1fr_1fr_72px] gap-3">
               <label>
                 <span className="text-xs text-slate-400">Quantità</span>
-                <input
-                  type="number"
+                <NumericInput
                   min="0"
                   value={item.quantita}
-                  onFocus={selezionaZeroAlFocus}
+                  inputMode="decimal"
                   onChange={(event) =>
-                    aggiornaLavorazione(index, "quantita", event.target.value)
+                    aggiornaLavorazione(index, "quantita", event)
                   }
                   className="mt-1 input-pro p-3"
                 />
@@ -393,13 +392,12 @@ export default function DettaglioPreventivo() {
 
               <label>
                 <span className="text-xs text-slate-400">Prezzo</span>
-                <input
-                  type="number"
+                <NumericInput
                   min="0"
                   value={item.prezzo}
-                  onFocus={selezionaZeroAlFocus}
+                  inputMode="decimal"
                   onChange={(event) =>
-                    aggiornaLavorazione(index, "prezzo", event.target.value)
+                    aggiornaLavorazione(index, "prezzo", event)
                   }
                   className="mt-1 input-pro p-3"
                 />
@@ -424,24 +422,22 @@ export default function DettaglioPreventivo() {
         <div className="grid grid-cols-2 gap-3">
           <label>
             <span className="text-sm text-slate-400">Sconto %</span>
-            <input
-              type="number"
+            <NumericInput
               min="0"
               value={sconto}
-              onFocus={selezionaZeroAlFocus}
-              onChange={(event) => setSconto(normalizzaNumero(event.target.value))}
+              inputMode="decimal"
+              onChange={setSconto}
               className="mt-2 input-pro"
             />
           </label>
 
           <label>
             <span className="text-sm text-slate-400">IVA %</span>
-            <input
-              type="number"
+            <NumericInput
               min="0"
               value={iva}
-              onFocus={selezionaZeroAlFocus}
-              onChange={(event) => setIva(normalizzaNumero(event.target.value))}
+              inputMode="decimal"
+              onChange={setIva}
               className="mt-2 input-pro"
             />
           </label>
@@ -450,12 +446,11 @@ export default function DettaglioPreventivo() {
         <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-3">
           <label>
             <span className="text-sm text-slate-400">Validità giorni</span>
-            <input
-              type="number"
+            <NumericInput
               min="0"
               value={validita}
-              onFocus={selezionaZeroAlFocus}
-              onChange={(event) => setValidita(normalizzaNumero(event.target.value))}
+              inputMode="numeric"
+              onChange={setValidita}
               className="mt-2 input-pro"
             />
           </label>
@@ -473,12 +468,11 @@ export default function DettaglioPreventivo() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label>
             <span className="text-sm text-slate-400">Acconto</span>
-            <input
-              type="number"
+            <NumericInput
               min="0"
               value={acconto}
-              onFocus={selezionaZeroAlFocus}
-              onChange={(event) => setAcconto(normalizzaNumero(event.target.value))}
+              inputMode="decimal"
+              onChange={setAcconto}
               className="mt-2 input-pro"
             />
           </label>
@@ -533,12 +527,11 @@ export default function DettaglioPreventivo() {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
-          <input
-            type="number"
+          <NumericInput
             min="0"
             value={nuovoIncasso}
-            onFocus={selezionaZeroAlFocus}
-            onChange={(event) => setNuovoIncasso(event.target.value)}
+            inputMode="decimal"
+            onChange={setNuovoIncasso}
             placeholder="Nuovo incasso"
             className="input-pro"
           />
