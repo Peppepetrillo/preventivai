@@ -12,6 +12,7 @@ import {
 import BottomNav from "./components/BottomNav";
 import AppLock from "./components/AppLock";
 import InstallPrompt from "./components/InstallPrompt";
+import { WizardProvider } from "./features/preventivi/wizard/wizardContext";
 import { ROUTES } from "./app/routes";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -44,6 +45,8 @@ export default function App() {
     <AppLock>
 
     <HashRouter>
+
+      <WizardProvider>
 
       <div className="app-shell">
 
@@ -123,6 +126,8 @@ export default function App() {
         <InstallPrompt />
 
       </div>
+
+      </WizardProvider>
 
     </HashRouter>
 

@@ -43,6 +43,7 @@
  * @property {string} note
  * @property {string} stato
  * @property {string} data
+ * @property {"impianto"|"intervento"|"express"|string=} tipoLavoro Metadato UX per statistiche, non usato nei calcoli
  * @property {number} subtotale
  * @property {number} importoSconto
  * @property {number} imponibile

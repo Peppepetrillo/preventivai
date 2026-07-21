@@ -7,6 +7,8 @@ export const STORAGE_KEYS = {
   datiAzienda: "datiAzienda",
   listino: "listinoLocale",
   pinAccesso: "pinAccesso",
+  lavorazioniUsage: "preventivai:lavorazioni-usage",
+  wizardExtensions: "preventivai:wizard-extensions",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -16,6 +18,8 @@ export const STORAGE_FALLBACKS = {
   [STORAGE_KEYS.datiAzienda]: {},
   [STORAGE_KEYS.listino]: listinoBase,
   [STORAGE_KEYS.pinAccesso]: "",
+  [STORAGE_KEYS.lavorazioniUsage]: {},
+  [STORAGE_KEYS.wizardExtensions]: {},
 };
 
 export const APP_DATA_KEYS = {

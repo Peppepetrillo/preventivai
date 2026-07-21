@@ -44,6 +44,7 @@ export function preparaDatiPreventivo({
   pagamento,
   acconto = 0,
   note,
+  tipoLavoro,
 }) {
   return normalizzaPreventivoIncasso({
     ...preventivo,
@@ -56,6 +57,7 @@ export function preparaDatiPreventivo({
     pagamento: pagamento.trim(),
     acconto: normalizzaNumero(acconto),
     note,
+    ...(tipoLavoro ? { tipoLavoro } : {}),
     ...calcolaTotali(lavorazioni, sconto, iva),
   });
 }
@@ -70,6 +72,7 @@ export function creaPreventivo({
   pagamento,
   acconto = 0,
   note,
+  tipoLavoro,
 }) {
   const id = new Date().getTime();
 
@@ -84,6 +87,7 @@ export function creaPreventivo({
     pagamento: pagamento.trim(),
     acconto: normalizzaNumero(acconto),
     note,
+    ...(tipoLavoro ? { tipoLavoro } : {}),
     stato: "Bozza",
     data: new Date().toLocaleDateString("it-IT"),
     ...calcolaTotali(lavorazioni, sconto, iva),
