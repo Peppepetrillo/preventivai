@@ -4,6 +4,7 @@ export const ROUTES = {
   archivio: "/archivio",
   incassi: "/incassi",
   cantieri: "/cantieri",
+  dettaglioCantiere: "/cantiere/:id",
   clienti: "/clienti",
   listino: "/listino",
   sopralluogo: "/sopralluogo",
@@ -18,4 +19,8 @@ export function routePreventivo(id) {
 
 export function routeCliente(id) {
   return `/cliente/${id}`;
+}
+
+export function routeCantiere(id) {
+  return `/cantiere/${id}`;
 }

@@ -43,6 +43,10 @@
  * @property {string} note
  * @property {string} stato
  * @property {string} data
+ * @property {number|string=} cantiereId
+ * @property {string=} dataAccettazione
+ * @property {string=} indirizzo
+ * @property {number|string=} clienteId
  * @property {"impianto"|"intervento"|"express"|string=} tipoLavoro Metadato UX per statistiche, non usato nei calcoli
  * @property {number} subtotale
  * @property {number} importoSconto
@@ -64,6 +68,13 @@
  * @property {string} note
  * @property {string} creatoIl
  * @property {string} aggiornatoIl
+ * @property {number|string=} preventivoId
+ * @property {string=} preventivoNumero
+ * @property {number|string=} clienteId
+ * @property {string=} dataCreazione
+ * @property {string=} dataAccettazione
+ * @property {"preventivo"|string=} origine
+ * @property {LavorazionePreventivo[]=} lavorazioniOrigine
  */
 
 export {};

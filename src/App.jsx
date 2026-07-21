@@ -20,6 +20,7 @@ const Preventivi = lazy(() => import("./pages/Preventivi"));
 const ArchivioPreventivi = lazy(() => import("./pages/ArchivioPreventivi"));
 const Incassi = lazy(() => import("./pages/Incassi"));
 const Cantieri = lazy(() => import("./pages/Cantieri"));
+const Cantiere = lazy(() => import("./pages/Cantiere"));
 const Clienti = lazy(() => import("./pages/Clienti"));
 const Listino = lazy(() => import("./pages/Listino"));
 const Sopralluogo = lazy(() => import("./pages/Sopralluogo"));
@@ -79,6 +80,11 @@ export default function App() {
             <Route
               path={ROUTES.cantieri}
               element={<Cantieri />}
+            />
+
+            <Route
+              path={ROUTES.dettaglioCantiere}
+              element={<Cantiere />}
             />
 
             <Route

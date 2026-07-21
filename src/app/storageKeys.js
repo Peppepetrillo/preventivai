@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   pinAccesso: "pinAccesso",
   lavorazioniUsage: "preventivai:lavorazioni-usage",
   wizardExtensions: "preventivai:wizard-extensions",
+  esperienze: "preventivai:esperienze",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -20,6 +21,7 @@ export const STORAGE_FALLBACKS = {
   [STORAGE_KEYS.pinAccesso]: "",
   [STORAGE_KEYS.lavorazioniUsage]: {},
   [STORAGE_KEYS.wizardExtensions]: {},
+  [STORAGE_KEYS.esperienze]: [],
 };
 
 export const APP_DATA_KEYS = {

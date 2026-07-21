@@ -14,6 +14,7 @@ import {
   fileFotoValido,
   preparaFotoCantiere,
 } from "../services/cantieriFotoService";
+import { registraEsperienzaCompletamento } from "../../../services/experienceService";
 
 const FORM_CANTIERE_INIZIALE = {
   nome: "",
@@ -171,7 +172,19 @@ export function useCantieri({ cantiereInizialeId = "" } = {}) {
   function completaLavoro() {
     if (!cantiereSelezionato) return;
 
-    aggiornaSelezionato({ stato: "Completato" });
+    const cantiereCompletato = aggiornaCantiere(cantiereSelezionato, {
+      stato: "Completato",
+    });
+
+    salvaListaCantieri(
+      cantieri.map((cantiere) =>
+        String(cantiere.id) === String(cantiereSelezionato.id)
+          ? cantiereCompletato
+          : cantiere
+      )
+    );
+
+    registraEsperienzaCompletamento(cantiereCompletato);
     setMessaggio("Lavoro completato.");
   }
 

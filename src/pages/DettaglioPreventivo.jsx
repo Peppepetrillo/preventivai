@@ -21,7 +21,7 @@ import {
   segnaPreventivoSaldato,
 } from "../features/preventivi/incassiDomain";
 import {
-  creaCantierePerPreventivo,
+  convertiPreventivoInCantiere,
   trovaCantiereCollegato,
 } from "../features/cantieri/services/preventivoCantiereService";
 import { generaPdfPreventivo } from "../services/preventiviPdfService";
@@ -228,10 +228,11 @@ export default function DettaglioPreventivo() {
     }
   }
 
-  function iniziaCantiereCollegato() {
+  function trasformaInCantiere() {
     try {
-      const risultato = creaCantierePerPreventivo(datiAggiornati());
+      const risultato = convertiPreventivoInCantiere(datiAggiornati());
       setCantiereId(risultato.cantiere.id);
+      setStato(risultato.preventivo.stato || "Accettato");
       setMessaggio(
         risultato.creato
           ? "Cantiere creato e collegato al preventivo."
@@ -321,13 +322,11 @@ export default function DettaglioPreventivo() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="section-label">Workflow operativo</p>
-            <h2 className="text-xl font-black mt-1">Preventivo → Cantiere</h2>
+            <h2 className="text-xl font-black mt-1">🚧 Trasforma in Cantiere</h2>
             <p className="text-sm text-slate-400 mt-2">
               {preventivoCollegatoACantiere
                 ? "Preventivo già collegato a un cantiere."
-                : stato === "Accettato"
-                  ? "Avvia la scheda cantiere usando cliente e lavorazioni del preventivo."
-                  : "Imposta lo stato su Accettato per creare il cantiere."}
+                : "Crea un cantiere con cliente, lavorazioni e note del preventivo."}
             </p>
           </div>
 
@@ -337,16 +336,15 @@ export default function DettaglioPreventivo() {
               className="btn-secondary px-5 py-4 flex items-center justify-center gap-2"
             >
               <HardHat size={19} />
-              🚧 Apri Cantiere
+              🏗 Apri Cantiere
             </button>
           ) : (
             <button
-              onClick={iniziaCantiereCollegato}
-              disabled={stato !== "Accettato"}
-              className="btn-primary px-5 py-4 flex items-center justify-center gap-2 disabled:opacity-45"
+              onClick={trasformaInCantiere}
+              className="btn-primary px-5 py-4 flex items-center justify-center gap-2"
             >
               <HardHat size={19} />
-              🚧 Inizia Cantiere
+              CREA CANTIERE
             </button>
           )}
         </div>

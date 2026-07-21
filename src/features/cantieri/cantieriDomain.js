@@ -22,19 +22,28 @@ export function creaCantiere({ nome, cliente, indirizzo }) {
   };
 }
 
-export function creaCantiereDaPreventivo(preventivo) {
-  const data = new Date().toLocaleDateString("it-IT");
+export function creaCantiereDaPreventivo(
+  preventivo,
+  { clienteId = null, indirizzo = "", dataAccettazione } = {}
+) {
+  const dataCreazione = new Date().toLocaleDateString("it-IT");
+  const dataAccettazioneFinale = dataAccettazione || dataCreazione;
   const riferimento = preventivo.numero || `PREV-${preventivo.id}`;
   const lavorazioni = preventivo.lavorazioni || [];
+  const notePreventivo = String(preventivo.note || "").trim();
 
   return {
     id: new Date().getTime(),
     nome: `Cantiere ${riferimento}`,
     cliente: String(preventivo.cliente || "").trim(),
-    indirizzo: "",
+    indirizzo: String(indirizzo || preventivo.indirizzo || "").trim(),
     stato: "Da iniziare",
     preventivoId: preventivo.id,
     preventivoNumero: riferimento,
+    clienteId,
+    dataCreazione,
+    dataAccettazione: dataAccettazioneFinale,
+    origine: "preventivo",
     lavorazioniOrigine: lavorazioni.map((lavorazione) => ({ ...lavorazione })),
     checklist: lavorazioni.map((lavorazione, index) => ({
       id: `${preventivo.id}-check-${index}`,
@@ -43,9 +52,9 @@ export function creaCantiereDaPreventivo(preventivo) {
     })),
     materiali: [],
     foto: [],
-    note: `Creato dal preventivo ${riferimento}.`,
-    creatoIl: data,
-    aggiornatoIl: data,
+    note: notePreventivo || `Creato dal preventivo ${riferimento}.`,
+    creatoIl: dataCreazione,
+    aggiornatoIl: dataCreazione,
   };
 }
 
