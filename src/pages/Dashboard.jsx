@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import PageWrapper from "../components/PageWrapper";
+import AssistantPanel from "../components/assistant/AssistantPanel";
 import { ROUTES, routePreventivo } from "../app/routes";
 import { leggiCantieri } from "../repositories/cantieriRepository";
 import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
@@ -68,6 +69,16 @@ export default function Dashboard() {
           <p className="text-slate-400 mt-3">
             Parti dai lavori aperti, controlla i preventivi in attesa e scegli la prossima azione.
           </p>
+        </section>
+
+        <section className="mb-6">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-2xl" aria-hidden="true">
+              🧠
+            </span>
+            <h2 className="text-2xl font-black">Assistente</h2>
+          </div>
+          <AssistantPanel />
         </section>
 
         <section className="mb-6">

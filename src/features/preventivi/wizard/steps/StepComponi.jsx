@@ -8,6 +8,7 @@ import CategorieListino from "../../components/CategorieListino";
 import CondizioniAvanzate from "../../components/CondizioniAvanzate";
 import KitRapidiBar from "../../components/KitRapidiBar";
 import PiuUsatiListino from "../../components/PiuUsatiListino";
+import PreventivoAssistantPanel from "../../components/PreventivoAssistantPanel";
 import PreventivoExpress from "../../components/PreventivoExpress";
 import { useCarrelloPreventivo } from "../../hooks/useCarrelloPreventivo";
 import { useComponiPreventivo } from "../../hooks/useComponiPreventivo";
@@ -190,6 +191,12 @@ function StepComponi({
             ) : null}
           </div>
         ) : null}
+
+        <PreventivoAssistantPanel
+          tipoLavoro={tipoLavoro}
+          lavorazioni={lavorazioni}
+          onAggiungiVoce={aggiungiVoce}
+        />
 
         {opzione?.evidenziaKit ? (
           <KitRapidiBar onAggiungiKit={aggiungiKit} />

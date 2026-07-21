@@ -9,6 +9,9 @@ const PRIORITA_BASSA = "bassa";
 const TIPO_CHECKLIST = "checklist";
 const TIPO_MATERIALE = "materiale";
 const TIPO_DURATA = "durata";
+const TIPO_DOCUMENTAZIONE = "documentazione";
+const TIPO_NOTA = "nota";
+const TIPO_ECONOMICO = "economico";
 
 const ACTION_VIEW = "view";
 const ACTION_ACCEPT = "accept";
@@ -270,6 +273,84 @@ function cardsDaSuggerimenti(
 }
 
 /**
+ * Promemoria operativi derivati dallo stato del cantiere aperto.
+ * Regole deterministiche, indipendenti dal Suggestion Engine.
+ * @param {object=} cantiere
+ * @returns {AssistantCard[]}
+ */
+function cardsPromemoriaCantiere(cantiere) {
+  if (!cantiere || typeof cantiere !== "object") return [];
+
+  /** @type {AssistantCard[]} */
+  const cards = [];
+  const foto = Array.isArray(cantiere.foto) ? cantiere.foto : [];
+  const note = String(cantiere.note || "").trim();
+  const materiali = Array.isArray(cantiere.materiali) ? cantiere.materiali : [];
+  const lavorazioni = Array.isArray(cantiere.lavorazioniOrigine)
+    ? cantiere.lavorazioniOrigine
+    : [];
+  const stato = String(cantiere.stato || "");
+
+  if (foto.length === 0) {
+    cards.push(
+      creaCard({
+        tipo: TIPO_DOCUMENTAZIONE,
+        titolo: "Documentazione fotografica",
+        descrizione:
+          "Mancano ancora le foto finali del quadro elettrico.",
+        confidence: 0.88,
+        origine: "experience",
+        action: ACTION_ACCEPT,
+      })
+    );
+  }
+
+  if (!note) {
+    cards.push(
+      creaCard({
+        tipo: TIPO_NOTA,
+        titolo: "Annotazioni operative",
+        descrizione:
+          "Ricorda di annotare il numero del differenziale installato.",
+        confidence: 0.75,
+        origine: "experience",
+        action: ACTION_ACCEPT,
+      })
+    );
+  }
+
+  if (materiali.length === 0 && lavorazioni.length > 0) {
+    cards.push(
+      creaCard({
+        tipo: TIPO_MATERIALE,
+        titolo: "Verifica materiali",
+        descrizione:
+          "Nei lavori simili è stato necessario un secondo sopralluogo. Verifica la disponibilità del materiale.",
+        confidence: 0.72,
+        origine: "experience",
+        action: ACTION_VIEW,
+      })
+    );
+  }
+
+  if (stato === "In corso" || stato === "Completato") {
+    cards.push(
+      creaCard({
+        tipo: TIPO_ECONOMICO,
+        titolo: "Stato economico",
+        descrizione:
+          "Verifica acconto e ricorda di segnare il saldo a fine lavori.",
+        confidence: 0.8,
+        origine: "experience",
+        action: ACTION_ACCEPT,
+      })
+    );
+  }
+
+  return cards;
+}
+
+/**
  * @param {AssistantCard[]} cards
  * @returns {AssistantPayload}
  */
@@ -343,17 +424,41 @@ export function getPreventivoAssistant(opzioni = {}) {
 
 /**
  * Assistant contestuale al Cantiere.
- * @param {OpzioniAssistant=} opzioni
+ * Unisce promemoria operativi del cantiere aperto e suggerimenti esperienza.
+ * @param {OpzioniAssistant & { cantiere?: object }=} opzioni
  * @returns {AssistantPayload}
  */
 export function getCantiereAssistant(opzioni = {}) {
-  const suggerimenti = risolviSuggerimenti(opzioni);
-  const cards = cardsDaSuggerimenti(suggerimenti, {
+  const cantiere = opzioni.cantiere;
+  const tipoLavoro =
+    opzioni.tipoLavoro ||
+    cantiere?.tipoLavoro ||
+    cantiere?.origine ||
+    "";
+
+  const suggerimenti = risolviSuggerimenti({
+    ...opzioni,
+    tipoLavoro,
+  });
+
+  const daEsperienza = cardsDaSuggerimenti(suggerimenti, {
     includiChecklist: true,
     includiMateriali: true,
-    includiDurata: false,
+    includiDurata: true,
+  }).map((card) => {
+    if (card.tipo !== TIPO_DURATA) return card;
+    return {
+      ...card,
+      titolo: String(card.titolo || "").replace(
+        "Durata stimata:",
+        "Tempo medio dei cantieri simili:"
+      ),
+      descrizione: "Riferimento basato sui cantieri simili completati",
+    };
   });
-  return creaPayload(cards);
+
+  const promemoria = cardsPromemoriaCantiere(cantiere);
+  return creaPayload([...promemoria, ...daEsperienza]);
 }
 
 /**

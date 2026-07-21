@@ -9,6 +9,8 @@ import { Link } from "react-router-dom";
 
 import { ROUTES } from "../../../app/routes";
 import { formatEuro, normalizzaNumero } from "../../../utils/preventivi";
+import { calcolaAvanzamentoChecklist } from "../cantieriDomain";
+import CantiereAssistantPanel from "./CantiereAssistantPanel";
 
 function OverviewCard({ icon: Icon, titolo, valore, descrizione, azione, onAzione }) {
   return (
@@ -48,13 +50,20 @@ function calcolaTotaleLavorazioni(lavorazioni = []) {
   );
 }
 
-export default function CantiereOverview({ cantiere }) {
+export default function CantiereOverview({ cantiere, onAssistantAction }) {
   const lavorazioni = cantiere.lavorazioniOrigine || [];
   const numeroLavorazioni = lavorazioni.length;
   const totalePreventivo = calcolaTotaleLavorazioni(lavorazioni);
   const dataCreazione = cantiere.dataCreazione || cantiere.creatoIl || "—";
   const mostraAzioniDaIniziare = cantiere.stato === "Da iniziare";
   const mostraAzioniInCorso = cantiere.stato === "In corso";
+  const numeroFoto = Array.isArray(cantiere.foto) ? cantiere.foto.length : 0;
+  const numeroMateriali = Array.isArray(cantiere.materiali)
+    ? cantiere.materiali.length
+    : 0;
+  const avanzamentoChecklist = calcolaAvanzamentoChecklist(
+    cantiere.checklist || []
+  );
 
   return (
     <div className="pb-36">
@@ -96,6 +105,13 @@ export default function CantiereOverview({ cantiere }) {
         ) : null}
       </header>
 
+      <div className="mb-6">
+        <CantiereAssistantPanel
+          cantiere={cantiere}
+          onAction={onAssistantAction}
+        />
+      </div>
+
       <div className="space-y-4">
         <OverviewCard
           icon={Wrench}
@@ -109,7 +125,7 @@ export default function CantiereOverview({ cantiere }) {
         <OverviewCard
           icon={Package}
           titolo="Materiali"
-          valore="0 elementi"
+          valore={`${numeroMateriali} ${numeroMateriali === 1 ? "elemento" : "elementi"}`}
           azione="Gestisci"
           onAzione={() => {}}
         />
@@ -117,7 +133,7 @@ export default function CantiereOverview({ cantiere }) {
         <OverviewCard
           icon={Camera}
           titolo="Foto"
-          valore="0 fotografie"
+          valore={`${numeroFoto} ${numeroFoto === 1 ? "fotografia" : "fotografie"}`}
           azione="Apri"
           onAzione={() => {}}
         />
@@ -125,8 +141,12 @@ export default function CantiereOverview({ cantiere }) {
         <OverviewCard
           icon={ClipboardList}
           titolo="Checklist"
-          valore="0%"
-          descrizione="Nessuna attività completata"
+          valore={`${avanzamentoChecklist}%`}
+          descrizione={
+            avanzamentoChecklist === 0
+              ? "Nessuna attività completata"
+              : `Avanzamento checklist ${avanzamentoChecklist}%`
+          }
           azione="Apri"
           onAzione={() => {}}
         />

@@ -1,8 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import CantiereOverview from "./CantiereOverview";
+
+vi.mock("./CantiereAssistantPanel", () => ({
+  default: () => <div data-testid="cantiere-assistant" />,
+}));
 
 const cantiereEsempio = {
   id: 1,
@@ -11,6 +15,9 @@ const cantiereEsempio = {
   indirizzo: "Via Roma 1, Milano",
   stato: "Da iniziare",
   dataCreazione: "21/07/2026",
+  foto: [],
+  materiali: [],
+  checklist: [],
   lavorazioniOrigine: [
     {
       id: "l-1",
@@ -30,7 +37,9 @@ describe("CantiereOverview", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("heading", { name: "Mario Rossi" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Mario Rossi" })
+    ).toBeInTheDocument();
     expect(screen.getByText("Via Roma 1, Milano")).toBeInTheDocument();
     expect(screen.getByText("Creato il 21/07/2026")).toBeInTheDocument();
     expect(screen.getByText("1 lavorazione")).toBeInTheDocument();
@@ -39,8 +48,13 @@ describe("CantiereOverview", () => {
     expect(screen.getByText("0 fotografie")).toBeInTheDocument();
     expect(screen.getByText("0%")).toBeInTheDocument();
     expect(screen.getByText("Nessuna attività completata")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "✏️ Modifica" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "▶️ Inizia lavoro" })).toBeInTheDocument();
+    expect(screen.getByTestId("cantiere-assistant")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "✏️ Modifica" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "▶️ Inizia lavoro" })
+    ).toBeInTheDocument();
   });
 
   it("mostra azione concludi lavoro quando il cantiere è in corso", () => {
@@ -55,6 +69,8 @@ describe("CantiereOverview", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("button", { name: "✅ Concludi lavoro" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "✅ Concludi lavoro" })
+    ).toBeInTheDocument();
   });
 });

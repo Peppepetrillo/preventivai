@@ -177,16 +177,30 @@ describe("assistantService", () => {
       expect(tipi.has("durata")).toBe(true);
     });
 
-    it("cantiere include checklist e materiali, non durata", () => {
+    it("cantiere include checklist, materiali, durata e promemoria operativi", () => {
       const payload = getCantiereAssistant({
         suggerimenti: SUGGERIMENTI_RICCHI,
+        cantiere: {
+          stato: "In corso",
+          foto: [],
+          note: "",
+          materiali: [],
+          lavorazioniOrigine: [{ nome: "Punto luce" }],
+        },
       });
       const tipi = new Set(payload.cards.map((c) => c.tipo));
 
       expect(tipi.has("checklist")).toBe(true);
       expect(tipi.has("materiale")).toBe(true);
-      expect(tipi.has("durata")).toBe(false);
-      expect(payload.summary.totaleSuggerimenti).toBe(4);
+      expect(tipi.has("durata")).toBe(true);
+      expect(tipi.has("documentazione")).toBe(true);
+      expect(tipi.has("nota")).toBe(true);
+      expect(tipi.has("economico")).toBe(true);
+      expect(
+        payload.cards.some((c) =>
+          String(c.titolo).includes("Tempo medio dei cantieri simili")
+        )
+      ).toBe(true);
     });
 
     it("cliente restituisce struttura vuota pronta per il futuro", () => {
