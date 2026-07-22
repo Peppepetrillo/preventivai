@@ -10,10 +10,14 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { ROUTES, routePreventivo } from "../../../app/routes";
 import { getCantiereAssistant } from "../../../services/assistantService";
+import { generaPdfVariantiCantiere } from "../../../services/cantieriVariantiPdfService";
 import { formatEuro, normalizzaNumero } from "../../../utils/preventivi";
+import { leggiDatiAzienda } from "../../../repositories/impostazioniRepository";
 import { calcolaAvanzamentoChecklist } from "../cantieriDomain";
+import { riepilogoEconomicoCantiere } from "../cantiereVariantiDomain";
 import CantiereAssistantPanel from "./CantiereAssistantPanel";
 import CantiereOperativo from "./CantiereOperativo";
+import CantiereVarianti from "./CantiereVarianti";
 
 function OverviewCard({
   icon: Icon,
@@ -94,6 +98,8 @@ export default function CantiereOverview({
   onEliminaCantiere,
   onIniziaLavoro,
   onCompletaLavoro,
+  onAggiungiVariante,
+  onEliminaVariante,
 }) {
   const navigate = useNavigate();
   const sezioneModifica = useRef(null);
@@ -101,6 +107,7 @@ export default function CantiereOverview({
   const sezioneMateriali = useRef(null);
   const sezioneFoto = useRef(null);
   const sezioneNote = useRef(null);
+  const sezioneVarianti = useRef(null);
   const inputFoto = useRef(null);
 
   const lavorazioni = cantiere.lavorazioniOrigine || [];
@@ -117,6 +124,10 @@ export default function CantiereOverview({
     typeof avanzamentoProp === "number"
       ? avanzamentoProp
       : calcolaAvanzamentoChecklist(cantiere.checklist || []);
+  const economico = useMemo(
+    () => riepilogoEconomicoCantiere(cantiere),
+    [cantiere]
+  );
 
   const apriSezioneFoto = useCallback(() => {
     scorriA(sezioneFoto.current);
@@ -144,6 +155,10 @@ export default function CantiereOverview({
     scorriA(sezioneModifica.current);
   }, []);
 
+  const apriSezioneVarianti = useCallback(() => {
+    scorriA(sezioneVarianti.current);
+  }, []);
+
   const triggerAggiungiFoto = useCallback(() => {
     scorriA(sezioneFoto.current);
     inputFoto.current?.click();
@@ -160,9 +175,14 @@ export default function CantiereOverview({
         case "nota":
           apriSezioneNote();
           break;
+        case "variante":
+          apriSezioneVarianti();
+          break;
         case "economico":
           if (cantiere.preventivoId) {
             navigate(routePreventivo(cantiere.preventivoId));
+          } else {
+            apriSezioneVarianti();
           }
           break;
         case "materiale":
@@ -182,6 +202,7 @@ export default function CantiereOverview({
       apriSezioneLavorazioni,
       apriSezioneMateriali,
       apriSezioneNote,
+      apriSezioneVarianti,
       cantiere.preventivoId,
       navigate,
       triggerAggiungiFoto,
@@ -285,6 +306,31 @@ export default function CantiereOverview({
           }
           azione="Apri"
           onAzione={apriSezioneChecklist}
+        />
+
+        <OverviewCard
+          icon={ClipboardList}
+          titolo="Varianti"
+          valore={formatEuro(economico.totaleAggiornato)}
+          descrizione={
+            economico.numeroVarianti === 0
+              ? `Preventivo ${formatEuro(economico.preventivoOriginale)} · nessuna variante`
+              : `Preventivo ${formatEuro(economico.preventivoOriginale)} · ${economico.numeroVarianti} varianti (${economico.deltaVarianti >= 0 ? "+" : ""}${formatEuro(economico.deltaVarianti)})`
+          }
+          azione="Gestisci"
+          onAzione={apriSezioneVarianti}
+        />
+      </div>
+
+      <div className="mb-6">
+        <CantiereVarianti
+          cantiere={cantiere}
+          sezioneRef={sezioneVarianti}
+          onAggiungiVariante={onAggiungiVariante}
+          onEliminaVariante={onEliminaVariante}
+          onEsportaPdf={async () => {
+            await generaPdfVariantiCantiere(cantiere, leggiDatiAzienda());
+          }}
         />
       </div>
 

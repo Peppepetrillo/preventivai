@@ -83,13 +83,9 @@ export default function BottomNav() {
   const modalitaCompatta = wizardAttivo;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[94%] max-w-2xl z-50 safe-bottom">
-      <div
-        className={`bg-slate-950/[0.82] backdrop-blur-2xl border border-white/10 rounded-[20px] shadow-[0_18px_50px_rgba(0,0,0,0.42)] ${
-          modalitaCompatta ? "px-3 py-2" : "px-2 py-2"
-        }`}
-      >
-        <div className="flex items-center justify-around">
+    <nav className="ds-bottom-nav" aria-label="Navigazione principale">
+      <div className="ds-bottom-nav-inner">
+        <div className="flex items-center justify-around gap-0.5">
           {menu.map((item) => {
             const Icon = item.icon;
             const attivo = isVoceAttiva(location, item);
@@ -98,25 +94,26 @@ export default function BottomNav() {
               <Link
                 key={item.nome}
                 to={item.path}
-                className="flex flex-col items-center justify-center relative min-w-[56px]"
+                className="flex flex-col items-center justify-center relative min-w-0 flex-1 max-w-[72px] py-0.5 min-h-[44px]"
                 aria-current={attivo ? "page" : undefined}
+                aria-label={item.nome}
               >
                 <div
-                  className={`rounded-[14px] flex items-center justify-center transition-all duration-300 ${
-                    modalitaCompatta ? "w-11 h-11" : "w-12 h-12"
+                  className={`rounded-[16px] flex items-center justify-center transition-colors duration-200 ${
+                    modalitaCompatta ? "w-11 h-11" : "w-10 h-10"
                   } ${
                     attivo
-                      ? "bg-yellow-400 text-slate-950 shadow-lg shadow-yellow-500/25 scale-105"
+                      ? "bg-yellow-400 text-slate-950"
                       : "text-slate-400"
                   }`}
                 >
-                  <Icon size={modalitaCompatta ? 20 : 22} />
+                  <Icon size={20} aria-hidden="true" />
                 </div>
 
                 <span
-                  className={`mt-1 transition-all duration-300 ${
-                    modalitaCompatta ? "text-[10px]" : "text-[11px]"
-                  } ${attivo ? "text-yellow-200" : "text-slate-500"}`}
+                  className={`mt-1 truncate max-w-full px-0.5 text-[10px] leading-none transition-colors duration-200 ${
+                    attivo ? "text-yellow-200 font-semibold" : "text-slate-500"
+                  }`}
                 >
                   {item.nome}
                 </span>
@@ -125,6 +122,6 @@ export default function BottomNav() {
           })}
         </div>
       </div>
-    </div>
+    </nav>
   );
 }

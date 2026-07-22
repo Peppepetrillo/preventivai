@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import {
+  Brain,
+  ChevronRight,
   ClipboardList,
   FileText,
   HardHat,
@@ -20,6 +22,7 @@ import {
   preparaCantieriOperativi,
   selezionaPreventiviInAttesa,
 } from "../features/dashboard/dashboardSelectors";
+import { classeBadgeStatoCantiere } from "../ui/designSystem";
 
 const AZIONI_RAPIDE = [
   {
@@ -48,6 +51,14 @@ const AZIONI_RAPIDE = [
   },
 ];
 
+function ContatoreSezione({ valore, etichetta }) {
+  return (
+    <span className="ds-badge-count" aria-label={`${valore} ${etichetta}`}>
+      {valore}
+    </span>
+  );
+}
+
 export default function Dashboard() {
   const [datiAzienda] = useDatiLocaliSincronizzati(leggiDatiAzienda);
   const [cantieri] = useDatiLocaliSincronizzati(leggiCantieri);
@@ -69,132 +80,157 @@ export default function Dashboard() {
 
   return (
     <PageWrapper>
-      <div className="pro-page text-white pb-24">
-        <section className="pro-panel-strong p-5 mb-6">
+      <div className="pro-page text-white safe-top">
+        <header className="pro-panel-strong px-4 py-4 mb-6">
           <p className="section-label">Home operativa</p>
-          <h1 className="text-3xl sm:text-4xl font-black mt-1">
-            {messaggioOperativo}
-          </h1>
-          <p className="text-slate-400 mt-3">
-            Parti dai lavori aperti, controlla i preventivi in attesa e scegli la prossima azione.
+          <h1 className="ds-page-title mt-1">{messaggioOperativo}</h1>
+          <p className="ds-text-secondary mt-2 max-w-2xl">
+            Lavori aperti, preventivi in attesa e prossima azione.
           </p>
-        </section>
+        </header>
 
-        <section className="mb-6">
+        <section className="mb-6" aria-labelledby="dashboard-assistente">
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-2xl" aria-hidden="true">
-              🧠
-            </span>
-            <h2 className="text-2xl font-black">Assistente</h2>
+            <Brain size={20} className="text-yellow-300 shrink-0" aria-hidden="true" />
+            <h2 id="dashboard-assistente" className="ds-section-title">
+              Assistente
+            </h2>
           </div>
           <AssistantPanel />
         </section>
 
-        <section className="mb-6">
+        <section className="mb-6" aria-labelledby="dashboard-cantieri">
           <div className="flex items-center justify-between gap-3 mb-3">
-            <div className="flex items-center gap-3">
-              <HardHat size={23} className="text-yellow-300" />
-              <h2 className="text-2xl font-black">Cantieri aperti</h2>
+            <div className="flex items-center gap-3 min-w-0">
+              <HardHat size={20} className="text-yellow-300 shrink-0" aria-hidden="true" />
+              <h2 id="dashboard-cantieri" className="ds-section-title truncate">
+                Cantieri aperti
+              </h2>
             </div>
-            <span className="text-sm text-slate-400">{cantieriAperti.length}</span>
+            <ContatoreSezione
+              valore={cantieriAperti.length}
+              etichetta="cantieri aperti"
+            />
           </div>
 
           <div className="grid gap-3">
             {cantieriAperti.length === 0 && (
-              <div className="pro-panel p-5 text-slate-400">
+              <div className="pro-panel px-4 py-4 ds-text-secondary">
                 Nessun cantiere aperto. Puoi crearne uno o trasformare un preventivo accettato in cantiere.
               </div>
             )}
 
             {cantieriAperti.map((cantiere) => (
-              <div key={cantiere.id} className="pro-panel p-4">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <Link
+                key={cantiere.id}
+                to={routeCantiere(cantiere.id)}
+                className="pro-panel ds-card-link p-4"
+                aria-label={`Apri cantiere ${cantiere.cliente || cantiere.nome || ""}`}
+              >
+                <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase text-yellow-200">
+                    <span className={classeBadgeStatoCantiere(cantiere.stato)}>
                       {cantiere.stato}
-                    </p>
-                    <h3 className="text-xl font-black mt-1 truncate">
+                    </span>
+                    <h3 className="ds-card-title mt-2 truncate">
                       {cantiere.cliente || cantiere.nome || "Cliente non indicato"}
                     </h3>
-                    <p className="text-sm text-slate-400 mt-1 truncate">
+                    <p className="ds-text-secondary mt-1 truncate">
                       {cantiere.nome}
                     </p>
                   </div>
-
-                  <Link
-                    to={routeCantiere(cantiere.id)}
-                    className="btn-primary px-5 py-3 flex items-center justify-center gap-2"
+                  <div
+                    className="w-10 h-10 rounded-[16px] bg-yellow-400 text-slate-950 flex items-center justify-center shrink-0"
+                    aria-hidden="true"
                   >
-                    <HardHat size={18} />
-                    Apri
-                  </Link>
+                    <ChevronRight size={20} strokeWidth={2.5} />
+                  </div>
                 </div>
 
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-sm mb-2">
+                <div className="mt-3">
+                  <div className="flex items-center justify-between text-[12px] mb-1">
                     <span className="text-slate-400">Checklist</span>
-                    <span className="font-black text-yellow-100">{cantiere.avanzamento}%</span>
+                    <span className="font-semibold text-yellow-100 tabular-nums">
+                      {cantiere.avanzamento}%
+                    </span>
                   </div>
-                  <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="h-1.5 rounded-full bg-white/10 overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={cantiere.avanzamento}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Avanzamento checklist ${cantiere.avanzamento}%`}
+                  >
                     <div
                       className="h-full bg-yellow-400"
                       style={{ width: `${cantiere.avanzamento}%` }}
                     />
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </section>
 
-        <section className="mb-6">
+        <section className="mb-6" aria-labelledby="dashboard-preventivi">
           <div className="flex items-center justify-between gap-3 mb-3">
-            <div className="flex items-center gap-3">
-              <ClipboardList size={23} className="text-sky-300" />
-              <h2 className="text-2xl font-black">Preventivi in attesa</h2>
+            <div className="flex items-center gap-3 min-w-0">
+              <ClipboardList size={20} className="text-sky-300 shrink-0" aria-hidden="true" />
+              <h2 id="dashboard-preventivi" className="ds-section-title truncate">
+                Preventivi in attesa
+              </h2>
             </div>
-            <span className="text-sm text-slate-400">{preventiviInAttesa.length}</span>
+            <ContatoreSezione
+              valore={preventiviInAttesa.length}
+              etichetta="preventivi in attesa"
+            />
           </div>
 
           <div className="grid gap-3">
             {preventiviInAttesa.length === 0 && (
-              <div className="pro-panel p-5 text-slate-400">
+              <div className="pro-panel px-4 py-4 ds-text-secondary">
                 Nessun preventivo in attesa di risposta.
               </div>
             )}
 
             {preventiviInAttesa.map((preventivo) => (
-              <div key={preventivo.id} className="pro-panel p-4">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <Link
+                key={preventivo.id}
+                to={routePreventivo(preventivo.id)}
+                className="pro-panel ds-card-link p-4"
+                aria-label={`Apri preventivo ${preventivo.cliente || preventivo.numero || ""}`}
+              >
+                <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase text-sky-200">
+                    <p className="text-[12px] font-medium uppercase tracking-wide text-sky-200/90">
                       {preventivo.numero || `PREV-${preventivo.id}`}
                     </p>
-                    <h3 className="text-xl font-black mt-1 truncate">
+                    <h3 className="ds-card-title mt-2 truncate">
                       {preventivo.cliente || "Cliente non indicato"}
                     </h3>
-                    <p className="text-emerald-300 font-black mt-2">
+                    <p className="text-emerald-300 font-semibold mt-2 tabular-nums ds-text-primary">
                       {formatEuro(preventivo.totale)}
                     </p>
                   </div>
-
-                  <Link
-                    to={routePreventivo(preventivo.id)}
-                    className="btn-secondary px-5 py-3 flex items-center justify-center gap-2"
+                  <div
+                    className="w-10 h-10 rounded-[16px] bg-sky-400/15 text-sky-200 border border-sky-300/25 flex items-center justify-center shrink-0"
+                    aria-hidden="true"
                   >
-                    <FileText size={18} />
-                    Apri
-                  </Link>
+                    <ChevronRight size={20} strokeWidth={2.5} />
+                  </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </section>
 
-        <section>
+        <section aria-labelledby="dashboard-azioni">
           <div className="flex items-center gap-3 mb-3">
-            <Plus size={23} className="text-yellow-300" />
-            <h2 className="text-2xl font-black">Azioni rapide</h2>
+            <Plus size={20} className="text-yellow-300 shrink-0" aria-hidden="true" />
+            <h2 id="dashboard-azioni" className="ds-section-title">
+              Azioni rapide
+            </h2>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -205,15 +241,17 @@ export default function Dashboard() {
                 <Link
                   key={azione.titolo}
                   to={azione.link}
-                  className="pro-panel p-4 hover:border-yellow-300/45 transition"
+                  className="pro-panel ds-card-link px-4 py-3"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-[14px] bg-yellow-400/12 text-yellow-200 flex items-center justify-center">
-                      <Icon size={23} />
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-[16px] bg-yellow-400/12 text-yellow-200 flex items-center justify-center shrink-0">
+                      <Icon size={20} aria-hidden="true" />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-black">{azione.titolo}</h3>
-                      <p className="text-sm text-slate-400 mt-1">{azione.testo}</p>
+                    <div className="min-w-0">
+                      <h3 className="ds-text-primary font-semibold truncate">
+                        {azione.titolo}
+                      </h3>
+                      <p className="ds-text-secondary mt-1">{azione.testo}</p>
                     </div>
                   </div>
                 </Link>

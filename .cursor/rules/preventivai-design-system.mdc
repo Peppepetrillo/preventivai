@@ -1,0 +1,67 @@
+---
+description: PreventivAI Design System v1.0 — UI mobile-first per elettricisti
+alwaysApply: true
+---
+
+# PreventivAI Design System v1.0
+
+PreventivAI è uno **strumento di lavoro**. Ogni elemento grafico deve ridurre tempo, errori e stress. Mai aggiungere complessità.
+
+## Regola d'oro
+
+Prima di aggiungere un componente: *"Fa risparmiare tempo all'elettricista?"* Se no → non entra.
+
+## Principles
+
+1. **Mobile First** — nasce per iPhone, non desktop adattato
+2. **One Hand UX** — azioni principali col pollice
+3. **Information First** — info prima, azioni dopo
+4. **Progressive Disclosure** — solo ciò che serve ora
+5. **Speed Over Decoration** — velocità > spettacolo
+
+## Tokens (usa CSS in `src/index.css`)
+
+| Token | Valori |
+|-------|--------|
+| Spacing | 4 · 8 · 12 · 16 · 24 · 32 (`--space-1`…`--space-6`) — mai valori casuali |
+| Radius card | 20px (`--radius-card`) |
+| Radius input/button | 16px (`--radius-control`) |
+| Badge | pill 999px |
+| Ombra | solo `--shadow-soft` |
+| Motion | 150–250ms, `--ease-standard` |
+
+## Tipografia (classi DS)
+
+- Titolo pagina: `.ds-page-title` (24px / 700) — **non** `font-black`
+- Titolo card: `.ds-card-title` (18px / 600)
+- Info principale: `.ds-text-primary` (16px / 500)
+- Secondaria: `.ds-text-secondary` (14px / 400)
+- Badge: `.ds-badge` (12px / 500)
+
+## Colori semantici fissi
+
+- Primary: giallo PreventivAI
+- Success: verde · Warning: ambra · Danger: rosso · Text: slate
+- **Badge stato (non cambiare):**
+  - In corso → blu (`.ds-badge-in-corso`)
+  - Da iniziare → grigio (`.ds-badge-da-iniziare`)
+  - Completato → verde (`.ds-badge-completato`)
+  - Sospeso → arancione (`.ds-badge-sospeso`)
+
+## Pattern obbligatori
+
+- **Card**: titolo + info essenziali + badge opzionale; **intera superficie tappabile**; mai bottone "Apri"
+- **Ricerca**: sempre in alto; solo `SearchInput` / `.ds-search`
+- **Empty**: Titolo → Descrizione → CTA (`.ds-empty`)
+- **Bottoni**: solo `.btn-primary` / `.btn-secondary` / `.btn-danger`
+- **Icone**: solo Lucide — mai emoji
+- **Liste**: ordine fisso delle informazioni sulla card
+- **Touch**: ≥44pt · Safe Area completa
+
+## Non fare
+
+- Nuovi stili bottone/card/search
+- Ombre pesanti o gradienti decorativi
+- Animazioni >250ms o fine a sé stesse
+- `font-black` salvo necessità reale di contrasto
+- Modificare dominio/repository/sync per sole ragioni UI

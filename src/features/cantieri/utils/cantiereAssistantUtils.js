@@ -25,6 +25,7 @@ export function firmaCantierePerAssistant(cantiere) {
     Array.isArray(cantiere.foto) ? cantiere.foto.length : 0,
     String(cantiere.note || "").trim().length,
     Array.isArray(cantiere.materiali) ? cantiere.materiali.length : 0,
+    Array.isArray(cantiere.varianti) ? cantiere.varianti.length : 0,
     checklist,
   ].join("|");
 }
@@ -52,6 +53,8 @@ export function etichettaAzioneCantiere(card) {
       return "Aggiungi nota";
     case "economico":
       return "Segna saldo";
+    case "variante":
+      return "Apri varianti";
     case "durata":
     case "materiale":
     case "checklist":

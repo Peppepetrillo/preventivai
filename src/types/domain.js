@@ -75,6 +75,21 @@
  * @property {string=} dataAccettazione
  * @property {"preventivo"|string=} origine
  * @property {LavorazionePreventivo[]=} lavorazioniOrigine
+ * @property {number=} preventivoOriginaleTotale Snapshot economico del preventivo iniziale
+ * @property {VarianteCantiere[]=} varianti Extra in cantiere (non alterano il preventivo)
+ */
+
+/**
+ * @typedef {Object} VarianteCantiere
+ * @property {number|string} id
+ * @property {string} data
+ * @property {"aggiunta"|"rimozione"} tipo
+ * @property {string} descrizione
+ * @property {string=} categoria
+ * @property {number} quantita
+ * @property {number} prezzoUnitario
+ * @property {number} totale
+ * @property {string=} note
  */
 
 export {};

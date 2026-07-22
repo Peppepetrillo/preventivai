@@ -203,6 +203,26 @@ export function useCantieri({
     });
   }
 
+  function aggiungiVariante(variante) {
+    if (!cantiereSelezionato || !variante) return;
+
+    aggiornaSelezionato({
+      varianti: [...(cantiereSelezionato.varianti || []), variante],
+    });
+    setMessaggio("Variante registrata sul cantiere.");
+  }
+
+  function eliminaVariante(varianteId) {
+    if (!cantiereSelezionato) return;
+
+    aggiornaSelezionato({
+      varianti: (cantiereSelezionato.varianti || []).filter(
+        (variante) => String(variante.id) !== String(varianteId)
+      ),
+    });
+    setMessaggio("Variante eliminata.");
+  }
+
   function completaLavoro() {
     if (!cantiereSelezionato) return;
 
@@ -304,6 +324,8 @@ export function useCantieri({
     aggiornaCampoMateriale,
     aggiungiMateriale,
     eliminaMateriale,
+    aggiungiVariante,
+    eliminaVariante,
     completaLavoro,
     aggiungiFoto,
     eliminaFoto,

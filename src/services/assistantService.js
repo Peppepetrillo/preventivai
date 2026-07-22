@@ -1,4 +1,8 @@
 import { getSuggerimenti } from "./experienceSuggestionService";
+import {
+  formatEuro,
+} from "../utils/preventivi";
+import { riepilogoEconomicoCantiere } from "../features/cantieri/cantiereVariantiDomain";
 
 export const ASSISTANT_VERSIONE = 1;
 
@@ -12,6 +16,7 @@ const TIPO_DURATA = "durata";
 const TIPO_DOCUMENTAZIONE = "documentazione";
 const TIPO_NOTA = "nota";
 const TIPO_ECONOMICO = "economico";
+const TIPO_VARIANTE = "variante";
 
 const ACTION_VIEW = "view";
 const ACTION_ACCEPT = "accept";
@@ -343,6 +348,43 @@ function cardsPromemoriaCantiere(cantiere) {
         confidence: 0.8,
         origine: "experience",
         action: ACTION_ACCEPT,
+      })
+    );
+  }
+
+  const economico = riepilogoEconomicoCantiere(cantiere);
+  if (economico.numeroVarianti > 0) {
+    const delta = economico.deltaVarianti;
+    const descrizioneDelta =
+      delta === 0
+        ? `Sono state registrate ${economico.numeroVarianti} varianti a saldo zero.`
+        : delta > 0
+          ? `Il valore del cantiere è aumentato di ${formatEuro(delta)} rispetto al preventivo iniziale.`
+          : `Il valore del cantiere è diminuito di ${formatEuro(Math.abs(delta))} rispetto al preventivo iniziale.`;
+
+    cards.push(
+      creaCard({
+        tipo: TIPO_VARIANTE,
+        titolo:
+          economico.numeroVarianti === 1
+            ? "1 variante di cantiere"
+            : `${economico.numeroVarianti} varianti di cantiere`,
+        descrizione: descrizioneDelta,
+        confidence: 0.9,
+        origine: "experience",
+        action: ACTION_VIEW,
+      })
+    );
+  } else if (stato === "In corso") {
+    cards.push(
+      creaCard({
+        tipo: TIPO_VARIANTE,
+        titolo: "Richieste extra del cliente?",
+        descrizione:
+          "Registra aggiunte o rimozioni come varianti: il preventivo originale resta invariato.",
+        confidence: 0.7,
+        origine: "experience",
+        action: ACTION_VIEW,
       })
     );
   }

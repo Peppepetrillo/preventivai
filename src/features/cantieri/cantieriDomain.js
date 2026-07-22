@@ -17,6 +17,8 @@ export function creaCantiere({ nome, cliente, indirizzo }) {
     materiali: [],
     foto: [],
     note: "",
+    preventivoOriginaleTotale: 0,
+    varianti: [],
     creatoIl: new Date().toLocaleDateString("it-IT"),
     aggiornatoIl: new Date().toLocaleDateString("it-IT"),
   };
@@ -31,6 +33,14 @@ export function creaCantiereDaPreventivo(
   const riferimento = preventivo.numero || `PREV-${preventivo.id}`;
   const lavorazioni = preventivo.lavorazioni || [];
   const notePreventivo = String(preventivo.note || "").trim();
+  const totalePreventivo = Number(preventivo.totale);
+  const preventivoOriginaleTotale = Number.isFinite(totalePreventivo)
+    ? totalePreventivo
+    : lavorazioni.reduce(
+        (acc, item) =>
+          acc + (Number(item.prezzo) || 0) * (Number(item.quantita) || 0),
+        0
+      );
 
   return {
     id: new Date().getTime(),
@@ -53,6 +63,8 @@ export function creaCantiereDaPreventivo(
     materiali: [],
     foto: [],
     note: notePreventivo || `Creato dal preventivo ${riferimento}.`,
+    preventivoOriginaleTotale,
+    varianti: [],
     creatoIl: dataCreazione,
     aggiornatoIl: dataCreazione,
   };

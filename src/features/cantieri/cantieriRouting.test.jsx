@@ -43,8 +43,11 @@ describe("Navigazione cantieri RC-1B", () => {
       </MemoryRouter>
     );
 
-    const link = screen.getByRole("link", { name: /Quadro ufficio/i });
+    const link = screen.getByRole("link", {
+      name: /Apri cantiere Bianchi SRL/i,
+    });
     expect(link).toHaveAttribute("href", routeCantiere("c-100"));
+    expect(screen.getByText("Quadro ufficio")).toBeInTheDocument();
   });
 
   it("il dettaglio legge l'id dall'URL e sopravvive al refresh simulato", () => {

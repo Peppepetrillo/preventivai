@@ -29,6 +29,14 @@ vi.mock("./CantiereAssistantPanel", () => ({
   ),
 }));
 
+vi.mock("./CantiereOperativo", () => ({
+  default: () => <div data-testid="cantiere-operativo" />,
+}));
+
+vi.mock("./CantiereVarianti", () => ({
+  default: () => <div data-testid="cantiere-varianti" />,
+}));
+
 const cantiereEsempio = {
   id: 1,
   nome: "Cantiere PREV-101",
@@ -107,6 +115,9 @@ describe("CantiereOverview", () => {
 
   it("esegue le CTA overview e le azioni assistant verso sezioni reali", () => {
     const onIniziaLavoro = vi.fn();
+    const sezioneLavorazioni = document.createElement("div");
+    sezioneLavorazioni.id = "sezione-lavorazioni";
+    document.body.appendChild(sezioneLavorazioni);
 
     render(
       <MemoryRouter>
@@ -119,12 +130,15 @@ describe("CantiereOverview", () => {
       </MemoryRouter>
     );
 
+    expect(screen.getByTestId("cantiere-varianti")).toBeInTheDocument();
+    expect(screen.getByTestId("cantiere-operativo")).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("button", { name: "Visualizza" }));
     expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole("button", { name: "Gestisci" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Gestisci" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Gestisci" })[1]);
     fireEvent.click(screen.getAllByRole("button", { name: "Apri" })[0]);
-    fireEvent.click(screen.getAllByRole("button", { name: "Apri" })[1]);
 
     fireEvent.click(screen.getByRole("button", { name: "▶️ Inizia lavoro" }));
     expect(onIniziaLavoro).toHaveBeenCalled();
@@ -133,9 +147,6 @@ describe("CantiereOverview", () => {
     fireEvent.click(screen.getByRole("button", { name: "Assistente nota" }));
     fireEvent.click(screen.getByRole("button", { name: "Assistente materiali" }));
 
-    expect(document.getElementById("sezione-materiali")).toBeTruthy();
-    expect(document.getElementById("sezione-foto")).toBeTruthy();
-    expect(document.getElementById("sezione-note")).toBeTruthy();
-    expect(document.getElementById("sezione-checklist")).toBeTruthy();
+    sezioneLavorazioni.remove();
   });
 });

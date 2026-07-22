@@ -67,6 +67,8 @@ describe("preventivoCantiereService", () => {
     expect(cantieri[0].dataCreazione).toBeTruthy();
     expect(cantieri[0].dataAccettazione).toBeTruthy();
     expect(cantieri[0].lavorazioniOrigine).toHaveLength(1);
+    expect(cantieri[0].varianti).toEqual([]);
+    expect(cantieri[0].preventivoOriginaleTotale).toBe(90);
     expect(cantieri[0].checklist[0].testo).toBe("Eseguire Installazione punto luce");
     expect(preventivi[0]).toMatchObject({
       stato: "Accettato",

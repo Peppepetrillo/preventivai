@@ -1,6 +1,9 @@
 import { Search } from "lucide-react";
 import { useId } from "react";
 
+/**
+ * Ricerca unica Design System v1.0 — sempre stessa altezza/radius/animazione.
+ */
 export default function SearchInput({
   value,
   onChange,
@@ -31,7 +34,7 @@ export default function SearchInput({
           onChange={onChange}
           placeholder={placeholder}
           aria-label={label}
-          className={`w-full h-11 rounded-[14px] bg-slate-950/50 border border-white/10 pl-11 pr-4 outline-none focus:border-yellow-300/50 ${inputClassName}`}
+          className={`ds-search ${inputClassName}`.trim()}
         />
       </div>
     </div>

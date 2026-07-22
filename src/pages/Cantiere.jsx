@@ -29,6 +29,8 @@ export default function Cantiere() {
     aggiornaCampoMateriale,
     aggiungiMateriale,
     eliminaMateriale,
+    aggiungiVariante,
+    eliminaVariante,
     completaLavoro,
     aggiungiFoto,
     eliminaFoto,
@@ -85,6 +87,8 @@ export default function Cantiere() {
           onEliminaCantiere={gestisciElimina}
           onIniziaLavoro={iniziaLavoro}
           onCompletaLavoro={completaLavoro}
+          onAggiungiVariante={aggiungiVariante}
+          onEliminaVariante={eliminaVariante}
         />
       </div>
     </PageWrapper>
