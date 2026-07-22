@@ -3,13 +3,23 @@ import { APP_DATA_KEYS, STORAGE_KEYS } from "../app/storageKeys";
 import { supabase, supabaseConfigurato } from "../lib/supabaseClient";
 import { leggiStorage, salvaStorage } from "../utils/storage";
 import { comprimiImmagine, generaMiniatura } from "../utils/immagini";
+import {
+  deveApplicareAggiornamentoCloud,
+  deveRispingereLocaleVersoCloud,
+} from "./cloudSyncIntegrity";
+import {
+  creaPathFotoCantiereImmutabile,
+  preparaPayloadCloud,
+} from "./cloudMediaPayload";
 
 const TABELLA_RECORD = "app_records";
 const STORAGE_SYNC = "preventivai-cloud-sync";
+const STORAGE_REVISIONI = "preventivai-cloud-local-revisions";
 const BUCKET_FOTO_CANTIERI = "foto-cantieri";
 
 let sessioneCorrente = null;
 let sincronizzazioneAttiva = false;
+let sincronizzazioneRichiesta = false;
 let canaleRealtime = null;
 
 const STORAGE_CODA = "preventivai-cloud-sync-queue";
@@ -49,6 +59,32 @@ function rimuoviDaCoda(chiave) {
 function svuotaCoda() {
   codaSalvataggi.clear();
   salvaCodaPersistente([]);
+}
+
+function chiaveInCodaOffline(chiave) {
+  return codaSalvataggi.has(chiave);
+}
+
+function leggiRevisioniLocali() {
+  return leggiStorage(STORAGE_REVISIONI, {});
+}
+
+function leggiRevisioneLocale(chiave) {
+  return leggiRevisioniLocali()[chiave] || null;
+}
+
+function salvaRevisioneLocale(chiave, updatedAt) {
+  if (!chiave) return;
+  const iso = updatedAt || new Date().toISOString();
+  const revisioni = {
+    ...leggiRevisioniLocali(),
+    [chiave]: iso,
+  };
+  salvaStorage(STORAGE_REVISIONI, revisioni);
+}
+
+function svuotaRevisioniLocali() {
+  salvaStorage(STORAGE_REVISIONI, {});
 }
 
 function leggiCodaEliminazioneMedia() {
@@ -92,10 +128,6 @@ function haValoreLocale(valore, fallback) {
   return valore !== undefined && valore !== null && valore !== fallback;
 }
 
-function leggiMetaSync() {
-  return leggiStorage(STORAGE_SYNC, {});
-}
-
 function salvaMetaSync(meta) {
   return salvaStorage(STORAGE_SYNC, meta);
 }
@@ -106,12 +138,40 @@ function notificaDatiAggiornati() {
 }
 
 function applicaRecordLocale(record) {
-  if (!record?.record_key) return;
+  if (!record?.record_key) return false;
   const fallback = APP_DATA_KEYS[record.record_key];
 
-  if (fallback === undefined && !(record.record_key in APP_DATA_KEYS)) return;
+  if (fallback === undefined && !(record.record_key in APP_DATA_KEYS)) {
+    return false;
+  }
 
   salvaStorage(record.record_key, record.payload ?? fallback);
+  salvaRevisioneLocale(record.record_key, record.updated_at);
+  return true;
+}
+
+/**
+ * Applica un record remoto solo se non viola coda offline / updated_at.
+ * @param {object} record
+ * @returns {boolean} true se lo storage locale è stato aggiornato
+ */
+function provaAdApplicareRecordCloud(record) {
+  if (!record?.record_key) return false;
+
+  const chiave = record.record_key;
+  const inCoda = chiaveInCodaOffline(chiave);
+
+  if (
+    !deveApplicareAggiornamentoCloud({
+      chiaveInCoda: inCoda,
+      updatedAtCloud: record.updated_at,
+      updatedAtLocale: leggiRevisioneLocale(chiave),
+    })
+  ) {
+    return false;
+  }
+
+  return applicaRecordLocale(record);
 }
 
 export function cloudDisponibile() {
@@ -139,22 +199,27 @@ async function caricaRecordCloud() {
 }
 
 async function salvaRecordCloud(chiave, valore) {
-  if (!cloudDisponibile() || !sessioneCorrente?.user) return;
+  if (!cloudDisponibile() || !sessioneCorrente?.user) return null;
 
-  const { error } = await supabase
+  const payload = preparaPayloadCloud(chiave, valore);
+
+  const { data, error } = await supabase
     .from(TABELLA_RECORD)
     .upsert(
       {
         user_id: sessioneCorrente.user.id,
         record_key: chiave,
-        payload: valore,
+        payload,
       },
       {
         onConflict: "user_id,record_key",
       }
-    );
+    )
+    .select("record_key,updated_at")
+    .maybeSingle();
 
   if (error) throw error;
+  return data;
 }
 
 function dataURLtoBlob(dataurl) {
@@ -177,7 +242,6 @@ async function migraImmaginiEsistenti() {
     if (!cantiere.foto || cantiere.foto.length === 0) continue;
 
     for (const foto of cantiere.foto) {
-      // Se l'immagine è in Base64 ed è sprovvista di miniatura (vecchio formato), eseguiamo la migrazione
       if (foto.src && foto.src.startsWith("data:") && !foto.miniatura) {
         try {
           const imgCompressa = await comprimiImmagine(foto.src, 1200, 0.7);
@@ -196,6 +260,7 @@ async function migraImmaginiEsistenti() {
 
   if (modificato) {
     salvaStorage(STORAGE_KEYS.cantieri, cantieri);
+    salvaRevisioneLocale(STORAGE_KEYS.cantieri, new Date().toISOString());
     aggiungiACoda(STORAGE_KEYS.cantieri, cantieri);
   }
 }
@@ -215,14 +280,20 @@ async function sincronizzaMediaCantieri() {
         try {
           const blob = dataURLtoBlob(foto.src);
           const estensione = blob.type.split("/")[1] || "jpeg";
-          const path = `${utenteId}/${cantiere.id}/${foto.id}.${estensione}`;
+          // Path immutabile + upsert:false: evita dipendere da policy UPDATE su Storage.
+          const path = creaPathFotoCantiereImmutabile({
+            utenteId,
+            cantiereId: cantiere.id,
+            fotoId: foto.id,
+            estensione,
+          });
+          const pathPrecedente = foto.storagePath;
 
-          // Carica su Supabase Storage
           const { error } = await supabase.storage
             .from(BUCKET_FOTO_CANTIERI)
             .upload(path, blob, {
               contentType: blob.type,
-              upsert: true,
+              upsert: false,
             });
 
           if (error) throw error;
@@ -231,6 +302,14 @@ async function sincronizzaMediaCantieri() {
           foto.src = foto.miniatura || "";
           foto.daSincronizzare = false;
           modificato = true;
+
+          if (
+            pathPrecedente &&
+            pathPrecedente !== path &&
+            typeof pathPrecedente === "string"
+          ) {
+            accodaEliminazioneMedia([pathPrecedente]);
+          }
         } catch (errore) {
           console.error(`Errore caricamento storage foto ${foto.nome}:`, errore);
         }
@@ -240,6 +319,7 @@ async function sincronizzaMediaCantieri() {
 
   if (modificato) {
     salvaStorage(STORAGE_KEYS.cantieri, cantieri);
+    salvaRevisioneLocale(STORAGE_KEYS.cantieri, new Date().toISOString());
     aggiungiACoda(STORAGE_KEYS.cantieri, cantieri);
     notificaDatiAggiornati();
   }
@@ -266,46 +346,82 @@ async function inviaCodaEliminazioneMedia() {
 }
 
 let invioInCorso = false;
+let drenaggioCodaRichiesto = false;
 
+async function eseguiPassataCodaSalvataggi() {
+  await inviaCodaEliminazioneMedia();
+  await sincronizzaMediaCantieri();
+
+  if (codaSalvataggi.size === 0) {
+    return;
+  }
+
+  const salvataggi = Array.from(codaSalvataggi.entries());
+
+  for (const [chiave, valore] of salvataggi) {
+    try {
+      // Per i cantieri rileggi lo storage dopo media sync e sanitizza:
+      // la coda non deve mai portare data: URL in app_records.
+      const daInviare =
+        chiave === STORAGE_KEYS.cantieri
+          ? preparaPayloadCloud(
+              chiave,
+              leggiStorage(STORAGE_KEYS.cantieri, APP_DATA_KEYS[STORAGE_KEYS.cantieri])
+            )
+          : preparaPayloadCloud(chiave, valore);
+
+      const salvato = await salvaRecordCloud(chiave, daInviare);
+      if (codaSalvataggi.get(chiave) === valore) {
+        rimuoviDaCoda(chiave);
+        salvaRevisioneLocale(
+          chiave,
+          salvato?.updated_at || new Date().toISOString()
+        );
+      }
+    } catch (errore) {
+      console.error(`Errore invio record per chiave ${chiave}:`, errore);
+    }
+  }
+}
+
+/**
+ * Svuota la coda in modo affidabile: se arriva un nuovo salvataggio durante
+ * un flush, ripete; errori su singole chiavi lasciano la voce in coda.
+ */
 async function inviaCodaSalvataggi() {
-  if (!cloudDisponibile() || !sessioneCorrente?.user || invioInCorso) {
+  if (!cloudDisponibile() || !sessioneCorrente?.user) {
+    return;
+  }
+
+  if (invioInCorso) {
+    drenaggioCodaRichiesto = true;
     return;
   }
 
   invioInCorso = true;
 
   try {
-    await inviaCodaEliminazioneMedia();
-
-    // Prima carichiamo i file multimediali pendenti su Supabase Storage
-    await sincronizzaMediaCantieri();
-
-    if (codaSalvataggi.size === 0) {
-      return;
-    }
-
-    const salvataggi = Array.from(codaSalvataggi.entries());
-
-    for (const [chiave, valore] of salvataggi) {
-      try {
-        await salvaRecordCloud(chiave, valore);
-        // Rimuoviamo dalla coda solo se il valore non è cambiato nel frattempo
-        if (codaSalvataggi.get(chiave) === valore) {
-          rimuoviDaCoda(chiave);
-        }
-      } catch (errore) {
-        console.error(`Errore invio record per chiave ${chiave}:`, errore);
-      }
-    }
+    do {
+      drenaggioCodaRichiesto = false;
+      await eseguiPassataCodaSalvataggi();
+    } while (drenaggioCodaRichiesto);
   } finally {
     invioInCorso = false;
+
+    if (drenaggioCodaRichiesto) {
+      drenaggioCodaRichiesto = false;
+      inviaCodaSalvataggi().catch((errore) => {
+        console.error("Errore drenaggio coda cloud:", errore);
+      });
+    }
   }
 }
 
 export function salvaDatoCloud(chiave, valore) {
   if (!APP_DATA_KEYS[chiave] && !(chiave in APP_DATA_KEYS)) return;
 
-  aggiungiACoda(chiave, valore);
+  salvaRevisioneLocale(chiave, new Date().toISOString());
+  aggiungiACoda(chiave, preparaPayloadCloud(chiave, valore));
 
   if (!sessioneCorrente?.user) return;
 
@@ -321,7 +437,11 @@ export async function salvaDatoCloudImmediato(chiave, valore) {
 
   if (!sessioneCorrente?.user) return;
 
-  await salvaRecordCloud(chiave, valore);
+  const salvato = await salvaRecordCloud(chiave, preparaPayloadCloud(chiave, valore));
+  salvaRevisioneLocale(
+    chiave,
+    salvato?.updated_at || new Date().toISOString()
+  );
 }
 
 export function eliminaFotoCantiereStorage(storagePaths) {
@@ -348,6 +468,42 @@ export async function creaUrlFirmatoFotoCantiere(storagePath) {
   return data?.signedUrl || "";
 }
 
+function gestisciEventoRealtime(evento) {
+  if (evento.eventType === "DELETE") {
+    const chiave = evento.old?.record_key;
+    if (!chiave || !(chiave in APP_DATA_KEYS)) return;
+
+    // Modifica locale pendente: non cancellare lo storage locale.
+    if (chiaveInCodaOffline(chiave)) {
+      inviaCodaSalvataggi().catch((errore) => {
+        console.error("Errore flush coda dopo DELETE realtime:", errore);
+      });
+      return;
+    }
+
+    salvaStorage(chiave, APP_DATA_KEYS[chiave]);
+    salvaRevisioneLocale(chiave, new Date().toISOString());
+    notificaDatiAggiornati();
+    return;
+  }
+
+  const record = evento.new;
+  const chiave = record?.record_key;
+
+  if (chiave && chiaveInCodaOffline(chiave)) {
+    // Coda offline vince: non applicare il cloud; prova a drenare.
+    inviaCodaSalvataggi().catch((errore) => {
+      console.error("Errore flush coda dopo evento realtime:", errore);
+    });
+    return;
+  }
+
+  const applicato = provaAdApplicareRecordCloud(record);
+  if (applicato) {
+    notificaDatiAggiornati();
+  }
+}
+
 export function avviaRealtimeCloud() {
   if (!cloudDisponibile() || !sessioneCorrente?.user || canaleRealtime) return;
 
@@ -363,18 +519,7 @@ export function avviaRealtimeCloud() {
         table: TABELLA_RECORD,
         filter: `user_id=eq.${userId}`,
       },
-      (evento) => {
-        if (evento.eventType === "DELETE") {
-          const chiave = evento.old?.record_key;
-          if (chiave in APP_DATA_KEYS) {
-            salvaStorage(chiave, APP_DATA_KEYS[chiave]);
-          }
-        } else {
-          applicaRecordLocale(evento.new);
-        }
-
-        notificaDatiAggiornati();
-      }
+      gestisciEventoRealtime
     )
     .subscribe();
 }
@@ -386,56 +531,97 @@ export function fermaRealtimeCloud() {
   canaleRealtime = null;
 }
 
+async function eseguiSincronizzazioneDaCloud() {
+  await migraImmaginiEsistenti();
+
+  const recordCloud = await caricaRecordCloud();
+  const recordPerChiave = new Map(
+    recordCloud.map((record) => [record.record_key, record])
+  );
+  const utenteId = sessioneCorrente.user.id;
+
+  for (const [chiave, fallback] of Object.entries(APP_DATA_KEYS)) {
+    if (chiaveInCodaOffline(chiave)) {
+      continue;
+    }
+
+    const recordCloudChiave = recordPerChiave.get(chiave);
+    const valoreLocale = leggiStorage(chiave, fallback);
+    const updatedAtLocale = leggiRevisioneLocale(chiave);
+
+    if (recordCloudChiave) {
+      const applicabile = deveApplicareAggiornamentoCloud({
+        chiaveInCoda: false,
+        updatedAtCloud: recordCloudChiave.updated_at,
+        updatedAtLocale,
+      });
+
+      if (applicabile) {
+        await salvaStorage(chiave, recordCloudChiave.payload ?? fallback);
+        salvaRevisioneLocale(chiave, recordCloudChiave.updated_at);
+        continue;
+      }
+
+      if (
+        deveRispingereLocaleVersoCloud({
+          chiaveInCoda: false,
+          updatedAtCloud: recordCloudChiave.updated_at,
+          updatedAtLocale,
+          haValoreLocale: haValoreLocale(valoreLocale, fallback),
+        })
+      ) {
+        aggiungiACoda(chiave, preparaPayloadCloud(chiave, valoreLocale));
+      }
+
+      continue;
+    }
+
+    // RC-2A wipe-safe: chiave assente sul cloud → non cancellare mai il locale.
+    // Nuove chiavi APP_DATA (es. esperienze) o record mancanti: push se c'è dato locale,
+    // altrimenti seed cloud con fallback senza toccare lo storage.
+    if (haValoreLocale(valoreLocale, fallback)) {
+      aggiungiACoda(chiave, preparaPayloadCloud(chiave, valoreLocale));
+      continue;
+    }
+
+    await salvaRecordCloud(chiave, fallback);
+    salvaRevisioneLocale(chiave, new Date().toISOString());
+  }
+
+  await inviaCodaSalvataggi();
+  await salvaMetaSync({
+    userId: utenteId,
+    syncedAt: new Date().toISOString(),
+  });
+  notificaDatiAggiornati();
+}
+
 export async function sincronizzaDaCloud() {
-  if (!cloudDisponibile() || !sessioneCorrente?.user || sincronizzazioneAttiva) {
+  if (!cloudDisponibile() || !sessioneCorrente?.user) {
+    return;
+  }
+
+  if (sincronizzazioneAttiva) {
+    sincronizzazioneRichiesta = true;
     return;
   }
 
   sincronizzazioneAttiva = true;
 
   try {
-    // Esegui la migrazione e compressione delle vecchie immagini in chiaro (retrocompatibilità)
-    await migraImmaginiEsistenti();
-
-    const recordCloud = await caricaRecordCloud();
-    const recordPerChiave = new Map(
-      recordCloud.map((record) => [record.record_key, record.payload])
-    );
-    const meta = leggiMetaSync();
-    const utenteId = sessioneCorrente.user.id;
-    const primaSincronizzazioneUtente = meta.userId !== utenteId;
-
-    for (const [chiave, fallback] of Object.entries(APP_DATA_KEYS)) {
-      if (codaSalvataggi.has(chiave)) {
-        // C'è una modifica locale pendente in coda (offline). Non sovrascriverla con il cloud.
-        continue;
-      }
-
-      const valoreCloud = recordPerChiave.get(chiave);
-      const valoreLocale = leggiStorage(chiave, fallback);
-
-      if (valoreCloud !== undefined) {
-        await salvaStorage(chiave, valoreCloud);
-        continue;
-      }
-
-      if (primaSincronizzazioneUtente && haValoreLocale(valoreLocale, fallback)) {
-        await salvaRecordCloud(chiave, valoreLocale);
-        continue;
-      }
-
-      await salvaRecordCloud(chiave, fallback);
-      await salvaStorage(chiave, fallback);
-    }
-
-    await inviaCodaSalvataggi();
-    await salvaMetaSync({
-      userId: utenteId,
-      syncedAt: new Date().toISOString(),
-    });
-    notificaDatiAggiornati();
+    do {
+      sincronizzazioneRichiesta = false;
+      await eseguiSincronizzazioneDaCloud();
+    } while (sincronizzazioneRichiesta);
   } finally {
     sincronizzazioneAttiva = false;
+
+    if (sincronizzazioneRichiesta) {
+      sincronizzazioneRichiesta = false;
+      sincronizzaDaCloud().catch((errore) => {
+        console.error("Errore sincronizzazione cloud differita:", errore);
+      });
+    }
   }
 }
 
@@ -444,6 +630,7 @@ export function pulisciSessioneCloudLocale() {
   sessioneCorrente = null;
   svuotaCoda();
   svuotaCodaEliminazioneMedia();
+  svuotaRevisioniLocali();
   sessionStorage.removeItem("preventivai-sbloccata");
   for (const [chiave, fallback] of Object.entries(APP_DATA_KEYS)) {
     salvaStorage(chiave, fallback);
@@ -451,4 +638,9 @@ export function pulisciSessioneCloudLocale() {
   salvaStorage(STORAGE_KEYS.pinAccesso, "");
   salvaMetaSync({});
   notificaDatiAggiornati();
+}
+
+/** Esposto per test RC-1A: indica se una chiave ha modifiche offline pendenti. */
+export function haModificheOfflinePendenti(chiave) {
+  return chiaveInCodaOffline(chiave);
 }

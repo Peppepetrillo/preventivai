@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Copy, Download, HardHat, Save, Trash2, Wallet } from "lucide-react";
-import { ROUTES, routePreventivo } from "../app/routes";
+import { ROUTES, routeCantiere, routePreventivo } from "../app/routes";
 import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
 import {
   eliminaPreventivo as eliminaPreventivoRepository,
@@ -238,22 +238,14 @@ export default function DettaglioPreventivo() {
           ? "Cantiere creato e collegato al preventivo."
           : "Apro il cantiere già collegato."
       );
-      navigate(ROUTES.cantieri, {
-        state: {
-          cantiereId: risultato.cantiere.id,
-        },
-      });
+      navigate(routeCantiere(risultato.cantiere.id));
     } catch (errore) {
       setMessaggio(errore.message || "Non è stato possibile creare il cantiere.");
     }
   }
 
   function apriCantiereCollegato() {
-    navigate(ROUTES.cantieri, {
-      state: {
-        cantiereId: cantiereCollegatoId,
-      },
-    });
+    navigate(routeCantiere(cantiereCollegatoId));
   }
 
   if (!preventivo) {

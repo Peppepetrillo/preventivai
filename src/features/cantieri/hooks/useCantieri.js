@@ -6,6 +6,7 @@ import {
   creaVoceChecklist,
   aggiornaCantiere,
 } from "../cantieriDomain";
+import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
 import { leggiCantieri, salvaCantieri } from "../../../repositories/cantieriRepository";
 import {
   apriFotoCantiere,
@@ -28,23 +29,40 @@ const FORM_MATERIALE_INIZIALE = {
   unita: "cad",
 };
 
-export function useCantieri({ cantiereInizialeId = "" } = {}) {
-  const [cantieri, setCantieri] = useState(() => leggiCantieri());
-  const [cantiereSelezionatoId, setCantiereSelezionatoId] = useState(
-    () => cantiereInizialeId || cantieri[0]?.id || ""
-  );
+/**
+ * @param {{ cantiereId?: string|number, cantiereInizialeId?: string|number }} [opzioni]
+ * `cantiereId` è la selezione vincolata dall'URL (route canonica /cantiere/:id).
+ * `cantiereInizialeId` resta supportato per compatibilità test legacy
+ * (non usare location.state in produzione).
+ */
+export function useCantieri({
+  cantiereId = "",
+  cantiereInizialeId = "",
+} = {}) {
+  const idEsterno = cantiereId || cantiereInizialeId || "";
+
+  const [cantieri, setCantieri] = useDatiLocaliSincronizzati(leggiCantieri);
+  const [cantiereSelezionatoIdInterno, setCantiereSelezionatoIdInterno] =
+    useState(() => idEsterno || cantieri[0]?.id || "");
   const [nuovoCantiere, setNuovoCantiere] = useState(FORM_CANTIERE_INIZIALE);
   const [nuovaChecklist, setNuovaChecklist] = useState("");
   const [nuovoMateriale, setNuovoMateriale] = useState(FORM_MATERIALE_INIZIALE);
   const [messaggio, setMessaggio] = useState("");
 
-  const cantiereSelezionato = useMemo(
-    () =>
-      cantieri.find(
-        (cantiere) => String(cantiere.id) === String(cantiereSelezionatoId)
-      ) || cantieri[0],
-    [cantieri, cantiereSelezionatoId]
-  );
+  // Con id URL/esterno la selezione è derivata; altrimenti stato locale (lista/test).
+  const cantiereSelezionatoId = idEsterno || cantiereSelezionatoIdInterno;
+
+  function setCantiereSelezionatoId(prossimoId) {
+    setCantiereSelezionatoIdInterno(prossimoId);
+  }
+
+  const cantiereSelezionato = useMemo(() => {
+    const trovato = cantieri.find(
+      (cantiere) => String(cantiere.id) === String(cantiereSelezionatoId)
+    );
+    if (idEsterno) return trovato || null;
+    return trovato || cantieri[0] || null;
+  }, [cantieri, cantiereSelezionatoId, idEsterno]);
 
   const avanzamento = cantiereSelezionato
     ? calcolaAvanzamentoChecklist(cantiereSelezionato.checklist || [])
@@ -56,16 +74,16 @@ export function useCantieri({ cantiereInizialeId = "" } = {}) {
   }
 
   function aggiornaCampoNuovoCantiere(campo, valore) {
-    setNuovoCantiere({
-      ...nuovoCantiere,
+    setNuovoCantiere((precedente) => ({
+      ...precedente,
       [campo]: valore,
-    });
+    }));
   }
 
   function aggiungiCantiere() {
     if (!nuovoCantiere.nome.trim()) {
       setMessaggio("Inserisci il nome del cantiere.");
-      return;
+      return null;
     }
 
     const cantiere = creaCantiere(nuovoCantiere);
@@ -75,28 +93,37 @@ export function useCantieri({ cantiereInizialeId = "" } = {}) {
     setCantiereSelezionatoId(cantiere.id);
     setNuovoCantiere(FORM_CANTIERE_INIZIALE);
     setMessaggio("Cantiere creato sul dispositivo.");
+    return cantiere;
   }
 
   function aggiornaSelezionato(modifiche) {
     if (!cantiereSelezionato) return;
 
+    const idTarget = cantiereSelezionato.id;
+
     salvaListaCantieri(
       cantieri.map((cantiere) =>
-        String(cantiere.id) === String(cantiereSelezionato.id)
+        String(cantiere.id) === String(idTarget)
           ? aggiornaCantiere(cantiere, modifiche)
           : cantiere
       )
     );
   }
 
-  function eliminaCantiere() {
+  function iniziaLavoro() {
     if (!cantiereSelezionato) return;
+    aggiornaSelezionato({ stato: "In corso" });
+    setMessaggio("Lavoro avviato.");
+  }
+
+  function eliminaCantiere() {
+    if (!cantiereSelezionato) return false;
 
     const conferma = window.confirm(
       `Eliminare il cantiere ${cantiereSelezionato.nome}?`
     );
 
-    if (!conferma) return;
+    if (!conferma) return false;
 
     eliminaStorageFotoCantieri(cantiereSelezionato.foto || []);
 
@@ -107,6 +134,7 @@ export function useCantieri({ cantiereInizialeId = "" } = {}) {
     salvaListaCantieri(cantieriAggiornati);
     setCantiereSelezionatoId(cantieriAggiornati[0]?.id || "");
     setMessaggio("Cantiere eliminato.");
+    return true;
   }
 
   function aggiungiChecklist() {
@@ -122,6 +150,8 @@ export function useCantieri({ cantiereInizialeId = "" } = {}) {
   }
 
   function aggiornaChecklist(voceId, modifiche) {
+    if (!cantiereSelezionato) return;
+
     aggiornaSelezionato({
       checklist: (cantiereSelezionato.checklist || []).map((voce) =>
         String(voce.id) === String(voceId)
@@ -135,6 +165,8 @@ export function useCantieri({ cantiereInizialeId = "" } = {}) {
   }
 
   function eliminaChecklist(voceId) {
+    if (!cantiereSelezionato) return;
+
     aggiornaSelezionato({
       checklist: (cantiereSelezionato.checklist || []).filter(
         (voce) => String(voce.id) !== String(voceId)
@@ -143,10 +175,10 @@ export function useCantieri({ cantiereInizialeId = "" } = {}) {
   }
 
   function aggiornaCampoMateriale(campo, valore) {
-    setNuovoMateriale({
-      ...nuovoMateriale,
+    setNuovoMateriale((precedente) => ({
+      ...precedente,
       [campo]: valore,
-    });
+    }));
   }
 
   function aggiungiMateriale() {
@@ -162,6 +194,8 @@ export function useCantieri({ cantiereInizialeId = "" } = {}) {
   }
 
   function eliminaMateriale(materialeId) {
+    if (!cantiereSelezionato) return;
+
     aggiornaSelezionato({
       materiali: (cantiereSelezionato.materiali || []).filter(
         (materiale) => String(materiale.id) !== String(materialeId)
@@ -190,8 +224,9 @@ export function useCantieri({ cantiereInizialeId = "" } = {}) {
 
   async function aggiungiFoto(event) {
     const file = event.target.files?.[0];
+    const idTarget = cantiereSelezionato?.id;
 
-    if (!file || !cantiereSelezionato) return;
+    if (!file || !idTarget) return;
 
     if (!fileFotoValido(file)) {
       setMessaggio("Seleziona una foto valida.");
@@ -203,8 +238,16 @@ export function useCantieri({ cantiereInizialeId = "" } = {}) {
       setMessaggio("Elaborazione immagine...");
       const nuovaFoto = await preparaFotoCantiere(file);
 
-      aggiornaSelezionato({
-        foto: [...(cantiereSelezionato.foto || []), nuovaFoto],
+      setCantieri((precedenti) => {
+        const aggiornati = precedenti.map((cantiere) =>
+          String(cantiere.id) === String(idTarget)
+            ? aggiornaCantiere(cantiere, {
+                foto: [...(cantiere.foto || []), nuovaFoto],
+              })
+            : cantiere
+        );
+        salvaCantieri(aggiornati);
+        return aggiornati;
       });
       setMessaggio("Foto aggiunta con successo.");
     } catch (e) {
@@ -216,6 +259,8 @@ export function useCantieri({ cantiereInizialeId = "" } = {}) {
   }
 
   function eliminaFoto(fotoId) {
+    if (!cantiereSelezionato) return;
+
     const fotoDaEliminare = (cantiereSelezionato.foto || []).find(
       (foto) => String(foto.id) === String(fotoId)
     );
@@ -251,6 +296,7 @@ export function useCantieri({ cantiereInizialeId = "" } = {}) {
     aggiornaCampoNuovoCantiere,
     aggiungiCantiere,
     aggiornaSelezionato,
+    iniziaLavoro,
     eliminaCantiere,
     aggiungiChecklist,
     aggiornaChecklist,

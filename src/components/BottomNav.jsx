@@ -12,6 +12,7 @@ import { Link, useLocation } from "react-router-dom";
 
 import { ROUTES } from "../app/routes";
 import { useWizardContext } from "../features/preventivi/wizard/useWizardContext";
+import { isVoceAttiva } from "./bottomNavUtils";
 
 const MENU_COMPLETO = [
   {
@@ -20,8 +21,9 @@ const MENU_COMPLETO = [
     icon: Home,
   },
   {
+    // Lista ufficiale documenti; il wizard resta su /preventivi (azioni Dashboard).
     nome: "Preventivi",
-    path: ROUTES.preventivi,
+    path: ROUTES.archivio,
     icon: FileText,
   },
   {
@@ -73,19 +75,6 @@ const MENU_WIZARD = [
     icon: List,
   },
 ];
-
-function isVoceAttiva(location, item) {
-  return (
-    location.pathname === item.path ||
-    (item.path === ROUTES.incassi &&
-      location.pathname.startsWith("/preventivo/")) ||
-    (item.path === ROUTES.archivio &&
-      location.pathname.startsWith("/preventivo/")) ||
-    (item.path === ROUTES.clienti &&
-      location.pathname.startsWith("/cliente/")) ||
-    (item.path === ROUTES.preventivi && location.pathname === ROUTES.preventivi)
-  );
-}
 
 export default function BottomNav() {
   const location = useLocation();

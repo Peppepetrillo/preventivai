@@ -1,4 +1,5 @@
 import {
+  useMemo,
   useState,
 } from "react";
 
@@ -11,7 +12,12 @@ import {
 
 import PageWrapper from "../components/PageWrapper";
 import { routeCliente } from "../app/routes";
+import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import { leggiClienti, salvaClienti as salvaClientiRepository } from "../repositories/clientiRepository";
+import {
+  limitaElencoVisibile,
+  PAGINA_LISTA_DEFAULT,
+} from "../utils/listPerformance";
 
 import {
   motion,
@@ -27,9 +33,14 @@ export default function Clienti() {
     useNavigate();
 
   const [clienti, setClienti] =
-    useState(() =>
-      leggiClienti()
-    );
+    useDatiLocaliSincronizzati(leggiClienti);
+  const [limite, setLimite] = useState(PAGINA_LISTA_DEFAULT);
+
+  const clientiVisibili = useMemo(
+    () => limitaElencoVisibile(clienti, limite),
+    [clienti, limite]
+  );
+  const rimanenti = Math.max(0, clienti.length - clientiVisibili.length);
 
   const [nome, setNome] =
     useState("");
@@ -188,28 +199,25 @@ export default function Clienti() {
 
         <div className="space-y-5">
 
-          {clienti.map(
+          {clientiVisibili.map(
             (cliente) => (
 
-              <motion.div
+              <div
                 key={cliente.id}
-                initial={{
-                  opacity: 0,
-                  y: 20,
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                }}
-                whileTap={{
-                  scale: 0.98,
-                }}
+                role="button"
+                tabIndex={0}
                 onClick={() =>
                   navigate(
                     routeCliente(cliente.id)
                   )
                 }
-                className="pro-panel p-5 hover:border-yellow-300/40 transition"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    navigate(routeCliente(cliente.id));
+                  }
+                }}
+                className="pro-panel p-5 hover:border-yellow-300/40 transition cursor-pointer"
               >
 
                 <div className="flex items-start justify-between">
@@ -268,10 +276,20 @@ export default function Clienti() {
 
                 </div>
 
-              </motion.div>
+              </div>
 
             )
           )}
+
+          {rimanenti > 0 ? (
+            <button
+              type="button"
+              className="w-full btn-secondary p-4"
+              onClick={() => setLimite((n) => n + PAGINA_LISTA_DEFAULT)}
+            >
+              Mostra altri ({rimanenti})
+            </button>
+          ) : null}
 
         </div>
 

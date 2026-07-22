@@ -1,15 +1,16 @@
+import { useMemo } from "react";
 import {
   ClipboardList,
   FileText,
   HardHat,
-  MapPinned,
   Plus,
   UserPlus,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import PageWrapper from "../components/PageWrapper";
 import AssistantPanel from "../components/assistant/AssistantPanel";
-import { ROUTES, routePreventivo } from "../app/routes";
+import { ROUTES, routeCantiere, routePreventivo } from "../app/routes";
+import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import { leggiCantieri } from "../repositories/cantieriRepository";
 import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
 import { leggiPreventivi } from "../repositories/preventiviRepository";
@@ -28,6 +29,12 @@ const AZIONI_RAPIDE = [
     icon: FileText,
   },
   {
+    titolo: "Archivio Preventivi",
+    testo: "Riapri documenti salvati e stati.",
+    link: ROUTES.archivio,
+    icon: ClipboardList,
+  },
+  {
     titolo: "Nuovo Cliente",
     testo: "Aggiungi contatto e riferimenti.",
     link: ROUTES.clienti,
@@ -39,18 +46,20 @@ const AZIONI_RAPIDE = [
     link: ROUTES.cantieri,
     icon: HardHat,
   },
-  {
-    titolo: "Sopralluogo",
-    testo: "Modulo in arrivo.",
-    link: ROUTES.sopralluogo,
-    icon: MapPinned,
-  },
 ];
 
 export default function Dashboard() {
-  const datiAzienda = leggiDatiAzienda();
-  const cantieriAperti = preparaCantieriOperativi(leggiCantieri());
-  const preventiviInAttesa = selezionaPreventiviInAttesa(leggiPreventivi());
+  const [datiAzienda] = useDatiLocaliSincronizzati(leggiDatiAzienda);
+  const [cantieri] = useDatiLocaliSincronizzati(leggiCantieri);
+  const [preventivi] = useDatiLocaliSincronizzati(leggiPreventivi);
+  const cantieriAperti = useMemo(
+    () => preparaCantieriOperativi(cantieri),
+    [cantieri]
+  );
+  const preventiviInAttesa = useMemo(
+    () => selezionaPreventiviInAttesa(preventivi),
+    [preventivi]
+  );
   const nomeOperativo = datiAzienda.nomeDitta || "";
   const messaggioOperativo = creaMessaggioOperativo({
     nome: nomeOperativo,
@@ -113,8 +122,7 @@ export default function Dashboard() {
                   </div>
 
                   <Link
-                    to={ROUTES.cantieri}
-                    state={{ cantiereId: cantiere.id }}
+                    to={routeCantiere(cantiere.id)}
                     className="btn-primary px-5 py-3 flex items-center justify-center gap-2"
                   >
                     <HardHat size={18} />

@@ -5,6 +5,7 @@ import {
 
 import {
   HashRouter,
+  Navigate,
   Routes,
   Route,
 } from "react-router-dom";
@@ -121,6 +122,11 @@ export default function App() {
               element={
                 <DettaglioCliente />
               }
+            />
+
+            <Route
+              path="*"
+              element={<Navigate to={ROUTES.dashboard} replace />}
             />
 
           </Routes>

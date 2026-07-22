@@ -1,3 +1,4 @@
+import { useCallback, useMemo, useRef } from "react";
 import {
   Camera,
   ClipboardList,
@@ -5,14 +6,26 @@ import {
   Package,
   Wrench,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-import { ROUTES } from "../../../app/routes";
+import { ROUTES, routePreventivo } from "../../../app/routes";
+import { getCantiereAssistant } from "../../../services/assistantService";
 import { formatEuro, normalizzaNumero } from "../../../utils/preventivi";
 import { calcolaAvanzamentoChecklist } from "../cantieriDomain";
 import CantiereAssistantPanel from "./CantiereAssistantPanel";
+import CantiereOperativo from "./CantiereOperativo";
 
-function OverviewCard({ icon: Icon, titolo, valore, descrizione, azione, onAzione }) {
+function OverviewCard({
+  icon: Icon,
+  titolo,
+  valore,
+  descrizione,
+  azione,
+  onAzione,
+  disabled = false,
+}) {
+  const haAzione = typeof onAzione === "function" && azione;
+
   return (
     <section className="pro-panel p-5">
       <div className="flex items-start justify-between gap-4">
@@ -30,13 +43,16 @@ function OverviewCard({ icon: Icon, titolo, valore, descrizione, azione, onAzion
           ) : null}
         </div>
 
-        <button
-          type="button"
-          onClick={onAzione}
-          className="btn-secondary px-4 py-3 shrink-0 min-h-[48px]"
-        >
-          {azione}
-        </button>
+        {haAzione ? (
+          <button
+            type="button"
+            onClick={onAzione}
+            disabled={disabled}
+            className="btn-secondary px-4 py-3 shrink-0 min-h-[48px] disabled:opacity-45 disabled:cursor-not-allowed"
+          >
+            {azione}
+          </button>
+        ) : null}
       </div>
     </section>
   );
@@ -50,7 +66,43 @@ function calcolaTotaleLavorazioni(lavorazioni = []) {
   );
 }
 
-export default function CantiereOverview({ cantiere, onAssistantAction }) {
+function scorriA(elemento) {
+  if (!elemento) return;
+  elemento.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/**
+ * Dettaglio ufficiale del cantiere (overview + sezioni operative).
+ * Tutte le CTA e i suggerimenti Assistant devono avere un'azione reale.
+ */
+export default function CantiereOverview({
+  cantiere,
+  avanzamento: avanzamentoProp,
+  nuovaChecklist = "",
+  nuovoMateriale = { nome: "", quantita: "", unita: "cad" },
+  onAggiornaCampo,
+  onImpostaChecklist,
+  onAggiungiChecklist,
+  onAggiornaChecklist,
+  onEliminaChecklist,
+  onAggiornaCampoMateriale,
+  onAggiungiMateriale,
+  onEliminaMateriale,
+  onAggiungiFoto,
+  onEliminaFoto,
+  onApriFoto,
+  onEliminaCantiere,
+  onIniziaLavoro,
+  onCompletaLavoro,
+}) {
+  const navigate = useNavigate();
+  const sezioneModifica = useRef(null);
+  const sezioneChecklist = useRef(null);
+  const sezioneMateriali = useRef(null);
+  const sezioneFoto = useRef(null);
+  const sezioneNote = useRef(null);
+  const inputFoto = useRef(null);
+
   const lavorazioni = cantiere.lavorazioniOrigine || [];
   const numeroLavorazioni = lavorazioni.length;
   const totalePreventivo = calcolaTotaleLavorazioni(lavorazioni);
@@ -61,9 +113,92 @@ export default function CantiereOverview({ cantiere, onAssistantAction }) {
   const numeroMateriali = Array.isArray(cantiere.materiali)
     ? cantiere.materiali.length
     : 0;
-  const avanzamentoChecklist = calcolaAvanzamentoChecklist(
-    cantiere.checklist || []
+  const avanzamentoChecklist =
+    typeof avanzamentoProp === "number"
+      ? avanzamentoProp
+      : calcolaAvanzamentoChecklist(cantiere.checklist || []);
+
+  const apriSezioneFoto = useCallback(() => {
+    scorriA(sezioneFoto.current);
+  }, []);
+
+  const apriSezioneNote = useCallback(() => {
+    scorriA(sezioneNote.current);
+    const textarea = sezioneNote.current?.querySelector("textarea");
+    textarea?.focus();
+  }, []);
+
+  const apriSezioneMateriali = useCallback(() => {
+    scorriA(sezioneMateriali.current);
+  }, []);
+
+  const apriSezioneChecklist = useCallback(() => {
+    scorriA(sezioneChecklist.current);
+  }, []);
+
+  const apriSezioneLavorazioni = useCallback(() => {
+    scorriA(document.getElementById("sezione-lavorazioni"));
+  }, []);
+
+  const apriSezioneModifica = useCallback(() => {
+    scorriA(sezioneModifica.current);
+  }, []);
+
+  const triggerAggiungiFoto = useCallback(() => {
+    scorriA(sezioneFoto.current);
+    inputFoto.current?.click();
+  }, []);
+
+  const gestisciAssistantAction = useCallback(
+    (card, action) => {
+      if (action === "dismiss") return;
+
+      switch (card?.tipo) {
+        case "documentazione":
+          triggerAggiungiFoto();
+          break;
+        case "nota":
+          apriSezioneNote();
+          break;
+        case "economico":
+          if (cantiere.preventivoId) {
+            navigate(routePreventivo(cantiere.preventivoId));
+          }
+          break;
+        case "materiale":
+          apriSezioneMateriali();
+          break;
+        case "checklist":
+          apriSezioneChecklist();
+          break;
+        case "durata":
+        default:
+          apriSezioneLavorazioni();
+          break;
+      }
+    },
+    [
+      apriSezioneChecklist,
+      apriSezioneLavorazioni,
+      apriSezioneMateriali,
+      apriSezioneNote,
+      cantiere.preventivoId,
+      navigate,
+      triggerAggiungiFoto,
+    ]
   );
+
+  // "Segna saldo" richiede un preventivo collegato: altrimenti la card non viene mostrata.
+  const loadAssistant = useMemo(() => {
+    return (opzioni) => {
+      const payload = getCantiereAssistant(opzioni);
+      if (cantiere.preventivoId) return payload;
+      return {
+        ...payload,
+        cards: (payload.cards || []).filter((card) => card?.tipo !== "economico"),
+      };
+    };
+  }, [cantiere.preventivoId]);
 
   return (
     <div className="pb-36">
@@ -108,18 +243,19 @@ export default function CantiereOverview({ cantiere, onAssistantAction }) {
       <div className="mb-6">
         <CantiereAssistantPanel
           cantiere={cantiere}
-          onAction={onAssistantAction}
+          loadAssistant={loadAssistant}
+          onAction={gestisciAssistantAction}
         />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 mb-6">
         <OverviewCard
           icon={Wrench}
           titolo="Lavorazioni"
           valore={`${numeroLavorazioni} ${numeroLavorazioni === 1 ? "lavorazione" : "lavorazioni"}`}
           descrizione={`Totale preventivo ${formatEuro(totalePreventivo)}`}
           azione="Visualizza"
-          onAzione={() => {}}
+          onAzione={apriSezioneLavorazioni}
         />
 
         <OverviewCard
@@ -127,7 +263,7 @@ export default function CantiereOverview({ cantiere, onAssistantAction }) {
           titolo="Materiali"
           valore={`${numeroMateriali} ${numeroMateriali === 1 ? "elemento" : "elementi"}`}
           azione="Gestisci"
-          onAzione={() => {}}
+          onAzione={apriSezioneMateriali}
         />
 
         <OverviewCard
@@ -135,7 +271,7 @@ export default function CantiereOverview({ cantiere, onAssistantAction }) {
           titolo="Foto"
           valore={`${numeroFoto} ${numeroFoto === 1 ? "fotografia" : "fotografie"}`}
           azione="Apri"
-          onAzione={() => {}}
+          onAzione={apriSezioneFoto}
         />
 
         <OverviewCard
@@ -148,15 +284,43 @@ export default function CantiereOverview({ cantiere, onAssistantAction }) {
               : `Avanzamento checklist ${avanzamentoChecklist}%`
           }
           azione="Apri"
-          onAzione={() => {}}
+          onAzione={apriSezioneChecklist}
         />
       </div>
+
+      <CantiereOperativo
+        cantiere={cantiere}
+        avanzamento={avanzamentoChecklist}
+        nuovaChecklist={nuovaChecklist}
+        nuovoMateriale={nuovoMateriale}
+        refs={{
+          sezioneModifica,
+          sezioneChecklist,
+          sezioneMateriali,
+          sezioneFoto,
+          sezioneNote,
+          inputFoto,
+        }}
+        onAggiornaCampo={onAggiornaCampo}
+        onImpostaChecklist={onImpostaChecklist}
+        onAggiungiChecklist={onAggiungiChecklist}
+        onAggiornaChecklist={onAggiornaChecklist}
+        onEliminaChecklist={onEliminaChecklist}
+        onAggiornaCampoMateriale={onAggiornaCampoMateriale}
+        onAggiungiMateriale={onAggiungiMateriale}
+        onEliminaMateriale={onEliminaMateriale}
+        onAggiungiFoto={onAggiungiFoto}
+        onEliminaFoto={onEliminaFoto}
+        onApriFoto={onApriFoto}
+        onEliminaCantiere={onEliminaCantiere}
+      />
 
       {(mostraAzioniDaIniziare || mostraAzioniInCorso) && (
         <div className="fixed bottom-[88px] left-0 right-0 z-40 px-4 safe-bottom">
           <div className="max-w-[1120px] mx-auto pro-panel-strong p-3 grid grid-cols-2 gap-3">
             <button
               type="button"
+              onClick={apriSezioneModifica}
               className="btn-secondary min-h-[56px] text-base font-black flex items-center justify-center gap-2"
             >
               ✏️ Modifica
@@ -165,14 +329,18 @@ export default function CantiereOverview({ cantiere, onAssistantAction }) {
             {mostraAzioniDaIniziare ? (
               <button
                 type="button"
-                className="btn-primary min-h-[56px] text-base font-black flex items-center justify-center gap-2"
+                onClick={onIniziaLavoro}
+                disabled={typeof onIniziaLavoro !== "function"}
+                className="btn-primary min-h-[56px] text-base font-black flex items-center justify-center gap-2 disabled:opacity-45"
               >
                 ▶️ Inizia lavoro
               </button>
             ) : (
               <button
                 type="button"
-                className="btn-primary min-h-[56px] text-base font-black flex items-center justify-center gap-2"
+                onClick={onCompletaLavoro}
+                disabled={typeof onCompletaLavoro !== "function"}
+                className="btn-primary min-h-[56px] text-base font-black flex items-center justify-center gap-2 disabled:opacity-45"
               >
                 ✅ Concludi lavoro
               </button>

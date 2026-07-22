@@ -62,7 +62,8 @@ describe("experienceService", () => {
     expect(esperienza.id).toBeTruthy();
   });
 
-  it("salva e recupera esperienze dal repository", () => {
+  it("salva e recupera esperienze dal repository", async () => {
+    const { salvaDatoCloud } = await import("./cloudSyncService");
     const esperienza = creaEsperienzaDaCantiere(cantiereCompletato);
 
     salvaEsperienza(esperienza);
@@ -70,6 +71,10 @@ describe("experienceService", () => {
 
     expect(elenco).toHaveLength(1);
     expect(elenco[0].cantiereId).toBe(500);
+    expect(salvaDatoCloud).toHaveBeenCalledWith(
+      STORAGE_KEYS.esperienze,
+      expect.arrayContaining([expect.objectContaining({ cantiereId: 500 })])
+    );
   });
 
   it("registraEsperienzaCompletamento salva automaticamente", () => {

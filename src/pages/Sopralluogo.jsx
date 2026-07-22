@@ -3,25 +3,38 @@ import { Link } from "react-router-dom";
 import PageWrapper from "../components/PageWrapper";
 import { ROUTES } from "../app/routes";
 
+/**
+ * Modulo non ancora disponibile in RC 1.0.
+ * Nessuna CTA operativa: solo informativa + ritorno alla Home.
+ */
 export default function Sopralluogo() {
   return (
     <PageWrapper>
       <div className="pro-page text-white pb-24">
         <Link to={ROUTES.dashboard} className="text-slate-400 mb-5 inline-block">
-          Home
+          ← Home
         </Link>
 
-        <section className="pro-panel-strong p-6">
-          <div className="w-14 h-14 rounded-[14px] bg-yellow-400 text-slate-950 flex items-center justify-center mb-5">
-            <MapPinned size={28} />
+        <section className="pro-panel-strong p-6" aria-labelledby="sopralluogo-title">
+          <div className="w-14 h-14 rounded-[14px] bg-yellow-400/20 text-yellow-200 flex items-center justify-center mb-5">
+            <MapPinned size={28} aria-hidden="true" />
           </div>
           <span className="inline-flex rounded-full bg-yellow-400/15 px-3 py-1 text-xs font-black uppercase text-yellow-100">
-            Prossimamente
+            Disponibile prossimamente
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black mt-1">Sopralluogo</h1>
+          <h1 id="sopralluogo-title" className="text-3xl sm:text-4xl font-black mt-3">
+            Sopralluogo
+          </h1>
           <p className="text-slate-400 mt-3 max-w-xl">
-            Qui potrai preparare appunti, foto e misure prima di trasformarli in preventivo.
+            Qui potrai preparare appunti, foto e misure prima di trasformarli in
+            preventivo. La funzione non è ancora attiva in questa versione.
           </p>
+          <Link
+            to={ROUTES.dashboard}
+            className="btn-secondary inline-flex mt-6 px-5 py-3"
+          >
+            Torna alla Home
+          </Link>
         </section>
       </div>
     </PageWrapper>

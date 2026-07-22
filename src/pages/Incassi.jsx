@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { CheckCircle, FileText, Plus, Wallet } from "lucide-react";
 import PageWrapper from "../components/PageWrapper";
 import NumericInput from "../components/NumericInput";
+import { APP_EVENTS } from "../app/events";
 import { routePreventivo } from "../app/routes";
+import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import { leggiPreventivi, salvaPreventivi } from "../repositories/preventiviRepository";
 import { formatEuro, normalizzaNumero } from "../utils/preventivi";
 import {
@@ -14,9 +16,14 @@ import {
   segnaPreventivoSaldato,
 } from "../features/preventivi/incassiDomain";
 
+function leggiPreventiviIncasso() {
+  return leggiPreventivi().map(normalizzaPreventivoIncasso);
+}
+
 export default function Incassi() {
-  const [preventivi, setPreventivi] = useState(() =>
-    leggiPreventivi().map(normalizzaPreventivoIncasso)
+  const [preventivi, setPreventivi] = useDatiLocaliSincronizzati(
+    leggiPreventiviIncasso,
+    [APP_EVENTS.preventiviAggiornati]
   );
   const [importi, setImporti] = useState({});
   const riepilogo = riepilogaIncassi(preventivi);

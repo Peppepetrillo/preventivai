@@ -1,16 +1,67 @@
-# React + Vite
+# PreventivAI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Gestionale offline-first per elettricisti: preventivi, cantieri, clienti, incassi e assistente operativo basato sull’esperienza.
 
-Currently, two official plugins are available:
+**Versione:** `1.0.0-rc.3` (Release Candidate)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+- React 19 + Vite + Tailwind
+- Capacitor (iOS/Android) + PWA (`vite-plugin-pwa`)
+- Supabase (auth + `app_records` + storage foto) — opzionale
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Avvio locale
 
-## Expanding the ESLint configuration
+```bash
+npm install
+cp .env.example .env   # se usi Supabase
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+Build nativo:
+
+```bash
+npm run sync
+npm run open:ios
+# oppure
+npm run open:android
+```
+
+## Percorsi principali
+
+| Area | Route |
+|------|--------|
+| Home | `/` |
+| Nuovo preventivo (wizard) | `/preventivi` |
+| Archivio preventivi | `/archivio` |
+| Dettaglio preventivo | `/preventivo/:id` |
+| Cantieri (lista) | `/cantieri` |
+| Dettaglio cantiere | `/cantiere/:id` |
+| Incassi / Clienti / Listino / Impostazioni | rispettive route in `src/app/routes.js` |
+
+## Sicurezza (RC-3)
+
+- PIN locale opzionale 4–6 cifre, salvato come **hash PBKDF2** (mai in chiaro)
+- Timeout di inattività configurabile in Impostazioni
+- PIN **non** sincronizzato sul cloud
+- Face ID / Touch ID: predisposti, non ancora collegati
+
+## Cloud sync
+
+Vedi `supabase/README.md`. Dataset sincronizzato: preventivi, cantieri, clienti, dati azienda, listino, esperienze.
+
+## Release
+
+- Changelog: `CHANGELOG.md`
+- Checklist QA / Go-NoGo: `docs/RC3-RELEASE-CHECKLIST.md`
+- Tag consigliato: `v1.0.0-rc3` (dopo commit di rilascio)
+
+## Licenza
+
+Progetto privato — tutti i diritti riservati.

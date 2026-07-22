@@ -1,11 +1,32 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import CantiereOverview from "./CantiereOverview";
 
 vi.mock("./CantiereAssistantPanel", () => ({
-  default: () => <div data-testid="cantiere-assistant" />,
+  default: ({ onAction }) => (
+    <div data-testid="cantiere-assistant">
+      <button
+        type="button"
+        onClick={() => onAction?.({ tipo: "documentazione", id: "doc" }, "accept")}
+      >
+        Assistente foto
+      </button>
+      <button
+        type="button"
+        onClick={() => onAction?.({ tipo: "nota", id: "nota" }, "accept")}
+      >
+        Assistente nota
+      </button>
+      <button
+        type="button"
+        onClick={() => onAction?.({ tipo: "materiale", id: "mat" }, "view")}
+      >
+        Assistente materiali
+      </button>
+    </div>
+  ),
 }));
 
 const cantiereEsempio = {
@@ -30,10 +51,18 @@ const cantiereEsempio = {
 };
 
 describe("CantiereOverview", () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
   it("mostra header, card operative e azioni per cantiere da iniziare", () => {
     render(
       <MemoryRouter>
-        <CantiereOverview cantiere={cantiereEsempio} />
+        <CantiereOverview
+          cantiere={cantiereEsempio}
+          onIniziaLavoro={vi.fn()}
+          onCompletaLavoro={vi.fn()}
+        />
       </MemoryRouter>
     );
 
@@ -46,7 +75,7 @@ describe("CantiereOverview", () => {
     expect(screen.getByText(/Totale preventivo/i)).toBeInTheDocument();
     expect(screen.getByText("0 elementi")).toBeInTheDocument();
     expect(screen.getByText("0 fotografie")).toBeInTheDocument();
-    expect(screen.getByText("0%")).toBeInTheDocument();
+    expect(screen.getAllByText("0%").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Nessuna attività completata")).toBeInTheDocument();
     expect(screen.getByTestId("cantiere-assistant")).toBeInTheDocument();
     expect(
@@ -65,6 +94,8 @@ describe("CantiereOverview", () => {
             ...cantiereEsempio,
             stato: "In corso",
           }}
+          onIniziaLavoro={vi.fn()}
+          onCompletaLavoro={vi.fn()}
         />
       </MemoryRouter>
     );
@@ -72,5 +103,39 @@ describe("CantiereOverview", () => {
     expect(
       screen.getByRole("button", { name: "✅ Concludi lavoro" })
     ).toBeInTheDocument();
+  });
+
+  it("esegue le CTA overview e le azioni assistant verso sezioni reali", () => {
+    const onIniziaLavoro = vi.fn();
+
+    render(
+      <MemoryRouter>
+        <CantiereOverview
+          cantiere={cantiereEsempio}
+          onIniziaLavoro={onIniziaLavoro}
+          onCompletaLavoro={vi.fn()}
+          onAggiornaCampo={vi.fn()}
+        />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Visualizza" }));
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Gestisci" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Apri" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Apri" })[1]);
+
+    fireEvent.click(screen.getByRole("button", { name: "▶️ Inizia lavoro" }));
+    expect(onIniziaLavoro).toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Assistente foto" }));
+    fireEvent.click(screen.getByRole("button", { name: "Assistente nota" }));
+    fireEvent.click(screen.getByRole("button", { name: "Assistente materiali" }));
+
+    expect(document.getElementById("sezione-materiali")).toBeTruthy();
+    expect(document.getElementById("sezione-foto")).toBeTruthy();
+    expect(document.getElementById("sezione-note")).toBeTruthy();
+    expect(document.getElementById("sezione-checklist")).toBeTruthy();
   });
 });

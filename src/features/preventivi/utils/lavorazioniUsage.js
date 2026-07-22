@@ -62,10 +62,6 @@ export function leggiLavorazioniPiuUsate(listino = [], limit = PIU_USATI_LIMIT) 
     .map((item) => item.voce);
 }
 
-export function leggiStatisticheUso() {
-  return leggiUsage();
-}
-
 export function chiaveUsoDaLavorazione(lavorazione = {}) {
   const id = String(lavorazione.id || "");
 

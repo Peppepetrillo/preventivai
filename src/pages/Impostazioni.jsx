@@ -21,11 +21,18 @@ import {
 } from "../utils/backup";
 import {
   leggiDatiAzienda,
-  leggiPinAccesso,
   salvaDatiAzienda,
-  salvaPinAccesso,
 } from "../repositories/impostazioniRepository";
 import { useCloudAuth } from "../contexts/cloudAuthContext";
+import {
+  disattivaPin,
+  impostaPinSicuro,
+  leggiConfigAppLock,
+  pinEAttivo,
+  salvaConfigAppLock,
+  TIMEOUT_INATTIVITA_OPZIONI,
+  validaFormatoPin,
+} from "../services/pinSecurity";
 
 export default function Impostazioni() {
   const cloudAuth = useCloudAuth();
@@ -37,8 +44,13 @@ export default function Impostazioni() {
   const [telefono, setTelefono] = useState(datiSalvati.telefono || "");
   const [email, setEmail] = useState(datiSalvati.email || "");
   const [logo, setLogo] = useState(datiSalvati.logo || "");
-  const [pinAccesso, setPinAccesso] = useState(leggiPinAccesso());
+  const [pinNuovo, setPinNuovo] = useState("");
+  const [pinAttivo, setPinAttivo] = useState(() => pinEAttivo());
+  const [timeoutMinuti, setTimeoutMinuti] = useState(
+    () => leggiConfigAppLock().timeoutMinuti
+  );
   const [messaggio, setMessaggio] = useState("");
+  const [salvataggioPin, setSalvataggioPin] = useState(false);
 
   function salvaDati() {
     salvaDatiAzienda({ nomeDitta, telefono, email, logo });
@@ -96,21 +108,41 @@ export default function Impostazioni() {
     reader.readAsText(file);
   }
 
-  function salvaPin() {
-    const pinPulito = pinAccesso.trim();
-
-    if (pinPulito && pinPulito.length < 4) {
-      setMessaggio("Usa un PIN di almeno 4 cifre.");
+  async function salvaPin() {
+    const validazione = validaFormatoPin(pinNuovo);
+    if (!validazione.ok) {
+      setMessaggio(validazione.errore);
       return;
     }
 
-    salvaPinAccesso(pinPulito);
-    sessionStorage.removeItem("preventivai-sbloccata");
-    setMessaggio(
-      pinPulito
-        ? "PIN app aggiornato. Verrà richiesto alla prossima apertura."
-        : "PIN app rimosso."
-    );
+    setSalvataggioPin(true);
+    try {
+      if (validazione.disattiva) {
+        disattivaPin();
+        setPinAttivo(false);
+        setPinNuovo("");
+        setMessaggio("Blocco app disattivato.");
+        return;
+      }
+
+      await impostaPinSicuro(validazione.pin);
+      salvaConfigAppLock({ timeoutMinuti });
+      sessionStorage.removeItem("preventivai-sbloccata");
+      setPinAttivo(true);
+      setPinNuovo("");
+      setMessaggio(
+        "PIN aggiornato in modo sicuro. Verrà richiesto dopo l'inattività o alla prossima apertura."
+      );
+    } catch (errore) {
+      setMessaggio(errore.message || "Impossibile salvare il PIN.");
+    } finally {
+      setSalvataggioPin(false);
+    }
+  }
+
+  function salvaTimeoutInattivita() {
+    salvaConfigAppLock({ timeoutMinuti });
+    setMessaggio("Timeout di blocco aggiornato.");
   }
 
   return (
@@ -266,28 +298,78 @@ export default function Impostazioni() {
             <div>
               <h2 className="text-2xl font-bold">Blocco app</h2>
               <p className="text-slate-400 mt-1">
-                Proteggi clienti e preventivi con un PIN locale.
+                PIN locale 4–6 cifre, salvato come hash (mai in chiaro). Opzionale.
               </p>
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+          <p className="text-sm text-slate-400 mb-3">
+            Stato:{" "}
+            <span className="font-bold text-yellow-100">
+              {pinAttivo ? "Attivo" : "Disattivato"}
+            </span>
+          </p>
+
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto] mb-3">
             <input
               type="password"
               inputMode="numeric"
-              placeholder="PIN di accesso"
-              value={pinAccesso}
-              onChange={(event) => setPinAccesso(event.target.value)}
+              autoComplete="new-password"
+              maxLength={6}
+              placeholder={
+                pinAttivo
+                  ? "Nuovo PIN (lascia vuoto e salva per disattivare)"
+                  : "Imposta PIN di accesso"
+              }
+              value={pinNuovo}
+              onChange={(event) =>
+                setPinNuovo(event.target.value.replace(/\D/g, ""))
+              }
               className="input-pro"
+              aria-label="PIN di accesso"
             />
 
             <button
+              type="button"
               onClick={salvaPin}
-              className="btn-primary px-5 py-4"
+              disabled={salvataggioPin}
+              className="btn-primary px-5 py-4 disabled:opacity-45"
             >
-              Salva PIN
+              {salvataggioPin ? "Salvo..." : "Salva PIN"}
             </button>
           </div>
+
+          <label className="block text-sm text-slate-400 mb-2" htmlFor="timeout-lock">
+            Blocca dopo inattività
+          </label>
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <select
+              id="timeout-lock"
+              value={timeoutMinuti}
+              onChange={(event) =>
+                setTimeoutMinuti(Number(event.target.value))
+              }
+              className="input-pro"
+            >
+              {TIMEOUT_INATTIVITA_OPZIONI.map((opzione) => (
+                <option key={opzione.valore} value={opzione.valore}>
+                  {opzione.etichetta}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={salvaTimeoutInattivita}
+              className="btn-secondary px-5 py-4"
+            >
+              Salva timeout
+            </button>
+          </div>
+
+          <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+            Face ID / Touch ID: predisposti, non ancora collegati al dispositivo.
+            Il PIN non viene sincronizzato sul cloud.
+          </p>
         </div>
 
         <div className="pro-panel p-5">

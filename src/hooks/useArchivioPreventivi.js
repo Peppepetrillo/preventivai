@@ -1,25 +1,15 @@
-import { useEffect, useState } from "react";
-import { APP_EVENTS } from "../app/events";
 import { leggiPreventivi } from "../repositories/preventiviRepository";
+import { APP_EVENTS } from "../app/events";
+import { useDatiLocaliSincronizzati } from "./useDatiLocaliSincronizzati";
+
+function leggiArchivioPreventivi() {
+  return [...leggiPreventivi()].reverse();
+}
 
 export function useArchivioPreventivi() {
-  const [preventivi, setPreventivi] = useState([]);
-
-  useEffect(() => {
-    function aggiornaArchivio() {
-      setPreventivi([...leggiPreventivi()].reverse());
-    }
-
-    aggiornaArchivio();
-
-    window.addEventListener(APP_EVENTS.preventiviAggiornati, aggiornaArchivio);
-    window.addEventListener(APP_EVENTS.cloudSyncAggiornata, aggiornaArchivio);
-
-    return () => {
-      window.removeEventListener(APP_EVENTS.preventiviAggiornati, aggiornaArchivio);
-      window.removeEventListener(APP_EVENTS.cloudSyncAggiornata, aggiornaArchivio);
-    };
-  }, []);
+  const [preventivi] = useDatiLocaliSincronizzati(leggiArchivioPreventivi, [
+    APP_EVENTS.preventiviAggiornati,
+  ]);
 
   return preventivi;
 }

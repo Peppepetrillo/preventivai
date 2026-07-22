@@ -86,4 +86,39 @@ describe("useCantieri", () => {
     expect(result.current.cantiereSelezionato.stato).toBe("Completato");
     expect(result.current.messaggio).toBe("Lavoro completato.");
   });
+
+  it("avvia il lavoro impostando lo stato In corso", () => {
+    const { result } = renderHook(() => useCantieri());
+
+    act(() => {
+      result.current.aggiornaCampoNuovoCantiere("nome", "Impianto villa");
+    });
+    act(() => {
+      result.current.aggiungiCantiere();
+    });
+    act(() => {
+      result.current.iniziaLavoro();
+    });
+
+    expect(result.current.cantiereSelezionato.stato).toBe("In corso");
+    expect(result.current.messaggio).toBe("Lavoro avviato.");
+  });
+
+  it("vincola la selezione all'id URL (cantiereId) senza fallback", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.cantieri,
+      JSON.stringify([
+        { id: "primo", nome: "Primo", checklist: [] },
+        { id: "secondo", nome: "Secondo", checklist: [] },
+      ])
+    );
+
+    const { result } = renderHook(() =>
+      useCantieri({
+        cantiereId: "mancante",
+      })
+    );
+
+    expect(result.current.cantiereSelezionato).toBeNull();
+  });
 });
