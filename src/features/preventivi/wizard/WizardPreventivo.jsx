@@ -30,6 +30,7 @@ export default function WizardPreventivo() {
     indietro,
     aggiornaLavorazioni,
     aggiornaCondizioni,
+    aggiornaContesto,
     impostaExpressAutoOpen,
     impostaCliente,
     totaleStep,
@@ -71,8 +72,10 @@ export default function WizardPreventivo() {
             expressAutoOpen={stato.expressAutoOpen}
             lavorazioni={stato.lavorazioni}
             condizioni={stato.condizioni}
+            contesto={stato.contesto}
             onAggiornaLavorazioni={aggiornaLavorazioni}
             onAggiornaCondizioni={aggiornaCondizioni}
+            onAggiornaContesto={aggiornaContesto}
             onImpostaCliente={impostaCliente}
             onImpostaExpressAutoOpen={impostaExpressAutoOpen}
             onAvanti={avanti}

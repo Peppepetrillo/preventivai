@@ -36,6 +36,7 @@ export default function NumericInput({
   onChange,
   onBlur,
   inputMode = "decimal",
+  selectOnFocus = true,
   ...props
 }) {
   const [inModifica, setInModifica] = useState(false);
@@ -47,6 +48,18 @@ export default function NumericInput({
 
     if (valoreNumerico(evento.currentTarget.value) === 0) {
       setTesto("");
+    } else {
+      setTesto(valoreVisualizzato(value));
+      if (selectOnFocus) {
+        const campo = evento.currentTarget;
+        queueMicrotask(() => {
+          try {
+            campo.select();
+          } catch {
+            /* ignore */
+          }
+        });
+      }
     }
 
     props.onFocus?.(evento);
@@ -62,13 +75,25 @@ export default function NumericInput({
     onChange?.(prossimoTesto);
   }
 
-  function gestisciBlur(evento) {
+  function confermaValore(evento) {
     const prossimoValore = valoreNumerico(testo);
 
     setInModifica(false);
     setTesto(String(prossimoValore));
     onChange?.(prossimoValore);
     onBlur?.(evento);
+  }
+
+  function gestisciBlur(evento) {
+    confermaValore(evento);
+  }
+
+  function gestisciKeyDown(evento) {
+    if (evento.key === "Enter") {
+      evento.preventDefault();
+      evento.currentTarget.blur();
+    }
+    props.onKeyDown?.(evento);
   }
 
   return (
@@ -80,6 +105,7 @@ export default function NumericInput({
       onFocus={gestisciFocus}
       onChange={gestisciChange}
       onBlur={gestisciBlur}
+      onKeyDown={gestisciKeyDown}
     />
   );
 }

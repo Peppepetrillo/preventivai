@@ -86,23 +86,45 @@ describe("NumericInput", () => {
     expect(input).toHaveValue("12.5");
   });
 
-  it("converte un campo vuoto in zero al blur", async () => {
+  it("al focus seleziona il valore non zero", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <NumericInputControllato
+        aria-label="Quantità"
+        value={12}
+        inputMode="numeric"
+      />
+    );
+
+    const input = screen.getByLabelText(/quantità/i);
+    await user.click(input);
+
+    await vi.waitFor(() => {
+      expect(input.selectionStart).toBe(0);
+      expect(input.selectionEnd).toBe(String(input.value).length);
+    });
+  });
+
+  it("conferma il valore con Enter", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
 
     render(
       <NumericInputControllato
-        aria-label="Sconto"
-        value={0}
+        aria-label="Quantità"
+        value={1}
+        inputMode="numeric"
         onChange={onChange}
       />
     );
 
-    const input = screen.getByLabelText(/sconto/i);
+    const input = screen.getByLabelText(/quantità/i);
     await user.click(input);
-    await user.tab();
+    await user.clear(input);
+    await user.type(input, "8");
+    await user.keyboard("{Enter}");
 
-    expect(onChange).toHaveBeenLastCalledWith(0);
-    expect(input).toHaveValue("0");
+    expect(onChange).toHaveBeenLastCalledWith(8);
   });
 });

@@ -1,6 +1,10 @@
 import { useCallback, useReducer } from "react";
 
 import {
+  creaContestoPreventivo,
+  aggiornaContestoPreventivo,
+} from "../contesto/contestoPreventivoModel";
+import {
   CONDIZIONI_DEFAULT,
   indiceStep,
   stepDaIndice,
@@ -17,6 +21,7 @@ export const WIZARD_AZIONI = {
   vaiAStep: "vaiAStep",
   aggiornaLavorazioni: "aggiornaLavorazioni",
   aggiornaCondizioni: "aggiornaCondizioni",
+  aggiornaContesto: "aggiornaContesto",
   impostaExpressAutoOpen: "impostaExpressAutoOpen",
   impostaCliente: "impostaCliente",
   applicaPrefill: "applicaPrefill",
@@ -35,6 +40,7 @@ function statoIniziale() {
       ...CONDIZIONI_DEFAULT,
       ...(prefill?.condizioni || {}),
     },
+    contesto: creaContestoPreventivo(prefill?.contesto || {}),
     expressAutoOpen: Boolean(prefill?.expressAutoOpen),
     prefillSource: prefill?.source || null,
   };
@@ -107,6 +113,12 @@ function wizardReducer(stato, azione) {
         },
       };
 
+    case WIZARD_AZIONI.aggiornaContesto:
+      return {
+        ...stato,
+        contesto: aggiornaContestoPreventivo(stato.contesto, azione.payload),
+      };
+
     case WIZARD_AZIONI.impostaExpressAutoOpen:
       return {
         ...stato,
@@ -127,6 +139,7 @@ function wizardReducer(stato, azione) {
           ...CONDIZIONI_DEFAULT,
           ...(azione.payload?.condizioni || {}),
         },
+        contesto: creaContestoPreventivo(azione.payload?.contesto || {}),
       };
 
     case WIZARD_AZIONI.reset:
@@ -183,6 +196,10 @@ export function useWizardPreventivoState() {
     dispatch({ type: WIZARD_AZIONI.aggiornaCondizioni, payload: condizioni });
   }, []);
 
+  const aggiornaContesto = useCallback((patch) => {
+    dispatch({ type: WIZARD_AZIONI.aggiornaContesto, payload: patch });
+  }, []);
+
   const indiceCorrente = indiceStep(stato.stepId);
   const puoAndareIndietro = indiceCorrente > 0;
   const puoAndareAvanti = indiceCorrente < WIZARD_STEPS.length - 1;
@@ -201,6 +218,7 @@ export function useWizardPreventivoState() {
     impostaExpressAutoOpen,
     impostaCliente,
     aggiornaCondizioni,
+    aggiornaContesto,
     indiceCorrente,
     puoAndareIndietro,
     puoAndareAvanti,

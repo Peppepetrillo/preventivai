@@ -11,6 +11,8 @@ export const STORAGE_KEYS = {
   lavorazioniUsage: "preventivai:lavorazioni-usage",
   wizardExtensions: "preventivai:wizard-extensions",
   esperienze: "preventivai:esperienze",
+  /** Catalogo Serie Civile — solo locale, fuori sync cloud (Sprint 11C) */
+  serieCivili: "preventivai:serie-civili",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -24,6 +26,7 @@ export const STORAGE_FALLBACKS = {
   [STORAGE_KEYS.lavorazioniUsage]: {},
   [STORAGE_KEYS.wizardExtensions]: {},
   [STORAGE_KEYS.esperienze]: [],
+  [STORAGE_KEYS.serieCivili]: null,
 };
 
 export const APP_DATA_KEYS = {

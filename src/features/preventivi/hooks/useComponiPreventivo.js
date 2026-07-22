@@ -59,6 +59,7 @@ export function useComponiPreventivo({ onAggiornaLavorazioni }) {
   );
 
   return {
+    listino,
     listinoFiltrato,
     piuUsati,
     ricerca,
