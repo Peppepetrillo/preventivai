@@ -35,7 +35,7 @@ export default function ArchivioPreventivi() {
 
   return (
     <PageWrapper>
-      <div className="pro-page text-white pb-24">
+      <div className="pro-page text-white">
         <div className="mb-6 pro-panel-strong p-5">
           <p className="section-label">Documenti salvati</p>
           <h1 className="text-3xl sm:text-4xl font-black mt-1">

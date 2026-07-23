@@ -66,7 +66,7 @@ export default function Incassi() {
 
   return (
     <PageWrapper>
-      <div className="pro-page text-white pb-24">
+      <div className="pro-page text-white">
         <section className="pro-panel-strong p-5 mb-6">
           <p className="section-label">Soldi da seguire</p>
           <h1 className="text-3xl sm:text-4xl font-black mt-1">Incassi</h1>

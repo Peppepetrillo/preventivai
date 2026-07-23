@@ -31,10 +31,10 @@ const DettaglioCliente = lazy(() => import("./pages/DettaglioCliente"));
 
 function LoadingPage() {
   return (
-    <div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center px-5">
+    <div className="min-h-screen min-h-[100dvh] bg-[#070b14] text-white flex items-center justify-center px-5 safe-top safe-bottom">
       <div className="pro-panel-strong p-6 text-center">
         <p className="section-label">PreventivAI</p>
-        <h1 className="text-3xl font-black mt-1">Caricamento...</h1>
+        <h1 className="ds-page-title mt-1">Caricamento...</h1>
       </div>
     </div>
   );

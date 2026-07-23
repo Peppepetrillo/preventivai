@@ -132,7 +132,7 @@ export default function Cantieri() {
 
   return (
     <PageWrapper>
-      <div className="pro-page text-white safe-top">
+      <div className="pro-page text-white">
         <header className="pro-panel-strong px-4 py-4 mb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">

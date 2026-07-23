@@ -10,13 +10,13 @@ function WizardHeader({
   onIndietro,
 }) {
   return (
-    <header className="sticky top-0 z-30 bg-slate-950/[0.94] backdrop-blur-xl border-b border-white/10 safe-top">
-      <div className="px-4 pt-4 pb-3 flex items-start gap-3">
+    <header className="sticky z-30 bg-slate-950/[0.94] backdrop-blur-xl border-b border-white/10 safe-top top-0">
+      <div className="px-4 pt-3 pb-3 flex items-start gap-3">
         {puoAndareIndietro ? (
           <button
             type="button"
             onClick={onIndietro}
-            className="w-11 h-11 rounded-[14px] bg-white/8 text-white flex items-center justify-center shrink-0"
+            className="w-11 h-11 rounded-[16px] bg-white/8 text-white flex items-center justify-center shrink-0"
             aria-label="Torna al passo precedente"
           >
             <ArrowLeft size={20} />
@@ -29,9 +29,9 @@ function WizardHeader({
           <p className="section-label">
             Nuovo preventivo · {indiceCorrente + 1}/{totaleStep}
           </p>
-          <h1 className="text-2xl font-black tracking-tight truncate">{title}</h1>
+          <h1 className="ds-page-title truncate">{title}</h1>
           {subtitle ? (
-            <p className="text-sm text-slate-400 mt-0.5 truncate">{subtitle}</p>
+            <p className="ds-text-secondary mt-0.5 truncate">{subtitle}</p>
           ) : null}
         </div>
       </div>

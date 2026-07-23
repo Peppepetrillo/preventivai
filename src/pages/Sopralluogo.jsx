@@ -10,7 +10,7 @@ import { ROUTES } from "../app/routes";
 export default function Sopralluogo() {
   return (
     <PageWrapper>
-      <div className="pro-page text-white pb-24">
+      <div className="pro-page text-white">
         <Link to={ROUTES.dashboard} className="text-slate-400 mb-5 inline-block">
           ← Home
         </Link>

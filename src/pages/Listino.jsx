@@ -1,201 +1,272 @@
-import { useState } from "react";
-import { Plus, Save } from "lucide-react";
-import NumericInput from "../components/NumericInput";
-import { leggiListino, salvaListino } from "../repositories/listinoRepository";
-import { formatEuro, normalizzaNumero } from "../utils/preventivi";
+import { useMemo, useState } from "react";
+import { BookOpen, Plus, Star } from "lucide-react";
 
+import PageWrapper from "../components/PageWrapper";
+import SearchInput from "../components/SearchInput";
+import RigaVoceCatalogo from "../features/listino/components/RigaVoceCatalogo";
+import VoceCatalogoSheet from "../features/listino/components/VoceCatalogoSheet";
+import { useListinoCatalogo } from "../features/listino/hooks/useListinoCatalogo";
+import { LISTINI_CATALOGHI } from "../features/listino/listinoCatalogDomain";
+
+/**
+ * Listino professionale — catalogo lavorazioni (Sprint 12A).
+ * Flusso: Ricerca → Preferiti → Categorie → Lavorazioni.
+ * Indipendente dal dominio preventivi.
+ */
 export default function Listino() {
-  const [listino, setListino] = useState(() =>
-    leggiListino()
-  );
-  const [nuovaVoce, setNuovaVoce] = useState({
-    categoria: "Materiali",
-    nome: "",
-    prezzo: "",
-    unita: "cad",
-  });
-  const [messaggio, setMessaggio] = useState("");
+  const {
+    catalogo,
+    preferiti,
+    categorie,
+    lavorazioniVisibili,
+    ricerca,
+    categoriaAttiva,
+    messaggio,
+    setMessaggio,
+    aggiornaRicerca,
+    setCategoriaAttiva,
+    salvaVoce,
+    aggiungiVoce,
+    eliminaVoce,
+    toggleAttiva,
+    togglePreferita,
+  } = useListinoCatalogo();
 
-  function aggiornaVoce(id, campo, valore) {
-    const listinoAggiornato = listino.map((item) =>
-      item.id === id
-        ? {
-            ...item,
-            [campo]: campo === "prezzo" ? normalizzaNumero(valore) : valore,
-          }
-        : item
-    );
+  const [voceInModifica, setVoceInModifica] = useState(null);
+  const [sheetNuova, setSheetNuova] = useState(false);
 
-    setListino(listinoAggiornato);
-    salvaListino(listinoAggiornato);
-  }
+  const sheetAperto = sheetNuova || Boolean(voceInModifica);
 
-  function aggiornaNuovaVoce(campo, valore) {
-    setNuovaVoce({
-      ...nuovaVoce,
-      [campo]: campo === "prezzo" ? valore : valore,
-    });
-  }
-
-  function aggiungiVoce() {
-    if (!nuovaVoce.nome.trim()) {
-      setMessaggio("Inserisci il nome del materiale o della lavorazione.");
-      return;
+  const preferitiVisibili = useMemo(() => {
+    if (ricerca.trim()) return [];
+    if (categoriaAttiva !== "tutte") {
+      return preferiti.filter((v) => v.categoria === categoriaAttiva);
     }
+    return preferiti;
+  }, [preferiti, ricerca, categoriaAttiva]);
 
-    const voce = {
-      id: `locale-${new Date().getTime()}`,
-      categoria: nuovaVoce.categoria.trim() || "Materiali",
-      nome: nuovaVoce.nome.trim(),
-      prezzo: normalizzaNumero(nuovaVoce.prezzo),
-      unita: nuovaVoce.unita.trim() || "cad",
-    };
+  const preferitiIds = useMemo(
+    () => new Set(preferitiVisibili.map((v) => String(v.id))),
+    [preferitiVisibili]
+  );
 
-    const listinoAggiornato = [voce, ...listino];
-    setListino(listinoAggiornato);
-    salvaListino(listinoAggiornato);
-    setNuovaVoce({
-      categoria: "Materiali",
-      nome: "",
-      prezzo: "",
-      unita: "cad",
-    });
-    setMessaggio("Voce aggiunta al listino locale.");
+  const lavorazioniSenzaPreferiti = useMemo(() => {
+    if (preferitiIds.size === 0) return lavorazioniVisibili;
+    return lavorazioniVisibili.filter(
+      (voce) => !preferitiIds.has(String(voce.id))
+    );
+  }, [lavorazioniVisibili, preferitiIds]);
+
+  const listaVuota = catalogo.length === 0;
+  const ricercaSenzaRisultati =
+    !listaVuota &&
+    lavorazioniVisibili.length === 0 &&
+    Boolean(ricerca.trim());
+  const sezioneLavorazioniVuota =
+    !listaVuota &&
+    !ricercaSenzaRisultati &&
+    lavorazioniSenzaPreferiti.length === 0 &&
+    preferitiVisibili.length > 0;
+
+  function chiudiSheet() {
+    setSheetNuova(false);
+    setVoceInModifica(null);
   }
 
-  function salvaPrezzo() {
-    salvaListino(listino);
-    setMessaggio("Listino aggiornato in locale.");
+  function gestisciCrea(payload) {
+    const creata = aggiungiVoce(payload);
+    return Boolean(creata);
   }
 
   return (
-    <div className="pro-page text-white">
-      <div className="mb-6 pro-panel-strong p-5">
-        <p className="section-label">
-          Prezzi base
-        </p>
-        <h1 className="text-3xl sm:text-4xl font-black mt-1">Listino</h1>
-        <p className="text-slate-400 mt-2">
-          Voci, unità e prezzi che alimentano i preventivi.
-        </p>
-      </div>
-
-      {messaggio && (
-        <div className="pro-panel p-4 mb-5 text-yellow-100 border-yellow-300/30">
-          {messaggio}
-        </div>
-      )}
-
-      <section className="pro-panel p-5 mb-5">
-        <div className="flex items-center gap-3 mb-4">
-          <Plus size={22} className="text-yellow-300" />
-          <div>
-            <h2 className="text-xl font-black">Aggiungi materiale</h2>
-            <p className="text-slate-400 text-sm">
-              La nuova voce sarà disponibile nei preventivi.
-            </p>
+    <PageWrapper>
+      <div className="pro-page text-white">
+        <header className="pro-panel-strong px-4 py-4 mb-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="section-label">Catalogo cantiere</p>
+              <h1 className="ds-page-title mt-1">Listino</h1>
+              <p className="ds-text-secondary mt-2">
+                {LISTINI_CATALOGHI.preventivaiBase.label} — cerca, preferiti,
+                prezzi.
+              </p>
+            </div>
+            <span
+              className="ds-badge-count shrink-0"
+              aria-label={`${catalogo.length} lavorazioni`}
+            >
+              {catalogo.length}
+            </span>
           </div>
-        </div>
+        </header>
 
-        <div className="grid gap-3 sm:grid-cols-[1fr_1fr_120px_90px]">
-          <input
-            value={nuovaVoce.nome}
-            onChange={(event) => aggiornaNuovaVoce("nome", event.target.value)}
-            placeholder="Nome materiale o lavorazione"
-            className="input-pro"
-          />
-          <input
-            value={nuovaVoce.categoria}
-            onChange={(event) =>
-              aggiornaNuovaVoce("categoria", event.target.value)
-            }
-            placeholder="Categoria"
-            className="input-pro"
-          />
-          <NumericInput
-            min="0"
-            value={nuovaVoce.prezzo}
-            inputMode="decimal"
-            onChange={(event) =>
-              aggiornaNuovaVoce("prezzo", event)
-            }
-            placeholder="Prezzo"
-            className="input-pro"
-          />
-          <input
-            value={nuovaVoce.unita}
-            onChange={(event) => aggiornaNuovaVoce("unita", event.target.value)}
-            placeholder="Unità"
-            className="input-pro"
-          />
-        </div>
-
-        <button
-          onClick={aggiungiVoce}
-          className="mt-4 btn-primary px-5 py-4 flex items-center justify-center gap-2"
-        >
-          <Plus size={19} />
-          Aggiungi al listino
-        </button>
-      </section>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        {listino.map((item) => (
+        {messaggio ? (
           <div
-            key={item.id}
-            className="pro-panel p-5"
+            className="pro-panel px-3.5 py-3 mb-3 text-sm text-yellow-100 border-yellow-300/30"
+            role="status"
           >
-            <p className="text-white/40 text-xs font-bold uppercase mb-2">
-              {item.categoria || "Lavorazioni"}
-            </p>
-
-            <input
-              value={item.nome}
-              onChange={(event) =>
-                aggiornaVoce(item.id, "nome", event.target.value)
-              }
-              className="w-full bg-transparent text-xl font-black outline-none mb-4"
-            />
-
-            <div className="grid grid-cols-[1fr_82px_46px] gap-3 items-end">
-              <label>
-                <span className="text-sm text-white/45">Prezzo</span>
-                <NumericInput
-                  value={item.prezzo}
-                  inputMode="decimal"
-                  onChange={(event) =>
-                    aggiornaVoce(item.id, "prezzo", event)
-                  }
-                  className="mt-2 input-pro p-3"
-                />
-              </label>
-
-              <label>
-                <span className="text-sm text-white/45">Unità</span>
-                <input
-                  value={item.unita || "cad"}
-                  onChange={(event) =>
-                    aggiornaVoce(item.id, "unita", event.target.value)
-                  }
-                  className="mt-2 input-pro p-3"
-                />
-              </label>
-
+            <div className="flex items-start justify-between gap-2">
+              <p>{messaggio}</p>
               <button
-                onClick={salvaPrezzo}
-                className="h-[50px] rounded-[14px] bg-yellow-400 text-slate-950 flex items-center justify-center"
-                aria-label="Salva prezzo"
+                type="button"
+                onClick={() => setMessaggio("")}
+                className="text-xs font-bold text-slate-400 min-h-[44px] px-2 shrink-0"
               >
-                <Save size={19} />
+                Chiudi
               </button>
             </div>
-
-            <p className="text-white/40 text-sm mt-3">
-              Valore attuale: {formatEuro(item.prezzo)} / {item.unita || "cad"}
-            </p>
           </div>
-        ))}
+        ) : null}
+
+        <SearchInput
+          className="mb-3"
+          label="Cerca lavorazione"
+          placeholder="Nome, categoria o unità"
+          value={ricerca}
+          onChange={(event) => aggiornaRicerca(event.target.value)}
+        />
+
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={() => {
+              setVoceInModifica(null);
+              setSheetNuova(true);
+            }}
+            className="w-full btn-secondary min-h-[48px] px-4 py-3 flex items-center justify-center gap-2 text-sm font-bold"
+          >
+            <Plus size={18} aria-hidden="true" />
+            Nuova lavorazione
+          </button>
+        </div>
+
+        {preferitiVisibili.length > 0 ? (
+          <section className="mb-4" aria-labelledby="listino-preferiti">
+            <div className="flex items-center gap-2.5 mb-2.5">
+              <Star
+                size={18}
+                className="text-yellow-300 shrink-0 fill-yellow-300"
+                aria-hidden="true"
+              />
+              <h2 id="listino-preferiti" className="ds-section-title">
+                Preferiti
+              </h2>
+            </div>
+            <ul className="space-y-1.5" role="list">
+              {preferitiVisibili.map((voce) => (
+                <li key={`pref-${voce.id}`}>
+                  <RigaVoceCatalogo
+                    voce={voce}
+                    onApri={setVoceInModifica}
+                    onToggleAttiva={toggleAttiva}
+                    onTogglePreferita={togglePreferita}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        <div
+          className="flex gap-2 mb-3 overflow-x-auto pb-0.5"
+          role="tablist"
+          aria-label="Categorie listino"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={categoriaAttiva === "tutte"}
+            onClick={() => setCategoriaAttiva("tutte")}
+            className={`ds-chip ${
+              categoriaAttiva === "tutte" ? "ds-chip-active" : ""
+            }`}
+          >
+            Tutte
+          </button>
+          {categorie.map((cat) => {
+            const attiva = categoriaAttiva === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                role="tab"
+                aria-selected={attiva}
+                onClick={() => setCategoriaAttiva(cat)}
+                className={`ds-chip ${attiva ? "ds-chip-active" : ""}`}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+
+        <section aria-labelledby="listino-lavorazioni">
+          <div className="flex items-center gap-2.5 mb-2.5">
+            <BookOpen
+              size={20}
+              className="text-yellow-300 shrink-0"
+              aria-hidden="true"
+            />
+            <h2 id="listino-lavorazioni" className="ds-section-title">
+              Lavorazioni
+            </h2>
+          </div>
+
+          {listaVuota ? (
+            <div className="pro-panel ds-empty">
+              <div className="ds-empty-icon" aria-hidden="true">
+                <BookOpen size={28} />
+              </div>
+              <p className="ds-card-title">Catalogo vuoto</p>
+              <p className="ds-text-secondary mt-2 max-w-sm mx-auto">
+                Aggiungi la prima lavorazione: la ritroverai nei preventivi.
+              </p>
+            </div>
+          ) : null}
+
+          {ricercaSenzaRisultati ? (
+            <div className="pro-panel px-4 py-6 text-center">
+              <p className="ds-card-title">Nessun risultato</p>
+              <p className="ds-text-secondary mt-2">
+                Prova un altro termine o cambia categoria.
+              </p>
+            </div>
+          ) : null}
+
+          {sezioneLavorazioniVuota ? (
+            <p className="ds-text-secondary text-sm px-1 py-2">
+              Tutte le voci di questa vista sono già nei preferiti.
+            </p>
+          ) : null}
+
+          {!listaVuota &&
+          !ricercaSenzaRisultati &&
+          lavorazioniSenzaPreferiti.length > 0 ? (
+            <ul className="space-y-1.5" role="list">
+              {lavorazioniSenzaPreferiti.map((voce) => (
+                <li key={voce.id}>
+                  <RigaVoceCatalogo
+                    voce={voce}
+                    onApri={setVoceInModifica}
+                    onToggleAttiva={toggleAttiva}
+                    onTogglePreferita={togglePreferita}
+                  />
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+
+        <VoceCatalogoSheet
+          open={sheetAperto}
+          onClose={chiudiSheet}
+          voce={voceInModifica}
+          categorie={categorie}
+          onSalva={salvaVoce}
+          onCrea={gestisciCrea}
+          onElimina={eliminaVoce}
+        />
       </div>
-    </div>
+    </PageWrapper>
   );
 }

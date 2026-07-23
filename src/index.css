@@ -68,6 +68,10 @@
   --badge-sospeso-bd: rgba(251, 146, 60, 0.3);
 }
 
+html {
+  height: 100%;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -84,9 +88,15 @@ body {
     ui-sans-serif,
     system-ui,
     sans-serif;
-  min-height: 100vh;
+  min-height: 100%;
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100%;
+  min-height: 100dvh;
 }
 
 * {
@@ -112,25 +122,45 @@ a {
 }
 
 .safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
+  /* iOS 11.0–11.2 + modern */
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .safe-top {
-  padding-top: env(safe-area-inset-top);
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .app-shell {
-  min-height: 100vh;
+  --app-safe-top: constant(safe-area-inset-top);
+  --app-safe-top: env(safe-area-inset-top, 0px);
+  --app-safe-bottom: constant(safe-area-inset-bottom);
+  --app-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --app-safe-left: constant(safe-area-inset-left);
+  --app-safe-left: env(safe-area-inset-left, 0px);
+  --app-safe-right: constant(safe-area-inset-right);
+  --app-safe-right: env(safe-area-inset-right, 0px);
+
+  min-height: 100%;
+  min-height: 100dvh;
   background:
     linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
   background-size: 42px 42px;
 }
 
+/*
+  Layout pagina condiviso — Safe Area PWA Home Screen.
+  Tutte le schermate con .pro-page ereditano top/bottom/left/right.
+*/
 .pro-page {
   width: min(100%, 1120px);
   margin: 0 auto;
-  padding: var(--space-5) var(--space-4) 132px;
+  padding-top: calc(var(--space-5) + var(--app-safe-top, env(safe-area-inset-top, 0px)));
+  padding-right: max(var(--space-4), var(--app-safe-right, env(safe-area-inset-right, 0px)));
+  padding-bottom: calc(132px + var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)));
+  padding-left: max(var(--space-4), var(--app-safe-left, env(safe-area-inset-left, 0px)));
 }
 
 .pro-panel {
@@ -413,7 +443,7 @@ a {
   width: 94%;
   max-width: 42rem;
   z-index: 50;
-  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  bottom: max(10px, var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)));
 }
 
 .ds-bottom-nav-inner {

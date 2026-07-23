@@ -11,8 +11,13 @@
  * @property {number|string} id
  * @property {string} categoria
  * @property {string} nome
+ * @property {string=} descrizione
  * @property {number|string} prezzo
  * @property {string=} unita
+ * @property {boolean=} attiva
+ * @property {boolean=} preferita
+ * @property {number=} ordinamento
+ * // Futuri (non ancora usati): serieCompatibili, marca, iva, codiceArticolo, tempoMedioInstallazione
  */
 
 /**

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 
+import { selezionaVociAttive } from "../../listino/listinoCatalogDomain";
 import { leggiListino } from "../../../repositories/listinoRepository";
 import {
   creaLavorazioneDaVoce,
@@ -13,7 +14,7 @@ import {
 } from "../utils/lavorazioniUsage";
 
 export function useComponiPreventivo({ onAggiornaLavorazioni }) {
-  const [listino] = useState(() => leggiListino());
+  const [listino] = useState(() => selezionaVociAttive(leggiListino()));
   const [ricerca, setRicerca] = useState("");
 
   const listinoFiltrato = useMemo(

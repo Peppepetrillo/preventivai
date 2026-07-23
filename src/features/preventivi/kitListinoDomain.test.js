@@ -10,18 +10,17 @@ describe("kitListinoDomain", () => {
   it("crea lavorazioni da un kit usando il listino esistente", () => {
     const kit = trovaKitListino("camera-standard");
 
+    // Kit resta invariato: voci assenti dal catalogo 12B vengono ignorate.
     expect(creaLavorazioniDaKit(kit, listinoBase)).toEqual([
       expect.objectContaining({
         nome: "Punto luce",
         quantita: 2,
+        prezzo: 40,
       }),
       expect.objectContaining({
         nome: "Punto presa",
         quantita: 4,
-      }),
-      expect.objectContaining({
-        nome: "Montaggio plafoniera",
-        quantita: 1,
+        prezzo: 40,
       }),
     ]);
   });

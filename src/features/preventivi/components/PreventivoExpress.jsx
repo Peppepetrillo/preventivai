@@ -2,6 +2,7 @@ import { useCallback, useId, useState } from "react";
 import { Mic, MicOff, Sparkles } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
+import { selezionaVociAttive } from "../../listino/listinoCatalogDomain";
 import { leggiClienti } from "../../../repositories/clientiRepository";
 import { leggiListino } from "../../../repositories/listinoRepository";
 import { useRiconoscimentoVocale } from "../../../hooks/useRiconoscimentoVocale";
@@ -53,7 +54,7 @@ export default function PreventivoExpress({
       const bozza = await generaBozzaPreventivoAI({
         testo,
         clienti: leggiClienti(),
-        listino: leggiListino(),
+        listino: selezionaVociAttive(leggiListino()),
       });
 
       bozza.lavorazioni?.forEach((lavorazione) => {

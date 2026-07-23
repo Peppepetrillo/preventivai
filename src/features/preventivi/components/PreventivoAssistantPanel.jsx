@@ -2,6 +2,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { Brain } from "lucide-react";
 
 import AssistantCard from "../../../components/assistant/AssistantCard";
+import { selezionaVociAttive } from "../../listino/listinoCatalogDomain";
 import { getPreventivoAssistant } from "../../../services/assistantService";
 import { leggiListino } from "../../../repositories/listinoRepository";
 import {
@@ -27,7 +28,7 @@ function PreventivoAssistantPanel({
   onAction,
 }) {
   const [ignorate, setIgnorate] = useState(() => new Set());
-  const [listino] = useState(() => leggiListino());
+  const [listino] = useState(() => selezionaVociAttive(leggiListino()));
 
   const firmaLavorazioni = useMemo(
     () =>

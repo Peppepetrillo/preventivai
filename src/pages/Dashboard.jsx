@@ -80,8 +80,8 @@ export default function Dashboard() {
 
   return (
     <PageWrapper>
-      <div className="pro-page text-white safe-top">
-        <header className="pro-panel-strong px-4 py-4 mb-6">
+      <div className="pro-page text-white">
+        <header className="pro-panel-strong px-4 py-4 mb-4">
           <p className="section-label">Home operativa</p>
           <h1 className="ds-page-title mt-1">{messaggioOperativo}</h1>
           <p className="ds-text-secondary mt-2 max-w-2xl">
@@ -89,8 +89,8 @@ export default function Dashboard() {
           </p>
         </header>
 
-        <section className="mb-6" aria-labelledby="dashboard-assistente">
-          <div className="flex items-center gap-3 mb-3">
+        <section className="mb-4" aria-labelledby="dashboard-assistente">
+          <div className="flex items-center gap-3 mb-2">
             <Brain size={20} className="text-yellow-300 shrink-0" aria-hidden="true" />
             <h2 id="dashboard-assistente" className="ds-section-title">
               Assistente
@@ -99,8 +99,8 @@ export default function Dashboard() {
           <AssistantPanel />
         </section>
 
-        <section className="mb-6" aria-labelledby="dashboard-cantieri">
-          <div className="flex items-center justify-between gap-3 mb-3">
+        <section className="mb-4" aria-labelledby="dashboard-cantieri">
+          <div className="flex items-center justify-between gap-3 mb-2">
             <div className="flex items-center gap-3 min-w-0">
               <HardHat size={20} className="text-yellow-300 shrink-0" aria-hidden="true" />
               <h2 id="dashboard-cantieri" className="ds-section-title truncate">
@@ -173,8 +173,8 @@ export default function Dashboard() {
           </div>
         </section>
 
-        <section className="mb-6" aria-labelledby="dashboard-preventivi">
-          <div className="flex items-center justify-between gap-3 mb-3">
+        <section className="mb-4" aria-labelledby="dashboard-preventivi">
+          <div className="flex items-center justify-between gap-3 mb-2">
             <div className="flex items-center gap-3 min-w-0">
               <ClipboardList size={20} className="text-sky-300 shrink-0" aria-hidden="true" />
               <h2 id="dashboard-preventivi" className="ds-section-title truncate">
