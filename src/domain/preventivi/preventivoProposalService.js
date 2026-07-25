@@ -239,23 +239,33 @@ export function generaPreventivoEconomico(form = {}, opzioni = {}) {
       return { success: false, error: "proposta_knowledge_fallita" };
     }
 
-    const listino =
-      opzioni.listino !== undefined
-        ? opzioni.listino
-        : caricaCatalogoListino();
+    // Listino / Brain non devono interrompere la pipeline dopo il KE:
+    // la proposal economica si costruisce comunque (prezzi mancanti → badge).
+    let listino = opzioni.listino;
+    if (listino === undefined) {
+      try {
+        listino = caricaCatalogoListino();
+      } catch {
+        listino = [];
+      }
+    }
 
-    const patterns =
-      opzioni.brainPatterns !== undefined
-        ? opzioni.brainPatterns
-        : ottieniPattern();
+    let patterns = opzioni.brainPatterns;
+    if (patterns === undefined) {
+      try {
+        patterns = ottieniPattern();
+      } catch {
+        patterns = [];
+      }
+    }
 
     const proposal = costruisciPreventivoProposal({
       conoscenzaProposta: conoscenza.proposta,
-      listino,
+      listino: Array.isArray(listino) ? listino : [],
       input: form,
       iva: opzioni.iva ?? 22,
       sconto: opzioni.sconto ?? 0,
-      brainInsights: { patterns },
+      brainInsights: { patterns: Array.isArray(patterns) ? patterns : [] },
     });
 
     return { success: true, proposal };

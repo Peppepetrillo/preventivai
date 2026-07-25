@@ -119,16 +119,25 @@ export default function PreventivoIntelligente() {
       setProposal(risultato.proposal);
       setRagionamentoAperto(false);
 
-      const conoscenza = risultato.proposal.conoscenzaProposta;
-      if (conoscenza) {
-        salvaOsservazione(input, conoscenza, {});
-        analizzaOsservazioni();
+      // Side-effect Brain: non deve bloccare la visualizzazione della proposal.
+      try {
+        const conoscenza = risultato.proposal.conoscenzaProposta;
+        if (conoscenza) {
+          salvaOsservazione(input, conoscenza, {});
+          analizzaOsservazioni();
+        }
+      } catch {
+        // ignora errori Brain in generazione
       }
       return;
     }
 
     setProposal(null);
-    setErrore("Impossibile generare la proposta. Riprova.");
+    setErrore(
+      risultato?.error === "proposta_knowledge_fallita"
+        ? "Il Knowledge Engine non ha prodotto una proposta. Riprova."
+        : "Impossibile generare la proposta. Riprova."
+    );
   }
 
   function creaPreventivoDaProposal() {
