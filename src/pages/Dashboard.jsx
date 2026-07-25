@@ -17,6 +17,7 @@ import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati"
 import { contaOsservazioni } from "../domain/brain/brainObservationService";
 import { statisticheLearning } from "../domain/brain/brainLearningService";
 import { contaConoscenzePersonali } from "../domain/brain/personalKnowledgeService";
+import { contaPreventiviConvertiti } from "../domain/workflow";
 import { getNumeroRegole } from "../domain/knowledge/knowledgeStatistics";
 import { leggiCantieri } from "../repositories/cantieriRepository";
 import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
@@ -82,6 +83,7 @@ export default function Dashboard() {
     osservazioni: contaOsservazioni(),
   };
   const patternStats = statisticheLearning();
+  const preventiviConvertiti = contaPreventiviConvertiti();
   const nomeOperativo = datiAzienda.nomeDitta || "";
   const messaggioOperativo = creaMessaggioOperativo({
     nome: nomeOperativo,
@@ -315,6 +317,25 @@ export default function Dashboard() {
                 </div>
               </Link>
             ))}
+          </div>
+        </section>
+
+        <section className="mb-4" aria-labelledby="dashboard-convertiti">
+          <div className="pro-panel px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="section-label">Workflow</p>
+                <h2 id="dashboard-convertiti" className="ds-card-title mt-1">
+                  Preventivi Convertiti
+                </h2>
+                <p className="ds-text-secondary text-xs mt-1">
+                  Offerte trasformate in cantiere
+                </p>
+              </div>
+              <p className="ds-page-title tabular-nums text-2xl shrink-0">
+                {preventiviConvertiti}
+              </p>
+            </div>
           </div>
         </section>
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   creaVarianteCantiere,
@@ -6,8 +6,13 @@ import {
   riepilogoEconomicoCantiere,
   risolviPreventivoOriginaleTotale,
 } from "./cantiereVariantiDomain";
+import { resetVarianti } from "../../domain/varianti";
 
 describe("cantiereVariantiDomain", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    resetVarianti();
+  });
   it("crea aggiunta e rimozione con totale corretto", () => {
     const aggiunta = creaVarianteCantiere({
       tipo: "aggiunta",

@@ -1,87 +1,60 @@
-import { creaCantiereDaPreventivo } from "../cantieriDomain";
-import { leggiClienti } from "../../../repositories/clientiRepository";
-import { leggiCantieri, salvaCantieri } from "../../../repositories/cantieriRepository";
-import { aggiornaPreventivo } from "../../../repositories/preventiviRepository";
+/**
+ * Adapter legacy: conversione Preventivo → Cantiere.
+ * Delega al Workflow Service (accetta se necessario, poi converte).
+ */
 
-function dataOdierna() {
-  return new Date().toLocaleDateString("it-IT");
-}
-
-function risolviDatiCliente(preventivo) {
-  const cliente = leggiClienti().find(
-    (item) => item.nome === preventivo.cliente
-  );
-
-  return {
-    clienteId: preventivo.clienteId ?? cliente?.id ?? null,
-    indirizzo: String(preventivo.indirizzo || cliente?.indirizzo || "").trim(),
-  };
-}
+import {
+  accettaPreventivo,
+  convertiInCantiere,
+  trovaCantiereCollegato as trovaCantiereWorkflow,
+  STATI_PREVENTIVO,
+  normalizzaStatoPreventivo,
+} from "../../../domain/workflow";
 
 export function trovaCantiereCollegato(preventivo) {
-  if (!preventivo) return null;
-
-  return (
-    leggiCantieri().find(
-      (cantiere) =>
-        String(cantiere.id) === String(preventivo.cantiereId) ||
-        String(cantiere.preventivoId) === String(preventivo.id)
-    ) || null
-  );
+  return trovaCantiereWorkflow(preventivo);
 }
 
+/**
+ * One-click legacy: se non ancora accettato, accetta e converte.
+ * @param {object} preventivo
+ */
 export function convertiPreventivoInCantiere(preventivo) {
   if (!preventivo) {
     throw new Error("Preventivo non trovato.");
   }
 
-  const cantiereEsistente = trovaCantiereCollegato(preventivo);
+  const stato = normalizzaStatoPreventivo(preventivo.stato);
+  const giaCollegato = trovaCantiereCollegato(preventivo);
 
-  if (cantiereEsistente) {
-    const preventivoAggiornato =
-      String(preventivo.cantiereId) === String(cantiereEsistente.id)
-        ? preventivo
-        : aggiornaPreventivo(preventivo.id, (item) => ({
-            ...item,
-            cantiereId: cantiereEsistente.id,
-          })).find((item) => String(item.id) === String(preventivo.id));
-
+  if (giaCollegato) {
+    const risultato = convertiInCantiere(preventivo.id);
+    if (!risultato.success) {
+      throw new Error(risultato.error || "Conversione non riuscita.");
+    }
     return {
-      cantiere: cantiereEsistente,
+      cantiere: risultato.cantiere,
       creato: false,
-      preventivo: preventivoAggiornato || {
-        ...preventivo,
-        cantiereId: cantiereEsistente.id,
-      },
+      preventivo: risultato.preventivo,
     };
   }
 
-  const dataAccettazione = dataOdierna();
-  const { clienteId, indirizzo } = risolviDatiCliente(preventivo);
-  const cantiere = creaCantiereDaPreventivo(preventivo, {
-    clienteId,
-    indirizzo,
-    dataAccettazione,
-  });
+  if (stato !== STATI_PREVENTIVO.ACCETTATO) {
+    const accettazione = accettaPreventivo(preventivo.id);
+    if (!accettazione.success) {
+      throw new Error(accettazione.error || "Accettazione non riuscita.");
+    }
+  }
 
-  salvaCantieri([cantiere, ...leggiCantieri()]);
-
-  const [preventivoAggiornato] = aggiornaPreventivo(preventivo.id, (item) => ({
-    ...item,
-    stato: "Accettato",
-    cantiereId: cantiere.id,
-    dataAccettazione,
-  })).filter((item) => String(item.id) === String(preventivo.id));
+  const risultato = convertiInCantiere(preventivo.id);
+  if (!risultato.success) {
+    throw new Error(risultato.error || "Conversione non riuscita.");
+  }
 
   return {
-    cantiere,
-    creato: true,
-    preventivo: preventivoAggiornato || {
-      ...preventivo,
-      stato: "Accettato",
-      cantiereId: cantiere.id,
-      dataAccettazione,
-    },
+    cantiere: risultato.cantiere,
+    creato: Boolean(risultato.creato),
+    preventivo: risultato.preventivo,
   };
 }
 

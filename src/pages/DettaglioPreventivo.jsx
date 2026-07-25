@@ -1,6 +1,16 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Copy, Download, HardHat, Save, Trash2, Wallet } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  Download,
+  HardHat,
+  Save,
+  Trash2,
+  Wallet,
+  X,
+} from "lucide-react";
 import { ROUTES, routeCantiere, routePreventivo } from "../app/routes";
 import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
 import {
@@ -20,10 +30,20 @@ import {
   registraIncasso,
   segnaPreventivoSaldato,
 } from "../features/preventivi/incassiDomain";
+import { classeColoreStatoPreventivo } from "../features/preventivi/archivioPreventiviUtils";
 import {
-  convertiPreventivoInCantiere,
+  AZIONI_PREVENTIVO,
+  EVENTI_WORKFLOW,
+  EVENTI_WORKFLOW_LABEL,
+  STATI_PREVENTIVO,
+  accettaPreventivo,
+  annullaPreventivo,
+  convertiInCantiere,
+  inviaPreventivo,
+  ottieniAzioniDisponibili,
+  ottieniTimeline,
   trovaCantiereCollegato,
-} from "../features/cantieri/services/preventivoCantiereService";
+} from "../domain/workflow";
 import { generaPdfPreventivo } from "../services/preventiviPdfService";
 import {
   calcolaTotali,
@@ -64,6 +84,7 @@ export default function DettaglioPreventivo() {
   const [noteIncasso, setNoteIncasso] = useState(preventivo?.noteIncasso || "");
   const [nuovoIncasso, setNuovoIncasso] = useState("");
   const [messaggio, setMessaggio] = useState("");
+  const [timelineTick, setTimelineTick] = useState(0);
 
   const totali = calcolaTotali(lavorazioni, sconto, iva);
   const saldo = calcolaSaldo(totali.totale, acconto);
@@ -74,15 +95,18 @@ export default function DettaglioPreventivo() {
     noteIncasso,
   });
   const daIncassare = calcolaDaIncassare(preventivoIncasso);
-  const cantiereCollegato = trovaCantiereCollegato({
+  const preventivoCorrente = {
     ...preventivo,
+    stato,
     cantiereId: cantiereId || preventivo?.cantiereId,
-  });
+  };
+  const cantiereCollegato = trovaCantiereCollegato(preventivoCorrente);
   const cantiereCollegatoId =
-    cantiereId ||
-    preventivo?.cantiereId ||
-    cantiereCollegato?.id;
-  const preventivoCollegatoACantiere = Boolean(cantiereCollegatoId);
+    cantiereId || preventivo?.cantiereId || cantiereCollegato?.id;
+  const azioniDisponibili = ottieniAzioniDisponibili(preventivoCorrente);
+  const timeline = ottieniTimeline(preventivo?.id);
+  // timelineTick forza refresh dopo mutazioni workflow
+  const timelineKey = `tl-${timelineTick}-${timeline.length}`;
 
   function aggiornaLavorazione(index, campo, valore) {
     setLavorazioni(
@@ -228,15 +252,68 @@ export default function DettaglioPreventivo() {
     }
   }
 
+  function sincronizzaDaWorkflow(prossimoPreventivo, testoOk) {
+    if (prossimoPreventivo?.stato) setStato(prossimoPreventivo.stato);
+    if (prossimoPreventivo?.cantiereId) {
+      setCantiereId(prossimoPreventivo.cantiereId);
+    }
+    setTimelineTick((n) => n + 1);
+    setMessaggio(testoOk);
+  }
+
+  function eseguiAccetta() {
+    salvaModificheSilenzioso();
+    const risultato = accettaPreventivo(preventivo.id);
+    if (!risultato.success) {
+      setMessaggio(risultato.error || "Accettazione non riuscita.");
+      return;
+    }
+    sincronizzaDaWorkflow(risultato.preventivo, "Preventivo accettato.");
+  }
+
+  function eseguiInvia() {
+    salvaModificheSilenzioso();
+    const risultato = inviaPreventivo(preventivo.id);
+    if (!risultato.success) {
+      setMessaggio(risultato.error || "Invio non riuscito.");
+      return;
+    }
+    sincronizzaDaWorkflow(risultato.preventivo, "Preventivo segnato come inviato.");
+  }
+
+  function eseguiAnnulla() {
+    const conferma = window.confirm("Annullare questo preventivo?");
+    if (!conferma) return;
+    const risultato = annullaPreventivo(preventivo.id);
+    if (!risultato.success) {
+      setMessaggio(risultato.error || "Annullamento non riuscito.");
+      return;
+    }
+    sincronizzaDaWorkflow(risultato.preventivo, "Preventivo annullato.");
+  }
+
+  function salvaModificheSilenzioso() {
+    const archivioAggiornato = leggiPreventivi().map((item, index) =>
+      index === indicePreventivo ? datiAggiornati() : item
+    );
+    salvaPreventivi(archivioAggiornato);
+  }
+
   function trasformaInCantiere() {
     try {
-      const risultato = convertiPreventivoInCantiere(datiAggiornati());
+      salvaModificheSilenzioso();
+      const risultato = convertiInCantiere(preventivo.id);
+      if (!risultato.success) {
+        setMessaggio(risultato.error || "Non è stato possibile creare il cantiere.");
+        return;
+      }
       setCantiereId(risultato.cantiere.id);
-      setStato(risultato.preventivo.stato || "Accettato");
+      setStato(risultato.preventivo.stato || STATI_PREVENTIVO.CONVERTITO);
+      setTimelineTick((n) => n + 1);
       setMessaggio(
         risultato.creato
           ? "Cantiere creato e collegato al preventivo."
-          : "Apro il cantiere già collegato."
+          : "Cantiere già collegato."
       );
       navigate(routeCantiere(risultato.cantiere.id));
     } catch (errore) {
@@ -271,9 +348,16 @@ export default function DettaglioPreventivo() {
         <p className="section-label">
           {preventivo.numero || `PREV-${preventivo.id}`}
         </p>
-        <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1">
-          Dettaglio preventivo
-        </h1>
+        <div className="flex flex-wrap items-center gap-3 mt-1">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
+            Dettaglio preventivo
+          </h1>
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-semibold text-white ${classeColoreStatoPreventivo(stato)}`}
+          >
+            {stato || STATI_PREVENTIVO.BOZZA}
+          </span>
+        </div>
         <p className="text-slate-400 mt-2">
           Modifica lavorazioni, stato, condizioni e documento PDF.
         </p>
@@ -302,44 +386,131 @@ export default function DettaglioPreventivo() {
             onChange={(event) => setStato(event.target.value)}
             className="mt-2 input-pro"
           >
-            <option>Bozza</option>
-            <option>Inviato</option>
-            <option>Accettato</option>
-            <option>Completato</option>
+            <option value={STATI_PREVENTIVO.BOZZA}>Bozza</option>
+            <option value={STATI_PREVENTIVO.INVIATO}>Inviato</option>
+            <option value={STATI_PREVENTIVO.ACCETTATO}>Accettato</option>
+            <option value={STATI_PREVENTIVO.CONVERTITO}>Convertito</option>
+            <option value={STATI_PREVENTIVO.ANNULLATO}>Annullato</option>
           </select>
         </label>
       </section>
 
-      <section className="pro-panel p-5 mb-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="section-label">Workflow operativo</p>
-            <h2 className="text-xl font-black mt-1">🚧 Trasforma in Cantiere</h2>
-            <p className="text-sm text-slate-400 mt-2">
-              {preventivoCollegatoACantiere
-                ? "Preventivo già collegato a un cantiere."
-                : "Crea un cantiere con cliente, lavorazioni e note del preventivo."}
-            </p>
-          </div>
-
-          {preventivoCollegatoACantiere ? (
-            <button
-              onClick={apriCantiereCollegato}
-              className="btn-secondary px-5 py-4 flex items-center justify-center gap-2"
-            >
-              <HardHat size={19} />
-              🏗 Apri Cantiere
-            </button>
-          ) : (
-            <button
-              onClick={trasformaInCantiere}
-              className="btn-primary px-5 py-4 flex items-center justify-center gap-2"
-            >
-              <HardHat size={19} />
-              CREA CANTIERE
-            </button>
-          )}
+      <section className="pro-panel p-5 mb-5 space-y-4">
+        <div>
+          <p className="section-label">Workflow operativo</p>
+          <h2 className="text-xl font-black mt-1">Preventivo → Cantiere</h2>
+          <p className="text-sm text-slate-400 mt-2">
+            {stato === STATI_PREVENTIVO.CONVERTITO || cantiereCollegatoId
+              ? "Preventivo collegato a un cantiere."
+              : stato === STATI_PREVENTIVO.ACCETTATO
+                ? "Preventivo accettato: puoi creare il cantiere."
+                : "Accetta il preventivo per abilitare la creazione del cantiere."}
+          </p>
         </div>
+
+        {(stato === STATI_PREVENTIVO.CONVERTITO || cantiereCollegatoId) && (
+          <div className="rounded-[14px] border border-emerald-400/25 bg-emerald-400/10 px-3.5 py-3">
+            <p className="text-sm font-semibold text-emerald-100">
+              ✅ Collegato al Cantiere
+            </p>
+            {cantiereCollegatoId ? (
+              <Link
+                to={routeCantiere(cantiereCollegatoId)}
+                className="inline-flex min-h-[44px] items-center gap-2 mt-2 text-sm font-semibold text-yellow-200"
+              >
+                <HardHat size={16} aria-hidden="true" />
+                Apri cantiere collegato
+              </Link>
+            ) : null}
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          {azioniDisponibili.includes(AZIONI_PREVENTIVO.INVIA) ? (
+            <button
+              type="button"
+              onClick={eseguiInvia}
+              className="btn-secondary px-4 py-3 text-sm font-semibold"
+            >
+              Segna inviato
+            </button>
+          ) : null}
+          {azioniDisponibili.includes(AZIONI_PREVENTIVO.ACCETTA) ? (
+            <button
+              type="button"
+              onClick={eseguiAccetta}
+              className="btn-secondary px-4 py-3 text-sm font-semibold flex items-center gap-2"
+            >
+              <Check size={16} aria-hidden="true" />
+              Accetta
+            </button>
+          ) : null}
+          {azioniDisponibili.includes(AZIONI_PREVENTIVO.CONVERTI_CANTIERE) ? (
+            <button
+              type="button"
+              onClick={trasformaInCantiere}
+              className="btn-primary px-5 py-3 flex items-center justify-center gap-2"
+            >
+              <HardHat size={19} aria-hidden="true" />
+              🏗️ Crea Cantiere
+            </button>
+          ) : null}
+          {azioniDisponibili.includes(AZIONI_PREVENTIVO.APRI_CANTIERE) &&
+          cantiereCollegatoId ? (
+            <button
+              type="button"
+              onClick={apriCantiereCollegato}
+              className="btn-secondary px-5 py-3 flex items-center justify-center gap-2"
+            >
+              <HardHat size={19} aria-hidden="true" />
+              Apri Cantiere
+            </button>
+          ) : null}
+          {azioniDisponibili.includes(AZIONI_PREVENTIVO.ANNULLA) ? (
+            <button
+              type="button"
+              onClick={eseguiAnnulla}
+              className="btn-secondary px-4 py-3 text-sm font-semibold flex items-center gap-2 text-red-200"
+            >
+              <X size={16} aria-hidden="true" />
+              Annulla
+            </button>
+          ) : null}
+        </div>
+
+        {timeline.length > 0 ? (
+          <div className="pt-2 border-t border-white/[0.06]">
+            <h3 className="text-[12px] font-medium text-slate-400 mb-2">
+              Timeline
+            </h3>
+            <ol className="space-y-1.5" aria-label="Timeline preventivo" key={timelineKey}>
+              {timeline
+                .filter((e) =>
+                  [
+                    EVENTI_WORKFLOW.PREVENTIVO_CREATO,
+                    EVENTI_WORKFLOW.PREVENTIVO_INVIATO,
+                    EVENTI_WORKFLOW.PREVENTIVO_ACCETTATO,
+                    EVENTI_WORKFLOW.CANTIERE_CREATO,
+                    EVENTI_WORKFLOW.PREVENTIVO_CONVERTITO,
+                    EVENTI_WORKFLOW.PREVENTIVO_ANNULLATO,
+                  ].includes(e.tipo)
+                )
+                .map((evento) => (
+                  <li
+                    key={evento.id}
+                    className="text-xs text-slate-300 flex items-start gap-2"
+                  >
+                    <span className="text-yellow-200/80 shrink-0">•</span>
+                    <span>
+                      {evento.label ||
+                        EVENTI_WORKFLOW_LABEL[evento.tipo] ||
+                        evento.tipo}
+                    </span>
+                  </li>
+                ))}
+            </ol>
+          </div>
+        ) : null}
       </section>
 
       <section className="space-y-4 mb-5">

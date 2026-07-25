@@ -16,6 +16,12 @@ import {
   preparaFotoCantiere,
 } from "../services/cantieriFotoService";
 import { registraEsperienzaCompletamento } from "../../../services/experienceService";
+import {
+  annullaVariante as annullaVarianteDomain,
+  approvaVariante as approvaVarianteDomain,
+  creaVariante as creaVarianteDomain,
+  eseguiVariante as eseguiVarianteDomain,
+} from "../../../domain/varianti";
 
 const FORM_CANTIERE_INIZIALE = {
   nome: "",
@@ -48,6 +54,7 @@ export function useCantieri({
   const [nuovaChecklist, setNuovaChecklist] = useState("");
   const [nuovoMateriale, setNuovoMateriale] = useState(FORM_MATERIALE_INIZIALE);
   const [messaggio, setMessaggio] = useState("");
+  const [variantiTick, setVariantiTick] = useState(0);
 
   // Con id URL/esterno la selezione è derivata; altrimenti stato locale (lista/test).
   const cantiereSelezionatoId = idEsterno || cantiereSelezionatoIdInterno;
@@ -203,24 +210,73 @@ export function useCantieri({
     });
   }
 
-  function aggiungiVariante(variante) {
-    if (!cantiereSelezionato || !variante) return;
-
-    aggiornaSelezionato({
-      varianti: [...(cantiereSelezionato.varianti || []), variante],
+  function creaVariante(dati = {}) {
+    if (!cantiereSelezionato) {
+      return { success: false, error: "cantiere_non_selezionato" };
+    }
+    const risultato = creaVarianteDomain({
+      ...dati,
+      cantiereId: cantiereSelezionato.id,
     });
-    setMessaggio("Variante registrata sul cantiere.");
+    if (risultato.success) {
+      setVariantiTick((n) => n + 1);
+      setMessaggio(
+        risultato.duplicato
+          ? "Variante già presente come proposta."
+          : "Variante proposta registrata."
+      );
+    } else {
+      setMessaggio(risultato.error || "Impossibile creare la variante.");
+    }
+    return risultato;
   }
 
-  function eliminaVariante(varianteId) {
-    if (!cantiereSelezionato) return;
+  function approvaVariante(varianteId) {
+    const risultato = approvaVarianteDomain(varianteId);
+    if (risultato.success) {
+      setVariantiTick((n) => n + 1);
+      setMessaggio("Variante approvata.");
+    } else {
+      setMessaggio(risultato.error || "Approvazione non riuscita.");
+    }
+    return risultato;
+  }
 
-    aggiornaSelezionato({
-      varianti: (cantiereSelezionato.varianti || []).filter(
-        (variante) => String(variante.id) !== String(varianteId)
-      ),
+  function eseguiVariante(varianteId) {
+    const risultato = eseguiVarianteDomain(varianteId);
+    if (risultato.success) {
+      setVariantiTick((n) => n + 1);
+      setMessaggio("Variante eseguita.");
+    } else {
+      setMessaggio(risultato.error || "Esecuzione non riuscita.");
+    }
+    return risultato;
+  }
+
+  function annullaVariante(varianteId) {
+    const risultato = annullaVarianteDomain(varianteId);
+    if (risultato.success) {
+      setVariantiTick((n) => n + 1);
+      setMessaggio("Variante annullata.");
+    } else {
+      setMessaggio(risultato.error || "Annullamento non riuscito.");
+    }
+    return risultato;
+  }
+
+  /** @deprecated Usa creaVariante */
+  function aggiungiVariante(variante) {
+    return creaVariante({
+      ...variante,
+      titolo: variante?.titolo || variante?.descrizione,
+      descrizione: variante?.descrizione || variante?.titolo,
+      importo: variante?.importo ?? variante?.totale,
     });
-    setMessaggio("Variante eliminata.");
+  }
+
+  /** @deprecated Preferire annullaVariante */
+  function eliminaVariante(varianteId) {
+    return annullaVariante(varianteId);
   }
 
   function completaLavoro() {
@@ -326,6 +382,11 @@ export function useCantieri({
     eliminaMateriale,
     aggiungiVariante,
     eliminaVariante,
+    creaVariante,
+    approvaVariante,
+    eseguiVariante,
+    annullaVariante,
+    variantiTick,
     completaLavoro,
     aggiungiFoto,
     eliminaFoto,

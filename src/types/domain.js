@@ -46,13 +46,17 @@
  * @property {string=} noteIncasso
  * @property {string=} statoIncasso
  * @property {string} note
- * @property {string} stato
+ * @property {string} stato Bozza | Inviato | Accettato | Convertito | Annullato
  * @property {string} data
  * @property {number|string=} cantiereId
  * @property {string=} dataAccettazione
+ * @property {number=} convertitoAt
+ * @property {string=} convertitoBy
  * @property {string=} indirizzo
  * @property {number|string=} clienteId
  * @property {"impianto"|"intervento"|"express"|string=} tipoLavoro Metadato UX per statistiche, non usato nei calcoli
+ * @property {object=} extra
+ * @property {string=} descrizione
  * @property {number} subtotale
  * @property {number} importoSconto
  * @property {number} imponibile
@@ -75,12 +79,15 @@
  * @property {string} aggiornatoIl
  * @property {number|string=} preventivoId
  * @property {string=} preventivoNumero
+ * @property {number=} preventivoImporto
  * @property {number|string=} clienteId
  * @property {string=} dataCreazione
  * @property {string=} dataAccettazione
  * @property {"preventivo"|string=} origine
  * @property {LavorazionePreventivo[]=} lavorazioniOrigine
  * @property {number=} preventivoOriginaleTotale Snapshot economico del preventivo iniziale
+ * @property {string=} descrizione
+ * @property {object=} extra
  * @property {VarianteCantiere[]=} varianti Extra in cantiere (non alterano il preventivo)
  */
 

@@ -33,6 +33,13 @@ export function creaCantiereDaPreventivo(
   const riferimento = preventivo.numero || `PREV-${preventivo.id}`;
   const lavorazioni = preventivo.lavorazioni || [];
   const notePreventivo = String(preventivo.note || "").trim();
+  const descrizione = String(
+    preventivo.descrizione || preventivo.note || ""
+  ).trim();
+  const extra =
+    preventivo.extra && typeof preventivo.extra === "object"
+      ? { ...preventivo.extra }
+      : {};
   const totalePreventivo = Number(preventivo.totale);
   const preventivoOriginaleTotale = Number.isFinite(totalePreventivo)
     ? totalePreventivo
@@ -47,14 +54,17 @@ export function creaCantiereDaPreventivo(
     nome: `Cantiere ${riferimento}`,
     cliente: String(preventivo.cliente || "").trim(),
     indirizzo: String(indirizzo || preventivo.indirizzo || "").trim(),
+    descrizione,
     stato: "Da iniziare",
     preventivoId: preventivo.id,
     preventivoNumero: riferimento,
+    preventivoImporto: preventivoOriginaleTotale,
     clienteId,
     dataCreazione,
     dataAccettazione: dataAccettazioneFinale,
     origine: "preventivo",
     lavorazioniOrigine: lavorazioni.map((lavorazione) => ({ ...lavorazione })),
+    extra,
     checklist: lavorazioni.map((lavorazione, index) => ({
       id: `${preventivo.id}-check-${index}`,
       testo: `Eseguire ${lavorazione.nome}`,

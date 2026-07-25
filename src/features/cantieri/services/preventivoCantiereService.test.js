@@ -71,10 +71,12 @@ describe("preventivoCantiereService", () => {
     expect(cantieri[0].preventivoOriginaleTotale).toBe(90);
     expect(cantieri[0].checklist[0].testo).toBe("Eseguire Installazione punto luce");
     expect(preventivi[0]).toMatchObject({
-      stato: "Accettato",
+      stato: "Convertito",
       cantiereId: cantieri[0].id,
     });
+    expect(preventivi[0].convertitoAt).toBeTruthy();
     expect(preventivi[0].dataAccettazione).toBeTruthy();
+    expect(cantieri[0].preventivoImporto).toBe(90);
   });
 
   it("non crea duplicati quando il preventivo è già collegato a un cantiere", () => {
@@ -83,7 +85,7 @@ describe("preventivoCantiereService", () => {
     const primoRisultato = convertiPreventivoInCantiere(preventivoBase);
     const secondoRisultato = convertiPreventivoInCantiere({
       ...preventivoBase,
-      stato: "Accettato",
+      stato: "Convertito",
       cantiereId: primoRisultato.cantiere.id,
       dataAccettazione: "21/07/2026",
     });

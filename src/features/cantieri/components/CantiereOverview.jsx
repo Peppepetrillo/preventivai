@@ -10,11 +10,9 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { ROUTES, routePreventivo } from "../../../app/routes";
 import { getCantiereAssistant } from "../../../services/assistantService";
-import { generaPdfVariantiCantiere } from "../../../services/cantieriVariantiPdfService";
 import { formatEuro, normalizzaNumero } from "../../../utils/preventivi";
-import { leggiDatiAzienda } from "../../../repositories/impostazioniRepository";
 import { calcolaAvanzamentoChecklist } from "../cantieriDomain";
-import { riepilogoEconomicoCantiere } from "../cantiereVariantiDomain";
+import { calcolaTotaleCantiere } from "../../../domain/varianti";
 import CantiereAssistantPanel from "./CantiereAssistantPanel";
 import CantiereOperativo from "./CantiereOperativo";
 import CantiereVarianti from "./CantiereVarianti";
@@ -98,6 +96,12 @@ export default function CantiereOverview({
   onEliminaCantiere,
   onIniziaLavoro,
   onCompletaLavoro,
+  onCreaVariante,
+  onApprovaVariante,
+  onEseguiVariante,
+  onAnnullaVariante,
+  variantiTick = 0,
+  // legacy aliases
   onAggiungiVariante,
   onEliminaVariante,
 }) {
@@ -124,10 +128,8 @@ export default function CantiereOverview({
     typeof avanzamentoProp === "number"
       ? avanzamentoProp
       : calcolaAvanzamentoChecklist(cantiere.checklist || []);
-  const economico = useMemo(
-    () => riepilogoEconomicoCantiere(cantiere),
-    [cantiere]
-  );
+  const economico = calcolaTotaleCantiere(cantiere);
+  void variantiTick;
 
   const apriSezioneFoto = useCallback(() => {
     scorriA(sezioneFoto.current);
@@ -326,11 +328,11 @@ export default function CantiereOverview({
         <CantiereVarianti
           cantiere={cantiere}
           sezioneRef={sezioneVarianti}
-          onAggiungiVariante={onAggiungiVariante}
-          onEliminaVariante={onEliminaVariante}
-          onEsportaPdf={async () => {
-            await generaPdfVariantiCantiere(cantiere, leggiDatiAzienda());
-          }}
+          refreshKey={variantiTick}
+          onCreaVariante={onCreaVariante || onAggiungiVariante}
+          onApprovaVariante={onApprovaVariante}
+          onEseguiVariante={onEseguiVariante}
+          onAnnullaVariante={onAnnullaVariante || onEliminaVariante}
         />
       </div>
 

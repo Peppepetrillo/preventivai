@@ -17,6 +17,11 @@ export const STORAGE_KEYS = {
   brainObservations: "preventivai.brain.observations",
   brainPersonalKnowledge: "preventivai.brain.personalKnowledge",
   brainPatterns: "preventivai.brain.patterns",
+  /** Timeline workflow preventivo → cantiere (locale) */
+  workflowTimeline: "preventivai.workflow.timeline",
+  /** Varianti cantiere — locale, separate dal preventivo */
+  varianti: "preventivai.varianti",
+  variantiTimeline: "preventivai.varianti.timeline",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -34,6 +39,9 @@ export const STORAGE_FALLBACKS = {
   [STORAGE_KEYS.brainObservations]: [],
   [STORAGE_KEYS.brainPersonalKnowledge]: [],
   [STORAGE_KEYS.brainPatterns]: [],
+  [STORAGE_KEYS.workflowTimeline]: [],
+  [STORAGE_KEYS.varianti]: [],
+  [STORAGE_KEYS.variantiTimeline]: [],
 };
 
 export const APP_DATA_KEYS = {
