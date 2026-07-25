@@ -5,6 +5,7 @@ import {
   Check,
   Copy,
   Download,
+  Eye,
   HardHat,
   Save,
   Trash2,
@@ -52,6 +53,11 @@ import {
   normalizzaNumero,
 } from "../utils/preventivi";
 import NumericInput from "../components/NumericInput";
+import PdfAnteprima from "../components/PdfAnteprima";
+import FirmaClienteSection from "../features/preventivi/components/FirmaClienteSection";
+import CondivisioneSection from "../features/preventivi/components/CondivisioneSection";
+import { salvaFirma, ottieniFirma } from "../domain/firma";
+import { risolviDocumentoDaCondividere } from "../domain/condivisione";
 
 export default function DettaglioPreventivo() {
   const { id } = useParams();
@@ -85,6 +91,9 @@ export default function DettaglioPreventivo() {
   const [nuovoIncasso, setNuovoIncasso] = useState("");
   const [messaggio, setMessaggio] = useState("");
   const [timelineTick, setTimelineTick] = useState(0);
+  const [pdfAnteprimaUrl, setPdfAnteprimaUrl] = useState("");
+  const [pdfAnteprimaAperta, setPdfAnteprimaAperta] = useState(false);
+  const [pdfInElaborazione, setPdfInElaborazione] = useState(false);
 
   const totali = calcolaTotali(lavorazioni, sconto, iva);
   const saldo = calcolaSaldo(totali.totale, acconto);
@@ -231,10 +240,16 @@ export default function DettaglioPreventivo() {
     navigate(ROUTES.archivio);
   }
 
-  async function generaPDF() {
+  async function generaDocumentoPdf({
+    salva = true,
+    apriAnteprima = false,
+    firmato = undefined,
+  } = {}) {
+    setPdfInElaborazione(true);
     try {
-      await generaPdfPreventivo({
-        preventivo,
+      const dati = datiAggiornati();
+      const risultato = await generaPdfPreventivo({
+        preventivo: dati,
         datiAzienda,
         cliente,
         stato,
@@ -246,10 +261,53 @@ export default function DettaglioPreventivo() {
         iva,
         acconto,
         totali,
+        salva,
+        firmato,
       });
+
+      const firmaEsistente = ottieniFirma(dati.id);
+      if (firmaEsistente && risultato?.nomeFile?.includes("_firmato")) {
+        salvaFirma(firmaEsistente, {
+          preventivo: dati,
+          registraFirmato: true,
+        });
+      }
+
+      if (pdfAnteprimaUrl) {
+        URL.revokeObjectURL(pdfAnteprimaUrl);
+      }
+      if (risultato?.blobUrl) {
+        setPdfAnteprimaUrl(risultato.blobUrl);
+      }
+      if (apriAnteprima) {
+        setPdfAnteprimaAperta(true);
+      }
+      setMessaggio(
+        salva
+          ? risultato?.nomeFile?.includes("_firmato")
+            ? "PDF firmato generato e scaricato."
+            : "PDF generato e scaricato."
+          : "Anteprima PDF aggiornata."
+      );
+      return risultato;
     } catch {
       setMessaggio("Non è stato possibile generare il PDF.");
+      return null;
+    } finally {
+      setPdfInElaborazione(false);
     }
+  }
+
+  async function generaPDF() {
+    await generaDocumentoPdf({ salva: true, apriAnteprima: false });
+  }
+
+  async function anteprimaPDF() {
+    await generaDocumentoPdf({ salva: false, apriAnteprima: true });
+  }
+
+  function chiudiAnteprimaPdf() {
+    setPdfAnteprimaAperta(false);
   }
 
   function sincronizzaDaWorkflow(prossimoPreventivo, testoOk) {
@@ -513,6 +571,61 @@ export default function DettaglioPreventivo() {
         ) : null}
       </section>
 
+      <FirmaClienteSection
+        preventivo={{ ...datiAggiornati(), stato }}
+        onMessaggio={setMessaggio}
+        pdfInElaborazione={pdfInElaborazione}
+        onRigeneraPdf={({ firmato } = {}) =>
+          generaDocumentoPdf({ salva: true, apriAnteprima: false, firmato })
+        }
+      />
+
+      <CondivisioneSection
+        preventivo={{ ...datiAggiornati(), stato }}
+        onMessaggio={setMessaggio}
+        inElaborazione={pdfInElaborazione}
+        onVisualizzaPdf={() =>
+          generaDocumentoPdf({
+            salva: false,
+            apriAnteprima: true,
+            firmato: risolviDocumentoDaCondividere(preventivo.id, datiAggiornati())
+              .firmato,
+          })
+        }
+        preparaDocumento={async ({ firmato } = {}) => {
+          // Documento già in anteprima: riusa il blob senza riscaricare.
+          // Se assente, genera una sola volta su azione esplicita dell'utente.
+          if (pdfAnteprimaUrl) {
+            try {
+              const risposta = await fetch(pdfAnteprimaUrl);
+              const blob = await risposta.blob();
+              const docInfo = risolviDocumentoDaCondividere(
+                preventivo.id,
+                datiAggiornati()
+              );
+              return {
+                blob,
+                nomeFile: docInfo.nomeFile,
+                firmato: docInfo.firmato,
+              };
+            } catch {
+              // ricade su generazione esplicita
+            }
+          }
+          const risultato = await generaDocumentoPdf({
+            salva: false,
+            apriAnteprima: false,
+            firmato,
+          });
+          if (!risultato?.blob) return null;
+          return {
+            blob: risultato.blob,
+            nomeFile: risultato.nomeFile,
+            firmato: Boolean(firmato),
+          };
+        }}
+      />
+
       <section className="space-y-4 mb-5">
         {lavorazioni.map((item, index) => (
           <div
@@ -723,11 +836,21 @@ export default function DettaglioPreventivo() {
         </button>
 
         <button
+          onClick={anteprimaPDF}
+          disabled={pdfInElaborazione}
+          className="w-full btn-secondary p-5 text-lg flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          <Eye size={20} />
+          Anteprima PDF
+        </button>
+
+        <button
           onClick={generaPDF}
-          className="w-full btn-secondary p-5 text-lg flex items-center justify-center gap-2"
+          disabled={pdfInElaborazione}
+          className="w-full btn-secondary p-5 text-lg flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Download size={20} />
-          Genera PDF
+          {pdfInElaborazione ? "Generazione PDF…" : "Genera PDF"}
         </button>
 
         <button
@@ -746,6 +869,17 @@ export default function DettaglioPreventivo() {
           Elimina preventivo
         </button>
       </div>
+
+      <PdfAnteprima
+        aperto={pdfAnteprimaAperta}
+        blobUrl={pdfAnteprimaUrl}
+        titolo={preventivo.numero || `PREV-${preventivo.id}`}
+        inElaborazione={pdfInElaborazione}
+        onChiudi={chiudiAnteprimaPdf}
+        onRigenera={() =>
+          generaDocumentoPdf({ salva: false, apriAnteprima: true })
+        }
+      />
     </div>
   );
 }

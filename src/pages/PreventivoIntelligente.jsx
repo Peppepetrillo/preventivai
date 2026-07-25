@@ -1,37 +1,24 @@
-import { useId, useMemo, useState } from "react";
+import { useId, useState } from "react";
 import {
-  BookOpen,
-  Brain,
   Building2,
-  Check,
   ChevronDown,
-  Eye,
+  FilePlus2,
   Sparkles,
-  X,
   Zap,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-import { ROUTES } from "../app/routes";
+import { ROUTES, routePreventivo } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
 import NumericInput from "../components/NumericInput";
-import { KNOWLEDGE_CATEGORIES } from "../domain/knowledge/knowledgeCategories";
-import { KNOWLEDGE_ORIGINE } from "../domain/knowledge/knowledgePriorityService";
-import { generaPropostaPreventivo } from "../domain/knowledge/preventivoIntelligenteService";
 import {
-  getNumeroRegole,
-  getRegolePerCategoria,
-} from "../domain/knowledge/knowledgeStatistics";
+  generaPreventivoEconomico,
+  convertiProposalInPreventivo,
+} from "../domain/preventivi";
 import { salvaOsservazione } from "../domain/brain/brainObservationService";
-import {
-  analizzaOsservazioni,
-  ottieniPattern,
-} from "../domain/brain/brainPatternService";
-import {
-  accettaPattern,
-  rifiutaPattern,
-} from "../domain/brain/brainLearningService";
-import { BRAIN_PATTERN_STATI } from "../domain/brain/brainPatternTypes";
+import { analizzaOsservazioni } from "../domain/brain/brainPatternService";
+import { leggiPreventivi, salvaNuovoPreventivo } from "../repositories/preventiviRepository";
+import { formatEuro } from "../utils/preventivi";
 
 const TIPI_IMMOBILE = [
   { id: "appartamento", label: "Appartamento" },
@@ -85,20 +72,22 @@ const FORM_INIZIALE = {
   statoImmobile: "nuova-costruzione",
   serieCivile: "living-now",
   livelloImpianto: "standard",
+  cliente: "",
   extra: Object.fromEntries(EXTRA_OPZIONI.map((voce) => [voce.id, false])),
 };
 
 /**
- * Preventivo Intelligente — raccolta dati per il Knowledge Engine.
- * Nessuna generazione preventivo in questo sprint.
+ * Preventivo Intelligente — proposta economica (Proposal Service).
+ * La UI riceve solo PreventivoProposal, non conosce il Knowledge Engine.
  */
 export default function PreventivoIntelligente() {
   const baseId = useId();
+  const navigate = useNavigate();
   const [form, setForm] = useState(FORM_INIZIALE);
-  const [proposta, setProposta] = useState(null);
+  const [proposal, setProposal] = useState(null);
   const [errore, setErrore] = useState("");
-  const [patterns, setPatterns] = useState(() => ottieniPattern());
-  const [patternApertoId, setPatternApertoId] = useState(null);
+  const [ragionamentoAperto, setRagionamentoAperto] = useState(false);
+  const [creazioneInCorso, setCreazioneInCorso] = useState(false);
 
   function aggiornaCampo(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
@@ -124,21 +113,44 @@ export default function PreventivoIntelligente() {
           : Number(form.superficieMq),
     };
 
-    const risultato = generaPropostaPreventivo(input);
+    const risultato = generaPreventivoEconomico(input);
 
-    if (risultato?.success && risultato.proposta) {
-      setProposta(risultato.proposta);
+    if (risultato?.success && risultato.proposal) {
+      setProposal(risultato.proposal);
+      setRagionamentoAperto(false);
 
-      // Brain: osserva + memorizza, poi ricalcola pattern (solo proposta, no auto-conoscenza).
-      salvaOsservazione(input, risultato.proposta, {});
-      const analisi = analizzaOsservazioni();
-      setPatterns(analisi.patterns || []);
+      const conoscenza = risultato.proposal.conoscenzaProposta;
+      if (conoscenza) {
+        salvaOsservazione(input, conoscenza, {});
+        analizzaOsservazioni();
+      }
       return;
     }
 
-    setProposta(null);
+    setProposal(null);
     setErrore("Impossibile generare la proposta. Riprova.");
   }
+
+  function creaPreventivoDaProposal() {
+    if (!proposal || creazioneInCorso) return;
+    setCreazioneInCorso(true);
+    setErrore("");
+
+    try {
+      const archivio = leggiPreventivi();
+      const preventivo = convertiProposalInPreventivo(proposal, {
+        archivio,
+        cliente: form.cliente,
+      });
+      salvaNuovoPreventivo(preventivo);
+      navigate(routePreventivo(preventivo.id));
+    } catch {
+      setErrore("Impossibile creare il preventivo. Riprova.");
+      setCreazioneInCorso(false);
+    }
+  }
+
+  const haProposta = Boolean(proposal);
 
   return (
     <PageWrapper>
@@ -156,11 +168,11 @@ export default function PreventivoIntelligente() {
               <Zap size={22} aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <p className="section-label">Knowledge</p>
+              <p className="section-label">Preventivo</p>
               <h1 className="ds-page-title mt-1">Preventivo Intelligente</h1>
               <p className="ds-text-secondary mt-2">
-                Descrivi immobile e impianto. Il Rule Engine costruisce la
-                proposta.
+                Descrivi immobile e impianto. Ottieni subito un preventivo
+                economico suggerito.
               </p>
             </div>
           </div>
@@ -182,6 +194,18 @@ export default function PreventivoIntelligente() {
               Immobile
             </h2>
           </div>
+
+          <CampoLabel etichetta="Cliente (opzionale)" htmlFor={`${baseId}-cliente`}>
+            <input
+              id={`${baseId}-cliente`}
+              type="text"
+              value={form.cliente}
+              onChange={(event) => aggiornaCampo("cliente", event.target.value)}
+              placeholder="Es. Rossi Mario"
+              className="input-pro mt-2"
+              autoComplete="organization"
+            />
+          </CampoLabel>
 
           <CampoLabel etichetta="Tipo immobile">
             <ChipGroup
@@ -302,383 +326,293 @@ export default function PreventivoIntelligente() {
           className="w-full btn-primary min-h-[56px] px-5 py-4 text-base font-semibold flex items-center justify-center gap-2"
         >
           <Sparkles size={20} aria-hidden="true" />
-          Genera Proposta
+          {haProposta ? "Aggiorna proposta" : "Genera proposta"}
         </button>
 
-        {proposta ? <PropostaPreventivoCard proposta={proposta} /> : null}
-
-        <BrainInsights
-          patterns={patterns}
-          patternApertoId={patternApertoId}
-          onVisualizza={(id) =>
-            setPatternApertoId((corrente) => (corrente === id ? null : id))
-          }
-          onInsegnami={(id) => {
-            const risultato = accettaPattern(id);
-            if (risultato.success) {
-              setPatterns(ottieniPattern());
-            }
-          }}
-          onIgnora={(id) => {
-            const risultato = rifiutaPattern(id);
-            if (risultato.success) {
-              setPatterns(ottieniPattern());
-            }
-          }}
-        />
-
-        <KnowledgeEngineInfo
-          regoleApplicate={proposta?.regoleApplicate || []}
-        />
+        {proposal ? (
+          <>
+            <RiepilogoCard proposal={proposal} />
+            <PreventivoSuggeritoCard
+              proposal={proposal}
+              onCrea={creaPreventivoDaProposal}
+              creazioneInCorso={creazioneInCorso}
+            />
+            <RagionamentoCard
+              proposal={proposal}
+              aperto={ragionamentoAperto}
+              onToggle={() => setRagionamentoAperto((v) => !v)}
+            />
+          </>
+        ) : null}
       </div>
     </PageWrapper>
   );
 }
 
-function BrainInsights({
-  patterns,
-  patternApertoId,
-  onVisualizza,
-  onInsegnami,
-  onIgnora,
-}) {
-  const elenco = Array.isArray(patterns) ? patterns : [];
-
-  return (
-    <section
-      className="pro-panel px-4 py-4 mt-4"
-      aria-labelledby="brain-insights-title"
-    >
-      <div className="flex items-center gap-2.5 mb-3">
-        <Brain
-          size={18}
-          className="text-yellow-300 shrink-0"
-          aria-hidden="true"
-        />
-        <h2 id="brain-insights-title" className="ds-section-title">
-          Brain Insights
-        </h2>
-      </div>
-
-      {elenco.length === 0 ? (
-        <p className="ds-text-secondary text-sm">
-          Nessun pattern ancora. Servono almeno 5 osservazioni simili con
-          ripetizione ≥ 80%.
-        </p>
-      ) : (
-        <ul className="space-y-2" role="list">
-          {elenco.map((pattern) => {
-            const aperto = patternApertoId === pattern.id;
-            const accettato = pattern.stato === BRAIN_PATTERN_STATI.ACCETTATO;
-            const rifiutato = pattern.stato === BRAIN_PATTERN_STATI.RIFIUTATO;
-            const daConfermare = !accettato && !rifiutato;
-
-            return (
-              <li
-                key={pattern.id}
-                className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-3.5 py-3"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-white truncate">
-                        {pattern.nome}
-                      </p>
-                      {accettato ? (
-                        <span className="inline-flex items-center rounded-md border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-200">
-                          Insegnato
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="ds-text-secondary text-xs mt-1">
-                      Affidabilità {pattern.affidabilita}% ·{" "}
-                      {pattern.osservazioni} osservazioni
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onVisualizza(pattern.id)}
-                    className="btn-secondary min-h-[44px] px-3 text-xs font-semibold flex items-center gap-1.5 shrink-0"
-                    aria-expanded={aperto}
-                  >
-                    <Eye size={14} aria-hidden="true" />
-                    Visualizza
-                  </button>
-                </div>
-
-                {aperto ? (
-                  <div className="mt-3 pt-3 border-t border-white/[0.06] space-y-3">
-                    <p className="text-[12px] font-medium text-slate-400">
-                      Categoria · {pattern.categoria}
-                    </p>
-                    <p className="text-sm text-white font-semibold">
-                      {pattern.suggerimento?.testo || "—"}
-                    </p>
-                    <p className="ds-text-secondary text-xs">
-                      Stato: {pattern.stato}
-                    </p>
-
-                    {daConfermare ? (
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => onInsegnami(pattern.id)}
-                          className="btn-primary min-h-[44px] px-3 text-xs font-semibold flex items-center gap-1.5"
-                        >
-                          <Check size={14} aria-hidden="true" />
-                          Insegnami
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onIgnora(pattern.id)}
-                          className="btn-secondary min-h-[44px] px-3 text-xs font-semibold flex items-center gap-1.5"
-                        >
-                          <X size={14} aria-hidden="true" />
-                          Ignora
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
-  );
-}
-
-function KnowledgeEngineInfo({ regoleApplicate }) {
-  const numeroRegole = useMemo(() => getNumeroRegole(), []);
-  const perCategoria = useMemo(() => getRegolePerCategoria(), []);
-  const categoriePopolate = KNOWLEDGE_CATEGORIES.filter(
-    (categoria) => (perCategoria[categoria] || 0) > 0
-  );
-
-  return (
-    <section
-      className="pro-panel px-4 py-4 mt-4 mb-2"
-      aria-labelledby="knowledge-engine-info-title"
-    >
-      <div className="flex items-center gap-2.5 mb-3">
-        <BookOpen
-          size={18}
-          className="text-yellow-300 shrink-0"
-          aria-hidden="true"
-        />
-        <h2 id="knowledge-engine-info-title" className="ds-section-title">
-          Knowledge Engine
-        </h2>
-      </div>
-
-      <dl className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
-          <dt className="text-[12px] font-medium text-slate-400">
-            Regole disponibili
-          </dt>
-          <dd className="ds-card-title mt-1 tabular-nums">{numeroRegole}</dd>
-        </div>
-        <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
-          <dt className="text-[12px] font-medium text-slate-400">
-            Categorie
-          </dt>
-          <dd className="ds-card-title mt-1 tabular-nums">
-            {KNOWLEDGE_CATEGORIES.length}
-          </dd>
-        </div>
-        <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
-          <dt className="text-[12px] font-medium text-slate-400">
-            Regole applicate
-          </dt>
-          <dd className="ds-card-title mt-1 tabular-nums">
-            {regoleApplicate.length}
-          </dd>
-        </div>
-      </dl>
-
-      <div className="mt-4">
-        <h3 className="text-[12px] font-medium text-slate-400 mb-2">
-          Categorie con regole
-        </h3>
-        {categoriePopolate.length === 0 ? (
-          <p className="ds-text-secondary text-sm">Nessuna categoria popolata.</p>
-        ) : (
-          <ul className="flex flex-wrap gap-2" role="list">
-            {categoriePopolate.map((categoria) => (
-              <li key={categoria} className="ds-chip">
-                {categoria}
-                <span className="ml-1.5 tabular-nums text-yellow-200/90">
-                  {perCategoria[categoria]}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {regoleApplicate.length > 0 ? (
-        <div className="mt-4">
-          <h3 className="text-[12px] font-medium text-slate-400 mb-2">
-            Ultime regole applicate
-          </h3>
-          <ul className="space-y-1.5" role="list">
-            {regoleApplicate.map((regola) => (
-              <li
-                key={regola.id}
-                className="flex items-center justify-between gap-2 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-sm"
-              >
-                <span className="font-semibold text-white truncate">
-                  {regola.nome}
-                </span>
-                <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500 shrink-0">
-                  {regola.id}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-function PropostaPreventivoCard({ proposta }) {
-  const punti =
-    proposta.puntiStimati === null || proposta.puntiStimati === undefined
+function RiepilogoCard({ proposal }) {
+  const r = proposal.riepilogo || {};
+  const mq =
+    r.superficieMq === null || r.superficieMq === undefined
       ? "—"
-      : proposta.puntiStimati;
-  const quadro = proposta.quadroSuggerito || "—";
-  const suggerimenti = proposta.suggerimenti || [];
-  const regole = proposta.regoleApplicate || [];
-  const [percheAperto, setPercheAperto] = useState(null);
+      : r.superficieMq;
+  const livello = r.livelloImpianto || "—";
+  const punti =
+    r.puntiStimati === null || r.puntiStimati === undefined
+      ? "—"
+      : r.puntiStimati;
+  const quadro = r.quadroSuggerito || "—";
 
   return (
     <section
       className="pro-panel-strong px-4 py-4 mt-4"
-      aria-labelledby="proposta-preventivo-title"
+      aria-labelledby="riepilogo-proposta-title"
     >
-      <p className="section-label">Rule Engine</p>
-      <h2 id="proposta-preventivo-title" className="ds-section-title mt-1">
-        Proposta preventivo
+      <p className="section-label">Proposta</p>
+      <h2 id="riepilogo-proposta-title" className="ds-section-title mt-1">
+        Riepilogo
       </h2>
 
-      <dl className="mt-4 grid gap-3">
-        <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
-          <dt className="text-[12px] font-medium text-slate-400">
-            Punti stimati
-          </dt>
-          <dd className="ds-card-title mt-1 tabular-nums">{punti}</dd>
-        </div>
-        <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
-          <dt className="text-[12px] font-medium text-slate-400">
-            Quadro suggerito
-          </dt>
-          <dd className="ds-card-title mt-1">{quadro}</dd>
-        </div>
+      <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+        <RiepilogoVoce etichetta="mq" valore={mq} />
+        <RiepilogoVoce etichetta="Livello" valore={livello} />
+        <RiepilogoVoce etichetta="Punti stimati" valore={punti} />
+        <RiepilogoVoce etichetta="Quadro suggerito" valore={quadro} />
       </dl>
+    </section>
+  );
+}
 
-      <div className="mt-4">
-        <h3 className="text-[12px] font-medium text-slate-400 mb-2">
-          Suggerimenti
-        </h3>
-        {suggerimenti.length === 0 ? (
-          <p className="ds-text-secondary text-sm">Nessun suggerimento.</p>
-        ) : (
-          <ul className="space-y-2" role="list">
-            {suggerimenti.map((voce, indice) => {
-              const titolo =
-                typeof voce === "string" ? voce : voce.titolo || "—";
-              const origine =
-                typeof voce === "object" ? voce.origine : KNOWLEDGE_ORIGINE.BASE;
-              const labelOrigine =
-                typeof voce === "object"
-                  ? voce.labelOrigine
-                  : "Conoscenza Base";
-              const affidabilita =
-                typeof voce === "object" ? voce.affidabilita : null;
-              const perche =
-                typeof voce === "object"
-                  ? voce.percheBrain || voce.perche
-                  : null;
-              const chiave = `${origine}-${titolo}-${indice}`;
-              const aperto = percheAperto === chiave;
-              const iconaOrigine =
-                origine === KNOWLEDGE_ORIGINE.BRAIN ? "🧠" : "📘";
+function RiepilogoVoce({ etichetta, valore }) {
+  return (
+    <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
+      <dt className="text-[12px] font-medium text-slate-400">{etichetta}</dt>
+      <dd className="ds-card-title mt-1 tabular-nums capitalize">{valore}</dd>
+    </div>
+  );
+}
 
-              return (
-                <li
-                  key={chiave}
-                  className="rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2.5"
+function PreventivoSuggeritoCard({ proposal, onCrea, creazioneInCorso }) {
+  const lavorazioni = proposal.lavorazioni || [];
+  const iva = proposal.ivaPercentuale ?? 22;
+
+  return (
+    <section
+      className="pro-panel-strong px-4 py-4 mt-3"
+      aria-labelledby="preventivo-suggerito-title"
+    >
+      <p className="section-label">Economico</p>
+      <h2 id="preventivo-suggerito-title" className="ds-section-title mt-1">
+        Preventivo suggerito
+      </h2>
+
+      {lavorazioni.length === 0 ? (
+        <p className="ds-text-secondary text-sm mt-4">
+          Nessuna lavorazione suggerita.
+        </p>
+      ) : (
+        <div className="mt-4 overflow-x-auto -mx-1 px-1">
+          <table className="w-full min-w-[320px] text-left text-sm">
+            <thead>
+              <tr className="text-[11px] font-medium uppercase tracking-wide text-slate-500 border-b border-white/[0.08]">
+                <th className="py-2 pr-2 font-medium">Descrizione</th>
+                <th className="py-2 px-2 font-medium text-right">Qtà</th>
+                <th className="py-2 px-2 font-medium text-right">Prezzo u.</th>
+                <th className="py-2 pl-2 font-medium text-right">Totale</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lavorazioni.map((lav) => (
+                <tr
+                  key={lav.id}
+                  className="border-b border-white/[0.04] align-top"
                 >
-                  <p className="text-sm font-semibold text-white">{titolo}</p>
-                  <p className="ds-text-secondary text-xs mt-1.5">
-                    Origine {iconaOrigine} {labelOrigine}
-                    {affidabilita !== null && affidabilita !== undefined
-                      ? ` · Affidabilità ${affidabilita}%`
-                      : ""}
-                    {typeof voce === "object" && voce.rafforzatoDalBrain
-                      ? " · Rafforzato dal Brain"
-                      : ""}
-                  </p>
-                  {perche ? (
-                    <div className="mt-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setPercheAperto((corrente) =>
-                            corrente === chiave ? null : chiave
-                          )
-                        }
-                        className="inline-flex min-h-[36px] items-center gap-1 text-xs font-semibold text-yellow-200/90"
-                        aria-expanded={aperto}
-                      >
-                        Perché?
-                        <ChevronDown
-                          size={14}
-                          className={aperto ? "rotate-180" : ""}
-                          aria-hidden="true"
-                        />
-                      </button>
-                      {aperto ? (
-                        <p className="ds-text-secondary text-xs mt-1.5 leading-relaxed">
-                          {perche}
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                  <td className="py-3 pr-2">
+                    <p className="font-semibold text-white leading-snug">
+                      {lav.descrizione}
+                    </p>
+                    {!lav.prezzoConfigurato ? (
+                      <span className="mt-1.5 inline-flex items-center rounded-md border border-amber-400/35 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-100">
+                        Prezzo non configurato
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className="py-3 px-2 text-right tabular-nums text-slate-300">
+                    {lav.quantita}
+                  </td>
+                  <td className="py-3 px-2 text-right tabular-nums text-slate-300">
+                    {lav.prezzoConfigurato
+                      ? formatEuro(lav.prezzoUnitario)
+                      : "—"}
+                  </td>
+                  <td className="py-3 pl-2 text-right tabular-nums font-semibold text-white">
+                    {lav.prezzoConfigurato ? formatEuro(lav.totale) : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="mt-4 rounded-[16px] border border-yellow-400/25 bg-yellow-400/10 px-4 py-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <div>
+            <p className="text-[12px] font-medium text-yellow-100/80">
+              Totale finale (IVA {iva}%)
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              Imponibile {formatEuro(proposal.subtotale)} · IVA{" "}
+              {formatEuro(proposal.totaleIVA)}
+            </p>
+          </div>
+          <p className="text-2xl font-black tabular-nums text-yellow-300">
+            {formatEuro(proposal.totale)}
+          </p>
+        </div>
       </div>
 
-      <div className="mt-4">
-        <h3 className="text-[12px] font-medium text-slate-400 mb-2">
-          Regole applicate
-        </h3>
-        {regole.length === 0 ? (
-          <p className="ds-text-secondary text-sm">Nessuna regola applicata.</p>
-        ) : (
-          <ul className="space-y-1.5" role="list">
-            {regole.map((regola) => (
-              <li
-                key={regola.id}
-                className="flex items-center justify-between gap-2 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2.5"
-              >
-                <span className="text-sm font-semibold text-white truncate">
-                  {regola.nome}
-                </span>
-                <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500 shrink-0">
-                  {regola.origine === KNOWLEDGE_ORIGINE.BRAIN ? "🧠 " : "📘 "}
-                  {regola.id}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={onCrea}
+        disabled={creazioneInCorso || lavorazioni.length === 0}
+        className="w-full btn-primary min-h-[52px] mt-4 px-5 py-3 text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+      >
+        <FilePlus2 size={18} aria-hidden="true" />
+        {creazioneInCorso ? "Creazione…" : "Crea Preventivo"}
+      </button>
+    </section>
+  );
+}
+
+function RagionamentoCard({ proposal, aperto, onToggle }) {
+  const regole = proposal.regoleApplicate || [];
+  const brain = proposal.brainInsights || {};
+  const suggerimentiBrain = brain.suggerimentiBrain || [];
+  const patterns = brain.patterns || [];
+  const lavorazioni = proposal.lavorazioni || [];
+  const conPerche = lavorazioni.filter((l) => l.perche);
+
+  return (
+    <section className="pro-panel px-4 py-3 mt-3 mb-2">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between gap-3 min-h-[48px] text-left"
+        aria-expanded={aperto}
+      >
+        <span className="ds-section-title text-base">
+          🧠 Come ha ragionato PreventivAI
+        </span>
+        <ChevronDown
+          size={18}
+          className={`text-slate-400 shrink-0 transition-transform ${
+            aperto ? "rotate-180" : ""
+          }`}
+          aria-hidden="true"
+        />
+      </button>
+
+      {aperto ? (
+        <div className="pt-2 pb-2 space-y-4 border-t border-white/[0.06] mt-2">
+          <div>
+            <h3 className="text-[12px] font-medium text-slate-400 mb-2">
+              Regole applicate
+            </h3>
+            {regole.length === 0 ? (
+              <p className="ds-text-secondary text-sm">Nessuna regola.</p>
+            ) : (
+              <ul className="space-y-1.5" role="list">
+                {regole.map((regola) => (
+                  <li
+                    key={regola.id}
+                    className="rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-sm font-semibold text-white"
+                  >
+                    {regola.nome}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-[12px] font-medium text-slate-400 mb-2">
+              Brain Insights
+            </h3>
+            {suggerimentiBrain.length === 0 && patterns.length === 0 ? (
+              <p className="ds-text-secondary text-sm">
+                Nessun insight Brain su questa proposta.
+              </p>
+            ) : (
+              <ul className="space-y-1.5" role="list">
+                {suggerimentiBrain.map((s, i) => (
+                  <li
+                    key={`brain-sug-${i}`}
+                    className="rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-sm text-white"
+                  >
+                    {s.titolo || s.testo || "—"}
+                    {s.affidabilita != null
+                      ? ` · ${s.affidabilita}%`
+                      : ""}
+                  </li>
+                ))}
+                {patterns.slice(0, 5).map((p) => (
+                  <li
+                    key={p.id}
+                    className="rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-sm text-white"
+                  >
+                    {p.nome}
+                    {p.affidabilita != null ? ` · ${p.affidabilita}%` : ""}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-[12px] font-medium text-slate-400 mb-2">
+              Origine suggerimenti
+            </h3>
+            <ul className="space-y-1.5" role="list">
+              {lavorazioni.map((lav) => (
+                <li
+                  key={`orig-${lav.id}`}
+                  className="flex items-center justify-between gap-2 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-sm"
+                >
+                  <span className="font-semibold text-white truncate">
+                    {lav.descrizione}
+                  </span>
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500 shrink-0">
+                    {lav.origine === "BRAIN" ? "🧠 Brain" : "📘 Base"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {conPerche.length > 0 ? (
+            <div>
+              <h3 className="text-[12px] font-medium text-slate-400 mb-2">
+                Perché?
+              </h3>
+              <ul className="space-y-2" role="list">
+                {conPerche.map((lav) => (
+                  <li
+                    key={`perche-${lav.id}`}
+                    className="rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2.5"
+                  >
+                    <p className="text-sm font-semibold text-white">
+                      {lav.descrizione}
+                    </p>
+                    <p className="ds-text-secondary text-xs mt-1.5 leading-relaxed">
+                      {lav.perche}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 }

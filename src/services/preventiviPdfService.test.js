@@ -13,12 +13,20 @@ vi.mock("jspdf", () => ({
     setDrawColor() {}
     setFontSize() {}
     setFont() {}
+    setLineWidth() {}
     text() {}
     rect() {}
     roundedRect() {}
     line() {}
     addImage() {}
     save() {}
+    splitTextToSize(valore) {
+      return [String(valore || "")];
+    }
+    output() {
+      return new Blob(["%PDF"], { type: "application/pdf" });
+    }
+    setPage() {}
     addPage(...args) {
       addPage(...args);
       getNumberOfPages.mockReturnValue(addPage.mock.calls.length + 1);
@@ -29,10 +37,8 @@ vi.mock("jspdf", () => ({
   },
 }));
 
-vi.mock("qrcode", () => ({
-  default: {
-    toDataURL: vi.fn(async () => "data:image/png;base64,qq"),
-  },
+vi.mock("../repositories/clientiRepository", () => ({
+  leggiClienti: () => [],
 }));
 
 import { generaPdfPreventivo } from "./preventiviPdfService";
@@ -41,12 +47,19 @@ describe("generaPdfPreventivo densità", () => {
   beforeEach(() => {
     addPage.mockClear();
     getNumberOfPages.mockReturnValue(1);
+    globalThis.URL.createObjectURL = vi.fn(() => "blob:x");
   });
 
   it("un preventivo piccolo resta su una sola pagina", async () => {
     const risultato = await generaPdfPreventivo({
       preventivo: { id: 1, numero: "PREV-TEST", data: "23/07/2026" },
-      datiAzienda: { nomeDitta: "Elettro Test", telefono: "333", email: "a@b.it" },
+      datiAzienda: {
+        nomeDitta: "Elettro Test",
+        telefono: "333",
+        email: "a@b.it",
+        indirizzo: "Via Test 1",
+        partitaIva: "IT000",
+      },
       cliente: "Rossi",
       stato: "Bozza",
       lavorazioni: [
@@ -71,5 +84,6 @@ describe("generaPdfPreventivo densità", () => {
 
     expect(addPage).not.toHaveBeenCalled();
     expect(risultato.pagine).toBe(1);
+    expect(risultato.document.azienda.nome).toBe("Elettro Test");
   });
 });

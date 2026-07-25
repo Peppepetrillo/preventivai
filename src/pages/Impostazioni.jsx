@@ -43,6 +43,11 @@ export default function Impostazioni() {
   const [nomeDitta, setNomeDitta] = useState(datiSalvati.nomeDitta || "");
   const [telefono, setTelefono] = useState(datiSalvati.telefono || "");
   const [email, setEmail] = useState(datiSalvati.email || "");
+  const [indirizzo, setIndirizzo] = useState(datiSalvati.indirizzo || "");
+  const [partitaIva, setPartitaIva] = useState(datiSalvati.partitaIva || "");
+  const [condizioniGenerali, setCondizioniGenerali] = useState(
+    datiSalvati.condizioniGenerali || ""
+  );
   const [logo, setLogo] = useState(datiSalvati.logo || "");
   const [pinNuovo, setPinNuovo] = useState("");
   const [pinAttivo, setPinAttivo] = useState(() => pinEAttivo());
@@ -53,7 +58,16 @@ export default function Impostazioni() {
   const [salvataggioPin, setSalvataggioPin] = useState(false);
 
   function salvaDati() {
-    salvaDatiAzienda({ nomeDitta, telefono, email, logo });
+    salvaDatiAzienda({
+      nomeDitta,
+      telefono,
+      email,
+      indirizzo,
+      partitaIva,
+      condizioniGenerali,
+      logo,
+      pdfSettings: datiSalvati.pdfSettings || undefined,
+    });
     setMessaggio("Dati azienda salvati sul dispositivo.");
   }
 
@@ -282,6 +296,27 @@ export default function Impostazioni() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input-pro"
+            />
+            <input
+              type="text"
+              placeholder="Indirizzo sede"
+              value={indirizzo}
+              onChange={(e) => setIndirizzo(e.target.value)}
+              className="input-pro"
+            />
+            <input
+              type="text"
+              placeholder="Partita IVA"
+              value={partitaIva}
+              onChange={(e) => setPartitaIva(e.target.value)}
+              className="input-pro"
+            />
+            <textarea
+              placeholder="Condizioni generali (testo nel PDF)"
+              value={condizioniGenerali}
+              onChange={(e) => setCondizioniGenerali(e.target.value)}
+              rows={4}
+              className="input-pro resize-none"
             />
             <button
               onClick={salvaDati}

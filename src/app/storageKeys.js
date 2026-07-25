@@ -22,6 +22,10 @@ export const STORAGE_KEYS = {
   /** Varianti cantiere — locale, separate dal preventivo */
   varianti: "preventivai.varianti",
   variantiTimeline: "preventivai.varianti.timeline",
+  /** Firme cliente — locale, separate dal preventivo */
+  firme: "preventivai.firme",
+  /** Storico condivisioni PDF — locale */
+  condivisioni: "preventivai.condivisioni",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -42,6 +46,8 @@ export const STORAGE_FALLBACKS = {
   [STORAGE_KEYS.workflowTimeline]: [],
   [STORAGE_KEYS.varianti]: [],
   [STORAGE_KEYS.variantiTimeline]: [],
+  [STORAGE_KEYS.firme]: [],
+  [STORAGE_KEYS.condivisioni]: [],
 };
 
 export const APP_DATA_KEYS = {
