@@ -4,8 +4,14 @@ import {
   normalizzaNumero,
 } from "../../utils/preventivi";
 import { normalizzaPreventivoIncasso } from "./incassiDomain";
+import { CATALOGO_BY_CHIAVE_LISTINO } from "../../domain/catalogo";
 
 export function creaLavorazioneDaVoce(voce) {
+  const listinoId = voce.id != null ? String(voce.id) : null;
+  const catalogoId = listinoId
+    ? CATALOGO_BY_CHIAVE_LISTINO[listinoId] || null
+    : null;
+
   return {
     id: `${voce.id ?? voce.nome}-${new Date().getTime()}`,
     nome: voce.nome,
@@ -13,6 +19,8 @@ export function creaLavorazioneDaVoce(voce) {
     prezzo: normalizzaNumero(voce.prezzo),
     quantita: 1,
     unita: voce.unita || "cad",
+    listinoId,
+    catalogoId,
   };
 }
 

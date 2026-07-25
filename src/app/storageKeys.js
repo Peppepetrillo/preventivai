@@ -26,6 +26,11 @@ export const STORAGE_KEYS = {
   firme: "preventivai.firme",
   /** Storico condivisioni PDF — locale */
   condivisioni: "preventivai.condivisioni",
+  /** Decision Memory sopralluogo — locale only */
+  decisionMemory: "preventivai.decisionMemory",
+  /** Sessioni sopralluogo — locale only */
+  sopralluogoSessions: "preventivai.sopralluogo.sessions",
+  sopralluogoSessionAttiva: "preventivai.sopralluogo.sessionAttiva",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -48,6 +53,9 @@ export const STORAGE_FALLBACKS = {
   [STORAGE_KEYS.variantiTimeline]: [],
   [STORAGE_KEYS.firme]: [],
   [STORAGE_KEYS.condivisioni]: [],
+  [STORAGE_KEYS.decisionMemory]: [],
+  [STORAGE_KEYS.sopralluogoSessions]: [],
+  [STORAGE_KEYS.sopralluogoSessionAttiva]: null,
 };
 
 export const APP_DATA_KEYS = {

@@ -12,6 +12,7 @@ const CATEGORIE_ATTESE = [
   "Citofonia",
   "Clima",
   "Comandi",
+  "Cucina",
   "Domotica",
   "Illuminazione",
   "LED",
@@ -22,8 +23,8 @@ const CATEGORIE_ATTESE = [
 ];
 
 describe("listinoBase Sprint 12B", () => {
-  it("contiene 20 lavorazioni normalizzate senza duplicati", () => {
-    expect(listinoBase).toHaveLength(20);
+  it("contiene 22 lavorazioni normalizzate senza duplicati", () => {
+    expect(listinoBase).toHaveLength(22);
 
     const ids = listinoBase.map((v) => v.id);
     expect(new Set(ids).size).toBe(ids.length);

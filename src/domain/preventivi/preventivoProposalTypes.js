@@ -24,6 +24,7 @@ export const ORIGINE_LAVORAZIONE = Object.freeze({
  * @property {string=} perche
  * @property {boolean} prezzoConfigurato
  * @property {string=} listinoId
+ * @property {string=} catalogoId
  * @property {string=} categoria
  */
 
@@ -68,6 +69,7 @@ export function creaLavorazioneProposal(dati = {}) {
     perche: dati.perche || "",
     prezzoConfigurato,
     listinoId: dati.listinoId || null,
+    catalogoId: dati.catalogoId || null,
     categoria: dati.categoria || "",
   };
 }

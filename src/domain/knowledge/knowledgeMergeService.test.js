@@ -107,14 +107,14 @@ describe("knowledgeMergeService", () => {
     expect(titoli).toContain("Predisposizione cancello");
 
     const quadro = proposta.suggerimenti.find(
-      (s) => s.titolo === "Quadro 36 moduli"
+      (s) => s.catalogoId === "QUADRO_ELETTRICO"
     );
     expect(quadro.origine).toBe(KNOWLEDGE_ORIGINE.BASE);
 
     const cancello = proposta.suggerimenti.find(
-      (s) => s.titolo === "Predisposizione cancello"
+      (s) => s.catalogoId === "CANCELLO"
     );
-    // Villa base ha già "Predisposizione cancello" → rafforzamento Brain
+    // Villa base ha già CANCELLO → rafforzamento Brain
     expect(cancello.origine).toBe(KNOWLEDGE_ORIGINE.BASE);
     expect(cancello.rafforzatoDalBrain).toBe(true);
     expect(cancello.osservazioni).toBe(18);
@@ -136,6 +136,7 @@ describe("knowledgeMergeService", () => {
           livelloImpianto: "premium",
         },
         suggerimento: {
+          catalogoId: "IRRIGAZIONE",
           testo: "Predisposizione irrigazione giardino",
         },
       },
@@ -158,7 +159,7 @@ describe("knowledgeMergeService", () => {
     );
 
     const voce = proposta.suggerimenti.find(
-      (s) => s.titolo === "Predisposizione irrigazione giardino"
+      (s) => s.catalogoId === "IRRIGAZIONE"
     );
     expect(voce).toMatchObject({
       origine: KNOWLEDGE_ORIGINE.BRAIN,
@@ -191,7 +192,8 @@ describe("knowledgeMergeService", () => {
         id: `pk-${i}`,
         payload: {
           condizioni: { tipoImmobile: "ufficio" },
-          suggerimento: { testo: `Suggerimento personalizzato ${i}` },
+          // Solo ID Catalogo — testo libero senza match non diventa regola
+          suggerimento: { catalogoId: "CANCELLO", quantita: 1 },
         },
       })
     );
@@ -210,6 +212,20 @@ describe("knowledgeMergeService", () => {
     expect(regole.length).toBe(knowledgeRules.length + 500);
     expect(proposta.suggerimenti.length).toBeGreaterThan(0);
     expect(elapsed).toBeLessThan(250);
+  });
+
+  it("conoscenza personale senza ID Catalogo risolvibile viene scartata", () => {
+    const regola = conoscenzaPersonaleToRegola(
+      conoscenzaCancello({
+        titolo: "Custom",
+        descrizione: "",
+        payload: {
+          condizioni: {},
+          suggerimento: { testo: "Suggerimento inventato senza catalogo" },
+        },
+      })
+    );
+    expect(regola).toBeNull();
   });
 
   it("conoscenzaPersonaleToRegola ignora voci senza titolo utile", () => {

@@ -7,13 +7,15 @@ import {
   normalizzaSuggerimento,
   ordinaRegolePerPriority,
   runKnowledgeEngine,
+  consultaConoscenzaTecnica,
 } from "./knowledgeEngine";
 import { knowledgeRules } from "./knowledgeRules";
 import { KNOWLEDGE_ORIGINE, prioritaEffettiva } from "./knowledgePriorityService";
 import { mergeKnowledgeRules } from "./knowledgeMergeService";
+import { CATALOGO_IDS } from "./knowledgeCatalogRefs";
 
 describe("knowledgeEngine", () => {
-  it("normalizza form UI verso input regole", () => {
+  it("normalizza form UI verso input regole KE 2.0", () => {
     expect(
       normalizzaInputKnowledge({
         superficieMq: 110,
@@ -27,6 +29,8 @@ describe("knowledgeEngine", () => {
       livelli: 4,
       tipoImmobile: "villa",
       livelloImpianto: "premium",
+      climatizzazione: true,
+      domotica: true,
       extra: { clima: true, domotica: true },
     });
   });
@@ -45,13 +49,14 @@ describe("knowledgeEngine", () => {
   it("first-wins sui dati: RULE_003 vince su RULE_002 oltre 150 mq", () => {
     const proposta = runKnowledgeEngine({ mq: 180 });
     expect(proposta.quadroSuggerito).toBe("Quadro 36 moduli");
+    expect(proposta.quadroCatalogoId).toBe(CATALOGO_IDS.QUADRO_ELETTRICO);
     expect(proposta.puntiStimati).toBe(180);
     expect(proposta.regoleApplicate.map((r) => r.id)).toEqual(
       expect.arrayContaining(["RULE_001", "RULE_002", "RULE_003"])
     );
   });
 
-  it("accumula suggerimenti da più regole senza duplicati di titolo", () => {
+  it("accumula suggerimenti Catalogo senza duplicati di id", () => {
     const proposta = runKnowledgeEngine({
       superficieMq: 120,
       numeroLivelli: "2",
@@ -61,24 +66,55 @@ describe("knowledgeEngine", () => {
 
     expect(proposta.puntiStimati).toBe(120);
     expect(proposta.quadroSuggerito).toBe("Quadro 24 moduli");
-    const titoli = proposta.suggerimenti.map((s) => s.titolo);
-    expect(titoli).toEqual(
+    const ids = proposta.suggerimenti.map((s) => s.catalogoId || s.id);
+    expect(ids).toEqual(
       expect.arrayContaining([
-        "Quadro 24 moduli",
-        "Predisposizione climatizzazione",
-        "Gateway",
-        "Bus",
-        "Alimentatore",
-        "Distribuzione linee per piano",
-        "Predisposizione cancello",
-        "Illuminazione esterna",
-        "Citofono/Videocitofono",
+        CATALOGO_IDS.PUNTO_IMPIANTO,
+        CATALOGO_IDS.QUADRO_ELETTRICO,
+        CATALOGO_IDS.CLIMA,
+        CATALOGO_IDS.GATEWAY,
+        CATALOGO_IDS.BUS,
+        CATALOGO_IDS.ALIMENTATORE,
+        CATALOGO_IDS.DISTRIBUZIONE_LINEE_PIANO,
+        CATALOGO_IDS.CANCELLO,
+        CATALOGO_IDS.ILLUMINAZIONE_ESTERNA,
+        CATALOGO_IDS.CITOFONO,
       ])
     );
-    expect(new Set(titoli).size).toBe(titoli.length);
+    expect(new Set(ids).size).toBe(ids.length);
     expect(
       proposta.suggerimenti.every((s) => s.origine === KNOWLEDGE_ORIGINE.BASE)
     ).toBe(true);
+  });
+
+  it("KE 2.0: caratteristiche indipendenti → catalogoId senza duplicati", () => {
+    const proposta = runKnowledgeEngine({
+      superficieMq: 80,
+      tipoImmobile: "appartamento",
+      climatizzazione: true,
+      reteDati: true,
+      impiantoTv: true,
+      allarme: true,
+      cancelloAutomatico: true,
+      cucina: "induzione",
+      videocitofono: true,
+    });
+
+    const ids = proposta.suggerimenti.map((s) => s.catalogoId || s.id);
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        CATALOGO_IDS.PUNTO_IMPIANTO,
+        CATALOGO_IDS.QUADRO_12_MODULI,
+        CATALOGO_IDS.CLIMA,
+        CATALOGO_IDS.PUNTO_DATI,
+        CATALOGO_IDS.PUNTO_TV,
+        CATALOGO_IDS.ALLARME,
+        CATALOGO_IDS.CANCELLO,
+        CATALOGO_IDS.LINEA_INDUZIONE,
+        CATALOGO_IDS.VIDEOCITOFONO,
+      ])
+    );
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("ignora regole disabled", () => {
@@ -90,54 +126,65 @@ describe("knowledgeEngine", () => {
         priority: 999,
         execute: () => ({
           applicata: true,
-          suggerimenti: ["Non deve apparire"],
+          suggerimenti: [{ id: CATALOGO_IDS.ALLARME, quantita: 1 }],
           dati: {},
         }),
       },
     ];
 
-    expect(runKnowledgeEngine({ mq: 10 }, regole)).toEqual({
+    expect(runKnowledgeEngine({ mq: 10 }, regole)).toMatchObject({
       puntiStimati: null,
       suggerimenti: [],
       regoleApplicate: [],
       quadroSuggerito: null,
+      quadroCatalogoId: null,
+      quadroModuli: null,
     });
+    const out = runKnowledgeEngine({ mq: 10 }, regole);
+    expect(out.schedeTecniche.map((s) => s.id)).toContain("BT_PUNTO_IMPIANTO");
   });
 
   it("fondiDatiRegola non sovrascrive chiavi già presenti", () => {
     expect(
       fondiDatiRegola(
-        { quadroSuggerito: "Quadro 36 moduli" },
-        { quadroSuggerito: "Quadro 24 moduli", puntiStimati: 10 }
+        { quadroSuggerito: CATALOGO_IDS.QUADRO_ELETTRICO },
+        { quadroSuggerito: "QUADRO_HACK", puntiStimati: 10 }
       )
     ).toEqual({
-      quadroSuggerito: "Quadro 36 moduli",
+      quadroSuggerito: CATALOGO_IDS.QUADRO_ELETTRICO,
       puntiStimati: 10,
     });
   });
 
-  it("normalizzaSuggerimento assegna origine BASE alle stringhe", () => {
+  it("normalizzaSuggerimento mappa legacy stringa a Catalogo", () => {
     const voce = normalizzaSuggerimento("Quadro 36 moduli", {
       descrizione: "Suggerisce quadro 36 moduli oltre 150 mq.",
       knowledgeOrigine: KNOWLEDGE_ORIGINE.BASE,
     });
     expect(voce).toMatchObject({
-      titolo: "Quadro 36 moduli",
+      id: CATALOGO_IDS.QUADRO_ELETTRICO,
+      catalogoId: CATALOGO_IDS.QUADRO_ELETTRICO,
+      titolo: "Quadro elettrico",
       origine: KNOWLEDGE_ORIGINE.BASE,
-      labelOrigine: "Conoscenza Base",
     });
   });
 
   it("accumulaSuggerimento rafforza Base con Brain senza sostituire", () => {
     const lista = [
       {
+        id: CATALOGO_IDS.CANCELLO,
+        catalogoId: CATALOGO_IDS.CANCELLO,
         titolo: "Predisposizione cancello",
+        quantita: 1,
         origine: KNOWLEDGE_ORIGINE.BASE,
         rafforzatoDalBrain: false,
       },
     ];
     accumulaSuggerimento(lista, {
+      id: CATALOGO_IDS.CANCELLO,
+      catalogoId: CATALOGO_IDS.CANCELLO,
       titolo: "Predisposizione cancello",
+      quantita: 1,
       origine: KNOWLEDGE_ORIGINE.BRAIN,
       affidabilita: 94,
       osservazioni: 18,
@@ -160,8 +207,14 @@ describe("knowledgeEngine", () => {
         priority: 100,
         execute: () => ({
           applicata: true,
-          suggerimenti: ["Quadro 36 moduli"],
-          dati: { quadroSuggerito: "Quadro 36 moduli", puntiStimati: 180 },
+          suggerimenti: [
+            { id: CATALOGO_IDS.QUADRO_ELETTRICO, quantita: 1, meta: { moduli: 36 } },
+          ],
+          dati: {
+            quadroSuggerito: CATALOGO_IDS.QUADRO_ELETTRICO,
+            quadroModuli: 36,
+            puntiStimati: 180,
+          },
         }),
       },
       {
@@ -173,8 +226,8 @@ describe("knowledgeEngine", () => {
         priority: 999,
         execute: () => ({
           applicata: true,
-          suggerimenti: ["Tentativo override"],
-          dati: { quadroSuggerito: "Quadro hack", puntiStimati: 1 },
+          suggerimenti: [{ id: "IRRIGAZIONE", quantita: 1 }],
+          dati: { quadroSuggerito: "QUADRO_HACK", puntiStimati: 1 },
         }),
       },
     ];
@@ -182,8 +235,28 @@ describe("knowledgeEngine", () => {
     const proposta = runKnowledgeEngine({ mq: 180 }, regole);
     expect(proposta.quadroSuggerito).toBe("Quadro 36 moduli");
     expect(proposta.puntiStimati).toBe(180);
-    expect(proposta.suggerimenti.map((s) => s.titolo)).toContain(
-      "Tentativo override"
+    expect(proposta.suggerimenti.map((s) => s.catalogoId)).toContain(
+      "IRRIGAZIONE"
     );
+  });
+
+  it("consulta la Base Tecnica senza alterare regole/pricing", () => {
+    const schede = consultaConoscenzaTecnica({
+      cucina: "induzione",
+      superficieMq: 60,
+      tipoImmobile: "appartamento",
+    });
+    expect(schede.map((s) => s.id)).toContain("BT_CUCINA_INDUZIONE");
+
+    const proposta = runKnowledgeEngine({
+      superficieMq: 60,
+      tipoImmobile: "appartamento",
+      cucina: "induzione",
+    });
+    expect(proposta.schedeTecniche.map((s) => s.id)).toContain(
+      "BT_CUCINA_INDUZIONE"
+    );
+    // I suggerimenti restano determinati dalle regole, non dalle schede
+    expect(proposta.suggerimenti.every((s) => s.catalogoId || s.id)).toBe(true);
   });
 });

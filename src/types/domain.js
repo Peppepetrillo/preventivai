@@ -28,6 +28,8 @@
  * @property {number} prezzo
  * @property {number} quantita
  * @property {string} unita
+ * @property {string=} catalogoId — ID Catalogo Lavorazioni (fonte di verità)
+ * @property {string=} listinoId — id voce listino (chiave prezzi)
  */
 
 /**

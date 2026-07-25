@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { generaPropostaPreventivo } from "./preventivoIntelligenteService";
 import { KNOWLEDGE_ORIGINE } from "./knowledgePriorityService";
 import { resetConoscenze } from "../brain/personalKnowledgeRepository";
+import { CATALOGO_IDS } from "./knowledgeCatalogRefs";
 
 describe("preventivoIntelligenteService", () => {
   beforeEach(() => {
@@ -22,14 +23,15 @@ describe("preventivoIntelligenteService", () => {
     expect(risultato.proposta).toMatchObject({
       puntiStimati: 160,
       quadroSuggerito: "Quadro 36 moduli",
+      quadroCatalogoId: CATALOGO_IDS.QUADRO_ELETTRICO,
     });
     expect(risultato.proposta.regoleApplicate.length).toBeGreaterThan(0);
     expect(
-      risultato.proposta.suggerimenti.map((s) => s.titolo)
-    ).toContain("Quadro 36 moduli");
+      risultato.proposta.suggerimenti.map((s) => s.catalogoId)
+    ).toContain(CATALOGO_IDS.QUADRO_ELETTRICO);
     expect(
       risultato.proposta.suggerimenti.find(
-        (s) => s.titolo === "Quadro 36 moduli"
+        (s) => s.catalogoId === CATALOGO_IDS.QUADRO_ELETTRICO
       ).origine
     ).toBe(KNOWLEDGE_ORIGINE.BASE);
   });
@@ -57,6 +59,7 @@ describe("preventivoIntelligenteService", () => {
                 livelloImpianto: "premium",
               },
               suggerimento: {
+                catalogoId: "IRRIGAZIONE",
                 testo: "Predisposizione irrigazione giardino",
               },
             },
@@ -66,7 +69,7 @@ describe("preventivoIntelligenteService", () => {
     );
 
     const brain = risultato.proposta.suggerimenti.find(
-      (s) => s.titolo === "Predisposizione irrigazione giardino"
+      (s) => s.catalogoId === "IRRIGAZIONE"
     );
     expect(brain).toMatchObject({
       origine: KNOWLEDGE_ORIGINE.BRAIN,
@@ -77,7 +80,7 @@ describe("preventivoIntelligenteService", () => {
     expect(risultato.proposta.quadroSuggerito).toBe("Quadro 36 moduli");
   });
 
-  it("non crea preventivo né lavorazioni — solo proposta knowledge", () => {
+  it("non crea preventivo — solo proposta knowledge con riferimenti Catalogo", () => {
     const risultato = generaPropostaPreventivo(
       { mq: 50 },
       { conoscenzePersonali: [] }
@@ -85,7 +88,11 @@ describe("preventivoIntelligenteService", () => {
 
     expect(risultato.success).toBe(true);
     expect(risultato.proposta.puntiStimati).toBe(50);
-    expect(risultato.proposta.suggerimenti).toEqual([]);
+    expect(risultato.proposta.suggerimenti).toHaveLength(1);
+    expect(risultato.proposta.suggerimenti[0].catalogoId).toBe(
+      CATALOGO_IDS.PUNTO_IMPIANTO
+    );
+    expect(risultato.proposta.suggerimenti[0].quantita).toBe(50);
     expect(risultato.proposta.quadroSuggerito).toBeNull();
     expect(risultato.proposta.regoleApplicate).toEqual([
       {

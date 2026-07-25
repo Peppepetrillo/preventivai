@@ -10,8 +10,8 @@ import {
 } from "./knowledgeStatistics";
 
 describe("knowledgeCategories", () => {
-  it("espone 12 categorie Knowledge Base ordinate", () => {
-    expect(KNOWLEDGE_CATEGORIES).toHaveLength(12);
+  it("espone le categorie Knowledge Base ordinate (KE 2.0)", () => {
+    expect(KNOWLEDGE_CATEGORIES).toHaveLength(14);
     expect(KNOWLEDGE_CATEGORIES).toEqual([
       "Immobile",
       "Punti impianto",
@@ -19,6 +19,8 @@ describe("knowledgeCategories", () => {
       "Distribuzione",
       "Serie civile",
       "Climatizzazione",
+      "Cucina",
+      "Citofonia",
       "Domotica",
       "Illuminazione",
       "Rete dati",
@@ -37,7 +39,7 @@ describe("knowledgeCategories", () => {
 
 describe("knowledgeStatistics", () => {
   it("conta il numero totale di regole", () => {
-    expect(getNumeroRegole()).toBe(7);
+    expect(getNumeroRegole()).toBe(knowledgeRules.length);
     expect(getNumeroRegole(knowledgeRules)).toBe(knowledgeRules.length);
   });
 
@@ -45,21 +47,29 @@ describe("knowledgeStatistics", () => {
     const perCategoria = getRegolePerCategoria();
 
     expect(perCategoria["Punti impianto"]).toBe(1);
-    expect(perCategoria["Quadro elettrico"]).toBe(2);
-    expect(perCategoria.Climatizzazione).toBe(1);
-    expect(perCategoria.Domotica).toBe(1);
+    expect(perCategoria["Quadro elettrico"]).toBe(3);
+    expect(perCategoria.Climatizzazione).toBe(2); // RULE_004 legacy + RULE_020
+    expect(perCategoria.Cucina).toBe(1);
+    expect(perCategoria.Citofonia).toBe(2);
+    expect(perCategoria.Domotica).toBe(2); // RULE_005 legacy + RULE_031
     expect(perCategoria.Distribuzione).toBe(1);
-    expect(perCategoria.Immobile).toBe(1);
+    expect(perCategoria.Immobile).toBe(2); // villa + cancello
+    expect(perCategoria["Rete dati"]).toBe(2);
+    expect(perCategoria.Sicurezza).toBe(2);
+    expect(perCategoria.Fotovoltaico).toBe(1);
+    expect(perCategoria["Ricarica Auto"]).toBe(1);
     expect(perCategoria["Serie civile"]).toBe(0);
-    expect(perCategoria.Fotovoltaico).toBe(0);
     expect(Object.keys(perCategoria)).toEqual(
       expect.arrayContaining(KNOWLEDGE_CATEGORIES)
     );
   });
 
   it("separa regole attive e disattivate", () => {
-    expect(getRegoleAttive()).toHaveLength(7);
-    expect(getRegoleDisattivate()).toHaveLength(0);
+    const atteseAttive = knowledgeRules.filter((r) => r.enabled !== false);
+    const atteseOff = knowledgeRules.filter((r) => r.enabled === false);
+    expect(getRegoleAttive()).toHaveLength(atteseAttive.length);
+    expect(getRegoleDisattivate()).toHaveLength(atteseOff.length);
+    expect(atteseOff.map((r) => r.id).sort()).toEqual(["RULE_004", "RULE_005"]);
 
     const miste = [
       { id: "A", enabled: true },

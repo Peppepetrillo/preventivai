@@ -115,29 +115,51 @@ export function individuaExtraRicorrenti(gruppo, minRip) {
   });
 
   return Object.entries(conteggi)
-    .map(([chiave, count]) => {
+    .flatMap(([chiave, count]) => {
       const rip = count / n;
-      if (rip < minRip) return null;
+      if (rip < minRip) return [];
       const meta = BRAIN_EXTRA_SUGGERIMENTI[chiave];
       const condizioni = {
         ...gruppo.condizioniBase,
         extra: chiave,
         extraLabel: meta.label,
       };
-      return {
+      const ids =
+        Array.isArray(meta.catalogoIds) && meta.catalogoIds.length > 0
+          ? meta.catalogoIds
+          : [meta.catalogoId].filter(Boolean);
+
+      if (ids.length === 0) {
+        return [
+          {
+            nome: componiNomePattern(condizioni),
+            categoria: meta.categoria,
+            condizioni,
+            suggerimento: {
+              tipo: "extra",
+              chiave,
+              testo: meta.testo,
+            },
+            osservazioni: count,
+            affidabilita: arrotondaAffidabilita(rip),
+          },
+        ];
+      }
+
+      return ids.map((catalogoId) => ({
         nome: componiNomePattern(condizioni),
         categoria: meta.categoria,
         condizioni,
         suggerimento: {
           tipo: "extra",
           chiave,
+          catalogoId,
           testo: meta.testo,
         },
         osservazioni: count,
         affidabilita: arrotondaAffidabilita(rip),
-      };
-    })
-    .filter(Boolean);
+      }));
+    });
 }
 
 /**

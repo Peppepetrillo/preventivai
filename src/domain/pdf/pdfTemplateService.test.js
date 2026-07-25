@@ -149,6 +149,35 @@ describe("pdfTemplateService", () => {
     expect(doc.note).toBe("Nota test");
   });
 
+  it("voci senza prezzo listino → Prezzo non configurato (mai 0 inventato in label)", () => {
+    const doc = buildPreventivoPdfDocument({
+      datiAzienda: { nomeDitta: "Test" },
+      cliente: "Rossi",
+      preventivo: { id: 1, numero: "PREV-1", data: "25/07/2026" },
+      lavorazioni: [
+        {
+          nome: "Predisposizione cancello",
+          quantita: 1,
+          prezzo: 0,
+          unita: "cad",
+          prezzoConfigurato: false,
+        },
+      ],
+      totali: {
+        subtotale: 0,
+        importoSconto: 0,
+        imponibile: 0,
+        importoIva: 0,
+        totale: 0,
+      },
+      sconto: 0,
+      iva: 22,
+    });
+
+    expect(doc.lavorazioni[0].prezzoNonConfigurato).toBe(true);
+    expect(doc.lavorazioni[0].prezzoLabel).toBe("Prezzo non configurato");
+  });
+
   it("render di un preventivo piccolo non forza addPage", async () => {
     const risultato = await generaPreventivoPdfDaInput(
       {

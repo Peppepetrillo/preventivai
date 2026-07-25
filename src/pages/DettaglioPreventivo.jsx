@@ -58,6 +58,7 @@ import FirmaClienteSection from "../features/preventivi/components/FirmaClienteS
 import CondivisioneSection from "../features/preventivi/components/CondivisioneSection";
 import { salvaFirma, ottieniFirma } from "../domain/firma";
 import { risolviDocumentoDaCondividere } from "../domain/condivisione";
+import { arricchisciPreventivoLegacy } from "../domain/catalogo";
 
 export default function DettaglioPreventivo() {
   const { id } = useParams();
@@ -67,7 +68,10 @@ export default function DettaglioPreventivo() {
   const indicePreventivo = archivio.findIndex(
     (p) => String(p.id) === String(id)
   );
-  const preventivo = archivio[indicePreventivo];
+  const preventivoGrezzo = archivio[indicePreventivo];
+  const preventivo = preventivoGrezzo
+    ? arricchisciPreventivoLegacy(preventivoGrezzo)
+    : null;
   const datiAzienda = leggiDatiAzienda();
 
   const [cliente, setCliente] = useState(preventivo?.cliente || "");

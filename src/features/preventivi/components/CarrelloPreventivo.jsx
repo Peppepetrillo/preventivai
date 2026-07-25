@@ -63,7 +63,12 @@ function CarrelloPreventivo({
                     key={lavorazione.id || `${lavorazione.nome}-${indice}`}
                     indice={indice}
                     lavorazione={lavorazione}
-                    prezzoListino={prezzoListinoPerNome?.get?.(lavorazione.nome)}
+                    prezzoListino={
+                      prezzoListinoPerNome?.get?.(
+                        lavorazione.listinoId || lavorazione.nome
+                      ) ??
+                      prezzoListinoPerNome?.get?.(lavorazione.nome)
+                    }
                     onAumentaQuantita={onAumentaQuantita}
                     onDiminuisciQuantita={onDiminuisciQuantita}
                     onImpostaQuantita={onImpostaQuantita}

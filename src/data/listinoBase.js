@@ -203,6 +203,30 @@ export const listinoBase = [
     preferita: false,
     ordinamento: 160,
   },
+  {
+    id: "predisposizione-videocitofono",
+    categoria: "Citofonia",
+    nome: "Predisposizione videocitofono",
+    descrizione: "",
+    prezzo: 180,
+    unita: "cad",
+    attiva: true,
+    preferita: false,
+    ordinamento: 165,
+  },
+
+  // —— Cucina ——
+  {
+    id: "linea-induzione",
+    categoria: "Cucina",
+    nome: "Linea dedicata induzione",
+    descrizione: "",
+    prezzo: 120,
+    unita: "cad",
+    attiva: true,
+    preferita: false,
+    ordinamento: 168,
+  },
 
   // —— Sicurezza ——
   {

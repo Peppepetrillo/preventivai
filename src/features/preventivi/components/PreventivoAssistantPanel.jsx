@@ -66,7 +66,10 @@ function PreventivoAssistantPanel({
       }
 
       if (action === "accept" && card && card.tipo !== "durata") {
-        const voce = risolviVoceListinoDaNome(card.titolo, listino);
+        const voce = risolviVoceListinoDaNome(
+          card.catalogoId || card.titolo,
+          listino
+        );
         if (voce) {
           onAggiungiVoce?.(voce);
         } else {
@@ -76,6 +79,7 @@ function PreventivoAssistantPanel({
             categoria: "Suggeriti",
             prezzo: 0,
             unita: "cad",
+            catalogoId: card.catalogoId || null,
           });
         }
       }

@@ -63,6 +63,14 @@ export function leggiLavorazioniPiuUsate(listino = [], limit = PIU_USATI_LIMIT) 
 }
 
 export function chiaveUsoDaLavorazione(lavorazione = {}) {
+  if (lavorazione.listinoId) {
+    return String(lavorazione.listinoId);
+  }
+
+  if (lavorazione.catalogoId) {
+    return String(lavorazione.catalogoId);
+  }
+
   const id = String(lavorazione.id || "");
 
   if (id.startsWith("kit-")) {
@@ -72,6 +80,11 @@ export function chiaveUsoDaLavorazione(lavorazione = {}) {
   const match = id.match(/^(.+)-\d{10,}$/);
   if (match) {
     return match[1];
+  }
+
+  // ID catalogo diretto (SCREAMING_SNAKE)
+  if (/^[A-Z][A-Z0-9_]+$/.test(id)) {
+    return id;
   }
 
   return lavorazione.nome;

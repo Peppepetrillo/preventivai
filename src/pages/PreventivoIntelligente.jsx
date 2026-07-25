@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { Fragment, useEffect, useId, useState } from "react";
 import {
   Building2,
   ChevronDown,
@@ -11,12 +11,21 @@ import { Link, useNavigate } from "react-router-dom";
 import { ROUTES, routePreventivo } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
 import NumericInput from "../components/NumericInput";
+import KnowledgeExplanationCard from "../components/knowledge/KnowledgeExplanationCard";
+import { risolviSpiegazioneLavorazione } from "../components/knowledge/knowledgeExplanationUtils";
+import AssistenteSopralluogoPanel from "../components/sopralluogo/AssistenteSopralluogoPanel";
 import {
   generaPreventivoEconomico,
   convertiProposalInPreventivo,
 } from "../domain/preventivi";
 import { salvaOsservazione } from "../domain/brain/brainObservationService";
 import { analizzaOsservazioni } from "../domain/brain/brainPatternService";
+import {
+  assicuratiSessioneAttiva,
+  chiudiSessione,
+  collegaPreventivoASessione,
+  nuovaSessioneSopralluogo,
+} from "../domain/sopralluogoSession";
 import { leggiPreventivi, salvaNuovoPreventivo } from "../repositories/preventiviRepository";
 import { formatEuro } from "../utils/preventivi";
 
@@ -25,6 +34,7 @@ const TIPI_IMMOBILE = [
   { id: "villa", label: "Villa" },
   { id: "ufficio", label: "Ufficio" },
   { id: "negozio", label: "Negozio" },
+  { id: "garage", label: "Garage" },
   { id: "altro", label: "Altro" },
 ];
 
@@ -55,25 +65,48 @@ const LIVELLI_IMPIANTO = [
   { id: "premium", label: "Premium" },
 ];
 
-const EXTRA_OPZIONI = [
-  { id: "predisposizioneClima", label: "Predisposizione Clima" },
-  { id: "videosorveglianza", label: "Videosorveglianza" },
+const CUCINA_OPZIONI = [
+  { id: "standard", label: "Standard" },
+  { id: "induzione", label: "Induzione" },
+];
+
+/** Flag impianto KE 2.0 — indipendenti, mappati 1:1 alle regole caratteristiche. */
+const CARATTERISTICHE_FLAG = [
+  { id: "climatizzazione", label: "Climatizzazione" },
+  { id: "citofono", label: "Citofono" },
+  { id: "videocitofono", label: "Videocitofono" },
+  { id: "impiantoTv", label: "Impianto TV" },
+  { id: "reteDati", label: "Rete dati / LAN" },
   { id: "allarme", label: "Allarme" },
+  { id: "videosorveglianza", label: "Videosorveglianza" },
+  { id: "cancelloAutomatico", label: "Cancello automatico" },
+  { id: "predisposizioneFotovoltaico", label: "Predisposizione fotovoltaico" },
+  { id: "predisposizioneColonnina", label: "Colonnina ricarica" },
   { id: "domotica", label: "Domotica" },
-  { id: "fotovoltaico", label: "Fotovoltaico" },
-  { id: "ricaricaAuto", label: "Ricarica Auto" },
-  { id: "automazioneCancello", label: "Automazione Cancello" },
 ];
 
 const FORM_INIZIALE = {
   tipoImmobile: "appartamento",
   superficieMq: "",
   numeroLivelli: "1",
+  numeroLocali: "",
+  numeroBagni: "",
+  cucina: "standard",
   statoImmobile: "nuova-costruzione",
   serieCivile: "living-now",
   livelloImpianto: "standard",
   cliente: "",
-  extra: Object.fromEntries(EXTRA_OPZIONI.map((voce) => [voce.id, false])),
+  climatizzazione: false,
+  citofono: false,
+  videocitofono: false,
+  impiantoTv: false,
+  reteDati: false,
+  allarme: false,
+  videosorveglianza: false,
+  cancelloAutomatico: false,
+  predisposizioneFotovoltaico: false,
+  predisposizioneColonnina: false,
+  domotica: false,
 };
 
 /**
@@ -88,32 +121,48 @@ export default function PreventivoIntelligente() {
   const [errore, setErrore] = useState("");
   const [ragionamentoAperto, setRagionamentoAperto] = useState(false);
   const [creazioneInCorso, setCreazioneInCorso] = useState(false);
+  const [sessione, setSessione] = useState(null);
+
+  useEffect(() => {
+    setSessione(assicuratiSessioneAttiva());
+  }, []);
 
   function aggiornaCampo(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
   }
 
-  function toggleExtra(extraId) {
+  function toggleCaratteristica(campo) {
     setForm((prev) => ({
       ...prev,
-      extra: {
-        ...prev.extra,
-        [extraId]: !prev.extra[extraId],
-      },
+      [campo]: !prev[campo],
     }));
   }
 
   function generaProposta() {
     setErrore("");
+    const sessioneCorrente = sessione || assicuratiSessioneAttiva();
+    if (!sessione) setSessione(sessioneCorrente);
+
     const input = {
       ...form,
       superficieMq:
         form.superficieMq === "" || form.superficieMq === null
           ? null
           : Number(form.superficieMq),
+      numeroLocali:
+        form.numeroLocali === "" || form.numeroLocali === null
+          ? null
+          : Number(form.numeroLocali),
+      numeroBagni:
+        form.numeroBagni === "" || form.numeroBagni === null
+          ? null
+          : Number(form.numeroBagni),
     };
 
-    const risultato = generaPreventivoEconomico(input);
+    const risultato = generaPreventivoEconomico(input, {
+      sessionId: sessioneCorrente.id,
+      preventivoId: sessioneCorrente.preventivoId || null,
+    });
 
     if (risultato?.success && risultato.proposal) {
       setProposal(risultato.proposal);
@@ -152,11 +201,31 @@ export default function PreventivoIntelligente() {
         cliente: form.cliente,
       });
       salvaNuovoPreventivo(preventivo);
+      if (sessione?.id) {
+        const aggiornata = collegaPreventivoASessione(
+          sessione.id,
+          preventivo.id
+        );
+        setSessione(aggiornata);
+      }
       navigate(routePreventivo(preventivo.id));
     } catch {
       setErrore("Impossibile creare il preventivo. Riprova.");
       setCreazioneInCorso(false);
     }
+  }
+
+  function onChiudiSessione() {
+    if (!sessione?.id) return;
+    chiudiSessione(sessione.id);
+    setSessione(null);
+    setProposal(null);
+  }
+
+  function onNuovaSessione() {
+    const nuova = nuovaSessioneSopralluogo();
+    setSessione(nuova);
+    setProposal(null);
   }
 
   const haProposta = Boolean(proposal);
@@ -246,6 +315,31 @@ export default function PreventivoIntelligente() {
             />
           </CampoLabel>
 
+          <div className="grid gap-3 sm:grid-cols-2">
+            <CampoLabel etichetta="Numero locali" htmlFor={`${baseId}-locali`}>
+              <NumericInput
+                id={`${baseId}-locali`}
+                min="0"
+                value={form.numeroLocali}
+                inputMode="numeric"
+                onChange={(valore) => aggiornaCampo("numeroLocali", valore)}
+                placeholder="Es. 4"
+                className="input-pro mt-2"
+              />
+            </CampoLabel>
+            <CampoLabel etichetta="Numero bagni" htmlFor={`${baseId}-bagni`}>
+              <NumericInput
+                id={`${baseId}-bagni`}
+                min="0"
+                value={form.numeroBagni}
+                inputMode="numeric"
+                onChange={(valore) => aggiornaCampo("numeroBagni", valore)}
+                placeholder="Es. 2"
+                className="input-pro mt-2"
+              />
+            </CampoLabel>
+          </div>
+
           <CampoLabel etichetta="Stato immobile">
             <ChipGroup
               nome="stato-immobile"
@@ -284,16 +378,25 @@ export default function PreventivoIntelligente() {
               onChange={(id) => aggiornaCampo("livelloImpianto", id)}
             />
           </CampoLabel>
+
+          <CampoLabel etichetta="Cucina">
+            <ChipGroup
+              nome="cucina"
+              opzioni={CUCINA_OPZIONI}
+              valore={form.cucina}
+              onChange={(id) => aggiornaCampo("cucina", id)}
+            />
+          </CampoLabel>
         </section>
 
-        <section className="pro-panel px-4 py-4 mb-4" aria-labelledby={`${baseId}-extra`}>
-          <h2 id={`${baseId}-extra`} className="ds-section-title mb-3">
-            Extra
+        <section className="pro-panel px-4 py-4 mb-4" aria-labelledby={`${baseId}-caratteristiche`}>
+          <h2 id={`${baseId}-caratteristiche`} className="ds-section-title mb-3">
+            Caratteristiche impianto
           </h2>
           <ul className="space-y-2" role="list">
-            {EXTRA_OPZIONI.map((voce) => {
-              const checked = Boolean(form.extra[voce.id]);
-              const inputId = `${baseId}-extra-${voce.id}`;
+            {CARATTERISTICHE_FLAG.map((voce) => {
+              const checked = Boolean(form[voce.id]);
+              const inputId = `${baseId}-flag-${voce.id}`;
               return (
                 <li key={voce.id}>
                   <label
@@ -307,7 +410,7 @@ export default function PreventivoIntelligente() {
                       id={inputId}
                       type="checkbox"
                       checked={checked}
-                      onChange={() => toggleExtra(voce.id)}
+                      onChange={() => toggleCaratteristica(voce.id)}
                       className="sr-only peer"
                     />
                     <span
@@ -328,6 +431,16 @@ export default function PreventivoIntelligente() {
             })}
           </ul>
         </section>
+
+        <AssistenteSopralluogoPanel
+          form={form}
+          proposal={proposal}
+          onProposalAggiornata={setProposal}
+          sessione={sessione}
+          onChiudiSessione={onChiudiSessione}
+          onNuovaSessione={onNuovaSessione}
+          preventivoId={sessione?.preventivoId || null}
+        />
 
         <button
           type="button"
@@ -430,34 +543,44 @@ function PreventivoSuggeritoCard({ proposal, onCrea, creazioneInCorso }) {
               </tr>
             </thead>
             <tbody>
-              {lavorazioni.map((lav) => (
-                <tr
-                  key={lav.id}
-                  className="border-b border-white/[0.04] align-top"
-                >
-                  <td className="py-3 pr-2">
-                    <p className="font-semibold text-white leading-snug">
-                      {lav.descrizione}
-                    </p>
-                    {!lav.prezzoConfigurato ? (
-                      <span className="mt-1.5 inline-flex items-center rounded-md border border-amber-400/35 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-100">
-                        Prezzo non configurato
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="py-3 px-2 text-right tabular-nums text-slate-300">
-                    {lav.quantita}
-                  </td>
-                  <td className="py-3 px-2 text-right tabular-nums text-slate-300">
-                    {lav.prezzoConfigurato
-                      ? formatEuro(lav.prezzoUnitario)
-                      : "—"}
-                  </td>
-                  <td className="py-3 pl-2 text-right tabular-nums font-semibold text-white">
-                    {lav.prezzoConfigurato ? formatEuro(lav.totale) : "—"}
-                  </td>
-                </tr>
-              ))}
+              {lavorazioni.map((lav) => {
+                const spiegazione = risolviSpiegazioneLavorazione(
+                  lav,
+                  proposal
+                );
+                return (
+                  <Fragment key={lav.id || lav.catalogoId || lav.descrizione}>
+                    <tr className="border-b border-white/[0.04] align-top">
+                      <td className="py-3 pr-2">
+                        <p className="font-semibold text-white leading-snug">
+                          {lav.descrizione}
+                        </p>
+                        {!lav.prezzoConfigurato ? (
+                          <span className="mt-1.5 inline-flex items-center rounded-md border border-amber-400/35 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-100">
+                            Prezzo non configurato
+                          </span>
+                        ) : null}
+                        {spiegazione ? (
+                          <KnowledgeExplanationCard
+                            spiegazione={spiegazione}
+                          />
+                        ) : null}
+                      </td>
+                      <td className="py-3 px-2 text-right tabular-nums text-slate-300">
+                        {lav.quantita}
+                      </td>
+                      <td className="py-3 px-2 text-right tabular-nums text-slate-300">
+                        {lav.prezzoConfigurato
+                          ? formatEuro(lav.prezzoUnitario)
+                          : "—"}
+                      </td>
+                      <td className="py-3 pl-2 text-right tabular-nums font-semibold text-white">
+                        {lav.prezzoConfigurato ? formatEuro(lav.totale) : "—"}
+                      </td>
+                    </tr>
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>

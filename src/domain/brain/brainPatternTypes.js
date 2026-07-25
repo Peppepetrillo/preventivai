@@ -26,47 +26,57 @@ export const BRAIN_PATTERN_STATI = Object.freeze({
   RIFIUTATO: "rifiutato",
 });
 
-/** Mappa extra form → etichetta / suggerimento contestuale. */
+/** Mappa extra form → Catalogo (id) + etichetta UI. */
 export const BRAIN_EXTRA_SUGGERIMENTI = Object.freeze({
   predisposizioneClima: {
     label: "Clima",
     categoria: "Climatizzazione",
+    catalogoId: "CLIMA",
     testo: "Predisposizione climatizzazione",
   },
   clima: {
     label: "Clima",
     categoria: "Climatizzazione",
+    catalogoId: "CLIMA",
     testo: "Predisposizione climatizzazione",
   },
   domotica: {
     label: "Domotica",
     categoria: "Domotica",
-    testo: "Componenti domotica (Gateway / Bus / Alimentatore)",
+    /** Domotica → più voci catalogo (non un testo composito). */
+    catalogoIds: ["GATEWAY", "BUS", "ALIMENTATORE"],
+    catalogoId: "GATEWAY",
+    testo: "Gateway",
   },
   videosorveglianza: {
     label: "Videosorveglianza",
     categoria: "Sicurezza",
-    testo: "Predisposizione videosorveglianza",
+    catalogoId: "VIDEOSORVEGLIANZA",
+    testo: "Videosorveglianza",
   },
   allarme: {
     label: "Allarme",
     categoria: "Sicurezza",
+    catalogoId: "ALLARME",
     testo: "Predisposizione impianto allarme",
   },
   fotovoltaico: {
     label: "Fotovoltaico",
     categoria: "Fotovoltaico",
+    catalogoId: "FOTOVOLTAICO",
     testo: "Predisposizione fotovoltaico",
   },
   ricaricaAuto: {
     label: "Ricarica Auto",
     categoria: "Ricarica Auto",
+    catalogoId: "RICARICA_AUTO",
     testo: "Predisposizione ricarica auto",
   },
   automazioneCancello: {
     label: "Cancello",
     categoria: "Immobile",
-    testo: "Predisposizione cancello / automazione",
+    catalogoId: "CANCELLO",
+    testo: "Predisposizione cancello",
   },
 });
 
@@ -147,6 +157,7 @@ export function fingerprintPattern(condizioni = {}, suggerimento = {}) {
     c: condizioni,
     s: {
       tipo: suggerimento.tipo || "",
+      catalogoId: suggerimento.catalogoId || "",
       testo: suggerimento.testo || "",
       chiave: suggerimento.chiave || "",
     },

@@ -72,6 +72,9 @@ function StepComponi({
       if (voce?.nome != null) {
         mappa.set(voce.nome, Number(voce.prezzo) || 0);
       }
+      if (voce?.id != null) {
+        mappa.set(String(voce.id), Number(voce.prezzo) || 0);
+      }
     });
     return mappa;
   }, [listino]);

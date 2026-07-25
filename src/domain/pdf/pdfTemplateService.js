@@ -58,13 +58,20 @@ export function buildPreventivoPdfDocument(input = {}) {
   const lavorazioni = (Array.isArray(input.lavorazioni) ? input.lavorazioni : []).map(
     (item) => {
       const quantita = normalizzaNumero(item.quantita);
-      const prezzo = normalizzaNumero(item.prezzo);
+      const prezzoNonConfigurato = item.prezzoConfigurato === false;
+      const prezzo = prezzoNonConfigurato
+        ? null
+        : normalizzaNumero(item.prezzo);
       return {
         descrizione: String(item.nome || item.descrizione || "Lavorazione"),
         quantita,
         unita: String(item.unita || "cad"),
-        prezzo,
-        totale: quantita * prezzo,
+        prezzo: prezzoNonConfigurato ? 0 : prezzo,
+        totale: prezzoNonConfigurato ? 0 : quantita * prezzo,
+        prezzoNonConfigurato,
+        prezzoLabel: prezzoNonConfigurato
+          ? "Prezzo non configurato"
+          : null,
       };
     }
   );
@@ -373,9 +380,18 @@ function disegnaLavorazioni(doc, document, yStart) {
       y,
       { align: "right" }
     );
-    doc.text(euro(item.prezzo), col.prezzo, y, { align: "right" });
-    applicaFont(doc, settings, "bold", settings.fontSizeBase);
-    doc.text(euro(item.totale), col.totale, y, { align: "right" });
+    if (item.prezzoNonConfigurato) {
+      setText(doc, settings.coloreTenue);
+      applicaFont(doc, settings, "normal", Math.max(7, settings.fontSizeBase - 1));
+      doc.text("Prezzo non configurato", col.prezzo, y, { align: "right" });
+      applicaFont(doc, settings, "bold", settings.fontSizeBase);
+      doc.text("—", col.totale, y, { align: "right" });
+      setText(doc, settings.coloreTesto);
+    } else {
+      doc.text(euro(item.prezzo), col.prezzo, y, { align: "right" });
+      applicaFont(doc, settings, "bold", settings.fontSizeBase);
+      doc.text(euro(item.totale), col.totale, y, { align: "right" });
+    }
 
     y += hRiga;
   });

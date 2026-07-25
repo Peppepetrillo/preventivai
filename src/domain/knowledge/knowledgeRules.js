@@ -1,10 +1,12 @@
 /**
  * Knowledge Rules — Knowledge Base + Rule Engine PreventivAI.
  *
- * Ogni regola è un oggetto documentato, abilitabile e prioritizzabile.
- * Il motore (knowledgeEngine) ne esegue solo la funzione `execute`.
- * Nessuna AI / API / LLM.
+ * I suggerimenti sono SEMPRE riferimenti al Catalogo Lavorazioni (id + quantita).
+ * Nessuna descrizione libera. Nessuna AI / API / LLM.
  */
+
+import { CATALOGO_IDS } from "./knowledgeCatalogRefs";
+import { knowledgeRulesCaratteristiche } from "./knowledgeRulesCaratteristiche";
 
 function risultatoVuoto() {
   return {
@@ -22,6 +24,10 @@ function risultatoApplicato({ suggerimenti = [], dati = {} } = {}) {
   };
 }
 
+function ref(id, quantita = 1, meta = {}) {
+  return { id, quantita, meta };
+}
+
 function leggiMq(input = {}) {
   const grezzo = input.mq ?? input.superficieMq;
   if (grezzo === null || grezzo === undefined || grezzo === "") return null;
@@ -31,9 +37,7 @@ function leggiMq(input = {}) {
 
 /**
  * RULE_001 — Stima punti impianto
- *
- * Scopo: dare una prima stima operativa dei punti partendo dalla superficie.
- * Formula v1: 1 punto = 1 mq (raffinabile in regole successive).
+ * Emette PUNTO_IMPIANTO con quantita = mq.
  */
 export const RULE_001 = {
   id: "RULE_001",
@@ -42,7 +46,7 @@ export const RULE_001 = {
     "Stima iniziale del numero di punti partendo dalla superficie.",
   categoria: "Punti impianto",
   tags: ["mq", "punti", "stima"],
-  version: "1.0",
+  version: "2.0",
   fonte: "Esperienza sul campo",
   enabled: true,
   priority: 100,
@@ -53,23 +57,21 @@ export const RULE_001 = {
 
     return risultatoApplicato({
       dati: { puntiStimati: mq },
+      suggerimenti: [ref(CATALOGO_IDS.PUNTO_IMPIANTO, mq)],
     });
   },
 };
 
 /**
- * RULE_002 — Quadro elettrico standard
- *
- * Scopo: suggerire un quadro 24 moduli quando la superficie supera i 100 mq.
- * Su mq > 150 cede il campo quadro a RULE_003 (priorità più alta / first-wins).
+ * RULE_002 — Quadro elettrico standard (oltre 100 mq)
  */
 export const RULE_002 = {
   id: "RULE_002",
   nome: "Quadro elettrico",
-  descrizione: "Suggerisce quadro 24 moduli oltre 100 mq.",
+  descrizione: "Suggerisce quadro elettrico 24 moduli oltre 100 mq.",
   categoria: "Quadro elettrico",
   tags: ["quadro", "moduli", "mq"],
-  version: "1.0",
+  version: "2.0",
   fonte: "Esperienza sul campo",
   enabled: true,
   priority: 200,
@@ -79,25 +81,60 @@ export const RULE_002 = {
     if (mq === null || mq <= 100) return risultatoVuoto();
 
     return risultatoApplicato({
-      suggerimenti: ["Quadro 24 moduli"],
-      dati: { quadroSuggerito: "Quadro 24 moduli" },
+      suggerimenti: [
+        ref(CATALOGO_IDS.QUADRO_ELETTRICO, 1, { moduli: 24 }),
+      ],
+      dati: {
+        quadroSuggerito: CATALOGO_IDS.QUADRO_ELETTRICO,
+        quadroModuli: 24,
+      },
     });
   },
 };
 
 /**
- * RULE_003 — Quadro elettrico grande
- *
- * Scopo: suggerire un quadro 36 moduli su superfici oltre 150 mq.
- * Priorità superiore a RULE_002 per vincere su `quadroSuggerito`.
+ * RULE_008 — Quadro 12 moduli per appartamenti fino a 100 mq (compresi).
+ * Prezzo solo via Catalogo → Listino (mai nella regola).
+ */
+export const RULE_008 = {
+  id: "RULE_008",
+  nome: "Quadro 12 moduli appartamento",
+  descrizione:
+    "Suggerisce quadro 12 moduli per appartamenti fino a 100 mq inclusi.",
+  categoria: "Quadro elettrico",
+  tags: ["quadro", "moduli", "mq", "appartamento"],
+  version: "1.0",
+  fonte: "Esperienza sul campo",
+  enabled: true,
+  priority: 195,
+
+  execute(input = {}) {
+    if (input.tipoImmobile !== "appartamento") return risultatoVuoto();
+    const mq = leggiMq(input);
+    if (mq === null || mq > 100) return risultatoVuoto();
+
+    return risultatoApplicato({
+      suggerimenti: [
+        ref(CATALOGO_IDS.QUADRO_12_MODULI, 1, { moduli: 12 }),
+      ],
+      dati: {
+        quadroSuggerito: CATALOGO_IDS.QUADRO_12_MODULI,
+        quadroModuli: 12,
+      },
+    });
+  },
+};
+
+/**
+ * RULE_003 — Quadro elettrico grande (oltre 150 mq)
  */
 export const RULE_003 = {
   id: "RULE_003",
   nome: "Quadro grande",
-  descrizione: "Suggerisce quadro 36 moduli oltre 150 mq.",
+  descrizione: "Suggerisce quadro elettrico 36 moduli oltre 150 mq.",
   categoria: "Quadro elettrico",
   tags: ["quadro", "moduli", "mq", "grande"],
-  version: "1.0",
+  version: "2.0",
   fonte: "Esperienza sul campo",
   enabled: true,
   priority: 300,
@@ -107,69 +144,73 @@ export const RULE_003 = {
     if (mq === null || mq <= 150) return risultatoVuoto();
 
     return risultatoApplicato({
-      suggerimenti: ["Quadro 36 moduli"],
-      dati: { quadroSuggerito: "Quadro 36 moduli" },
+      suggerimenti: [
+        ref(CATALOGO_IDS.QUADRO_ELETTRICO, 1, { moduli: 36 }),
+      ],
+      dati: {
+        quadroSuggerito: CATALOGO_IDS.QUADRO_ELETTRICO,
+        quadroModuli: 36,
+      },
     });
   },
 };
 
 /**
- * RULE_004 — Climatizzazione
- *
- * Scopo: se il cliente richiede predisposizione clima, ricordare la voce
- * di predisposizione nel preventivo (tubazioni / linee dedicate).
+ * RULE_004 — Climatizzazione (legacy)
+ * Sostituita da RULE_020 (KE 2.0). Disattivata per evitare duplicati.
  */
 export const RULE_004 = {
   id: "RULE_004",
   nome: "Climatizzazione",
-  descrizione: "Aggiunge predisposizione climatizzazione se richiesta.",
+  descrizione:
+    "Legacy — sostituita da RULE_020. Aggiunge predisposizione clima.",
   categoria: "Climatizzazione",
-  tags: ["clima", "predisposizione", "extra"],
-  version: "1.0",
+  tags: ["clima", "predisposizione", "extra", "legacy"],
+  version: "2.0",
   fonte: "Esperienza sul campo",
-  enabled: true,
+  enabled: false,
   priority: 150,
 
   execute(input = {}) {
-    if (!input.extra?.clima) return risultatoVuoto();
+    if (!input.extra?.clima && !input.climatizzazione) return risultatoVuoto();
 
     return risultatoApplicato({
-      suggerimenti: ["Predisposizione climatizzazione"],
+      suggerimenti: [ref(CATALOGO_IDS.CLIMA, 1)],
     });
   },
 };
 
 /**
- * RULE_005 — Domotica
- *
- * Scopo: quando è richiesta la domotica, elencare i componenti base
- * (gateway, bus, alimentatore) tipici di un impianto bus.
+ * RULE_005 — Domotica (legacy)
+ * Sostituita da RULE_031 (KE 2.0). Disattivata per evitare duplicati.
  */
 export const RULE_005 = {
   id: "RULE_005",
   nome: "Domotica",
-  descrizione: "Aggiunge componenti base di un impianto domotico.",
+  descrizione:
+    "Legacy — sostituita da RULE_031. Componenti base impianto domotico.",
   categoria: "Domotica",
-  tags: ["domotica", "gateway", "bus", "extra"],
-  version: "1.0",
+  tags: ["domotica", "gateway", "bus", "extra", "legacy"],
+  version: "2.0",
   fonte: "Esperienza sul campo",
-  enabled: true,
+  enabled: false,
   priority: 150,
 
   execute(input = {}) {
-    if (!input.extra?.domotica) return risultatoVuoto();
+    if (!input.extra?.domotica && !input.domotica) return risultatoVuoto();
 
     return risultatoApplicato({
-      suggerimenti: ["Gateway", "Bus", "Alimentatore"],
+      suggerimenti: [
+        ref(CATALOGO_IDS.GATEWAY, 1),
+        ref(CATALOGO_IDS.BUS, 1),
+        ref(CATALOGO_IDS.ALIMENTATORE, 1),
+      ],
     });
   },
 };
 
 /**
  * RULE_006 — Distribuzione su più livelli
- *
- * Scopo: con più di un piano, suggerire la distribuzione linee per piano
- * (montanti / sottocentri) per evitare impianti monolinea inadeguati.
  */
 export const RULE_006 = {
   id: "RULE_006",
@@ -177,7 +218,7 @@ export const RULE_006 = {
   descrizione: "Suggerisce distribuzione linee per piano su più livelli.",
   categoria: "Distribuzione",
   tags: ["livelli", "piani", "distribuzione"],
-  version: "1.0",
+  version: "2.0",
   fonte: "Esperienza sul campo",
   enabled: true,
   priority: 140,
@@ -187,16 +228,13 @@ export const RULE_006 = {
     if (!Number.isFinite(livelli) || livelli <= 1) return risultatoVuoto();
 
     return risultatoApplicato({
-      suggerimenti: ["Distribuzione linee per piano"],
+      suggerimenti: [ref(CATALOGO_IDS.DISTRIBUZIONE_LINEE_PIANO, 1)],
     });
   },
 };
 
 /**
  * RULE_007 — Immobile villa
- *
- * Scopo: in villa aggiungere le voci tipiche esterne / accesso
- * (cancello, illuminazione esterna, citofono/videocitofono).
  */
 export const RULE_007 = {
   id: "RULE_007",
@@ -204,7 +242,7 @@ export const RULE_007 = {
   descrizione: "Suggerimenti tipici per impianto in villa.",
   categoria: "Immobile",
   tags: ["villa", "esterno", "citofono", "cancello"],
-  version: "1.0",
+  version: "2.0",
   fonte: "Esperienza sul campo",
   enabled: true,
   priority: 130,
@@ -214,9 +252,9 @@ export const RULE_007 = {
 
     return risultatoApplicato({
       suggerimenti: [
-        "Predisposizione cancello",
-        "Illuminazione esterna",
-        "Citofono/Videocitofono",
+        ref(CATALOGO_IDS.CANCELLO, 1),
+        ref(CATALOGO_IDS.ILLUMINAZIONE_ESTERNA, 1),
+        ref(CATALOGO_IDS.CITOFONO, 1),
       ],
     });
   },
@@ -231,4 +269,6 @@ export const knowledgeRules = [
   RULE_005,
   RULE_006,
   RULE_007,
+  RULE_008,
+  ...knowledgeRulesCaratteristiche,
 ];

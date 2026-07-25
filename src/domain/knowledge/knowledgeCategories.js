@@ -10,6 +10,8 @@ export const KNOWLEDGE_CATEGORIES = [
   "Distribuzione",
   "Serie civile",
   "Climatizzazione",
+  "Cucina",
+  "Citofonia",
   "Domotica",
   "Illuminazione",
   "Rete dati",

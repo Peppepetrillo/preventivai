@@ -64,16 +64,21 @@ describe("preventivoAssistantUtils", () => {
     expect(card.descrizione).toContain("Materiale frequente");
   });
 
-  it("risolve voci listino per nome esatto o contenuto", () => {
+  it("risolve voci listino tramite Catalogo (chiaveListino)", () => {
     const listino = [
-      { id: "1", nome: "Punto luce", prezzo: 45 },
-      { id: "2", nome: "Quadro elettrico base", prezzo: 320 },
+      { id: "punto-luce", nome: "Punto luce", prezzo: 45, attiva: true },
+      { id: "quadro-elettrico", nome: "Quadro elettrico", prezzo: 320, attiva: true },
     ];
 
-    expect(risolviVoceListinoDaNome("Punto luce", listino)?.id).toBe("1");
-    expect(
-      risolviVoceListinoDaNome("Eseguire Quadro elettrico base", listino)?.id
-    ).toBe("2");
+    expect(risolviVoceListinoDaNome("Punto luce", listino)?.id).toBe(
+      "punto-luce"
+    );
+    expect(risolviVoceListinoDaNome("QUADRO_ELETTRICO", listino)?.id).toBe(
+      "quadro-elettrico"
+    );
+    expect(risolviVoceListinoDaNome("Quadro 36 moduli", listino)?.id).toBe(
+      "quadro-elettrico"
+    );
     expect(risolviVoceListinoDaNome("Inesistente", listino)).toBeNull();
   });
 });

@@ -13,6 +13,10 @@ import {
   KNOWLEDGE_ORIGINE_LABEL,
   prioritaEffettiva,
 } from "./knowledgePriorityService";
+import {
+  normalizzaRiferimentoCatalogo,
+  nomeDaCatalogo,
+} from "../catalogo";
 
 /**
  * @param {object} regola
@@ -99,13 +103,23 @@ export function conoscenzaPersonaleToRegola(conoscenza = {}) {
       ? payload.suggerimento
       : {};
 
-  const titolo =
-    suggerimentoPayload.testo ||
-    conoscenza.descrizione ||
-    conoscenza.titolo ||
-    "";
-  if (!titolo) return null;
+  // Preferisci catalogoId esplicito; altrimenti risolvi legacy testo → ID Catalogo
+  const rif =
+    normalizzaRiferimentoCatalogo(
+      suggerimentoPayload.catalogoId
+        ? {
+            id: suggerimentoPayload.catalogoId,
+            quantita: suggerimentoPayload.quantita || 1,
+          }
+        : suggerimentoPayload.testo ||
+            conoscenza.descrizione ||
+            conoscenza.titolo ||
+            ""
+    ) || null;
 
+  if (!rif) return null;
+
+  const titolo = nomeDaCatalogo(rif.id);
   const affidabilita = Number(conoscenza.affidabilita);
   const osservazioni = Number(conoscenza.osservazioni) || 0;
   const perche = costruisciPercheBrain(osservazioni);
@@ -129,7 +143,9 @@ export function conoscenzaPersonaleToRegola(conoscenza = {}) {
         applicata: true,
         suggerimenti: [
           {
-            titolo,
+            id: rif.id,
+            quantita: rif.quantita,
+            meta: rif.meta,
             origine: KNOWLEDGE_ORIGINE.BRAIN,
             labelOrigine: KNOWLEDGE_ORIGINE_LABEL[KNOWLEDGE_ORIGINE.BRAIN],
             affidabilita: Number.isFinite(affidabilita) ? affidabilita : null,
@@ -138,7 +154,6 @@ export function conoscenzaPersonaleToRegola(conoscenza = {}) {
             knowledgeId: conoscenza.id,
           },
         ],
-        // Nessun dato strutturale: le personali non sovrascrivono quadro/punti base
         dati: {},
       };
     },

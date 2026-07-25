@@ -1,7 +1,7 @@
 /**
  * Knowledge Engine — Rule Engine deterministico.
- * Ordina per priorità effettiva, esegue solo regole enabled, accumula risultati.
- * Non sa come nascono le regole: riceve solo la lista finale.
+ * I suggerimenti sono riferimenti Catalogo (id + quantita).
+ * Retrocompat: stringhe legacy normalizzate a ID Catalogo.
  */
 
 import { knowledgeRules } from "./knowledgeRules";
@@ -10,36 +10,35 @@ import {
   KNOWLEDGE_ORIGINE_LABEL,
   ordinaPerPrioritaKnowledge,
 } from "./knowledgePriorityService";
+import {
+  nomeDaCatalogo,
+  normalizzaRiferimentoCatalogo,
+  isCatalogoId,
+} from "../catalogo";
+import { creaKnowledgeInput } from "./knowledgeInputTypes";
+import {
+  consultaBaseTecnica,
+  mappaCatalogoIdASchedaTecnica,
+  ottieniSchedaTecnica,
+} from "../baseTecnica";
 
 /**
- * Normalizza il form UI verso l'input canonico delle regole.
+ * Normalizza il form UI verso l'input canonico delle regole (KE 2.0).
  * @param {object} form
+ * @returns {import("./knowledgeInputTypes").KnowledgeInput}
  */
 export function normalizzaInputKnowledge(form = {}) {
-  const mqGrezzo = form.mq ?? form.superficieMq;
-  let mq = null;
-  if (mqGrezzo !== null && mqGrezzo !== undefined && mqGrezzo !== "") {
-    const numero = Number(mqGrezzo);
-    mq = Number.isFinite(numero) ? numero : null;
-  }
+  return creaKnowledgeInput(form);
+}
 
-  const livelliGrezzo = form.livelli ?? form.numeroLivelli ?? 1;
-  const livelli =
-    String(livelliGrezzo) === "4+" ? 4 : Number(livelliGrezzo);
-
-  const extraForm = form.extra || {};
-
-  return {
-    mq,
-    tipoImmobile: form.tipoImmobile || "",
-    livelli: Number.isFinite(livelli) ? livelli : 1,
-    livelloImpianto: String(form.livelloImpianto || ""),
-    extra: {
-      ...extraForm,
-      clima: Boolean(extraForm.clima ?? extraForm.predisposizioneClima),
-      domotica: Boolean(extraForm.domotica),
-    },
-  };
+/**
+ * Consulta la Base Tecnica (conoscenza pura) a partire dal form.
+ * Non genera prezzi né quantità: solo schede tecniche applicabili.
+ * @param {object} form
+ * @returns {object[]}
+ */
+export function consultaConoscenzaTecnica(form = {}) {
+  return consultaBaseTecnica(normalizzaInputKnowledge(form));
 }
 
 /**
@@ -65,7 +64,7 @@ export function fondiDatiRegola(accumulato = {}, patch = {}) {
 }
 
 /**
- * Normalizza un suggerimento a oggetto con origine.
+ * Normalizza un suggerimento a riferimento Catalogo + metadati origine.
  * @param {string|object} voce
  * @param {object} metaRegola
  */
@@ -75,62 +74,62 @@ export function normalizzaSuggerimento(voce, metaRegola = {}) {
     metaRegola.knowledgeOrigine ||
     KNOWLEDGE_ORIGINE.BASE;
 
-  if (typeof voce === "string") {
-    return {
-      titolo: voce,
-      origine,
-      labelOrigine:
-        KNOWLEDGE_ORIGINE_LABEL[origine] ||
-        KNOWLEDGE_ORIGINE_LABEL[KNOWLEDGE_ORIGINE.BASE],
-      affidabilita: null,
-      osservazioni: null,
-      perche:
-        metaRegola.descrizione ||
-        "Regola della Knowledge Base.",
-      rafforzatoDalBrain: false,
-    };
-  }
+  const rif = normalizzaRiferimentoCatalogo(voce);
+  if (!rif) return null;
 
-  if (!voce || typeof voce !== "object") return null;
-
-  const titolo = String(voce.titolo || voce.testo || "").trim();
-  if (!titolo) return null;
+  const titolo = nomeDaCatalogo(rif.id);
+  const moduli = rif.meta?.moduli;
+  const titoloDisplay =
+    (rif.id === "QUADRO_ELETTRICO" || rif.id === "QUADRO_12_MODULI") && moduli
+      ? `Quadro ${moduli} moduli`
+      : titolo;
 
   return {
-    titolo,
-    origine: voce.origine || origine,
+    id: rif.id,
+    catalogoId: rif.id,
+    quantita: rif.quantita,
+    meta: rif.meta || {},
+    titolo: titoloDisplay,
+    origine,
     labelOrigine:
-      voce.labelOrigine ||
-      KNOWLEDGE_ORIGINE_LABEL[voce.origine || origine] ||
+      (typeof voce === "object" && voce.labelOrigine) ||
+      KNOWLEDGE_ORIGINE_LABEL[origine] ||
       KNOWLEDGE_ORIGINE_LABEL[KNOWLEDGE_ORIGINE.BASE],
     affidabilita:
-      voce.affidabilita === null || voce.affidabilita === undefined
-        ? null
-        : Number(voce.affidabilita),
+      typeof voce === "object" &&
+      voce.affidabilita !== null &&
+      voce.affidabilita !== undefined
+        ? Number(voce.affidabilita)
+        : null,
     osservazioni:
-      voce.osservazioni === null || voce.osservazioni === undefined
-        ? null
-        : Number(voce.osservazioni),
+      typeof voce === "object" &&
+      voce.osservazioni !== null &&
+      voce.osservazioni !== undefined
+        ? Number(voce.osservazioni)
+        : null,
     perche:
-      voce.perche ||
+      (typeof voce === "object" && voce.perche) ||
       metaRegola.descrizione ||
       "Regola della Knowledge Base.",
-    knowledgeId: voce.knowledgeId || null,
-    rafforzatoDalBrain: Boolean(voce.rafforzatoDalBrain),
+    knowledgeId:
+      typeof voce === "object" ? voce.knowledgeId || null : null,
+    rafforzatoDalBrain: Boolean(
+      typeof voce === "object" && voce.rafforzatoDalBrain
+    ),
   };
 }
 
 /**
- * Accumula suggerimenti: base non viene rimossa; personali aggiungono o rafforzano.
+ * Accumula per catalogoId (non per titolo).
  * @param {object[]} accumulato
  * @param {object} nuovo
  */
 export function accumulaSuggerimento(accumulato, nuovo) {
-  if (!nuovo?.titolo) return accumulato;
+  if (!nuovo?.id && !nuovo?.catalogoId) return accumulato;
+  const chiave = nuovo.catalogoId || nuovo.id;
 
   const indice = accumulato.findIndex(
-    (voce) =>
-      String(voce.titolo).toLowerCase() === String(nuovo.titolo).toLowerCase()
+    (voce) => (voce.catalogoId || voce.id) === chiave
   );
 
   if (indice < 0) {
@@ -140,13 +139,20 @@ export function accumulaSuggerimento(accumulato, nuovo) {
 
   const esistente = accumulato[indice];
 
-  // Rafforzamento: Brain conferma un suggerimento Base → origine resta BASE
+  // Quantità: max (es. punti) o somma se entrambe > 1 da fonti diverse — preferisci max
+  const quantita = Math.max(
+    Number(esistente.quantita) || 1,
+    Number(nuovo.quantita) || 1
+  );
+
   if (
     esistente.origine === KNOWLEDGE_ORIGINE.BASE &&
     nuovo.origine === KNOWLEDGE_ORIGINE.BRAIN
   ) {
     accumulato[indice] = {
       ...esistente,
+      quantita,
+      meta: { ...esistente.meta, ...nuovo.meta },
       rafforzatoDalBrain: true,
       affidabilita:
         esistente.affidabilita ??
@@ -154,21 +160,23 @@ export function accumulaSuggerimento(accumulato, nuovo) {
       osservazioni: nuovo.osservazioni ?? esistente.osservazioni,
       percheBrain: nuovo.perche || esistente.percheBrain,
     };
+    return accumulato;
   }
 
-  // Personale non sostituisce / non elimina Base
+  // Aggiorna quantità / meta se già presente (meta: first-wins)
+  accumulato[indice] = {
+    ...esistente,
+    quantita,
+    meta: { ...(nuovo.meta || {}), ...(esistente.meta || {}) },
+    titolo: esistente.titolo || nuovo.titolo,
+  };
+
   return accumulato;
 }
 
 /**
  * @param {object} formInput
  * @param {object[]=} regole
- * @returns {{
- *   puntiStimati: number|null,
- *   suggerimenti: object[],
- *   regoleApplicate: Array<object>,
- *   quadroSuggerito: string|null,
- * }}
  */
 export function runKnowledgeEngine(formInput = {}, regole = knowledgeRules) {
   const input = normalizzaInputKnowledge(formInput);
@@ -193,8 +201,6 @@ export function runKnowledgeEngine(formInput = {}, regole = knowledgeRules) {
       layer: regola.layer || "BASE",
     });
 
-    // Solo layer BASE può scrivere dati strutturali (quadro, punti).
-    // Personali/community non eliminano né sovrascrivono la base.
     if ((regola.layer || "BASE") === "BASE" || !regola.layer) {
       dati = fondiDatiRegola(dati, esito.dati);
     }
@@ -207,11 +213,65 @@ export function runKnowledgeEngine(formInput = {}, regole = knowledgeRules) {
     });
   });
 
+  // quadroSuggerito: ID catalogo → etichetta leggibile per UI
+  let quadroSuggerito = null;
+  if (dati.quadroSuggerito) {
+    if (isCatalogoId(dati.quadroSuggerito)) {
+      const moduli = dati.quadroModuli;
+      quadroSuggerito = moduli
+        ? `Quadro ${moduli} moduli`
+        : nomeDaCatalogo(dati.quadroSuggerito);
+    } else {
+      quadroSuggerito = String(dati.quadroSuggerito);
+    }
+  }
+
+  // Metadati Base Tecnica: collega catalogoId → scheda (senza cambiare le regole)
+  const mappaSchede = mappaCatalogoIdASchedaTecnica(input);
+  const suggerimentiConScheda = suggerimenti.map((s) => {
+    const catalogoId = s.catalogoId || s.id;
+    const schedaTecnicaId = mappaSchede.get(catalogoId) || null;
+    const scheda = schedaTecnicaId
+      ? ottieniSchedaTecnica(schedaTecnicaId)
+      : null;
+
+    return {
+      ...s,
+      schedaTecnicaId,
+      motivazione: scheda?.motivazione || null,
+      // Non sovrascrivere `origine` (BASE/BRAIN): metadati BT separati
+      origineTecnica: scheda?.origine ? { ...scheda.origine } : null,
+      verificheProfessionista: scheda
+        ? [...scheda.verificheProfessionista]
+        : [],
+      livelloAffidabilita: scheda?.livelloAffidabilita || null,
+    };
+  });
+
+  const schedeTecniche = consultaBaseTecnica(input).map((s) => ({
+    id: s.id,
+    categoria: s.categoria,
+    titolo: s.titolo,
+    priorita: s.priorita,
+    catalogoIds: [...s.catalogoIds],
+    condizioni: { ...s.condizioni },
+    origine: { ...s.origine },
+    motivazione: s.motivazione,
+    verificheProfessionista: [...s.verificheProfessionista],
+    livelloAffidabilita: s.livelloAffidabilita,
+  }));
+
   return {
     puntiStimati:
       dati.puntiStimati === undefined ? null : dati.puntiStimati,
-    suggerimenti,
+    suggerimenti: suggerimentiConScheda,
     regoleApplicate,
-    quadroSuggerito: dati.quadroSuggerito || null,
+    quadroSuggerito,
+    quadroCatalogoId: isCatalogoId(dati.quadroSuggerito)
+      ? dati.quadroSuggerito
+      : null,
+    quadroModuli: dati.quadroModuli ?? null,
+    /** Schede Base Tecnica applicabili (conoscenza spiegabile, non pricing). */
+    schedeTecniche,
   };
 }

@@ -5,196 +5,192 @@ import {
   convertiProposalInPreventivo,
   generaPreventivoEconomico,
   risolviVoceListino,
-  ORIGINE_LAVORAZIONE,
+  risolviVoceListinoDaCatalogo,
 } from "./preventivoProposalService";
 import { resetConoscenze } from "../brain/personalKnowledgeRepository";
+import { arricchisciLavorazioneLegacy } from "../catalogo";
+import { listinoBase } from "../../data/listinoBase";
 
-const LISTINO_COMPLETO = [
-  {
-    id: "quadro-elettrico",
-    nome: "Quadro elettrico",
-    categoria: "Quadri",
-    prezzo: 350,
-    unita: "cad",
-    attiva: true,
-  },
-  {
-    id: "allarme",
-    nome: "Predisposizione impianto allarme",
-    categoria: "Sicurezza",
-    prezzo: 700,
-    unita: "cad",
-    attiva: true,
-  },
-  {
-    id: "gateway",
-    nome: "Gateway Living Now",
-    categoria: "Domotica",
-    prezzo: 120,
-    unita: "cad",
-    attiva: true,
-  },
-];
-
-const LISTINO_INCOMPLETO = [
-  {
-    id: "quadro-elettrico",
-    nome: "Quadro elettrico",
-    categoria: "Quadri",
-    prezzo: 350,
-    unita: "cad",
-    attiva: true,
-  },
-];
-
-describe("preventivoProposalService", () => {
+describe("preventivoProposalService — Catalogo", () => {
   beforeEach(() => {
     localStorage.clear();
     resetConoscenze();
   });
 
-  describe("risolviVoceListino", () => {
-    it("mappa alias quadro → listino senza inventare prezzo", () => {
-      const { voce, prezzoConfigurato } = risolviVoceListino(
-        "Quadro 36 moduli",
-        LISTINO_COMPLETO
-      );
-      expect(prezzoConfigurato).toBe(true);
-      expect(voce.prezzo).toBe(350);
-      expect(voce.nome).toBe("Quadro elettrico");
-    });
-
-    it("restituisce prezzo non configurato se assente dal listino", () => {
-      const { voce, prezzoConfigurato } = risolviVoceListino(
-        "Videosorveglianza",
-        LISTINO_INCOMPLETO
-      );
-      expect(prezzoConfigurato).toBe(false);
-      expect(voce).toBeNull();
-    });
+  it("risolve prezzi solo tramite catalogoId", () => {
+    const { voce, prezzoConfigurato } = risolviVoceListinoDaCatalogo(
+      "QUADRO_ELETTRICO",
+      listinoBase
+    );
+    expect(prezzoConfigurato).toBe(true);
+    expect(voce.id).toBe("quadro-elettrico");
   });
 
-  describe("costruisciPreventivoProposal", () => {
-    it("calcola subtotale, IVA e totale solo sulle voci con prezzo", () => {
-      const proposal = costruisciPreventivoProposal({
-        conoscenzaProposta: {
-          puntiStimati: 100,
-          quadroSuggerito: "Quadro 36 moduli",
-          suggerimenti: [
-            { titolo: "Quadro 36 moduli", origine: "BASE" },
-            { titolo: "Videosorveglianza", origine: "BASE" },
-            { titolo: "Allarme", origine: "BASE" },
-          ],
-          regoleApplicate: [{ id: "r1", nome: "Regola test" }],
-        },
-        listino: LISTINO_COMPLETO,
-        input: {
-          superficieMq: 100,
-          livelloImpianto: "standard",
-          tipoImmobile: "appartamento",
-        },
+  it("legacy stringa ancora mappabile via Catalogo (retrocompat)", () => {
+    const { voce, prezzoConfigurato, catalogoId } = risolviVoceListino(
+      "Quadro 36 moduli",
+      listinoBase
+    );
+    expect(catalogoId).toBe("QUADRO_ELETTRICO");
+    expect(prezzoConfigurato).toBe(true);
+    expect(voce.prezzo).toBe(350);
+  });
+
+  it("Proposal → Totali con Punti + Quadro + Allarme via ID", () => {
+    const proposal = costruisciPreventivoProposal({
+      conoscenzaProposta: {
+        puntiStimati: 110,
+        quadroSuggerito: "Quadro 36 moduli",
+        quadroCatalogoId: "QUADRO_ELETTRICO",
+        quadroModuli: 36,
+        suggerimenti: [
+          { id: "PUNTO_IMPIANTO", quantita: 110, origine: "BASE" },
+          {
+            id: "QUADRO_ELETTRICO",
+            quantita: 1,
+            meta: { moduli: 36 },
+            origine: "BASE",
+          },
+          { id: "ALLARME", quantita: 1, origine: "BASE" },
+          { id: "VIDEOSORVEGLIANZA", quantita: 1, origine: "BASE" },
+        ],
+        regoleApplicate: [],
+      },
+      listino: listinoBase,
+      input: { superficieMq: 110, livelloImpianto: "standard" },
+      iva: 22,
+    });
+
+    const punti = proposal.lavorazioni.find((l) => l.catalogoId === "PUNTO_IMPIANTO");
+    expect(punti.quantita).toBe(110);
+    expect(punti.prezzoUnitario).toBe(40);
+    expect(punti.prezzoConfigurato).toBe(true);
+
+    const quadro = proposal.lavorazioni.find(
+      (l) => l.catalogoId === "QUADRO_ELETTRICO"
+    );
+    expect(quadro.prezzoUnitario).toBe(350);
+    expect(quadro.descrizione).toMatch(/Quadro/);
+
+    const video = proposal.lavorazioni.find(
+      (l) => l.catalogoId === "VIDEOSORVEGLIANZA"
+    );
+    expect(video.prezzoConfigurato).toBe(false);
+
+    // 110*40 + 350 + 700 = 5450; IVA 22%
+    expect(proposal.subtotale).toBe(5450);
+    expect(proposal.totaleIVA).toBeCloseTo(1199, 5);
+    expect(proposal.totale).toBeCloseTo(6649, 5);
+  });
+
+  it("generaPreventivoEconomico orchestra KE → Catalogo → Listino", () => {
+    const risultato = generaPreventivoEconomico(
+      {
+        superficieMq: 160,
+        numeroLivelli: "1",
+        tipoImmobile: "appartamento",
+        livelloImpianto: "standard",
+        extra: { allarme: true, predisposizioneClima: true },
+      },
+      { listino: listinoBase, brainPatterns: [] }
+    );
+
+    expect(risultato.success).toBe(true);
+    const ids = risultato.proposal.lavorazioni.map((l) => l.catalogoId);
+    expect(ids).toContain("PUNTO_IMPIANTO");
+    expect(ids).toContain("QUADRO_ELETTRICO");
+    expect(ids).toContain("CLIMA");
+
+    const punti = risultato.proposal.lavorazioni.find(
+      (l) => l.catalogoId === "PUNTO_IMPIANTO"
+    );
+    expect(punti.quantita).toBe(160);
+    expect(punti.prezzoConfigurato).toBe(true);
+  });
+
+  it("convertiProposalInPreventivo preserva catalogoId", () => {
+    const proposal = costruisciPreventivoProposal({
+      conoscenzaProposta: {
+        puntiStimati: 50,
+        suggerimenti: [{ id: "CLIMA", quantita: 1 }],
+        regoleApplicate: [],
+      },
+      listino: listinoBase,
+      input: { superficieMq: 50 },
+    });
+
+    const preventivo = convertiProposalInPreventivo(proposal, {
+      archivio: [],
+      cliente: "Test",
+    });
+
+    expect(preventivo.lavorazioni[0].catalogoId).toBe("CLIMA");
+    expect(preventivo.lavorazioni[0].listinoId).toBe(
+      "predisposizione-termostato"
+    );
+    expect(preventivo.lavorazioni[0].prezzoConfigurato).toBe(true);
+  });
+
+  it("convertiProposalInPreventivo non inventa prezzi senza listino", () => {
+    const proposal = costruisciPreventivoProposal({
+      conoscenzaProposta: {
+        puntiStimati: null,
+        suggerimenti: [{ id: "CANCELLO", quantita: 1 }],
+        regoleApplicate: [],
+      },
+      listino: listinoBase,
+      input: {},
+    });
+
+    const preventivo = convertiProposalInPreventivo(proposal, {
+      archivio: [],
+      cliente: "Test",
+    });
+
+    expect(preventivo.lavorazioni[0].prezzoConfigurato).toBe(false);
+    expect(preventivo.lavorazioni[0].prezzo).toBe(0);
+  });
+
+  it("appartamento 60 mq: QUADRO_12_MODULI a prezzo Listino, totale aggiornato", () => {
+    const out = generaPreventivoEconomico(
+      {
+        superficieMq: 60,
+        tipoImmobile: "appartamento",
+        livelli: 1,
+        livelloImpianto: "standard",
+        extra: {},
+      },
+      {
+        listino: listinoBase,
+        conoscenzePersonali: [],
+        brainPatterns: [],
         iva: 22,
-      });
+        sconto: 0,
+      }
+    );
 
-      expect(proposal.riepilogo.puntiStimati).toBe(100);
-      expect(proposal.riepilogo.quadroSuggerito).toBe("Quadro 36 moduli");
-      expect(proposal.lavorazioni.length).toBe(3);
-
-      const senzaPrezzo = proposal.lavorazioni.find(
-        (l) => l.descrizione === "Videosorveglianza"
-      );
-      expect(senzaPrezzo.prezzoConfigurato).toBe(false);
-      expect(senzaPrezzo.prezzoUnitario).toBeNull();
-      expect(senzaPrezzo.totale).toBeNull();
-
-      // Quadro 350 + Allarme 700 = 1050; IVA 22% = 231; totale 1281
-      expect(proposal.subtotale).toBe(1050);
-      expect(proposal.totaleIVA).toBeCloseTo(231, 5);
-      expect(proposal.totale).toBeCloseTo(1281, 5);
-      expect(proposal.regoleApplicate).toHaveLength(1);
-    });
-
-    it("con listino incompleto non inventa prezzi e totalizza solo le voci configurate", () => {
-      const proposal = costruisciPreventivoProposal({
-        conoscenzaProposta: {
-          puntiStimati: 80,
-          quadroSuggerito: "Quadro 24 moduli",
-          suggerimenti: [
-            { titolo: "Quadro 24 moduli", origine: "BASE" },
-            { titolo: "Gateway", origine: "BRAIN", perche: "Spesso scelto" },
-          ],
-          regoleApplicate: [],
-        },
-        listino: LISTINO_INCOMPLETO,
-        input: { superficieMq: 80, livelloImpianto: "base" },
-        iva: 22,
-      });
-
-      const gateway = proposal.lavorazioni.find(
-        (l) => l.descrizione === "Gateway"
-      );
-      expect(gateway.prezzoConfigurato).toBe(false);
-      expect(gateway.origine).toBe(ORIGINE_LAVORAZIONE.BRAIN);
-      expect(gateway.perche).toBe("Spesso scelto");
-
-      expect(proposal.subtotale).toBe(350);
-      expect(proposal.totaleIVA).toBeCloseTo(77, 5);
-      expect(proposal.totale).toBeCloseTo(427, 5);
-    });
+    expect(out.success).toBe(true);
+    const quadro = out.proposal.lavorazioni.find(
+      (l) => l.catalogoId === "QUADRO_12_MODULI"
+    );
+    expect(quadro).toBeTruthy();
+    expect(quadro.quantita).toBe(1);
+    expect(quadro.prezzoUnitario).toBe(350);
+    expect(quadro.listinoId).toBe("quadro-elettrico");
+    expect(out.proposal.subtotale).toBe(60 * 40 + 350);
+    expect(out.proposal.totale).toBe((60 * 40 + 350) * 1.22);
   });
 
-  describe("convertiProposalInPreventivo", () => {
-    it("crea un preventivo Bozza con voci senza prezzo a 0 €", () => {
-      const proposal = costruisciPreventivoProposal({
-        conoscenzaProposta: {
-          puntiStimati: 50,
-          quadroSuggerito: "Quadro 24 moduli",
-          suggerimenti: [
-            { titolo: "Quadro 24 moduli", origine: "BASE" },
-            { titolo: "Videosorveglianza", origine: "BASE" },
-          ],
-          regoleApplicate: [],
-        },
-        listino: LISTINO_INCOMPLETO,
-        input: { superficieMq: 50 },
-      });
-
-      const preventivo = convertiProposalInPreventivo(proposal, {
-        archivio: [],
-        cliente: "Cliente Test",
-      });
-
-      expect(preventivo.stato).toBe("Bozza");
-      expect(preventivo.cliente).toBe("Cliente Test");
-      expect(preventivo.lavorazioni).toHaveLength(2);
-      expect(
-        preventivo.lavorazioni.find((l) => l.nome === "Videosorveglianza").prezzo
-      ).toBe(0);
-      expect(
-        preventivo.lavorazioni.find((l) => l.nome === "Quadro 24 moduli").prezzo
-      ).toBe(350);
-      expect(preventivo.note).toMatch(/prezzo/i);
-    });
-  });
-
-  describe("generaPreventivoEconomico", () => {
-    it("orchestra Knowledge → Proposal senza errori", () => {
-      const risultato = generaPreventivoEconomico(
-        {
-          superficieMq: 160,
-          numeroLivelli: "1",
-          tipoImmobile: "appartamento",
-          livelloImpianto: "standard",
-          extra: {},
-        },
-        { listino: LISTINO_COMPLETO, brainPatterns: [] }
-      );
-
-      expect(risultato.success).toBe(true);
-      expect(risultato.proposal).toBeTruthy();
-      expect(risultato.proposal.lavorazioni.length).toBeGreaterThan(0);
-      expect(risultato.proposal.riepilogo.puntiStimati).toBe(160);
-      expect(typeof risultato.proposal.totale).toBe("number");
-    });
+  it("retrocompat: vecchio preventivo senza catalogoId si apre arricchito", () => {
+    const vecchio = {
+      id: "old-1",
+      nome: "Predisposizione impianto allarme",
+      prezzo: 700,
+      quantita: 1,
+      unita: "cad",
+    };
+    const arricchito = arricchisciLavorazioneLegacy(vecchio);
+    expect(arricchito.catalogoId).toBe("ALLARME");
+    expect(arricchito.nome).toBe("Predisposizione impianto allarme");
   });
 });
