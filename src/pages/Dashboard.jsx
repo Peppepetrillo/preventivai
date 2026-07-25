@@ -7,12 +7,17 @@ import {
   HardHat,
   Plus,
   UserPlus,
+  Zap,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import PageWrapper from "../components/PageWrapper";
 import AssistantPanel from "../components/assistant/AssistantPanel";
 import { ROUTES, routeCantiere, routePreventivo } from "../app/routes";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
+import { contaOsservazioni } from "../domain/brain/brainObservationService";
+import { statisticheLearning } from "../domain/brain/brainLearningService";
+import { contaConoscenzePersonali } from "../domain/brain/personalKnowledgeService";
+import { getNumeroRegole } from "../domain/knowledge/knowledgeStatistics";
 import { leggiCantieri } from "../repositories/cantieriRepository";
 import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
 import { leggiPreventivi } from "../repositories/preventiviRepository";
@@ -71,6 +76,12 @@ export default function Dashboard() {
     () => selezionaPreventiviInAttesa(preventivi),
     [preventivi]
   );
+  const brainStats = {
+    conoscenzeBase: getNumeroRegole(),
+    conoscenzePersonali: contaConoscenzePersonali(),
+    osservazioni: contaOsservazioni(),
+  };
+  const patternStats = statisticheLearning();
   const nomeOperativo = datiAzienda.nomeDitta || "";
   const messaggioOperativo = creaMessaggioOperativo({
     nome: nomeOperativo,
@@ -88,6 +99,140 @@ export default function Dashboard() {
             Lavori aperti, preventivi in attesa e prossima azione.
           </p>
         </header>
+
+        <section className="mb-4" aria-labelledby="dashboard-preventivo-intelligente">
+          <Link
+            to={ROUTES.preventivoIntelligente}
+            className="pro-panel-strong ds-card-link px-4 py-4 block"
+            aria-labelledby="dashboard-preventivo-intelligente"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-[16px] bg-yellow-400 text-slate-950 flex items-center justify-center shrink-0">
+                <Zap size={22} aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="section-label">Nuovo</p>
+                <h2
+                  id="dashboard-preventivo-intelligente"
+                  className="ds-card-title mt-1"
+                >
+                  Preventivo Intelligente
+                </h2>
+                <p className="ds-text-secondary mt-1">
+                  Immobile, impianto ed extra → proposta guidata.
+                </p>
+              </div>
+              <ChevronRight
+                size={20}
+                className="text-yellow-200 shrink-0"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              />
+            </div>
+          </Link>
+        </section>
+
+        <section className="mb-4" aria-labelledby="dashboard-brain">
+          <div className="pro-panel px-4 py-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-11 h-11 rounded-[16px] bg-yellow-400/12 text-yellow-200 flex items-center justify-center shrink-0">
+                <Brain size={20} aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <p className="section-label">Apprendimento</p>
+                <h2 id="dashboard-brain" className="ds-card-title mt-1">
+                  PreventivAI Brain
+                </h2>
+              </div>
+            </div>
+            <dl className="grid grid-cols-3 gap-2">
+              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
+                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                  Base
+                </dt>
+                <dd className="ds-card-title mt-1 tabular-nums text-base">
+                  {brainStats.conoscenzeBase}
+                </dd>
+                <dd className="sr-only">Conoscenze Base</dd>
+              </div>
+              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
+                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                  Personali
+                </dt>
+                <dd className="ds-card-title mt-1 tabular-nums text-base">
+                  {brainStats.conoscenzePersonali}
+                </dd>
+                <dd className="sr-only">Conoscenze Personali</dd>
+              </div>
+              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
+                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                  Osservazioni
+                </dt>
+                <dd className="ds-card-title mt-1 tabular-nums text-base">
+                  {brainStats.osservazioni}
+                </dd>
+                <dd className="sr-only">Osservazioni raccolte</dd>
+              </div>
+            </dl>
+            <p className="ds-text-secondary text-xs mt-3">
+              Conoscenze Base · Conoscenze Personali · Osservazioni raccolte
+            </p>
+          </div>
+        </section>
+
+        <section className="mb-4" aria-labelledby="dashboard-pattern">
+          <div className="pro-panel px-4 py-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-11 h-11 rounded-[16px] bg-yellow-400/12 text-yellow-200 flex items-center justify-center shrink-0">
+                <Brain size={20} aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <p className="section-label">Statistica</p>
+                <h2 id="dashboard-pattern" className="ds-card-title mt-1">
+                  Pattern individuati
+                </h2>
+              </div>
+            </div>
+            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
+                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                  Da confermare
+                </dt>
+                <dd className="ds-card-title mt-1 tabular-nums text-base">
+                  {patternStats.daConfermare}
+                </dd>
+              </div>
+              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
+                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                  Accettati
+                </dt>
+                <dd className="ds-card-title mt-1 tabular-nums text-base">
+                  {patternStats.accettati}
+                </dd>
+              </div>
+              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
+                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                  Rifiutati
+                </dt>
+                <dd className="ds-card-title mt-1 tabular-nums text-base">
+                  {patternStats.rifiutati}
+                </dd>
+              </div>
+              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
+                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                  Dal Brain
+                </dt>
+                <dd className="ds-card-title mt-1 tabular-nums text-base">
+                  {patternStats.conoscenzeDalBrain}
+                </dd>
+              </div>
+            </dl>
+            <p className="ds-text-secondary text-xs mt-3">
+              Pattern da confermare · Accettati · Rifiutati · Conoscenze create
+              dal Brain
+            </p>
+          </div>
+        </section>
 
         <section className="mb-4" aria-labelledby="dashboard-assistente">
           <div className="flex items-center gap-3 mb-2">

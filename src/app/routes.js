@@ -1,6 +1,7 @@
 export const ROUTES = {
   dashboard: "/",
   preventivi: "/preventivi",
+  preventivoIntelligente: "/preventivo-intelligente",
   archivio: "/archivio",
   incassi: "/incassi",
   cantieri: "/cantieri",

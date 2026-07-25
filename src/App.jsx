@@ -18,6 +18,7 @@ import { ROUTES } from "./app/routes";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Preventivi = lazy(() => import("./pages/Preventivi"));
+const PreventivoIntelligente = lazy(() => import("./pages/PreventivoIntelligente"));
 const ArchivioPreventivi = lazy(() => import("./pages/ArchivioPreventivi"));
 const Incassi = lazy(() => import("./pages/Incassi"));
 const Cantieri = lazy(() => import("./pages/Cantieri"));
@@ -64,6 +65,11 @@ export default function App() {
             <Route
               path={ROUTES.preventivi}
               element={<Preventivi />}
+            />
+
+            <Route
+              path={ROUTES.preventivoIntelligente}
+              element={<PreventivoIntelligente />}
             />
 
             <Route

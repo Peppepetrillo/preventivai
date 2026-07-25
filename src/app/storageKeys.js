@@ -13,6 +13,10 @@ export const STORAGE_KEYS = {
   esperienze: "preventivai:esperienze",
   /** Catalogo Serie Civile — solo locale, fuori sync cloud (Sprint 11C) */
   serieCivili: "preventivai:serie-civili",
+  /** PreventivAI Brain — locale only, fuori sync cloud */
+  brainObservations: "preventivai.brain.observations",
+  brainPersonalKnowledge: "preventivai.brain.personalKnowledge",
+  brainPatterns: "preventivai.brain.patterns",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -27,6 +31,9 @@ export const STORAGE_FALLBACKS = {
   [STORAGE_KEYS.wizardExtensions]: {},
   [STORAGE_KEYS.esperienze]: [],
   [STORAGE_KEYS.serieCivili]: null,
+  [STORAGE_KEYS.brainObservations]: [],
+  [STORAGE_KEYS.brainPersonalKnowledge]: [],
+  [STORAGE_KEYS.brainPatterns]: [],
 };
 
 export const APP_DATA_KEYS = {
