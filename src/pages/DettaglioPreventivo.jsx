@@ -54,11 +54,16 @@ import {
 } from "../utils/preventivi";
 import NumericInput from "../components/NumericInput";
 import PdfAnteprima from "../components/PdfAnteprima";
+import QualityCheckCard from "../components/QualityCheckCard";
 import FirmaClienteSection from "../features/preventivi/components/FirmaClienteSection";
 import CondivisioneSection from "../features/preventivi/components/CondivisioneSection";
 import { salvaFirma, ottieniFirma } from "../domain/firma";
 import { risolviDocumentoDaCondividere } from "../domain/condivisione";
 import { arricchisciPreventivoLegacy } from "../domain/catalogo";
+import {
+  contaRegoleAttive,
+  generateQualityChecks,
+} from "../domain/qualityCheck";
 
 export default function DettaglioPreventivo() {
   const { id } = useParams();
@@ -101,6 +106,12 @@ export default function DettaglioPreventivo() {
 
   const totali = calcolaTotali(lavorazioni, sconto, iva);
   const saldo = calcolaSaldo(totali.totale, acconto);
+  const qualityReport = generateQualityChecks({
+    ...(preventivo || {}),
+    cliente,
+    lavorazioni,
+  });
+  const qualityControlliTotali = contaRegoleAttive();
   const preventivoIncasso = normalizzaPreventivoIncasso({
     ...preventivo,
     totale: totali.totale,
@@ -782,6 +793,14 @@ export default function DettaglioPreventivo() {
           <p>Saldo {formatEuro(saldo)}</p>
         </div>
       </section>
+
+      <QualityCheckCard
+        report={qualityReport}
+        controlliTotali={qualityControlliTotali}
+        onApriLavorazione={() => {
+          // QC-002: deep-link predisposto, navigazione in sprint successivi
+        }}
+      />
 
       <section className="pro-panel p-5 mb-5 space-y-4">
         <div className="flex items-center gap-3">
