@@ -878,6 +878,7 @@ export default function DettaglioPreventivo() {
         aperto={pdfAnteprimaAperta}
         blobUrl={pdfAnteprimaUrl}
         titolo={preventivo.numero || `PREV-${preventivo.id}`}
+        nomeFile={`${preventivo.numero || `PREV-${preventivo.id}`}.pdf`}
         inElaborazione={pdfInElaborazione}
         onChiudi={chiudiAnteprimaPdf}
         onRigenera={() =>
