@@ -161,11 +161,40 @@ describe("preventivoWorkflowService", () => {
     expect(store.snapshot().cantieri).toHaveLength(1);
   });
 
-  it("annullaPreventivo e blocca conversione", () => {
+  it("annullaPreventivo marca Rifiutato e blocca conversione", () => {
     const annullo = wf.annullaPreventivo(101);
     expect(annullo.success).toBe(true);
-    expect(annullo.preventivo.stato).toBe(STATI_PREVENTIVO.ANNULLATO);
+    expect(annullo.preventivo.stato).toBe(STATI_PREVENTIVO.RIFIUTATO);
     expect(wf.convertiInCantiere(101).success).toBe(false);
+  });
+
+  it("completaLavoroDaCantiere porta il preventivo a Lavoro completato", () => {
+    wf.accettaPreventivo(101);
+    const creato = wf.convertiInCantiere(101);
+    const chiusura = wf.completaLavoroDaCantiere(101, {
+      cantiereId: creato.cantiere.id,
+    });
+    expect(chiusura.success).toBe(true);
+    expect(chiusura.preventivo.stato).toBe(STATI_PREVENTIVO.LAVORO_COMPLETATO);
+    expect(chiusura.preventivo.cantiereId).toBe(creato.cantiere.id);
+  });
+
+  it("sincronizzaVarianteSuPreventivo aggiunge lavorazione senza rompere il link", () => {
+    wf.accettaPreventivo(101);
+    const creato = wf.convertiInCantiere(101);
+    const sync = wf.sincronizzaVarianteSuPreventivo(101, {
+      id: "var-1",
+      titolo: "Punto extra",
+      quantita: 1,
+      prezzoUnitario: 50,
+      unita: "cad",
+    });
+    expect(sync.success).toBe(true);
+    expect(sync.preventivo.lavorazioni.some((l) => l.nome === "Punto extra")).toBe(
+      true
+    );
+    expect(sync.preventivo.cantiereId).toBe(creato.cantiere.id);
+    expect(sync.preventivo.totale).toBe(140);
   });
 
   it("ottieniAzioniDisponibili espone converti solo se accettato", () => {

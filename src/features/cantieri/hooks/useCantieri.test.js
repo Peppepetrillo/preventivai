@@ -84,7 +84,7 @@ describe("useCantieri", () => {
     });
 
     expect(result.current.cantiereSelezionato.stato).toBe("Completato");
-    expect(result.current.messaggio).toBe("Lavoro completato.");
+    expect(result.current.messaggio).toBe("🏁 Lavoro completato.");
   });
 
   it("avvia il lavoro impostando lo stato In corso", () => {

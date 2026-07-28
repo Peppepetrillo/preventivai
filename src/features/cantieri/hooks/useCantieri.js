@@ -17,6 +17,10 @@ import {
 } from "../services/cantieriFotoService";
 import { registraEsperienzaCompletamento } from "../../../services/experienceService";
 import {
+  completaLavoroDaCantiere,
+  sincronizzaVarianteSuPreventivo,
+} from "../../../domain/workflow";
+import {
   annullaVariante as annullaVarianteDomain,
   approvaVariante as approvaVarianteDomain,
   creaVariante as creaVarianteDomain,
@@ -126,12 +130,6 @@ export function useCantieri({
   function eliminaCantiere() {
     if (!cantiereSelezionato) return false;
 
-    const conferma = window.confirm(
-      `Eliminare il cantiere ${cantiereSelezionato.nome}?`
-    );
-
-    if (!conferma) return false;
-
     eliminaStorageFotoCantieri(cantiereSelezionato.foto || []);
 
     const cantieriAggiornati = cantieri.filter(
@@ -210,7 +208,23 @@ export function useCantieri({
     });
   }
 
-  function creaVariante(dati = {}) {
+  function sincronizzaVariantePreventivo(variante) {
+    if (!cantiereSelezionato?.preventivoId || !variante) {
+      return { success: false, error: "preventivo_non_collegato" };
+    }
+    const risultato = sincronizzaVarianteSuPreventivo(
+      cantiereSelezionato.preventivoId,
+      variante
+    );
+    if (risultato.success) {
+      setMessaggio("Preventivo aggiornato con la variante.");
+    } else {
+      setMessaggio(risultato.error || "Aggiornamento preventivo non riuscito.");
+    }
+    return risultato;
+  }
+
+  function creaVariante(dati = {}, opzioni = {}) {
     if (!cantiereSelezionato) {
       return { success: false, error: "cantiere_non_selezionato" };
     }
@@ -219,11 +233,23 @@ export function useCantieri({
       cantiereId: cantiereSelezionato.id,
     });
     if (risultato.success) {
+      if (
+        opzioni.aggiornaPreventivo &&
+        cantiereSelezionato.preventivoId &&
+        risultato.variante
+      ) {
+        sincronizzaVarianteSuPreventivo(
+          cantiereSelezionato.preventivoId,
+          risultato.variante
+        );
+      }
       setVariantiTick((n) => n + 1);
       setMessaggio(
         risultato.duplicato
           ? "Variante già presente come proposta."
-          : "Variante proposta registrata."
+          : opzioni.aggiornaPreventivo
+            ? "Variante registrata e preventivo aggiornato."
+            : "Variante proposta registrata."
       );
     } else {
       setMessaggio(risultato.error || "Impossibile creare la variante.");
@@ -280,7 +306,7 @@ export function useCantieri({
   }
 
   function completaLavoro() {
-    if (!cantiereSelezionato) return;
+    if (!cantiereSelezionato) return { success: false };
 
     const cantiereCompletato = aggiornaCantiere(cantiereSelezionato, {
       stato: "Completato",
@@ -294,8 +320,15 @@ export function useCantieri({
       )
     );
 
+    if (cantiereCompletato.preventivoId) {
+      completaLavoroDaCantiere(cantiereCompletato.preventivoId, {
+        cantiereId: cantiereCompletato.id,
+      });
+    }
+
     registraEsperienzaCompletamento(cantiereCompletato);
-    setMessaggio("Lavoro completato.");
+    setMessaggio("🏁 Lavoro completato.");
+    return { success: true, cantiere: cantiereCompletato };
   }
 
   async function aggiungiFoto(event) {
@@ -383,6 +416,7 @@ export function useCantieri({
     aggiungiVariante,
     eliminaVariante,
     creaVariante,
+    sincronizzaVariantePreventivo,
     approvaVariante,
     eseguiVariante,
     annullaVariante,

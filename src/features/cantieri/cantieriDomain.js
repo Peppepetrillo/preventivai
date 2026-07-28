@@ -49,6 +49,23 @@ export function creaCantiereDaPreventivo(
         0
       );
 
+  const allegatiSorgente = [
+    ...(Array.isArray(preventivo.allegati) ? preventivo.allegati : []),
+    ...(Array.isArray(preventivo.foto) ? preventivo.foto : []),
+    ...(Array.isArray(extra.allegati) ? extra.allegati : []),
+    ...(Array.isArray(extra.foto) ? extra.foto : []),
+  ];
+  const fotoDaAllegati = allegatiSorgente
+    .filter((voce) => voce && (voce.src || voce.url || voce.miniatura))
+    .map((voce, index) => ({
+      id: voce.id || `${preventivo.id}-all-${index}`,
+      nome: voce.nome || voce.name || `Allegato ${index + 1}`,
+      src: voce.src || voce.url || "",
+      miniatura: voce.miniatura || voce.src || voce.url || "",
+      aggiuntaIl: dataCreazione,
+      daPreventivo: true,
+    }));
+
   return {
     id: new Date().getTime(),
     nome: `Cantiere ${riferimento}`,
@@ -71,7 +88,8 @@ export function creaCantiereDaPreventivo(
       completata: false,
     })),
     materiali: [],
-    foto: [],
+    foto: fotoDaAllegati,
+    allegati: allegatiSorgente.map((voce) => ({ ...voce })),
     note: notePreventivo || `Creato dal preventivo ${riferimento}.`,
     preventivoOriginaleTotale,
     varianti: [],
@@ -119,4 +137,79 @@ export function calcolaAvanzamentoChecklist(checklist) {
 
   const completate = checklist.filter((voce) => voce.completata).length;
   return Math.round((completate / checklist.length) * 100);
+}
+
+/**
+ * Controlli pre-chiusura cantiere (presentation / UX).
+ * Non blocca: l'utente può sempre concludere.
+ * @param {object} cantiere
+ * @param {{ varianti?: object[], haFirma?: boolean }=} opzioni
+ * @returns {{ mancanze: Array<{ id: string, testo: string, soloAvviso?: boolean }>, ok: boolean }}
+ */
+export function valutaPrerequisitiChiusuraCantiere(
+  cantiere = {},
+  { varianti = [], haFirma = null } = {}
+) {
+  const mancanze = [];
+  const checklist = Array.isArray(cantiere.checklist) ? cantiere.checklist : [];
+  if (checklist.length > 0 && checklist.some((voce) => !voce.completata)) {
+    const rimanenti = checklist.filter((voce) => !voce.completata).length;
+    mancanze.push({
+      id: "checklist",
+      testo: `Checklist incompleta (${rimanenti} da fare)`,
+    });
+  }
+
+  const totale = Number(
+    cantiere.preventivoOriginaleTotale ??
+      cantiere.preventivoImporto ??
+      cantiere.totale ??
+      0
+  );
+  const incassato = Number(
+    cantiere.incassato ??
+      cantiere.extra?.incassato ??
+      cantiere.acconto ??
+      cantiere.extra?.acconto ??
+      0
+  );
+  if (totale > 0 && incassato < totale) {
+    mancanze.push({
+      id: "pagamenti",
+      testo: "Pagamenti non aggiornati (resta da incassare)",
+    });
+  }
+
+  const aperte = (Array.isArray(varianti) ? varianti : []).filter((v) => {
+    const stato = String(v?.stato || "").toLowerCase();
+    return stato === "proposta" || stato === "approvata";
+  });
+  if (aperte.length > 0) {
+    mancanze.push({
+      id: "varianti",
+      testo: `Varianti non gestite (${aperte.length})`,
+    });
+  }
+
+  const foto = Array.isArray(cantiere.foto) ? cantiere.foto : [];
+  if (foto.length === 0) {
+    mancanze.push({
+      id: "foto",
+      testo: "Nessuna foto presente",
+      soloAvviso: true,
+    });
+  }
+
+  if (haFirma === false) {
+    mancanze.push({
+      id: "firma",
+      testo: "Firma cliente non disponibile",
+      soloAvviso: true,
+    });
+  }
+
+  return {
+    mancanze,
+    ok: mancanze.length === 0,
+  };
 }

@@ -10,6 +10,7 @@ import {
   STATI_PREVENTIVO,
   calcolaAzioniDisponibili,
   creaEventoWorkflow,
+  isStatoPreventivoTerminale,
   normalizzaStatoPreventivo,
 } from "./preventivoWorkflowTypes";
 
@@ -102,8 +103,8 @@ export function creaPreventivoWorkflowService(deps) {
     }
 
     const stato = normalizzaStatoPreventivo(preventivo.stato);
-    if (stato === STATI_PREVENTIVO.ANNULLATO) {
-      return { success: false, error: "preventivo_annullato", preventivo };
+    if (isStatoPreventivoTerminale(stato)) {
+      return { success: false, error: "preventivo_chiuso", preventivo };
     }
     if (
       stato === STATI_PREVENTIVO.ACCETTATO ||
@@ -141,10 +142,13 @@ export function creaPreventivoWorkflowService(deps) {
     }
 
     const stato = normalizzaStatoPreventivo(preventivo.stato);
-    if (stato === STATI_PREVENTIVO.ANNULLATO) {
-      return { success: false, error: "preventivo_annullato", preventivo };
+    if (isStatoPreventivoTerminale(stato)) {
+      return { success: false, error: "preventivo_chiuso", preventivo };
     }
-    if (stato === STATI_PREVENTIVO.CONVERTITO) {
+    if (
+      stato === STATI_PREVENTIVO.CONVERTITO ||
+      stato === STATI_PREVENTIVO.LAVORO_COMPLETATO
+    ) {
       return {
         success: false,
         error: "gia_convertito",
@@ -177,36 +181,140 @@ export function creaPreventivoWorkflowService(deps) {
    * @param {{ by?: string }=} opzioni
    */
   function annullaPreventivo(preventivoId, opzioni = {}) {
+    return rifiutaPreventivo(preventivoId, opzioni);
+  }
+
+  /**
+   * Rifiuta / annulla (stato terminale 🔴 Rifiutato).
+   * @param {string|number} preventivoId
+   * @param {{ by?: string }=} opzioni
+   */
+  function rifiutaPreventivo(preventivoId, opzioni = {}) {
     const preventivo = trovaPreventivo(preventivoId);
     if (!preventivo) {
       return { success: false, error: "preventivo_non_trovato" };
     }
 
     const stato = normalizzaStatoPreventivo(preventivo.stato);
-    if (stato === STATI_PREVENTIVO.CONVERTITO) {
+    if (
+      stato === STATI_PREVENTIVO.CONVERTITO ||
+      stato === STATI_PREVENTIVO.LAVORO_COMPLETATO
+    ) {
       return {
         success: false,
         error: "non_annullabile_convertito",
         preventivo,
       };
     }
-    if (stato === STATI_PREVENTIVO.ANNULLATO) {
+    if (stato === STATI_PREVENTIVO.RIFIUTATO) {
       return { success: true, preventivo, alreadyCancelled: true };
     }
 
     const aggiornato = patchPreventivo(preventivoId, (item) => ({
       ...item,
-      stato: STATI_PREVENTIVO.ANNULLATO,
+      stato: STATI_PREVENTIVO.RIFIUTATO,
+      rifiutatoAt: now(),
       annullatoAt: now(),
       annullatoBy: opzioni.by || null,
     }));
 
-    registraEvento(EVENTI_WORKFLOW.PREVENTIVO_ANNULLATO, {
+    registraEvento(EVENTI_WORKFLOW.PREVENTIVO_RIFIUTATO, {
       preventivoId,
       by: opzioni.by || null,
     });
 
     return { success: true, preventivo: aggiornato };
+  }
+
+  /**
+   * Chiusura cantiere → preventivo 🏁 Lavoro completato.
+   * @param {string|number} preventivoId
+   * @param {{ by?: string, cantiereId?: string|number }=} opzioni
+   */
+  function completaLavoroDaCantiere(preventivoId, opzioni = {}) {
+    const preventivo = trovaPreventivo(preventivoId);
+    if (!preventivo) {
+      return { success: false, error: "preventivo_non_trovato" };
+    }
+
+    const stato = normalizzaStatoPreventivo(preventivo.stato);
+    if (stato === STATI_PREVENTIVO.LAVORO_COMPLETATO) {
+      return { success: true, preventivo, alreadyCompleted: true };
+    }
+    if (stato === STATI_PREVENTIVO.RIFIUTATO) {
+      return { success: false, error: "preventivo_rifiutato", preventivo };
+    }
+
+    const aggiornato = patchPreventivo(preventivoId, (item) => ({
+      ...item,
+      stato: STATI_PREVENTIVO.LAVORO_COMPLETATO,
+      cantiereId: opzioni.cantiereId ?? item.cantiereId ?? null,
+      lavoroCompletatoAt: now(),
+      lavoroCompletatoBy: opzioni.by || null,
+    }));
+
+    registraEvento(EVENTI_WORKFLOW.LAVORO_COMPLETATO, {
+      preventivoId,
+      cantiereId: opzioni.cantiereId ?? aggiornato.cantiereId ?? null,
+      by: opzioni.by || null,
+    });
+
+    return { success: true, preventivo: aggiornato };
+  }
+
+  /**
+   * Aggiunge una variante come lavorazione sul preventivo collegato.
+   * @param {string|number} preventivoId
+   * @param {object} variante
+   */
+  function sincronizzaVarianteSuPreventivo(preventivoId, variante = {}) {
+    const preventivo = trovaPreventivo(preventivoId);
+    if (!preventivo) {
+      return { success: false, error: "preventivo_non_trovato" };
+    }
+
+    const nome = String(
+      variante.titolo || variante.descrizione || "Variante cantiere"
+    ).trim();
+    const quantita = Number(variante.quantita);
+    const prezzo = Number(
+      variante.prezzoUnitario ??
+        (Number(variante.importo) && Number(variante.quantita)
+          ? Number(variante.importo) / Number(variante.quantita)
+          : variante.importo) ??
+        0
+    );
+    const qta = Number.isFinite(quantita) && quantita > 0 ? quantita : 1;
+    const prezzoUnitario = Number.isFinite(prezzo) ? prezzo : 0;
+
+    const nuovaLavorazione = {
+      id: `var-prev-${variante.id || Date.now()}`,
+      nome,
+      quantita: qta,
+      prezzo: prezzoUnitario,
+      unita: String(variante.unita || "cad").trim() || "cad",
+      daVariante: true,
+      varianteId: variante.id || null,
+    };
+
+    const aggiornato = patchPreventivo(preventivoId, (item) => {
+      const lavorazioni = [...(item.lavorazioni || []), nuovaLavorazione];
+      const totale = lavorazioni.reduce(
+        (acc, voce) =>
+          acc + (Number(voce.prezzo) || 0) * (Number(voce.quantita) || 0),
+        0
+      );
+      return {
+        ...item,
+        lavorazioni,
+        totale,
+        note: item.note
+          ? `${item.note}\n[Variante] ${nome}`
+          : `[Variante] ${nome}`,
+      };
+    });
+
+    return { success: true, preventivo: aggiornato, lavorazione: nuovaLavorazione };
   }
 
   /**
@@ -344,11 +452,14 @@ export function creaPreventivoWorkflowService(deps) {
   function contaPreventiviConvertiti() {
     return deps
       .leggiPreventivi()
-      .filter(
-        (p) =>
-          normalizzaStatoPreventivo(p.stato) === STATI_PREVENTIVO.CONVERTITO ||
+      .filter((p) => {
+        const stato = normalizzaStatoPreventivo(p.stato);
+        return (
+          stato === STATI_PREVENTIVO.CONVERTITO ||
+          stato === STATI_PREVENTIVO.LAVORO_COMPLETATO ||
           Boolean(p.cantiereId)
-      ).length;
+        );
+      }).length;
   }
 
   function registraCreazionePreventivo(preventivoId, opzioni = {}) {
@@ -363,6 +474,9 @@ export function creaPreventivoWorkflowService(deps) {
     accettaPreventivo,
     convertiInCantiere,
     annullaPreventivo,
+    rifiutaPreventivo,
+    completaLavoroDaCantiere,
+    sincronizzaVarianteSuPreventivo,
     ottieniAzioniDisponibili,
     ottieniTimeline,
     contaPreventiviConvertiti,

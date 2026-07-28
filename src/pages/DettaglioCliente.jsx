@@ -115,10 +115,7 @@ export default function DettaglioCliente() {
 
     <div className="pro-page text-white">
 
-      <Link
-        to={ROUTES.clienti}
-        className="text-slate-400 flex items-center gap-2 mb-5"
-      >
+      <Link to={ROUTES.clienti} className="ds-back-link mb-5">
         <ArrowLeft size={18} />
         Clienti
       </Link>

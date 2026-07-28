@@ -11,7 +11,7 @@ export default function Sopralluogo() {
   return (
     <PageWrapper>
       <div className="pro-page text-white">
-        <Link to={ROUTES.dashboard} className="text-slate-400 mb-5 inline-block">
+        <Link to={ROUTES.dashboard} className="ds-back-link mb-5">
           ← Home
         </Link>
 

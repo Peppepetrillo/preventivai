@@ -46,6 +46,15 @@ export const accettaPreventivo = (id, opzioni) =>
 export const convertiInCantiere = (id, opzioni) =>
   preventivoWorkflow.convertiInCantiere(id, opzioni);
 
+export const completaLavoroDaCantiere = (id, opzioni) =>
+  preventivoWorkflow.completaLavoroDaCantiere(id, opzioni);
+
+export const sincronizzaVarianteSuPreventivo = (id, variante) =>
+  preventivoWorkflow.sincronizzaVarianteSuPreventivo(id, variante);
+
+export const rifiutaPreventivo = (id, opzioni) =>
+  preventivoWorkflow.rifiutaPreventivo(id, opzioni);
+
 export const annullaPreventivo = (id, opzioni) =>
   preventivoWorkflow.annullaPreventivo(id, opzioni);
 
@@ -70,6 +79,8 @@ export {
   EVENTI_WORKFLOW,
   EVENTI_WORKFLOW_LABEL,
   STATI_PREVENTIVO,
+  etichettaStatoPreventivo,
+  isStatoPreventivoTerminale,
   normalizzaStatoPreventivo,
 } from "./preventivoWorkflowTypes";
 

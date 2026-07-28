@@ -48,7 +48,7 @@
  * @property {string=} noteIncasso
  * @property {string=} statoIncasso
  * @property {string} note
- * @property {string} stato Bozza | Inviato | Accettato | Convertito | Annullato
+ * @property {string} stato Bozza | Inviato | Accettato | Convertito | Lavoro completato | Rifiutato
  * @property {string} data
  * @property {number|string=} cantiereId
  * @property {string=} dataAccettazione

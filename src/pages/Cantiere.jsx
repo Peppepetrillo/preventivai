@@ -30,6 +30,7 @@ export default function Cantiere() {
     aggiungiMateriale,
     eliminaMateriale,
     creaVariante,
+    sincronizzaVariantePreventivo,
     approvaVariante,
     eseguiVariante,
     annullaVariante,
@@ -91,6 +92,7 @@ export default function Cantiere() {
           onIniziaLavoro={iniziaLavoro}
           onCompletaLavoro={completaLavoro}
           onCreaVariante={creaVariante}
+          onSincronizzaVariantePreventivo={sincronizzaVariantePreventivo}
           onApprovaVariante={approvaVariante}
           onEseguiVariante={eseguiVariante}
           onAnnullaVariante={annullaVariante}

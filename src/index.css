@@ -647,3 +647,101 @@ a {
     padding: 6px 8px;
   }
 }
+
+/* ——— Sprint 4: UX Premium / micro-motion ——— */
+.ds-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+.ds-back-link:active {
+  color: #e2e8f0;
+}
+
+.ux-enter {
+  animation: ux-enter var(--duration-fast) var(--ease-standard) both;
+}
+
+@keyframes ux-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ux-check-pop {
+  animation: ux-check-pop 160ms var(--ease-standard);
+}
+
+@keyframes ux-check-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.03);
+    border-color: rgba(52, 211, 153, 0.45);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.ux-snackbar {
+  animation: ux-snack-in 150ms var(--ease-standard);
+}
+
+@keyframes ux-snack-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ux-sheet {
+  animation: ux-sheet-in 160ms var(--ease-standard);
+}
+
+@keyframes ux-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ux-badge-pulse {
+  animation: ux-badge-pulse 180ms var(--ease-standard);
+}
+
+@keyframes ux-badge-pulse {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pro-panel,
+.pro-panel-strong {
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}

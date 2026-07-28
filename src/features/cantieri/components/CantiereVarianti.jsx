@@ -45,6 +45,7 @@ export default function CantiereVarianti({
   cantiere,
   sezioneRef,
   onCreaVariante,
+  onSincronizzaVariantePreventivo,
   onApprovaVariante,
   onEseguiVariante,
   onAnnullaVariante,
@@ -53,6 +54,7 @@ export default function CantiereVarianti({
   const [mostraForm, setMostraForm] = useState(false);
   const [form, setForm] = useState(FORM_INIZIALE);
   const [errore, setErrore] = useState("");
+  const [dialogoPreventivo, setDialogoPreventivo] = useState(null);
 
   // refreshKey forza il re-render dal parent dopo mutazioni workflow
   void refreshKey;
@@ -91,9 +93,24 @@ export default function CantiereVarianti({
         return;
       }
       resetForm();
+      if (
+        risultato?.success &&
+        risultato.variante &&
+        cantiere?.preventivoId &&
+        typeof onSincronizzaVariantePreventivo === "function"
+      ) {
+        setDialogoPreventivo(risultato.variante);
+      }
     } catch (e) {
       setErrore(e.message || "Impossibile salvare la variante.");
     }
+  }
+
+  function aggiornaAnchePreventivo() {
+    if (dialogoPreventivo) {
+      onSincronizzaVariantePreventivo?.(dialogoPreventivo);
+    }
+    setDialogoPreventivo(null);
   }
 
   const deltaLabel =
@@ -116,8 +133,7 @@ export default function CantiereVarianti({
               Varianti
             </h3>
             <p className="text-sm text-slate-400 mt-1">
-              Extra e modifiche in cantiere. Il preventivo originale resta
-              immutabile.
+              Extra e modifiche richieste dal cliente.
             </p>
           </div>
         </div>
@@ -363,6 +379,41 @@ export default function CantiereVarianti({
               </li>
             ))}
           </ol>
+        </div>
+      ) : null}
+
+      {dialogoPreventivo ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 px-4 safe-bottom"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="variante-preventivo-title"
+        >
+          <div className="w-full max-w-md pro-panel-strong p-5 space-y-4 mb-4 sm:mb-0 ux-sheet">
+            <h2 id="variante-preventivo-title" className="text-xl font-black">
+              Aggiornare anche il preventivo?
+            </h2>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              La variante è già sul cantiere. Puoi copiarla anche sul preventivo
+              collegato.
+            </p>
+            <div className="grid gap-2">
+              <button
+                type="button"
+                onClick={aggiornaAnchePreventivo}
+                className="btn-primary min-h-[52px] font-black"
+              >
+                Aggiorna
+              </button>
+              <button
+                type="button"
+                onClick={() => setDialogoPreventivo(null)}
+                className="btn-secondary min-h-[48px] font-bold"
+              >
+                Solo cantiere
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
     </section>

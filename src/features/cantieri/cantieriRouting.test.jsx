@@ -60,8 +60,9 @@ describe("Navigazione cantieri RC-1B", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "Bianchi SRL" })
+      screen.getByRole("heading", { name: "Quadro ufficio" })
     ).toBeInTheDocument();
+    expect(screen.getByText("Bianchi SRL")).toBeInTheDocument();
 
     unmount();
 
@@ -74,8 +75,9 @@ describe("Navigazione cantieri RC-1B", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "Bianchi SRL" })
+      screen.getByRole("heading", { name: "Quadro ufficio" })
     ).toBeInTheDocument();
+    expect(screen.getByText("Bianchi SRL")).toBeInTheDocument();
   });
 
   it("mostra non trovato se l'id URL non esiste (senza location.state)", () => {

@@ -233,10 +233,7 @@ export default function PreventivoIntelligente() {
   return (
     <PageWrapper>
       <div className="pro-page text-white">
-        <Link
-          to={ROUTES.dashboard}
-          className="text-slate-400 mb-4 inline-flex min-h-[44px] items-center"
-        >
+        <Link to={ROUTES.dashboard} className="ds-back-link mb-4">
           ← Home
         </Link>
 

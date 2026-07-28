@@ -39,6 +39,9 @@ export function classeColoreStatoPreventivo(stato) {
       return "bg-green-500";
     case "Convertito":
       return "bg-emerald-600";
+    case "Lavoro completato":
+      return "bg-slate-700";
+    case "Rifiutato":
     case "Annullato":
       return "bg-red-500";
     case "Completato":

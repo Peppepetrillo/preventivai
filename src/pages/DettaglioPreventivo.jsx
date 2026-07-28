@@ -40,7 +40,9 @@ import {
   accettaPreventivo,
   annullaPreventivo,
   convertiInCantiere,
+  etichettaStatoPreventivo,
   inviaPreventivo,
+  normalizzaStatoPreventivo,
   ottieniAzioniDisponibili,
   ottieniTimeline,
   trovaCantiereCollegato,
@@ -80,7 +82,9 @@ export default function DettaglioPreventivo() {
   const datiAzienda = leggiDatiAzienda();
 
   const [cliente, setCliente] = useState(preventivo?.cliente || "");
-  const [stato, setStato] = useState(preventivo?.stato || "Bozza");
+  const [stato, setStato] = useState(
+    () => normalizzaStatoPreventivo(preventivo?.stato)
+  );
   const [lavorazioni, setLavorazioni] = useState(
     preventivo?.lavorazioni || []
   );
@@ -99,6 +103,9 @@ export default function DettaglioPreventivo() {
   const [noteIncasso, setNoteIncasso] = useState(preventivo?.noteIncasso || "");
   const [nuovoIncasso, setNuovoIncasso] = useState("");
   const [messaggio, setMessaggio] = useState("");
+  const [confermaRifiuto, setConfermaRifiuto] = useState(false);
+  const [confermaEliminaPreventivo, setConfermaEliminaPreventivo] =
+    useState(false);
   const [timelineTick, setTimelineTick] = useState(0);
   const [pdfAnteprimaUrl, setPdfAnteprimaUrl] = useState("");
   const [pdfAnteprimaAperta, setPdfAnteprimaAperta] = useState(false);
@@ -243,16 +250,27 @@ export default function DettaglioPreventivo() {
   }
 
   function eliminaPreventivo() {
-    const conferma = window.confirm(
-      `Eliminare definitivamente il preventivo ${
-        preventivo.numero || `PREV-${preventivo.id}`
-      }?`
-    );
-
-    if (!conferma) return;
-
+    if (!confermaEliminaPreventivo) {
+      setConfermaEliminaPreventivo(true);
+      return;
+    }
     eliminaPreventivoRepository(preventivo.id);
     navigate(ROUTES.archivio);
+  }
+
+  function eseguiAnnulla() {
+    if (!confermaRifiuto) {
+      setConfermaRifiuto(true);
+      return;
+    }
+    const risultato = annullaPreventivo(preventivo.id);
+    if (!risultato.success) {
+      setMessaggio(risultato.error || "Operazione non riuscita.");
+      setConfermaRifiuto(false);
+      return;
+    }
+    setConfermaRifiuto(false);
+    sincronizzaDaWorkflow(risultato.preventivo, "Preventivo rifiutato.");
   }
 
   async function generaDocumentoPdf({
@@ -326,7 +344,9 @@ export default function DettaglioPreventivo() {
   }
 
   function sincronizzaDaWorkflow(prossimoPreventivo, testoOk) {
-    if (prossimoPreventivo?.stato) setStato(prossimoPreventivo.stato);
+    if (prossimoPreventivo?.stato) {
+      setStato(normalizzaStatoPreventivo(prossimoPreventivo.stato));
+    }
     if (prossimoPreventivo?.cantiereId) {
       setCantiereId(prossimoPreventivo.cantiereId);
     }
@@ -352,17 +372,6 @@ export default function DettaglioPreventivo() {
       return;
     }
     sincronizzaDaWorkflow(risultato.preventivo, "Preventivo segnato come inviato.");
-  }
-
-  function eseguiAnnulla() {
-    const conferma = window.confirm("Annullare questo preventivo?");
-    if (!conferma) return;
-    const risultato = annullaPreventivo(preventivo.id);
-    if (!risultato.success) {
-      setMessaggio(risultato.error || "Annullamento non riuscito.");
-      return;
-    }
-    sincronizzaDaWorkflow(risultato.preventivo, "Preventivo annullato.");
   }
 
   function salvaModificheSilenzioso() {
@@ -408,10 +417,7 @@ export default function DettaglioPreventivo() {
 
   return (
     <div className="pro-page text-white">
-      <Link
-        to={ROUTES.archivio}
-        className="text-slate-400 flex items-center gap-2 mb-5"
-      >
+      <Link to={ROUTES.archivio} className="ds-back-link mb-5">
         <ArrowLeft size={18} />
         Archivio
       </Link>
@@ -426,14 +432,36 @@ export default function DettaglioPreventivo() {
             Dettaglio preventivo
           </h1>
           <span
-            className={`px-3 py-1 rounded-full text-sm font-semibold text-white ${classeColoreStatoPreventivo(stato)}`}
+            key={stato}
+            className={`ux-badge-pulse px-3 py-1 rounded-full text-sm font-semibold text-white ${classeColoreStatoPreventivo(stato)}`}
           >
-            {stato || STATI_PREVENTIVO.BOZZA}
+            {etichettaStatoPreventivo(stato)}
           </span>
         </div>
         <p className="text-slate-400 mt-2">
-          Modifica lavorazioni, stato, condizioni e documento PDF.
+          {cliente || "Cliente"} · due fasi dello stesso lavoro
         </p>
+
+        {azioniDisponibili.includes(AZIONI_PREVENTIVO.CONVERTI_CANTIERE) ? (
+          <button
+            type="button"
+            onClick={trasformaInCantiere}
+            className="mt-5 w-full btn-primary min-h-[56px] text-base font-black flex items-center justify-center gap-2"
+          >
+            🚀 Inizia Cantiere
+          </button>
+        ) : null}
+
+        {azioniDisponibili.includes(AZIONI_PREVENTIVO.APRI_CANTIERE) &&
+        cantiereCollegatoId ? (
+          <button
+            type="button"
+            onClick={apriCantiereCollegato}
+            className="mt-5 w-full btn-primary min-h-[56px] text-base font-black flex items-center justify-center gap-2"
+          >
+            ➡️ Apri Cantiere
+          </button>
+        ) : null}
       </div>
 
       {messaggio && (
@@ -459,11 +487,14 @@ export default function DettaglioPreventivo() {
             onChange={(event) => setStato(event.target.value)}
             className="mt-2 input-pro"
           >
-            <option value={STATI_PREVENTIVO.BOZZA}>Bozza</option>
-            <option value={STATI_PREVENTIVO.INVIATO}>Inviato</option>
-            <option value={STATI_PREVENTIVO.ACCETTATO}>Accettato</option>
-            <option value={STATI_PREVENTIVO.CONVERTITO}>Convertito</option>
-            <option value={STATI_PREVENTIVO.ANNULLATO}>Annullato</option>
+            <option value={STATI_PREVENTIVO.BOZZA}>🟡 Bozza</option>
+            <option value={STATI_PREVENTIVO.INVIATO}>🔵 Inviato</option>
+            <option value={STATI_PREVENTIVO.ACCETTATO}>🟢 Accettato</option>
+            <option value={STATI_PREVENTIVO.CONVERTITO}>In cantiere</option>
+            <option value={STATI_PREVENTIVO.LAVORO_COMPLETATO}>
+              🏁 Lavoro completato
+            </option>
+            <option value={STATI_PREVENTIVO.RIFIUTATO}>🔴 Rifiutato</option>
           </select>
         </label>
       </section>
@@ -473,15 +504,19 @@ export default function DettaglioPreventivo() {
           <p className="section-label">Workflow operativo</p>
           <h2 className="text-xl font-black mt-1">Preventivo → Cantiere</h2>
           <p className="text-sm text-slate-400 mt-2">
-            {stato === STATI_PREVENTIVO.CONVERTITO || cantiereCollegatoId
-              ? "Preventivo collegato a un cantiere."
-              : stato === STATI_PREVENTIVO.ACCETTATO
-                ? "Preventivo accettato: puoi creare il cantiere."
-                : "Accetta il preventivo per abilitare la creazione del cantiere."}
+            {stato === STATI_PREVENTIVO.LAVORO_COMPLETATO
+              ? "Lavoro concluso. Puoi ancora aprire il cantiere."
+              : stato === STATI_PREVENTIVO.CONVERTITO || cantiereCollegatoId
+                ? "Preventivo collegato a un cantiere."
+                : stato === STATI_PREVENTIVO.ACCETTATO
+                  ? "Preventivo accettato: un tocco per iniziare il cantiere."
+                  : "Accetta il preventivo per abilitare il cantiere."}
           </p>
         </div>
 
-        {(stato === STATI_PREVENTIVO.CONVERTITO || cantiereCollegatoId) && (
+        {(stato === STATI_PREVENTIVO.CONVERTITO ||
+          stato === STATI_PREVENTIVO.LAVORO_COMPLETATO ||
+          cantiereCollegatoId) && (
           <div className="rounded-[14px] border border-emerald-400/25 bg-emerald-400/10 px-3.5 py-3">
             <p className="text-sm font-semibold text-emerald-100">
               ✅ Collegato al Cantiere
@@ -492,7 +527,7 @@ export default function DettaglioPreventivo() {
                 className="inline-flex min-h-[44px] items-center gap-2 mt-2 text-sm font-semibold text-yellow-200"
               >
                 <HardHat size={16} aria-hidden="true" />
-                Apri cantiere collegato
+                ➡️ Apri Cantiere
               </Link>
             ) : null}
           </div>
@@ -522,10 +557,9 @@ export default function DettaglioPreventivo() {
             <button
               type="button"
               onClick={trasformaInCantiere}
-              className="btn-primary px-5 py-3 flex items-center justify-center gap-2"
+              className="btn-primary px-5 py-3 flex items-center justify-center gap-2 font-black"
             >
-              <HardHat size={19} aria-hidden="true" />
-              🏗️ Crea Cantiere
+              🚀 Inizia Cantiere
             </button>
           ) : null}
           {azioniDisponibili.includes(AZIONI_PREVENTIVO.APRI_CANTIERE) &&
@@ -536,18 +570,32 @@ export default function DettaglioPreventivo() {
               className="btn-secondary px-5 py-3 flex items-center justify-center gap-2"
             >
               <HardHat size={19} aria-hidden="true" />
-              Apri Cantiere
+              ➡️ Apri Cantiere
             </button>
           ) : null}
-          {azioniDisponibili.includes(AZIONI_PREVENTIVO.ANNULLA) ? (
-            <button
-              type="button"
-              onClick={eseguiAnnulla}
-              className="btn-secondary px-4 py-3 text-sm font-semibold flex items-center gap-2 text-red-200"
-            >
-              <X size={16} aria-hidden="true" />
-              Annulla
-            </button>
+          {azioniDisponibili.includes(AZIONI_PREVENTIVO.ANNULLA) ||
+          azioniDisponibili.includes(AZIONI_PREVENTIVO.RIFIUTA) ? (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={eseguiAnnulla}
+                className={`btn-secondary px-4 py-3 text-sm font-semibold flex items-center gap-2 text-red-200 ${
+                  confermaRifiuto ? "border-red-400/50 bg-red-500/15" : ""
+                }`}
+              >
+                <X size={16} aria-hidden="true" />
+                {confermaRifiuto ? "Conferma rifiuto" : "Rifiuta"}
+              </button>
+              {confermaRifiuto ? (
+                <button
+                  type="button"
+                  onClick={() => setConfermaRifiuto(false)}
+                  className="btn-secondary px-4 py-3 text-sm font-semibold"
+                >
+                  Annulla
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
@@ -884,13 +932,36 @@ export default function DettaglioPreventivo() {
           Duplica preventivo
         </button>
 
-        <button
-          onClick={eliminaPreventivo}
-          className="w-full rounded-[14px] border border-red-400/25 bg-red-500/10 p-5 text-lg font-black text-red-100 flex items-center justify-center gap-2"
-        >
-          <Trash2 size={20} />
-          Elimina preventivo
-        </button>
+        {!confermaEliminaPreventivo ? (
+          <button
+            type="button"
+            onClick={eliminaPreventivo}
+            className="w-full rounded-[14px] border border-red-400/25 bg-red-500/10 p-5 text-lg font-black text-red-100 flex items-center justify-center gap-2"
+          >
+            <Trash2 size={20} />
+            Elimina preventivo
+          </button>
+        ) : (
+          <div className="grid gap-2 ux-sheet">
+            <p className="text-sm text-red-100/90 text-center">
+              Eliminare definitivamente questo preventivo?
+            </p>
+            <button
+              type="button"
+              onClick={eliminaPreventivo}
+              className="w-full rounded-[14px] border border-red-400/40 bg-red-500/20 p-4 text-base font-black text-red-100"
+            >
+              Conferma elimina
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfermaEliminaPreventivo(false)}
+              className="w-full btn-secondary p-4 font-bold"
+            >
+              Annulla
+            </button>
+          </div>
+        )}
       </div>
 
       <PdfAnteprima

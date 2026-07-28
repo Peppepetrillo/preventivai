@@ -1,430 +1,289 @@
 import { useMemo } from "react";
 import {
-  Brain,
+  AlertTriangle,
   ChevronRight,
-  ClipboardList,
-  FileText,
   HardHat,
+  MapPin,
   Plus,
   UserPlus,
-  Zap,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+
 import PageWrapper from "../components/PageWrapper";
-import AssistantPanel from "../components/assistant/AssistantPanel";
-import { ROUTES, routeCantiere, routePreventivo } from "../app/routes";
+import { ROUTES } from "../app/routes";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
-import { contaOsservazioni } from "../domain/brain/brainObservationService";
-import { statisticheLearning } from "../domain/brain/brainLearningService";
-import { contaConoscenzePersonali } from "../domain/brain/personalKnowledgeService";
-import { contaPreventiviConvertiti } from "../domain/workflow";
-import { getNumeroRegole } from "../domain/knowledge/knowledgeStatistics";
 import { leggiCantieri } from "../repositories/cantieriRepository";
 import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
 import { leggiPreventivi } from "../repositories/preventiviRepository";
-import { formatEuro } from "../utils/preventivi";
+import { PreventivAISuggestions } from "../features/intelligence";
 import {
-  creaMessaggioOperativo,
-  preparaCantieriOperativi,
+  creaFraseGiornata,
+  formattaDataGiornata,
+  nomeSalutoDaAzienda,
+  salutoOrario,
+  selezionaAttenzioni,
+  selezionaContinuaDoveHaiLasciato,
+  selezionaInterventiOggi,
   selezionaPreventiviInAttesa,
 } from "../features/dashboard/dashboardSelectors";
-import { classeBadgeStatoCantiere } from "../ui/designSystem";
 
 const AZIONI_RAPIDE = [
   {
     titolo: "Nuovo Preventivo",
-    testo: "Prepara subito una nuova offerta.",
-    link: ROUTES.preventivi,
-    icon: FileText,
-  },
-  {
-    titolo: "Archivio Preventivi",
-    testo: "Riapri documenti salvati e stati.",
-    link: ROUTES.archivio,
-    icon: ClipboardList,
-  },
-  {
-    titolo: "Nuovo Cliente",
-    testo: "Aggiungi contatto e riferimenti.",
-    link: ROUTES.clienti,
-    icon: UserPlus,
+    link: ROUTES.preventivoIntelligente,
+    icon: Plus,
+    primario: true,
   },
   {
     titolo: "Nuovo Cantiere",
-    testo: "Apri una scheda lavoro manuale.",
     link: ROUTES.cantieri,
     icon: HardHat,
+    primario: false,
+  },
+  {
+    titolo: "Nuovo Cliente",
+    link: ROUTES.clienti,
+    icon: UserPlus,
+    primario: false,
   },
 ];
 
-function ContatoreSezione({ valore, etichetta }) {
-  return (
-    <span className="ds-badge-count" aria-label={`${valore} ${etichetta}`}>
-      {valore}
-    </span>
-  );
-}
-
+/**
+ * Home 2.0 — punto di partenza della giornata lavorativa.
+ * Solo UI: nessun cambio repository / persistenza / business logic.
+ */
 export default function Dashboard() {
   const [datiAzienda] = useDatiLocaliSincronizzati(leggiDatiAzienda);
   const [cantieri] = useDatiLocaliSincronizzati(leggiCantieri);
   const [preventivi] = useDatiLocaliSincronizzati(leggiPreventivi);
-  const cantieriAperti = useMemo(
-    () => preparaCantieriOperativi(cantieri),
-    [cantieri]
+
+  const oggi = useMemo(() => selezionaInterventiOggi(cantieri), [cantieri]);
+  const attenzioni = useMemo(
+    () => selezionaAttenzioni({ cantieri, preventivi, massimo: 3 }),
+    [cantieri, preventivi]
+  );
+  const continua = useMemo(
+    () => selezionaContinuaDoveHaiLasciato({ cantieri, preventivi }),
+    [cantieri, preventivi]
   );
   const preventiviInAttesa = useMemo(
     () => selezionaPreventiviInAttesa(preventivi),
     [preventivi]
   );
-  const brainStats = {
-    conoscenzeBase: getNumeroRegole(),
-    conoscenzePersonali: contaConoscenzePersonali(),
-    osservazioni: contaOsservazioni(),
-  };
-  const patternStats = statisticheLearning();
-  const preventiviConvertiti = contaPreventiviConvertiti();
-  const nomeOperativo = datiAzienda.nomeDitta || "";
-  const messaggioOperativo = creaMessaggioOperativo({
-    nome: nomeOperativo,
-    cantieriAperti: cantieriAperti.length,
+
+  const nome = nomeSalutoDaAzienda(datiAzienda);
+  const saluto = salutoOrario();
+  const dataGiorno = formattaDataGiornata();
+  const haSaldo = attenzioni.some((a) => a.id === "pagamenti");
+  const frase = creaFraseGiornata({
+    interventiOggi: oggi.length,
     preventiviInAttesa: preventiviInAttesa.length,
+    haSaldoDaIncassare: haSaldo,
   });
 
   return (
     <PageWrapper>
-      <div className="pro-page text-white">
-        <header className="pro-panel-strong px-4 py-4 mb-4">
-          <p className="section-label">Home operativa</p>
-          <h1 className="ds-page-title mt-1">{messaggioOperativo}</h1>
-          <p className="ds-text-secondary mt-2 max-w-2xl">
-            Lavori aperti, preventivi in attesa e prossima azione.
+      <div className="pro-page text-white space-y-5">
+        <header className="pt-1">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
+            <span aria-hidden="true">👋 </span>
+            {saluto}
+            {nome ? ` ${nome}` : ""}
+          </h1>
+          <p className="mt-2 text-base font-semibold text-slate-300">
+            {dataGiorno}
+          </p>
+          <p className="mt-1.5 text-sm text-slate-400 leading-relaxed">
+            {frase}
           </p>
         </header>
 
-        <section className="mb-4" aria-labelledby="dashboard-preventivo-intelligente">
-          <Link
-            to={ROUTES.preventivoIntelligente}
-            className="pro-panel-strong ds-card-link px-4 py-4 block"
-            aria-labelledby="dashboard-preventivo-intelligente"
+        {/* Card 1 — OGGI */}
+        <section
+          className="pro-panel-strong p-5"
+          aria-labelledby="home-oggi-title"
+        >
+          <p className="section-label">Priorità</p>
+          <h2
+            id="home-oggi-title"
+            className="text-2xl sm:text-3xl font-black tracking-tight mt-1"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-[16px] bg-yellow-400 text-slate-950 flex items-center justify-center shrink-0">
-                <Zap size={22} aria-hidden="true" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="section-label">Nuovo</p>
-                <h2
-                  id="dashboard-preventivo-intelligente"
-                  className="ds-card-title mt-1"
-                >
-                  Preventivo Intelligente
-                </h2>
-                <p className="ds-text-secondary mt-1">
-                  Immobile, impianto ed extra → proposta guidata.
-                </p>
-              </div>
-              <ChevronRight
-                size={20}
-                className="text-yellow-200 shrink-0"
-                strokeWidth={2.5}
-                aria-hidden="true"
-              />
-            </div>
-          </Link>
-        </section>
+            Oggi
+          </h2>
 
-        <section className="mb-4" aria-labelledby="dashboard-brain">
-          <div className="pro-panel px-4 py-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-11 h-11 rounded-[16px] bg-yellow-400/12 text-yellow-200 flex items-center justify-center shrink-0">
-                <Brain size={20} aria-hidden="true" />
-              </div>
-              <div className="min-w-0">
-                <p className="section-label">Apprendimento</p>
-                <h2 id="dashboard-brain" className="ds-card-title mt-1">
-                  PreventivAI Brain
-                </h2>
-              </div>
-            </div>
-            <dl className="grid grid-cols-3 gap-2">
-              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
-                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                  Base
-                </dt>
-                <dd className="ds-card-title mt-1 tabular-nums text-base">
-                  {brainStats.conoscenzeBase}
-                </dd>
-                <dd className="sr-only">Conoscenze Base</dd>
-              </div>
-              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
-                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                  Personali
-                </dt>
-                <dd className="ds-card-title mt-1 tabular-nums text-base">
-                  {brainStats.conoscenzePersonali}
-                </dd>
-                <dd className="sr-only">Conoscenze Personali</dd>
-              </div>
-              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
-                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                  Osservazioni
-                </dt>
-                <dd className="ds-card-title mt-1 tabular-nums text-base">
-                  {brainStats.osservazioni}
-                </dd>
-                <dd className="sr-only">Osservazioni raccolte</dd>
-              </div>
-            </dl>
-            <p className="ds-text-secondary text-xs mt-3">
-              Conoscenze Base · Conoscenze Personali · Osservazioni raccolte
+          {oggi.length === 0 ? (
+            <p className="mt-5 text-slate-400 text-sm leading-relaxed">
+              Nessun intervento in programma. Buona giornata.
             </p>
-          </div>
-        </section>
-
-        <section className="mb-4" aria-labelledby="dashboard-pattern">
-          <div className="pro-panel px-4 py-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-11 h-11 rounded-[16px] bg-yellow-400/12 text-yellow-200 flex items-center justify-center shrink-0">
-                <Brain size={20} aria-hidden="true" />
-              </div>
-              <div className="min-w-0">
-                <p className="section-label">Statistica</p>
-                <h2 id="dashboard-pattern" className="ds-card-title mt-1">
-                  Pattern individuati
-                </h2>
-              </div>
-            </div>
-            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
-                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                  Da confermare
-                </dt>
-                <dd className="ds-card-title mt-1 tabular-nums text-base">
-                  {patternStats.daConfermare}
-                </dd>
-              </div>
-              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
-                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                  Accettati
-                </dt>
-                <dd className="ds-card-title mt-1 tabular-nums text-base">
-                  {patternStats.accettati}
-                </dd>
-              </div>
-              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
-                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                  Rifiutati
-                </dt>
-                <dd className="ds-card-title mt-1 tabular-nums text-base">
-                  {patternStats.rifiutati}
-                </dd>
-              </div>
-              <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-2.5 py-3 text-center">
-                <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                  Dal Brain
-                </dt>
-                <dd className="ds-card-title mt-1 tabular-nums text-base">
-                  {patternStats.conoscenzeDalBrain}
-                </dd>
-              </div>
-            </dl>
-            <p className="ds-text-secondary text-xs mt-3">
-              Pattern da confermare · Accettati · Rifiutati · Conoscenze create
-              dal Brain
-            </p>
-          </div>
-        </section>
-
-        <section className="mb-4" aria-labelledby="dashboard-assistente">
-          <div className="flex items-center gap-3 mb-2">
-            <Brain size={20} className="text-yellow-300 shrink-0" aria-hidden="true" />
-            <h2 id="dashboard-assistente" className="ds-section-title">
-              Assistente
-            </h2>
-          </div>
-          <AssistantPanel />
-        </section>
-
-        <section className="mb-4" aria-labelledby="dashboard-cantieri">
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-3 min-w-0">
-              <HardHat size={20} className="text-yellow-300 shrink-0" aria-hidden="true" />
-              <h2 id="dashboard-cantieri" className="ds-section-title truncate">
-                Cantieri aperti
-              </h2>
-            </div>
-            <ContatoreSezione
-              valore={cantieriAperti.length}
-              etichetta="cantieri aperti"
-            />
-          </div>
-
-          <div className="grid gap-3">
-            {cantieriAperti.length === 0 && (
-              <div className="pro-panel px-4 py-4 ds-text-secondary">
-                Nessun cantiere aperto. Puoi crearne uno o trasformare un preventivo accettato in cantiere.
-              </div>
-            )}
-
-            {cantieriAperti.map((cantiere) => (
-              <Link
-                key={cantiere.id}
-                to={routeCantiere(cantiere.id)}
-                className="pro-panel ds-card-link p-4"
-                aria-label={`Apri cantiere ${cantiere.cliente || cantiere.nome || ""}`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className={classeBadgeStatoCantiere(cantiere.stato)}>
-                      {cantiere.stato}
-                    </span>
-                    <h3 className="ds-card-title mt-2 truncate">
-                      {cantiere.cliente || cantiere.nome || "Cliente non indicato"}
-                    </h3>
-                    <p className="ds-text-secondary mt-1 truncate">
-                      {cantiere.nome}
-                    </p>
-                  </div>
-                  <div
-                    className="w-10 h-10 rounded-[16px] bg-yellow-400 text-slate-950 flex items-center justify-center shrink-0"
-                    aria-hidden="true"
+          ) : (
+            <ul className="mt-5 space-y-3">
+              {oggi.map((intervento) => (
+                <li key={intervento.id}>
+                  <Link
+                    to={intervento.link}
+                    className="flex items-center gap-3 rounded-[16px] border border-white/12 bg-black/[0.22] p-4 min-h-[72px] active:scale-[0.99] transition-transform"
+                    aria-label={`Apri cantiere ${intervento.cliente}`}
                   >
-                    <ChevronRight size={20} strokeWidth={2.5} />
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <div className="flex items-center justify-between text-[12px] mb-1">
-                    <span className="text-slate-400">Checklist</span>
-                    <span className="font-semibold text-yellow-100 tabular-nums">
-                      {cantiere.avanzamento}%
-                    </span>
-                  </div>
-                  <div
-                    className="h-1.5 rounded-full bg-white/10 overflow-hidden"
-                    role="progressbar"
-                    aria-valuenow={cantiere.avanzamento}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label={`Avanzamento checklist ${cantiere.avanzamento}%`}
-                  >
-                    <div
-                      className="h-full bg-yellow-400"
-                      style={{ width: `${cantiere.avanzamento}%` }}
+                    <div className="min-w-0 flex-1">
+                      {intervento.orario ? (
+                        <p className="text-xs font-bold uppercase tracking-wide text-yellow-200 tabular-nums">
+                          {intervento.orario}
+                        </p>
+                      ) : null}
+                      <p className="text-base font-bold text-white truncate mt-0.5">
+                        {intervento.cliente}
+                      </p>
+                      {intervento.indirizzo ? (
+                        <p className="text-sm text-slate-400 mt-1 flex items-start gap-1.5">
+                          <MapPin
+                            size={14}
+                            className="shrink-0 mt-0.5 text-slate-500"
+                            aria-hidden="true"
+                          />
+                          <span className="line-clamp-2">
+                            {intervento.indirizzo}
+                          </span>
+                        </p>
+                      ) : null}
+                    </div>
+                    <ChevronRight
+                      size={22}
+                      className="text-yellow-200 shrink-0"
+                      strokeWidth={2.5}
+                      aria-hidden="true"
                     />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
-        <section className="mb-4" aria-labelledby="dashboard-convertiti">
-          <div className="pro-panel px-4 py-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="section-label">Workflow</p>
-                <h2 id="dashboard-convertiti" className="ds-card-title mt-1">
-                  Preventivi Convertiti
-                </h2>
-                <p className="ds-text-secondary text-xs mt-1">
-                  Offerte trasformate in cantiere
-                </p>
-              </div>
-              <p className="ds-page-title tabular-nums text-2xl shrink-0">
-                {preventiviConvertiti}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="mb-4" aria-labelledby="dashboard-preventivi">
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-3 min-w-0">
-              <ClipboardList size={20} className="text-sky-300 shrink-0" aria-hidden="true" />
-              <h2 id="dashboard-preventivi" className="ds-section-title truncate">
-                Preventivi in attesa
-              </h2>
-            </div>
-            <ContatoreSezione
-              valore={preventiviInAttesa.length}
-              etichetta="preventivi in attesa"
+        {/* Card 2 — ATTENZIONE */}
+        <section
+          className="pro-panel p-5"
+          aria-labelledby="home-attenzione-title"
+        >
+          <div className="flex items-center gap-2.5 mb-4">
+            <AlertTriangle
+              size={18}
+              className="text-amber-300 shrink-0"
+              aria-hidden="true"
             />
-          </div>
-
-          <div className="grid gap-3">
-            {preventiviInAttesa.length === 0 && (
-              <div className="pro-panel px-4 py-4 ds-text-secondary">
-                Nessun preventivo in attesa di risposta.
-              </div>
-            )}
-
-            {preventiviInAttesa.map((preventivo) => (
-              <Link
-                key={preventivo.id}
-                to={routePreventivo(preventivo.id)}
-                className="pro-panel ds-card-link p-4"
-                aria-label={`Apri preventivo ${preventivo.cliente || preventivo.numero || ""}`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-medium uppercase tracking-wide text-sky-200/90">
-                      {preventivo.numero || `PREV-${preventivo.id}`}
-                    </p>
-                    <h3 className="ds-card-title mt-2 truncate">
-                      {preventivo.cliente || "Cliente non indicato"}
-                    </h3>
-                    <p className="text-emerald-300 font-semibold mt-2 tabular-nums ds-text-primary">
-                      {formatEuro(preventivo.totale)}
-                    </p>
-                  </div>
-                  <div
-                    className="w-10 h-10 rounded-[16px] bg-sky-400/15 text-sky-200 border border-sky-300/25 flex items-center justify-center shrink-0"
-                    aria-hidden="true"
-                  >
-                    <ChevronRight size={20} strokeWidth={2.5} />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section aria-labelledby="dashboard-azioni">
-          <div className="flex items-center gap-3 mb-3">
-            <Plus size={20} className="text-yellow-300 shrink-0" aria-hidden="true" />
-            <h2 id="dashboard-azioni" className="ds-section-title">
-              Azioni rapide
+            <h2
+              id="home-attenzione-title"
+              className="text-xl font-black tracking-tight"
+            >
+              Attenzione
             </h2>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          {attenzioni.length === 0 ? (
+            <p className="text-slate-400 text-sm">Niente di urgente.</p>
+          ) : (
+            <ul className="space-y-2.5">
+              {attenzioni.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    to={item.link}
+                    className="flex items-center gap-3 min-h-[52px] rounded-[14px] border border-amber-400/20 bg-amber-400/10 px-4 py-3"
+                  >
+                    <span className="text-amber-200 text-base" aria-hidden="true">
+                      ⚠️
+                    </span>
+                    <span className="flex-1 font-semibold text-amber-50 text-sm sm:text-base">
+                      {item.testo}
+                    </span>
+                    <ChevronRight
+                      size={18}
+                      className="text-amber-200/80 shrink-0"
+                      aria-hidden="true"
+                    />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Card 3 — AZIONI RAPIDE */}
+        <section aria-labelledby="home-azioni-title">
+          <h2
+            id="home-azioni-title"
+            className="text-xl font-black tracking-tight mb-3 px-0.5"
+          >
+            Azioni rapide
+          </h2>
+          <div className="grid gap-3">
             {AZIONI_RAPIDE.map((azione) => {
               const Icon = azione.icon;
-
               return (
                 <Link
                   key={azione.titolo}
                   to={azione.link}
-                  className="pro-panel ds-card-link px-4 py-3"
+                  className={`${
+                    azione.primario ? "btn-primary" : "btn-secondary"
+                  } min-h-[56px] px-5 flex items-center justify-center gap-3 text-base font-black`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-[16px] bg-yellow-400/12 text-yellow-200 flex items-center justify-center shrink-0">
-                      <Icon size={20} aria-hidden="true" />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="ds-text-primary font-semibold truncate">
-                        {azione.titolo}
-                      </h3>
-                      <p className="ds-text-secondary mt-1">{azione.testo}</p>
-                    </div>
-                  </div>
+                  <Icon size={22} aria-hidden="true" />
+                  {azione.titolo}
                 </Link>
               );
             })}
           </div>
         </section>
+
+        {/* Card 4 — CONTINUA */}
+        <section
+          className="pro-panel p-5"
+          aria-labelledby="home-continua-title"
+        >
+          <p className="section-label">Riprendi</p>
+          <h2
+            id="home-continua-title"
+            className="text-xl font-black tracking-tight mt-1"
+          >
+            Continua dove hai lasciato
+          </h2>
+
+          {!continua ? (
+            <p className="mt-4 text-slate-400 text-sm">
+              Ancora nessun lavoro da riprendere.
+            </p>
+          ) : (
+            <Link
+              to={continua.link}
+              className="mt-4 flex items-center gap-3 rounded-[16px] border border-white/12 bg-black/[0.2] p-4 min-h-[72px]"
+              aria-label={`Continua ${continua.etichetta} ${continua.titolo}`}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                  {continua.etichetta}
+                </p>
+                <p className="text-base font-bold text-white truncate mt-1">
+                  {continua.titolo}
+                </p>
+                {continua.dettaglio ? (
+                  <p className="text-sm text-slate-400 truncate mt-0.5">
+                    {continua.dettaglio}
+                  </p>
+                ) : null}
+              </div>
+              <ChevronRight
+                size={22}
+                className="text-yellow-200 shrink-0"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              />
+            </Link>
+          )}
+        </section>
+
+        <PreventivAISuggestions
+          scope="home"
+          cantieri={cantieri}
+          preventivi={preventivi}
+        />
       </div>
     </PageWrapper>
   );

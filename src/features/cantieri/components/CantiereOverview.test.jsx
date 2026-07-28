@@ -9,7 +9,9 @@ vi.mock("./CantiereAssistantPanel", () => ({
     <div data-testid="cantiere-assistant">
       <button
         type="button"
-        onClick={() => onAction?.({ tipo: "documentazione", id: "doc" }, "accept")}
+        onClick={() =>
+          onAction?.({ tipo: "documentazione", id: "doc" }, "accept")
+        }
       >
         Assistente foto
       </button>
@@ -29,10 +31,6 @@ vi.mock("./CantiereAssistantPanel", () => ({
   ),
 }));
 
-vi.mock("./CantiereOperativo", () => ({
-  default: () => <div data-testid="cantiere-operativo" />,
-}));
-
 vi.mock("./CantiereVarianti", () => ({
   default: () => <div data-testid="cantiere-varianti" />,
 }));
@@ -42,11 +40,13 @@ const cantiereEsempio = {
   nome: "Cantiere PREV-101",
   cliente: "Mario Rossi",
   indirizzo: "Via Roma 1, Milano",
+  telefono: "3331112222",
   stato: "Da iniziare",
   dataCreazione: "21/07/2026",
   foto: [],
-  materiali: [],
-  checklist: [],
+  materiali: [{ id: "m1", nome: "Tubo", quantita: 2, unita: "m" }],
+  checklist: [{ id: "c1", testo: "Posare tubi", completata: false }],
+  note: "Portare scala",
   lavorazioniOrigine: [
     {
       id: "l-1",
@@ -56,97 +56,125 @@ const cantiereEsempio = {
       unita: "cad",
     },
   ],
+  preventivoId: 101,
+  preventivoNumero: "PREV-101",
+  preventivoOriginaleTotale: 900,
 };
 
-describe("CantiereOverview", () => {
+describe("CantiereOverview 2.0", () => {
   beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn();
   });
 
-  it("mostra header, card operative e azioni per cantiere da iniziare", () => {
+  it("mostra header campo con Chiama e Naviga", () => {
     render(
       <MemoryRouter>
         <CantiereOverview
           cantiere={cantiereEsempio}
           onIniziaLavoro={vi.fn()}
-          onCompletaLavoro={vi.fn()}
-        />
-      </MemoryRouter>
-    );
-
-    expect(
-      screen.getByRole("heading", { name: "Mario Rossi" })
-    ).toBeInTheDocument();
-    expect(screen.getByText("Via Roma 1, Milano")).toBeInTheDocument();
-    expect(screen.getByText("Creato il 21/07/2026")).toBeInTheDocument();
-    expect(screen.getByText("1 lavorazione")).toBeInTheDocument();
-    expect(screen.getByText(/Totale preventivo/i)).toBeInTheDocument();
-    expect(screen.getByText("0 elementi")).toBeInTheDocument();
-    expect(screen.getByText("0 fotografie")).toBeInTheDocument();
-    expect(screen.getAllByText("0%").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Nessuna attività completata")).toBeInTheDocument();
-    expect(screen.getByTestId("cantiere-assistant")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "✏️ Modifica" })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "▶️ Inizia lavoro" })
-    ).toBeInTheDocument();
-  });
-
-  it("mostra azione concludi lavoro quando il cantiere è in corso", () => {
-    render(
-      <MemoryRouter>
-        <CantiereOverview
-          cantiere={{
-            ...cantiereEsempio,
-            stato: "In corso",
-          }}
-          onIniziaLavoro={vi.fn()}
-          onCompletaLavoro={vi.fn()}
-        />
-      </MemoryRouter>
-    );
-
-    expect(
-      screen.getByRole("button", { name: "✅ Concludi lavoro" })
-    ).toBeInTheDocument();
-  });
-
-  it("esegue le CTA overview e le azioni assistant verso sezioni reali", () => {
-    const onIniziaLavoro = vi.fn();
-    const sezioneLavorazioni = document.createElement("div");
-    sezioneLavorazioni.id = "sezione-lavorazioni";
-    document.body.appendChild(sezioneLavorazioni);
-
-    render(
-      <MemoryRouter>
-        <CantiereOverview
-          cantiere={cantiereEsempio}
-          onIniziaLavoro={onIniziaLavoro}
           onCompletaLavoro={vi.fn()}
           onAggiornaCampo={vi.fn()}
         />
       </MemoryRouter>
     );
 
+    expect(
+      screen.getByRole("heading", { name: "Cantiere PREV-101" })
+    ).toBeInTheDocument();
+    expect(screen.getByText("Mario Rossi")).toBeInTheDocument();
+    expect(screen.getByText("Via Roma 1, Milano")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Chiama/i })).toHaveAttribute(
+      "href",
+      "tel:3331112222"
+    );
+    expect(screen.getByRole("link", { name: /Naviga/i })).toHaveAttribute(
+      "href",
+      expect.stringContaining("maps.google.com")
+    );
+  });
+
+  it("mette in primo piano Oggi / Da comprare / Da ricordare", () => {
+    render(
+      <MemoryRouter>
+        <CantiereOverview
+          cantiere={cantiereEsempio}
+          onIniziaLavoro={vi.fn()}
+          onCompletaLavoro={vi.fn()}
+          onAggiornaCampo={vi.fn()}
+          nuovaChecklist=""
+          nuovoMateriale={{ nome: "", quantita: "", unita: "cad" }}
+        />
+      </MemoryRouter>
+    );
+
+    expect(
+      screen.getByRole("heading", { name: /Oggi devo fare/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /Da comprare/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /Da ricordare/i })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^Foto$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /Pagamenti/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /Documenti/i })
+    ).toBeInTheDocument();
     expect(screen.getByTestId("cantiere-varianti")).toBeInTheDocument();
-    expect(screen.getByTestId("cantiere-operativo")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Posare tubi")).toBeInTheDocument();
+    expect(screen.getByText("Tubo")).toBeInTheDocument();
+  });
 
-    fireEvent.click(screen.getByRole("button", { name: "Visualizza" }));
-    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+  it("mostra azione inizia / concludi lavoro", () => {
+    const { rerender } = render(
+      <MemoryRouter>
+        <CantiereOverview
+          cantiere={cantiereEsempio}
+          onIniziaLavoro={vi.fn()}
+          onCompletaLavoro={vi.fn()}
+        />
+      </MemoryRouter>
+    );
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Gestisci" })[0]);
-    fireEvent.click(screen.getAllByRole("button", { name: "Gestisci" })[1]);
-    fireEvent.click(screen.getAllByRole("button", { name: "Apri" })[0]);
+    expect(
+      screen.getByRole("button", { name: /Inizia lavoro/i })
+    ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "▶️ Inizia lavoro" }));
-    expect(onIniziaLavoro).toHaveBeenCalled();
+    rerender(
+      <MemoryRouter>
+        <CantiereOverview
+          cantiere={{ ...cantiereEsempio, stato: "In corso" }}
+          onIniziaLavoro={vi.fn()}
+          onCompletaLavoro={vi.fn()}
+        />
+      </MemoryRouter>
+    );
 
+    expect(
+      screen.getByRole("button", { name: /Concludi Cantiere/i })
+    ).toBeInTheDocument();
+  });
+
+  it("assistente collassato ma azioni raggiungibili", () => {
+    render(
+      <MemoryRouter>
+        <CantiereOverview
+          cantiere={cantiereEsempio}
+          onIniziaLavoro={vi.fn()}
+          onCompletaLavoro={vi.fn()}
+          onAggiornaCampo={vi.fn()}
+        />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(
+      screen.getByText(/Mostra suggerimenti Assistente/i)
+    );
+    expect(screen.getByTestId("cantiere-assistant")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Assistente foto" }));
-    fireEvent.click(screen.getByRole("button", { name: "Assistente nota" }));
-    fireEvent.click(screen.getByRole("button", { name: "Assistente materiali" }));
-
-    sezioneLavorazioni.remove();
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
   });
 });
