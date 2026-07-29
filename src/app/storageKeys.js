@@ -31,6 +31,8 @@ export const STORAGE_KEYS = {
   /** Sessioni sopralluogo — locale only */
   sopralluogoSessions: "preventivai.sopralluogo.sessions",
   sopralluogoSessionAttiva: "preventivai.sopralluogo.sessionAttiva",
+  /** Insight di campo — locale only */
+  insights: "preventivai.insights",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -56,6 +58,7 @@ export const STORAGE_FALLBACKS = {
   [STORAGE_KEYS.decisionMemory]: [],
   [STORAGE_KEYS.sopralluogoSessions]: [],
   [STORAGE_KEYS.sopralluogoSessionAttiva]: null,
+  [STORAGE_KEYS.insights]: [],
 };
 
 export const APP_DATA_KEYS = {

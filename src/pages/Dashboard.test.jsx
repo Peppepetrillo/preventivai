@@ -25,6 +25,7 @@ describe("Dashboard Home 2.0", () => {
           cliente: "Rossi",
           indirizzo: "Via Roma 1",
           orario: "09:30",
+          dataIntervento: new Date().toLocaleDateString("it-IT"),
           materiali: [{ id: "m1", nome: "Cavo", acquistato: false }],
           aggiornatoIl: "28/07/2026",
         },
@@ -41,7 +42,9 @@ describe("Dashboard Home 2.0", () => {
     );
 
     expect(screen.getByRole("heading", { name: /Giuseppe/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /^Oggi$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /La tua giornata/i })
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: /Attenzione/i })
     ).toBeInTheDocument();
@@ -53,7 +56,7 @@ describe("Dashboard Home 2.0", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Suggerimenti PreventivAI/i)).toBeInTheDocument();
     expect(screen.getAllByText("Rossi").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Materiale da comprare")).toBeInTheDocument();
+    expect(screen.getAllByText("Materiale da comprare").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("09:30")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /Nuovo Preventivo/i })

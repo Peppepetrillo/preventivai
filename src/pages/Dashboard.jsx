@@ -3,7 +3,6 @@ import {
   AlertTriangle,
   ChevronRight,
   HardHat,
-  MapPin,
   Plus,
   UserPlus,
 } from "lucide-react";
@@ -11,6 +10,8 @@ import { Link } from "react-router-dom";
 
 import PageWrapper from "../components/PageWrapper";
 import { ROUTES } from "../app/routes";
+import GiornataCard from "../features/agenda/components/GiornataCard";
+import { preparaAnteprimaGiornata } from "../features/agenda/giornataSelectors";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import { leggiCantieri } from "../repositories/cantieriRepository";
 import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
@@ -23,7 +24,6 @@ import {
   salutoOrario,
   selezionaAttenzioni,
   selezionaContinuaDoveHaiLasciato,
-  selezionaInterventiOggi,
   selezionaPreventiviInAttesa,
 } from "../features/dashboard/dashboardSelectors";
 
@@ -57,7 +57,7 @@ export default function Dashboard() {
   const [cantieri] = useDatiLocaliSincronizzati(leggiCantieri);
   const [preventivi] = useDatiLocaliSincronizzati(leggiPreventivi);
 
-  const oggi = useMemo(() => selezionaInterventiOggi(cantieri), [cantieri]);
+  const giornata = useMemo(() => preparaAnteprimaGiornata(cantieri), [cantieri]);
   const attenzioni = useMemo(
     () => selezionaAttenzioni({ cantieri, preventivi, massimo: 3 }),
     [cantieri, preventivi]
@@ -76,7 +76,7 @@ export default function Dashboard() {
   const dataGiorno = formattaDataGiornata();
   const haSaldo = attenzioni.some((a) => a.id === "pagamenti");
   const frase = creaFraseGiornata({
-    interventiOggi: oggi.length,
+    interventiOggi: giornata.totaleLavori,
     preventiviInAttesa: preventiviInAttesa.length,
     haSaldoDaIncassare: haSaldo,
   });
@@ -98,68 +98,9 @@ export default function Dashboard() {
           </p>
         </header>
 
-        {/* Card 1 — OGGI */}
-        <section
-          className="pro-panel-strong p-5"
-          aria-labelledby="home-oggi-title"
-        >
-          <p className="section-label">Priorità</p>
-          <h2
-            id="home-oggi-title"
-            className="text-2xl sm:text-3xl font-black tracking-tight mt-1"
-          >
-            Oggi
-          </h2>
+        <GiornataCard riepilogo={giornata} />
 
-          {oggi.length === 0 ? (
-            <p className="mt-5 text-slate-400 text-sm leading-relaxed">
-              Nessun intervento in programma. Buona giornata.
-            </p>
-          ) : (
-            <ul className="mt-5 space-y-3">
-              {oggi.map((intervento) => (
-                <li key={intervento.id}>
-                  <Link
-                    to={intervento.link}
-                    className="flex items-center gap-3 rounded-[16px] border border-white/12 bg-black/[0.22] p-4 min-h-[72px] active:scale-[0.99] transition-transform"
-                    aria-label={`Apri cantiere ${intervento.cliente}`}
-                  >
-                    <div className="min-w-0 flex-1">
-                      {intervento.orario ? (
-                        <p className="text-xs font-bold uppercase tracking-wide text-yellow-200 tabular-nums">
-                          {intervento.orario}
-                        </p>
-                      ) : null}
-                      <p className="text-base font-bold text-white truncate mt-0.5">
-                        {intervento.cliente}
-                      </p>
-                      {intervento.indirizzo ? (
-                        <p className="text-sm text-slate-400 mt-1 flex items-start gap-1.5">
-                          <MapPin
-                            size={14}
-                            className="shrink-0 mt-0.5 text-slate-500"
-                            aria-hidden="true"
-                          />
-                          <span className="line-clamp-2">
-                            {intervento.indirizzo}
-                          </span>
-                        </p>
-                      ) : null}
-                    </div>
-                    <ChevronRight
-                      size={22}
-                      className="text-yellow-200 shrink-0"
-                      strokeWidth={2.5}
-                      aria-hidden="true"
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {/* Card 2 — ATTENZIONE */}
+        {/* Card — ATTENZIONE */}
         <section
           className="pro-panel p-5"
           aria-labelledby="home-attenzione-title"

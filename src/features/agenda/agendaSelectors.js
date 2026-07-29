@@ -1,4 +1,5 @@
 import { routeCantiere } from "../../app/routes";
+import { creaLavoroDaCantiere } from "../lavori/lavoriDomain";
 
 /** @typedef {"programmato"|"in-corso"|"completato"} StatoAgenda */
 
@@ -189,42 +190,11 @@ export function cantiereAppartieneAlGiorno(cantiere, giorno, oggi) {
 }
 
 /**
- * Trasforma un cantiere in intervento agenda.
+ * Trasforma un cantiere in intervento agenda (alias Lavoro).
  * @param {object} cantiere
  */
 export function creaInterventoAgenda(cantiere = {}) {
-  const checklist = Array.isArray(cantiere.checklist) ? cantiere.checklist : [];
-  const materiali = Array.isArray(cantiere.materiali) ? cantiere.materiali : [];
-  const statoAgenda = statoAgendaDaCantiere(cantiere.stato);
-
-  return {
-    id: cantiere.id,
-    titolo: cantiere.nome || cantiere.cliente || "Intervento",
-    cliente: cantiere.cliente || "",
-    indirizzo: cantiere.indirizzo || "",
-    orario: leggiOrarioCantiere(cantiere),
-    durataStimata:
-      cantiere.durataStimata ||
-      cantiere.extra?.durataStimata ||
-      null,
-    stato: statoAgenda,
-    statoCantiere: cantiere.stato || "Da iniziare",
-    checklist: checklist
-      .filter((voce) => voce && !voce.completata)
-      .map((voce) => voce.testo)
-      .slice(0, 4),
-    materialiDaPortare: materiali
-      .filter((m) => m && m.acquistato)
-      .map((m) => ({
-        nome: m.nome,
-        quantita: Number(m.quantita) || 0,
-        unita: m.unita || "cad",
-      })),
-    saldo: saldoResiduoCantiere(cantiere),
-    telefono: telefonoCantiere(cantiere),
-    link: routeCantiere(cantiere.id),
-    cantiere,
-  };
+  return creaLavoroDaCantiere(cantiere);
 }
 
 /**

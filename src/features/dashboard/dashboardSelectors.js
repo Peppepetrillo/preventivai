@@ -1,5 +1,6 @@
 import { calcolaAvanzamentoChecklist } from "../cantieri/cantieriDomain";
 import { ROUTES, routeCantiere, routePreventivo } from "../../app/routes";
+import { preparaAnteprimaGiornata } from "../agenda/giornataSelectors";
 
 export function selezionaCantieriAperti(cantieri = []) {
   return cantieri.filter((cantiere) => cantiere.stato !== "Completato");
@@ -61,35 +62,21 @@ export function salutoOrario(data = new Date()) {
 }
 
 /**
- * Interventi della giornata: cantieri vivi (In corso / Da iniziare).
- * Orario solo se già presente sul record (nessun cambio modello).
+ * Interventi della giornata — delega alla logica agenda unificata.
+ * @deprecated Preferisci preparaAnteprimaGiornata / preparaRiepilogoGiornata.
  */
 export function selezionaInterventiOggi(cantieri = [], limite = 5) {
-  const peso = (stato) => {
-    if (stato === "In corso") return 0;
-    if (stato === "Da iniziare") return 1;
-    return 2;
-  };
-
-  return selezionaCantieriAperti(cantieri)
-    .filter(
-      (c) => c.stato === "In corso" || c.stato === "Da iniziare" || !c.stato
-    )
-    .sort((a, b) => peso(a.stato) - peso(b.stato))
-    .slice(0, limite)
-    .map((cantiere) => ({
-      id: cantiere.id,
-      cliente: cantiere.cliente || "Cliente non indicato",
-      indirizzo: cantiere.indirizzo || "",
-      nome: cantiere.nome || "",
-      orario:
-        cantiere.orario ||
-        cantiere.extra?.orario ||
-        cantiere.ora ||
-        cantiere.extra?.ora ||
-        "",
-      link: routeCantiere(cantiere.id),
-    }));
+  return preparaAnteprimaGiornata(cantieri, new Date(), limite).lavori.map(
+    (lavoro) => ({
+      id: lavoro.id,
+      cliente: lavoro.cliente || lavoro.titolo || "Cliente non indicato",
+      indirizzo: lavoro.indirizzo || "",
+      nome: lavoro.titolo || "",
+      orario: lavoro.orario || "",
+      tipoLavoro: lavoro.tipoLavoro,
+      link: lavoro.link,
+    })
+  );
 }
 
 function haMaterialeDaComprare(cantieri = []) {

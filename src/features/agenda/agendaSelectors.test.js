@@ -143,4 +143,17 @@ describe("agendaSelectors", () => {
     expect(minutiOrario("08:00")).toBeLessThan(minutiOrario("11:30"));
     expect(differenzaGiorni(inizioGiornata(OGGI), OGGI)).toBe(0);
   });
+
+  it("proietta tipo lavoro e durata stimata", () => {
+    const intervento = creaInterventoAgenda(
+      cantiere({
+        tipoLavoro: "intervento",
+        durataStimata: 75,
+      })
+    );
+
+    expect(intervento.tipoLavoro).toBe("intervento");
+    expect(intervento.tipoLavoroLabel).toBe("Intervento");
+    expect(intervento.durataStimataLabel).toBe("1 h 15 min");
+  });
 });

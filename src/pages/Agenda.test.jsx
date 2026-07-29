@@ -58,7 +58,7 @@ describe("Agenda", () => {
 
     expect(screen.getByText("Villa Rossi")).toBeInTheDocument();
     expect(screen.getAllByText("08:00").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Portare differenziale")).toBeInTheDocument();
+    expect(screen.getByText(/Portare differenziale/)).toBeInTheDocument();
 
     vi.useRealTimers();
   });
@@ -84,7 +84,7 @@ describe("Agenda", () => {
 
     renderAgenda();
 
-    const link = screen.getByRole("link", { name: /Apri Cantiere/i });
+    const link = screen.getByRole("link", { name: /Apri lavoro/i });
     expect(link).toHaveAttribute("href", "/cantiere/c1");
 
     vi.useRealTimers();
@@ -96,7 +96,7 @@ describe("Agenda", () => {
 
     renderAgenda();
 
-    fireEvent.click(screen.getByRole("button", { name: /Completato/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Segna completato/i }));
 
     const cantieri = JSON.parse(localStorage.getItem(STORAGE_KEYS.cantieri) || "[]");
     expect(cantieri[0].stato).toBe("Completato");

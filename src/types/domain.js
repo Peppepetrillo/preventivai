@@ -91,6 +91,37 @@
  * @property {string=} descrizione
  * @property {object=} extra
  * @property {VarianteCantiere[]=} varianti Extra in cantiere (non alterano il preventivo)
+ * @property {"cantiere"|"intervento"|"sopralluogo"|"manutenzione"|string=} tipoLavoro Tipologia agenda
+ * @property {string=} dataIntervento Data programmata (DD/MM/YYYY)
+ * @property {string=} orario Orario programmato (HH:mm)
+ * @property {number=} durataStimata Durata prevista in minuti
+ */
+
+/**
+ * @typedef {Object} Lavoro
+ * @property {number|string} id
+ * @property {"cantiere"|"intervento"|"sopralluogo"|"manutenzione"} tipoLavoro
+ * @property {string} titolo
+ * @property {string} cliente
+ * @property {string} indirizzo
+ * @property {string} orario
+ * @property {number|null} durataStimata
+ * @property {"programmato"|"in-corso"|"completato"} stato
+ * @property {string} link
+ * @property {object} cantiere Record sorgente (retrocompatibile)
+ */
+
+/**
+ * @typedef {Object} Insight
+ * @property {string} id
+ * @property {string} titolo
+ * @property {string} problema
+ * @property {string} soluzione
+ * @property {"bassa"|"media"|"alta"} priorita
+ * @property {"aperto"|"in-lavorazione"|"risolto"|"archiviato"} stato
+ * @property {string} data
+ * @property {string=} cantiereId
+ * @property {string=} cliente
  */
 
 /**

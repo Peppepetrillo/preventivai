@@ -70,6 +70,8 @@ describe("dashboardSelectors", () => {
   });
 
   it("seleziona gli interventi di oggi con orario se presente", () => {
+    const oggi = new Date();
+    const dataOggi = oggi.toLocaleDateString("it-IT");
     const interventi = selezionaInterventiOggi([
       {
         id: "a",
@@ -77,9 +79,16 @@ describe("dashboardSelectors", () => {
         cliente: "Rossi",
         indirizzo: "Via Roma 1",
         orario: "09:00",
+        dataIntervento: dataOggi,
       },
       { id: "b", stato: "Completato", cliente: "Verdi" },
-      { id: "c", stato: "Da iniziare", cliente: "Bianchi", indirizzo: "Via 2" },
+      {
+        id: "c",
+        stato: "Da iniziare",
+        cliente: "Bianchi",
+        indirizzo: "Via 2",
+        dataIntervento: dataOggi,
+      },
     ]);
 
     expect(interventi).toHaveLength(2);
