@@ -10,6 +10,8 @@ import { calcolaTotaleCantiere, ottieniVarianti } from "../../../domain/varianti
 import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
 import { leggiPreventivi } from "../../../repositories/preventiviRepository";
 import { PreventivAISuggestions } from "../../intelligence";
+import CantiereDiarioSection from "../../diario/components/CantiereDiarioSection";
+import CantiereReportPanel from "../../report/components/CantiereReportPanel";
 import {
   STATI_CANTIERE,
   calcolaAvanzamentoChecklist,
@@ -53,6 +55,7 @@ export default function CantiereOverview({
   onAggiungiFoto,
   onEliminaFoto,
   onApriFoto,
+  onAggiungiNotaDiario,
   onEliminaCantiere,
   onIniziaLavoro,
   onCompletaLavoro,
@@ -88,7 +91,10 @@ export default function CantiereOverview({
   const economico = calcolaTotaleCantiere(cantiere);
   const telefono = telefonoCantiere(cantiere);
   const variantiCantiere = useMemo(
-    () => (cantiere?.id ? ottieniVarianti(cantiere.id, cantiere) : []),
+    () => {
+      void variantiTick;
+      return cantiere?.id ? ottieniVarianti(cantiere.id, cantiere) : [];
+    },
     [cantiere, variantiTick]
   );
 
@@ -353,6 +359,19 @@ export default function CantiereOverview({
         onApriFoto={onApriFoto}
       />
 
+      <CantiereDiarioSection
+        cantiere={cantiere}
+        onAddManualNote={onAggiungiNotaDiario}
+        onOpenAttachment={(attachment) =>
+          onApriFoto?.({
+            id: attachment.id,
+            nome: attachment.alt,
+            src: attachment.src,
+            miniatura: attachment.thumbnail,
+          })
+        }
+      />
+
       {/* 5. VARIANTI */}
       <div className="mt-5 mb-5" id="sezione-varianti">
         <CantiereVarianti
@@ -455,6 +474,10 @@ export default function CantiereOverview({
           <p className="text-xs text-slate-500 px-1">
             PDF e firma cliente si gestiscono dal dettaglio preventivo.
           </p>
+        </div>
+
+        <div className="mt-4">
+          <CantiereReportPanel cantiere={cantiere} />
         </div>
 
         {(cantiere.lavorazioniOrigine || []).length > 0 ? (

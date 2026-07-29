@@ -1,0 +1,124 @@
+import { useEffect, useState } from "react";
+import { ArrowLeft, PenLine, Sparkles } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ROUTES } from "../app/routes";
+import { leggiClienti } from "../repositories/clientiRepository";
+
+const PREF_KEY = "preventivai_modalita_preventivo";
+
+export default function ScelgaModalitaPreventivo() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const clienteId = searchParams.get("clienteId");
+  const clienti = leggiClienti();
+  const cliente = clienteId
+    ? clienti.find((c) => String(c.id) === clienteId)
+    : null;
+
+  const [ultimaScelta, setUltimaScelta] = useState(
+    () => localStorage.getItem(PREF_KEY) || null
+  );
+
+  function scegli(modalita) {
+    localStorage.setItem(PREF_KEY, modalita);
+    setUltimaScelta(modalita);
+
+    const params = clienteId ? `?clienteId=${clienteId}` : "";
+
+    if (modalita === "intelligente") {
+      navigate(`${ROUTES.preventivoIntelligente}${params}`);
+    } else {
+      navigate(`${ROUTES.preventivoManuale}${params}`);
+    }
+  }
+
+  const backTo = clienteId
+    ? `/cliente/${clienteId}`
+    : ROUTES.preventivi;
+
+  return (
+    <div className="pro-page text-white">
+      <Link to={backTo} className="ds-back-link mb-6">
+        <ArrowLeft size={18} />
+        {cliente ? cliente.nome : "Preventivi"}
+      </Link>
+
+      {cliente && (
+        <div className="pro-panel-strong p-5 mb-6">
+          <p className="section-label">Nuovo preventivo per</p>
+          <h1 className="text-2xl font-black mt-1">{cliente.nome}</h1>
+          {cliente.indirizzo && (
+            <p className="text-slate-400 text-sm mt-1">{cliente.indirizzo}</p>
+          )}
+        </div>
+      )}
+
+      {!cliente && (
+        <div className="mb-6">
+          <p className="section-label">Nuovo preventivo</p>
+          <h1 className="text-2xl font-black mt-1">Come vuoi crearlo?</h1>
+        </div>
+      )}
+
+      <p className="text-slate-400 mb-6 text-sm">
+        Scegli la modalità di creazione.
+        {ultimaScelta && (
+          <span className="ml-1 text-yellow-300">
+            Ultima volta: {ultimaScelta === "intelligente" ? "Preventivo Intelligente" : "Preventivo Manuale"}.
+          </span>
+        )}
+      </p>
+
+      <div className="space-y-4">
+        <button
+          onClick={() => scegli("intelligente")}
+          className="w-full pro-panel p-5 text-left hover:border-yellow-300/40 transition active:scale-[0.98]"
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-[14px] bg-yellow-400 text-slate-950 flex items-center justify-center shrink-0">
+              <Sparkles size={22} />
+            </div>
+            <div>
+              <h2 className="text-lg font-black flex items-center gap-2">
+                Preventivo Intelligente
+                {ultimaScelta === "intelligente" && (
+                  <span className="text-xs font-normal text-yellow-300 bg-yellow-400/10 px-2 py-0.5 rounded-full">
+                    Ultima scelta
+                  </span>
+                )}
+              </h2>
+              <p className="text-slate-400 text-sm mt-1">
+                PreventivAI ti guida nella compilazione con suggerimenti e listino integrato.
+              </p>
+            </div>
+          </div>
+        </button>
+
+        <button
+          onClick={() => scegli("manuale")}
+          className="w-full pro-panel p-5 text-left hover:border-yellow-300/40 transition active:scale-[0.98]"
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-[14px] bg-slate-700 flex items-center justify-center shrink-0">
+              <PenLine size={22} className="text-slate-200" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black flex items-center gap-2">
+                Preventivo Manuale
+                {ultimaScelta === "manuale" && (
+                  <span className="text-xs font-normal text-yellow-300 bg-yellow-400/10 px-2 py-0.5 rounded-full">
+                    Ultima scelta
+                  </span>
+                )}
+              </h2>
+              <p className="text-slate-400 text-sm mt-1">
+                Aggiungi righe liberamente. Veloce, senza assistente.
+              </p>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}

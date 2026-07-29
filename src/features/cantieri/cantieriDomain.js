@@ -1,3 +1,5 @@
+import { creaEventoCantiereCreato } from "../diario/events/cantiereCreato";
+
 export const STATI_CANTIERE = [
   "Da iniziare",
   "Da avviare",
@@ -7,7 +9,7 @@ export const STATI_CANTIERE = [
 ];
 
 export function creaCantiere({ nome, cliente, indirizzo }) {
-  return {
+  const cantiere = {
     id: new Date().getTime(),
     nome: nome.trim(),
     cliente: cliente.trim(),
@@ -21,6 +23,10 @@ export function creaCantiere({ nome, cliente, indirizzo }) {
     varianti: [],
     creatoIl: new Date().toLocaleDateString("it-IT"),
     aggiornatoIl: new Date().toLocaleDateString("it-IT"),
+  };
+  return {
+    ...cantiere,
+    diario: [creaEventoCantiereCreato(cantiere)],
   };
 }
 
@@ -66,7 +72,7 @@ export function creaCantiereDaPreventivo(
       daPreventivo: true,
     }));
 
-  return {
+  const cantiere = {
     id: new Date().getTime(),
     nome: `Cantiere ${riferimento}`,
     cliente: String(preventivo.cliente || "").trim(),
@@ -95,6 +101,10 @@ export function creaCantiereDaPreventivo(
     varianti: [],
     creatoIl: dataCreazione,
     aggiornatoIl: dataCreazione,
+  };
+  return {
+    ...cantiere,
+    diario: [creaEventoCantiereCreato(cantiere)],
   };
 }
 

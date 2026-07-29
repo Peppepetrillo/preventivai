@@ -1,321 +1,350 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, FileText, Save, Trash2, Wallet } from "lucide-react";
-import { ROUTES, routePreventivo } from "../app/routes";
+import {
+  ArrowLeft,
+  FileText,
+  HardHat,
+  MapPin,
+  Phone,
+  Plus,
+  Trash2,
+  Wallet,
+} from "lucide-react";
+import { ROUTES, routeCantiere, routePreventivo } from "../app/routes";
 import { leggiClienti, salvaClienti } from "../repositories/clientiRepository";
 import { leggiPreventivi, salvaPreventivi } from "../repositories/preventiviRepository";
 import { formatEuro, normalizzaNumero } from "../utils/preventivi";
+import { useCantieri } from "../features/cantieri/hooks/useCantieri";
 
 export default function DettaglioCliente() {
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-  const { id } =
-    useParams();
-  const navigate =
-    useNavigate();
+  const clienti = leggiClienti();
+  const cliente = clienti.find((c) => String(c.id) === id);
+  const archivio = leggiPreventivi();
 
-  const clienti =
-    leggiClienti();
+  const { cantieri, aggiornaCampoNuovoCantiere, creaCantiere: creaCantiereHook } = useCantieri();
 
-  const cliente =
-    clienti.find(
-      (c) =>
-        String(c.id) === id
-    );
+  const [nome, setNome] = useState(cliente?.nome || "");
+  const [telefono, setTelefono] = useState(cliente?.telefono || "");
+  const [email, setEmail] = useState(cliente?.email || "");
+  const [indirizzo, setIndirizzo] = useState(cliente?.indirizzo || "");
+  const [messaggio, setMessaggio] = useState("");
+  const [confermaElimina, setConfermaElimina] = useState(false);
 
-  const archivio =
-    leggiPreventivi();
+  const preventiviCliente = archivio.filter(
+    (p) => p.cliente === cliente?.nome
+  );
 
-  const [nome, setNome] =
-    useState(cliente?.nome || "");
-  const [telefono, setTelefono] =
-    useState(cliente?.telefono || "");
-  const [email, setEmail] =
-    useState(cliente?.email || "");
-  const [messaggio, setMessaggio] =
-    useState("");
+  const cantieriCliente = cantieri.filter(
+    (c) => c.cliente === cliente?.nome
+  );
 
-  const preventiviCliente =
-    archivio.filter(
-      (p) =>
-        p.cliente ===
-        cliente?.nome
-    );
-
-  const totaleLavori =
-    preventiviCliente.reduce(
-      (acc, item) =>
-        acc + normalizzaNumero(item.totale),
-      0
-    );
+  const totaleLavori = preventiviCliente.reduce(
+    (acc, item) => acc + normalizzaNumero(item.totale),
+    0
+  );
 
   if (!cliente) {
-
     return (
-
       <div className="min-h-screen flex items-center justify-center text-white">
-
         Cliente non trovato
-
       </div>
-
     );
-
   }
 
   function salvaCliente() {
     const nomePulito = nome.trim();
-
     if (!nomePulito) {
       setMessaggio("Inserisci il nome del cliente.");
       return;
     }
 
-    const clientiAggiornati =
-      clienti.map((item) =>
-        String(item.id) === id
-          ? {
-              ...item,
-              nome: nomePulito,
-              telefono: telefono.trim(),
-              email: email.trim(),
-            }
-          : item
-      );
+    const clientiAggiornati = clienti.map((item) =>
+      String(item.id) === id
+        ? { ...item, nome: nomePulito, telefono: telefono.trim(), email: email.trim(), indirizzo: indirizzo.trim() }
+        : item
+    );
 
-    const archivioAggiornato =
-      archivio.map((preventivo) =>
-        preventivo.cliente === cliente.nome
-          ? {
-              ...preventivo,
-              cliente: nomePulito,
-            }
-          : preventivo
-      );
+    const archivioAggiornato = archivio.map((preventivo) =>
+      preventivo.cliente === cliente.nome
+        ? { ...preventivo, cliente: nomePulito }
+        : preventivo
+    );
 
     salvaClienti(clientiAggiornati);
     salvaPreventivi(archivioAggiornato);
-    setMessaggio("Cliente aggiornato sul dispositivo.");
+    setMessaggio("Salvato.");
+    setTimeout(() => setMessaggio(""), 2000);
   }
 
   function eliminaCliente() {
-    const conferma = window.confirm(
-      `Eliminare il cliente ${cliente.nome}? I preventivi già creati resteranno nell'archivio.`
-    );
-
-    if (!conferma) return;
-
-    const clientiAggiornati =
-      clienti.filter((item) => String(item.id) !== id);
-
+    const clientiAggiornati = clienti.filter((item) => String(item.id) !== id);
     salvaClienti(clientiAggiornati);
     navigate(ROUTES.clienti);
   }
 
+  function nuovoCantiereDaCliente() {
+    aggiornaCampoNuovoCantiere("cliente", cliente.nome);
+    aggiornaCampoNuovoCantiere("indirizzo", cliente.indirizzo || indirizzo || "");
+    aggiornaCampoNuovoCantiere("nome", "");
+    navigate(ROUTES.cantieri + "?nuovoCantiere=1");
+  }
+
+  const telLink = cliente.telefono
+    ? `tel:${cliente.telefono.replace(/\s/g, "")}`
+    : null;
+
+  const indirizzoCorrente = indirizzo || cliente.indirizzo || "";
+  const navLink = indirizzoCorrente
+    ? `https://maps.google.com/?q=${encodeURIComponent(indirizzoCorrente)}`
+    : null;
+
   return (
-
     <div className="pro-page text-white">
-
       <Link to={ROUTES.clienti} className="ds-back-link mb-5">
         <ArrowLeft size={18} />
         Clienti
       </Link>
 
-      <div className="pro-panel-strong p-5 mb-6">
+      {/* Header scheda cliente */}
+      <div className="pro-panel-strong p-5 mb-5">
+        <p className="section-label">Scheda cliente</p>
+        <h1 className="text-3xl font-black mt-1">{cliente.nome}</h1>
+        {indirizzoCorrente && (
+          <p className="text-slate-400 mt-1 text-sm flex items-center gap-1">
+            <MapPin size={13} className="shrink-0" />
+            {indirizzoCorrente}
+          </p>
+        )}
+        {cliente.telefono && (
+          <p className="text-slate-400 mt-0.5 text-sm">{cliente.telefono}</p>
+        )}
 
-        <p className="section-label">
+        {/* CTA principali */}
+        <div className="grid grid-cols-2 gap-3 mt-5">
+          <Link
+            to={`${ROUTES.nuovoPreventivo}?clienteId=${id}`}
+            className="btn-primary py-4 flex items-center justify-center gap-2 text-sm font-black"
+          >
+            <Plus size={18} />
+            Nuovo Preventivo
+          </Link>
 
-          Scheda cliente
+          <button
+            onClick={nuovoCantiereDaCliente}
+            className="btn-secondary py-4 flex items-center justify-center gap-2 text-sm font-black"
+          >
+            <HardHat size={18} />
+            Nuovo Cantiere
+          </button>
 
-        </p>
+          {telLink ? (
+            <a
+              href={telLink}
+              className="btn-secondary py-4 flex items-center justify-center gap-2 text-sm font-black"
+            >
+              <Phone size={18} />
+              Chiama
+            </a>
+          ) : (
+            <button
+              disabled
+              className="btn-secondary py-4 flex items-center justify-center gap-2 text-sm font-black opacity-40 cursor-not-allowed"
+            >
+              <Phone size={18} />
+              Chiama
+            </button>
+          )}
 
-        <h1 className="text-3xl sm:text-4xl font-black mt-1">
+          {navLink && (
+            <a
+              href={navLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary py-4 flex items-center justify-center gap-2 text-sm font-black"
+            >
+              <MapPin size={18} />
+              Naviga
+            </a>
+          )}
+        </div>
+      </div>
 
-          {cliente.nome}
-
-        </h1>
-
-        <p className="text-slate-400 mt-2">
-
-          Contatti, preventivi collegati e totale lavori.
-
-        </p>
-
+      {/* Statistiche */}
+      <div className="pro-panel p-5 mb-5 flex items-center gap-4">
+        <Wallet size={22} className="text-emerald-300 shrink-0" />
+        <div>
+          <p className="text-slate-400 text-sm">Totale lavori</p>
+          <p className="text-2xl font-black mt-0.5">{formatEuro(totaleLavori)}</p>
+        </div>
+        <div className="ml-auto text-right">
+          <p className="text-slate-400 text-sm">Preventivi</p>
+          <p className="text-2xl font-black mt-0.5">{preventiviCliente.length}</p>
+        </div>
+        <div className="ml-4 text-right">
+          <p className="text-slate-400 text-sm">Cantieri</p>
+          <p className="text-2xl font-black mt-0.5">{cantieriCliente.length}</p>
+        </div>
       </div>
 
       {messaggio && (
-        <div className="pro-panel p-4 mb-5 text-yellow-100 border-yellow-300/30">
+        <div className="pro-panel p-4 mb-5 text-yellow-100 border-yellow-300/30 text-sm">
           {messaggio}
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px] mb-6">
+      {/* Dati modificabili */}
+      <div className="pro-panel p-5 mb-5">
+        <h2 className="text-lg font-black mb-4">Informazioni</h2>
+        <div className="space-y-3">
+          <label className="block">
+            <span className="text-sm text-slate-400">Nome cliente</span>
+            <input
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              className="mt-1.5 input-pro"
+            />
+          </label>
 
-        <div className="pro-panel p-5">
+          <label className="block">
+            <span className="text-sm text-slate-400">Telefono</span>
+            <input
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+              className="mt-1.5 input-pro"
+            />
+          </label>
 
-          <h2 className="text-xl font-black mb-4">
+          <label className="block">
+            <span className="text-sm text-slate-400">Indirizzo</span>
+            <input
+              value={indirizzo}
+              onChange={(e) => setIndirizzo(e.target.value)}
+              className="mt-1.5 input-pro"
+            />
+          </label>
 
-            Informazioni
+          <label className="block">
+            <span className="text-sm text-slate-400">Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1.5 input-pro"
+            />
+          </label>
 
-          </h2>
+          <button
+            onClick={salvaCliente}
+            className="btn-primary w-full py-3.5 font-black"
+          >
+            Salva
+          </button>
+        </div>
+      </div>
 
-          <div className="space-y-4">
+      {/* Preventivi collegati */}
+      <div className="mb-5">
+        <h2 className="text-lg font-black mb-4">Preventivi</h2>
 
-            <label className="block">
-              <span className="text-sm text-slate-400">Nome cliente</span>
-              <input
-                value={nome}
-                onChange={(event) => setNome(event.target.value)}
-                className="mt-2 input-pro"
-              />
-            </label>
+        {preventiviCliente.length === 0 && (
+          <div className="pro-panel p-6 text-slate-400 text-center ds-empty">
+            <p className="font-black">Nessun preventivo</p>
+            <p className="text-sm mt-1">Crea il primo preventivo per questo cliente.</p>
+            <Link
+              to={`${ROUTES.nuovoPreventivo}?clienteId=${id}`}
+              className="btn-primary mt-4 inline-flex items-center gap-2 px-5 py-3 text-sm font-black"
+            >
+              <Plus size={16} />
+              Nuovo Preventivo
+            </Link>
+          </div>
+        )}
 
-            <label className="block">
-              <span className="text-sm text-slate-400">Telefono</span>
-              <input
-                value={telefono}
-                onChange={(event) => setTelefono(event.target.value)}
-                className="mt-2 input-pro"
-              />
-            </label>
+        <div className="space-y-3">
+          {preventiviCliente.map((preventivo) => (
+            <Link
+              key={preventivo.id}
+              to={routePreventivo(preventivo.id)}
+              className="pro-panel p-4 flex items-center gap-3 hover:border-yellow-300/40 transition"
+            >
+              <div className="w-10 h-10 rounded-[12px] bg-yellow-400 text-slate-950 flex items-center justify-center shrink-0">
+                <FileText size={18} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-black">{preventivo.numero || "PREV-000"}</p>
+                <p className="text-slate-400 text-sm mt-0.5">{preventivo.data}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-xs text-slate-400">{preventivo.stato}</p>
+                <p className="font-black text-emerald-300 mt-0.5">
+                  {formatEuro(preventivo.totale)}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
 
-            <label className="block">
-              <span className="text-sm text-slate-400">Email</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="mt-2 input-pro"
-              />
-            </label>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                onClick={salvaCliente}
-                className="btn-primary p-4 flex items-center justify-center gap-2"
+      {/* Cantieri collegati */}
+      {cantieriCliente.length > 0 && (
+        <div className="mb-5">
+          <h2 className="text-lg font-black mb-4">Cantieri</h2>
+          <div className="space-y-3">
+            {cantieriCliente.map((cantiere) => (
+              <Link
+                key={cantiere.id}
+                to={routeCantiere(cantiere.id)}
+                className="pro-panel p-4 flex items-center gap-3 hover:border-yellow-300/40 transition"
               >
-                <Save size={19} />
-                Salva cliente
-              </button>
+                <div className="w-10 h-10 rounded-[12px] bg-slate-700 flex items-center justify-center shrink-0">
+                  <HardHat size={18} className="text-yellow-300" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-black truncate">{cantiere.nome}</p>
+                  <p className="text-slate-400 text-sm mt-0.5">{cantiere.stato}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
+      {/* Elimina cliente */}
+      <div className="pro-panel p-5 mb-6 border-red-400/20">
+        <h2 className="text-lg font-black mb-3 text-red-300">Zona pericolosa</h2>
+        {!confermaElimina ? (
+          <button
+            onClick={() => setConfermaElimina(true)}
+            className="btn-danger w-full py-3.5 flex items-center justify-center gap-2 font-black"
+          >
+            <Trash2 size={18} />
+            Elimina cliente
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-300">
+              Eliminare <strong>{cliente.nome}</strong>? I preventivi già creati resteranno nell'archivio.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setConfermaElimina(false)}
+                className="btn-secondary py-3.5 font-black"
+              >
+                Annulla
+              </button>
               <button
                 onClick={eliminaCliente}
-                className="rounded-[14px] border border-red-400/25 bg-red-500/10 p-4 font-black text-red-100 flex items-center justify-center gap-2"
+                className="btn-danger py-3.5 font-black"
               >
-                <Trash2 size={19} />
                 Elimina
               </button>
             </div>
-
           </div>
-
-        </div>
-
-        <div className="pro-panel p-5">
-
-          <Wallet size={24} className="text-emerald-300 mb-4" />
-
-          <p className="text-slate-400">
-
-            Totale lavori
-
-          </p>
-
-          <h2 className="text-4xl font-black mt-2">
-
-            {formatEuro(totaleLavori)}
-
-          </h2>
-
-        </div>
-
+        )}
       </div>
-
-      <div>
-
-        <h2 className="text-2xl font-black mb-5">
-
-          Preventivi Cliente
-
-        </h2>
-
-        <div className="space-y-4">
-
-          {preventiviCliente.length === 0 && (
-
-            <div className="pro-panel p-6 text-slate-400 text-center">
-
-              Nessun preventivo collegato a questo cliente.
-
-            </div>
-
-          )}
-
-          {preventiviCliente.map(
-            (preventivo) => (
-
-              <Link
-                key={preventivo.id}
-                to={routePreventivo(preventivo.id)}
-                className="pro-panel p-5 block hover:border-yellow-300/40 transition"
-              >
-
-                <div className="flex items-center justify-between">
-
-                  <div className="flex items-center gap-3">
-
-                    <div className="w-12 h-12 rounded-[14px] bg-yellow-400 text-slate-950 flex items-center justify-center">
-
-                      <FileText size={21} />
-
-                    </div>
-
-                    <div>
-
-                      <h3 className="text-xl font-black">
-
-                        {preventivo.numero || "PREV-000"}
-
-                      </h3>
-
-                      <p className="text-slate-400 mt-1">
-
-                        {preventivo.data}
-
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                  <div className="text-right">
-
-                    <p className="text-sm text-slate-400">
-
-                      {preventivo.stato}
-
-                    </p>
-
-                    <h2 className="text-2xl font-black mt-1 text-emerald-300">
-
-                      {formatEuro(preventivo.totale)}
-
-                    </h2>
-
-                  </div>
-
-                </div>
-
-              </Link>
-
-            )
-          )}
-
-        </div>
-
-      </div>
-
     </div>
-
   );
-
 }

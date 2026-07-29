@@ -6,7 +6,7 @@ import {
   Sparkles,
   Zap,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { ROUTES, routePreventivo } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
@@ -116,7 +116,22 @@ const FORM_INIZIALE = {
 export default function PreventivoIntelligente() {
   const baseId = useId();
   const navigate = useNavigate();
-  const [form, setForm] = useState(FORM_INIZIALE);
+  const [searchParams] = useSearchParams();
+
+  const clienteIdParam = searchParams.get("clienteId");
+
+  const [form, setForm] = useState(() => {
+    if (clienteIdParam) {
+      try {
+        const clienti = JSON.parse(localStorage.getItem("clienti") || "[]");
+        const c = clienti.find((x) => String(x.id) === clienteIdParam);
+        if (c) return { ...FORM_INIZIALE, cliente: c.nome || "" };
+      } catch {
+        // silent
+      }
+    }
+    return FORM_INIZIALE;
+  });
   const [proposal, setProposal] = useState(null);
   const [errore, setErrore] = useState("");
   const [ragionamentoAperto, setRagionamentoAperto] = useState(false);

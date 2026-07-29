@@ -1,11 +1,11 @@
 import {
   Home,
-  FileText,
   HardHat,
   Settings,
-  List,
   Users,
-  Wallet,
+  CalendarDays,
+  FileText,
+  List,
 } from "lucide-react";
 
 import { Link, useLocation } from "react-router-dom";
@@ -21,15 +21,9 @@ const MENU_COMPLETO = [
     icon: Home,
   },
   {
-    // Lista ufficiale documenti; il wizard resta su /preventivi (azioni Dashboard).
-    nome: "Preventivi",
-    path: ROUTES.archivio,
-    icon: FileText,
-  },
-  {
-    nome: "Incassi",
-    path: ROUTES.incassi,
-    icon: Wallet,
+    nome: "Clienti",
+    path: ROUTES.clienti,
+    icon: Users,
   },
   {
     nome: "Cantieri",
@@ -37,14 +31,9 @@ const MENU_COMPLETO = [
     icon: HardHat,
   },
   {
-    nome: "Clienti",
-    path: ROUTES.clienti,
-    icon: Users,
-  },
-  {
-    nome: "Listino",
-    path: ROUTES.listino,
-    icon: List,
+    nome: "Agenda",
+    path: ROUTES.agenda,
+    icon: CalendarDays,
   },
   {
     nome: "Altro",

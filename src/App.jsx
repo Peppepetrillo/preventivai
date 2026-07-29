@@ -29,6 +29,9 @@ const Sopralluogo = lazy(() => import("./pages/Sopralluogo"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
 const DettaglioPreventivo = lazy(() => import("./pages/DettaglioPreventivo"));
 const DettaglioCliente = lazy(() => import("./pages/DettaglioCliente"));
+const ScelgaModalitaPreventivo = lazy(() => import("./pages/ScelgaModalitaPreventivo"));
+const PreventivoManuale = lazy(() => import("./pages/PreventivoManuale"));
+const Agenda = lazy(() => import("./pages/Agenda"));
 
 function LoadingPage() {
   return (
@@ -128,6 +131,21 @@ export default function App() {
               element={
                 <DettaglioCliente />
               }
+            />
+
+            <Route
+              path={ROUTES.nuovoPreventivo}
+              element={<ScelgaModalitaPreventivo />}
+            />
+
+            <Route
+              path={ROUTES.preventivoManuale}
+              element={<PreventivoManuale />}
+            />
+
+            <Route
+              path={ROUTES.agenda}
+              element={<Agenda />}
             />
 
             <Route

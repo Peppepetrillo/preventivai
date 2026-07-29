@@ -9,6 +9,19 @@ vi.mock("../../../services/cloudSyncService", () => ({
   salvaDatoCloud: vi.fn(),
 }));
 
+vi.mock("../services/cantieriFotoService", () => ({
+  apriFotoCantiere: vi.fn(),
+  eliminaStorageFotoCantiere: vi.fn(),
+  eliminaStorageFotoCantieri: vi.fn(),
+  fileFotoValido: vi.fn(() => true),
+  preparaFotoCantiere: vi.fn(async (file) => ({
+    id: "foto-1",
+    nome: file.name,
+    src: "blob://foto",
+    miniatura: "blob://thumb",
+  })),
+}));
+
 describe("useCantieri", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -29,6 +42,8 @@ describe("useCantieri", () => {
     expect(result.current.cantiereSelezionato.nome).toBe("Ristrutturazione");
     expect(result.current.messaggio).toBe("Cantiere creato sul dispositivo.");
     expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.cantieri))).toHaveLength(1);
+    expect(result.current.cantiereSelezionato.diario).toHaveLength(1);
+    expect(result.current.cantiereSelezionato.diario[0].title).toBe("Cantiere creato");
   });
 
   it("aggiunge una voce checklist al cantiere selezionato", () => {
@@ -50,6 +65,13 @@ describe("useCantieri", () => {
     expect(result.current.cantiereSelezionato.checklist).toHaveLength(1);
     expect(result.current.cantiereSelezionato.checklist[0].testo).toBe("Misurare pareti");
     expect(result.current.nuovaChecklist).toBe("");
+    expect(
+      result.current.cantiereSelezionato.diario.some(
+        (evento) =>
+          evento.title === "Checklist" &&
+          String(evento.description).includes("Misurare pareti")
+      )
+    ).toBe(true);
   });
 
   it("seleziona il cantiere iniziale quando viene passato un id", () => {
@@ -102,6 +124,60 @@ describe("useCantieri", () => {
 
     expect(result.current.cantiereSelezionato.stato).toBe("In corso");
     expect(result.current.messaggio).toBe("Lavoro avviato.");
+    expect(
+      result.current.cantiereSelezionato.diario.some(
+        (evento) => evento.title === "Cantiere avviato"
+      )
+    ).toBe(true);
+  });
+
+  it("aggiunge una nota manuale al diario", () => {
+    const { result } = renderHook(() => useCantieri());
+
+    act(() => {
+      result.current.aggiornaCampoNuovoCantiere("nome", "Impianto villa");
+    });
+    act(() => {
+      result.current.aggiungiCantiere();
+    });
+    act(() => {
+      result.current.aggiungiNotaDiario("Cliente preferisce LED caldi");
+    });
+
+    expect(
+      result.current.cantiereSelezionato.diario.some(
+        (evento) =>
+          evento.title === "Nota" &&
+          evento.description === "Cliente preferisce LED caldi"
+      )
+    ).toBe(true);
+  });
+
+  it("genera un evento quando viene aggiunta una foto", async () => {
+    const { result } = renderHook(() => useCantieri());
+
+    act(() => {
+      result.current.aggiornaCampoNuovoCantiere("nome", "Impianto villa");
+    });
+    act(() => {
+      result.current.aggiungiCantiere();
+    });
+
+    await act(async () => {
+      await result.current.aggiungiFoto({
+        target: {
+          files: [{ name: "quadro.jpg", type: "image/jpeg" }],
+          value: "fake",
+        },
+      });
+    });
+
+    expect(result.current.cantiereSelezionato.foto).toHaveLength(1);
+    expect(
+      result.current.cantiereSelezionato.diario.some(
+        (evento) => evento.title === "Foto aggiunta"
+      )
+    ).toBe(true);
   });
 
   it("vincola la selezione all'id URL (cantiereId) senza fallback", () => {

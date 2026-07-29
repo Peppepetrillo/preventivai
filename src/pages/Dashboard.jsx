@@ -30,7 +30,7 @@ import {
 const AZIONI_RAPIDE = [
   {
     titolo: "Nuovo Preventivo",
-    link: ROUTES.preventivoIntelligente,
+    link: ROUTES.nuovoPreventivo,
     icon: Plus,
     primario: true,
   },

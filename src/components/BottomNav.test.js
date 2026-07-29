@@ -9,6 +9,7 @@ describe("BottomNav isVoceAttiva RC-2B", () => {
   const voceArchivio = { path: ROUTES.archivio };
   const vocePreventivi = { path: ROUTES.preventivi };
   const voceClienti = { path: ROUTES.clienti };
+  const voceAgenda = { path: ROUTES.agenda };
 
   it("evidenzia Cantieri su lista e dettaglio", () => {
     expect(isVoceAttiva({ pathname: "/cantieri" }, voceCantieri)).toBe(true);
@@ -36,5 +37,10 @@ describe("BottomNav isVoceAttiva RC-2B", () => {
   it("evidenzia Clienti sul dettaglio cliente", () => {
     expect(isVoceAttiva({ pathname: "/cliente/3" }, voceClienti)).toBe(true);
     expect(isVoceAttiva({ pathname: "/" }, voceClienti)).toBe(false);
+  });
+
+  it("evidenzia Agenda solo sulla route agenda", () => {
+    expect(isVoceAttiva({ pathname: "/agenda" }, voceAgenda)).toBe(true);
+    expect(isVoceAttiva({ pathname: "/cantieri" }, voceAgenda)).toBe(false);
   });
 });

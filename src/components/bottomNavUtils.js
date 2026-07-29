@@ -25,6 +25,10 @@ export function isVoceAttiva(location, item) {
     return path.startsWith("/cliente/");
   }
 
+  if (item.path === ROUTES.agenda) {
+    return path === ROUTES.agenda;
+  }
+
   if (item.path === ROUTES.archivio || item.path === ROUTES.preventivi) {
     return (
       path === ROUTES.archivio ||
