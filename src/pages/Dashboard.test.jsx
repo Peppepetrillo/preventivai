@@ -56,7 +56,7 @@ describe("Dashboard Home 2.0", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Suggerimenti PreventivAI/i)).toBeInTheDocument();
     expect(screen.getAllByText("Rossi").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Materiale da comprare").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Da comprare oggi/i)).toBeInTheDocument();
     expect(screen.getByText("09:30")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /Nuovo Preventivo/i })

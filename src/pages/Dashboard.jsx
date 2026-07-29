@@ -12,6 +12,8 @@ import PageWrapper from "../components/PageWrapper";
 import { ROUTES } from "../app/routes";
 import GiornataCard from "../features/agenda/components/GiornataCard";
 import { preparaAnteprimaGiornata } from "../features/agenda/giornataSelectors";
+import { leggiAttivita } from "../domain/attivita";
+import { leggiListaSpesa } from "../domain/listaSpesa";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import { leggiCantieri } from "../repositories/cantieriRepository";
 import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
@@ -50,14 +52,22 @@ const AZIONI_RAPIDE = [
 
 /**
  * Home 2.0 — punto di partenza della giornata lavorativa.
- * Solo UI: nessun cambio repository / persistenza / business logic.
  */
 export default function Dashboard() {
   const [datiAzienda] = useDatiLocaliSincronizzati(leggiDatiAzienda);
   const [cantieri] = useDatiLocaliSincronizzati(leggiCantieri);
   const [preventivi] = useDatiLocaliSincronizzati(leggiPreventivi);
+  const [attivita] = useDatiLocaliSincronizzati(leggiAttivita);
+  const [listaSpesa] = useDatiLocaliSincronizzati(leggiListaSpesa);
 
-  const giornata = useMemo(() => preparaAnteprimaGiornata(cantieri), [cantieri]);
+  const giornata = useMemo(
+    () =>
+      preparaAnteprimaGiornata(cantieri, new Date(), 5, {
+        attivita,
+        listaSpesa,
+      }),
+    [cantieri, attivita, listaSpesa]
+  );
   const attenzioni = useMemo(
     () => selezionaAttenzioni({ cantieri, preventivi, massimo: 3 }),
     [cantieri, preventivi]
@@ -100,7 +110,6 @@ export default function Dashboard() {
 
         <GiornataCard riepilogo={giornata} />
 
-        {/* Card — ATTENZIONE */}
         <section
           className="pro-panel p-5"
           aria-labelledby="home-attenzione-title"
@@ -147,7 +156,6 @@ export default function Dashboard() {
           )}
         </section>
 
-        {/* Card 3 — AZIONI RAPIDE */}
         <section aria-labelledby="home-azioni-title">
           <h2
             id="home-azioni-title"
@@ -174,7 +182,6 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* Card 4 — CONTINUA */}
         <section
           className="pro-panel p-5"
           aria-labelledby="home-continua-title"

@@ -9,6 +9,9 @@ export const NOTIFICATION_TYPES = Object.freeze({
   REMINDER_MATERIALI: "reminder-materiali",
   REMINDER_PAGAMENTO: "reminder-pagamento",
   REMINDER_CHECKLIST: "reminder-checklist",
+  REMINDER_ATTIVITA: "reminder-attivita",
+  REMINDER_SPESA: "reminder-spesa",
+  REMINDER_GENERICO: "reminder-generico",
 });
 
 export const NOTIFICATION_STATUS = Object.freeze({
@@ -25,31 +28,55 @@ export const NOTIFICATION_STATUS = Object.freeze({
  * @property {string} messaggio
  * @property {string|Date=} scheduledAt
  * @property {string=} lavoroId
+ * @property {string=} attivitaId
+ * @property {string=} spesaId
  * @property {string} stato
  */
 
-function creaIdNotifica(type, lavoroId = "") {
-  return `${type}-${lavoroId || "globale"}-${Date.now()}`;
+/**
+ * Adapter opzionale per push nativo (Capacitor / Web Push).
+ * @typedef {Object} NotificationAdapter
+ * @property {(plan: NotificationPlan) => Promise<void>=} schedule
+ * @property {(id: string) => Promise<void>=} cancel
+ */
+
+function creaIdNotifica(type, riferimento = "") {
+  return `${type}-${riferimento || "globale"}-${Date.now()}`;
 }
 
 export class NotificationService {
-  constructor() {
+  /**
+   * @param {NotificationAdapter|null} adapter
+   */
+  constructor(adapter = null) {
     /** @type {NotificationPlan[]} */
     this.pianificate = [];
+    this.adapter = adapter;
   }
 
   /**
-   * Pianifica una notifica (solo struttura, nessun invio reale).
+   * Pianifica una notifica (solo struttura, nessun invio reale senza adapter).
    * @param {Omit<NotificationPlan, "id"|"stato"> & { id?: string }} notification
-   * @returns {NotificationPlan}
+   * @returns {Promise<NotificationPlan>|NotificationPlan}
    */
   schedule(notification) {
     const piano = {
-      id: notification.id || creaIdNotifica(notification.type, notification.lavoroId),
+      id:
+        notification.id ||
+        creaIdNotifica(
+          notification.type,
+          notification.lavoroId ||
+            notification.attivitaId ||
+            notification.spesaId ||
+            ""
+        ),
       stato: NOTIFICATION_STATUS.PIANIFICATA,
       ...notification,
     };
     this.pianificate.push(piano);
+    if (this.adapter?.schedule) {
+      return Promise.resolve(this.adapter.schedule(piano)).then(() => piano);
+    }
     return piano;
   }
 
@@ -63,6 +90,9 @@ export class NotificationService {
       ...this.pianificate[idx],
       stato: NOTIFICATION_STATUS.ANNULLATA,
     };
+    if (this.adapter?.cancel) {
+      void this.adapter.cancel(id);
+    }
     return this.pianificate[idx];
   }
 
@@ -141,6 +171,83 @@ export class NotificationService {
     }
 
     return piani;
+  }
+
+  /**
+   * Piano notifiche per un'attività agenda.
+   * @param {object} attivita
+   * @returns {NotificationPlan[]}
+   */
+  planForActivity(attivita = {}) {
+    const piani = [];
+    const base = { attivitaId: String(attivita.id || "") };
+
+    if (attivita.reminder || attivita.ora) {
+      piani.push(
+        this.schedule({
+          ...base,
+          type: NOTIFICATION_TYPES.REMINDER_ATTIVITA,
+          titolo: attivita.titolo || "Attività",
+          messaggio: attivita.ora
+            ? `Ricorda alle ${attivita.ora}: ${attivita.titolo || "attività"}.`
+            : `Ricorda: ${attivita.titolo || "attività"}.`,
+          scheduledAt: attivita.data,
+        })
+      );
+    }
+
+    if (attivita.priorita === "alta") {
+      piani.push(
+        this.schedule({
+          ...base,
+          type: NOTIFICATION_TYPES.REMINDER_ATTIVITA,
+          titolo: "Attività urgente",
+          messaggio: `${attivita.titolo || "Attività"} ha priorità alta.`,
+        })
+      );
+    }
+
+    return piani;
+  }
+
+  /**
+   * Piano notifiche per lista spesa / materiali da comprare.
+   * @param {object[]|object} shopping
+   * @returns {NotificationPlan[]}
+   */
+  planForShopping(shopping = []) {
+    const voci = Array.isArray(shopping)
+      ? shopping
+      : shopping.voci || shopping.items || [];
+    if (voci.length === 0) return [];
+
+    const piano = this.schedule({
+      type: NOTIFICATION_TYPES.REMINDER_SPESA,
+      titolo: "Materiale da comprare",
+      messaggio:
+        voci.length === 1
+          ? `Compra: ${voci[0].nome || "1 materiale"}.`
+          : `${voci.length} materiali da acquistare oggi.`,
+      spesaId: String(shopping.id || voci[0]?.id || ""),
+    });
+
+    return [piano];
+  }
+
+  /**
+   * Reminder generico (promemoria manuale).
+   * @param {{ titolo?: string, messaggio?: string, scheduledAt?: string|Date, attivitaId?: string }} input
+   * @returns {NotificationPlan[]}
+   */
+  planForReminder(input = {}) {
+    const piano = this.schedule({
+      type: NOTIFICATION_TYPES.REMINDER_GENERICO,
+      titolo: input.titolo || "Promemoria",
+      messaggio: input.messaggio || input.titolo || "Hai un promemoria.",
+      scheduledAt: input.scheduledAt,
+      attivitaId: input.attivitaId ? String(input.attivitaId) : "",
+    });
+    return [piano];
   }
 }
 

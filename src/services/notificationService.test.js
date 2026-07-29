@@ -54,4 +54,29 @@ describe("notificationService", () => {
     expect(annullata?.stato).toBe("annullata");
     expect(service.listPianificate()).toHaveLength(0);
   });
+
+  it("pianifica reminder per attività, spesa e promemoria", () => {
+    const attivita = service.planForActivity({
+      id: "a1",
+      titolo: "Chiama fornitore",
+      ora: "10:00",
+      reminder: true,
+      priorita: "alta",
+    });
+    expect(attivita.length).toBeGreaterThanOrEqual(1);
+    expect(attivita[0].type).toBe(NOTIFICATION_TYPES.REMINDER_ATTIVITA);
+
+    const spesa = service.planForShopping([
+      { id: "s1", nome: "Magnetotermico" },
+      { id: "s2", nome: "Differenziale" },
+    ]);
+    expect(spesa).toHaveLength(1);
+    expect(spesa[0].type).toBe(NOTIFICATION_TYPES.REMINDER_SPESA);
+
+    const reminder = service.planForReminder({
+      titolo: "Ricorda fattura",
+      messaggio: "Invia fattura Rossi",
+    });
+    expect(reminder[0].type).toBe(NOTIFICATION_TYPES.REMINDER_GENERICO);
+  });
 });

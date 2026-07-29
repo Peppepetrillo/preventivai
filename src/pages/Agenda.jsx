@@ -1,9 +1,16 @@
-import { CalendarDays } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
-import AgendaGiornoNav from "../features/agenda/components/AgendaGiornoNav";
+import { aggiungiInsight } from "../domain/insights";
+import { notificationService } from "../services/notificationService";
+import AgendaHeader from "../features/agenda/components/AgendaHeader";
 import AgendaPreparazioneCard from "../features/agenda/components/AgendaPreparazioneCard";
-import AgendaTimeline from "../features/agenda/components/AgendaTimeline";
+import AgendaToolbar from "../features/agenda/components/AgendaToolbar";
+import AttivitaFormSheet from "../features/agenda/components/AttivitaFormSheet";
+import InsightRapidoSheet from "../features/agenda/components/InsightRapidoSheet";
+import {
+  AgendaGiornoContenuto,
+  default as AgendaSettimanaView,
+} from "../features/agenda/components/AgendaSettimanaView";
 import { useAgenda } from "../features/agenda/hooks/useAgenda";
 import { aggiungiGiorni } from "../features/agenda/agendaSelectors";
 
@@ -13,15 +20,30 @@ export default function Agenda() {
   const {
     giorno,
     oggi,
+    vista,
+    cambiaVista,
     lavori,
+    attivita,
+    settimana,
+    attivitaPerGiorno,
     riepilogoPreparazione,
     completamentoId,
+    dataDefaultAttivita,
     segnaCompletato,
+    creaAttivita,
+    aggiornaAttivita,
+    completaAttivita,
+    eliminaAttivita,
     vaiGiornoPrecedente,
     vaiGiornoSuccessivo,
     vaiOggi,
     setGiorno,
   } = useAgenda();
+
+  const [formAperto, setFormAperto] = useState(false);
+  const [attivitaInModifica, setAttivitaInModifica] = useState(null);
+  const [insightAperto, setInsightAperto] = useState(false);
+  const [insightContesto, setInsightContesto] = useState(null);
   const touchStart = useRef(null);
 
   function onTouchStart(event) {
@@ -32,7 +54,7 @@ export default function Agenda() {
   }
 
   function onTouchEnd(event) {
-    if (!touchStart.current) return;
+    if (!touchStart.current || vista === "settimana") return;
     const dx = event.changedTouches[0].clientX - touchStart.current.x;
     const dy = event.changedTouches[0].clientY - touchStart.current.y;
     touchStart.current = null;
@@ -42,41 +64,97 @@ export default function Agenda() {
     else setGiorno((g) => aggiungiGiorni(g, 1));
   }
 
+  function apriNuovaAttivita() {
+    setAttivitaInModifica(null);
+    setFormAperto(true);
+  }
+
+  function salvaAttivita(form) {
+    if (attivitaInModifica?.id) {
+      aggiornaAttivita(attivitaInModifica.id, form);
+    } else {
+      const creata = creaAttivita({
+        ...form,
+        data: form.data || dataDefaultAttivita,
+      });
+      if (creata.reminder) {
+        notificationService.planForActivity(creata);
+      }
+    }
+    setAttivitaInModifica(null);
+  }
+
+  function apriInsight(lavoro) {
+    setInsightContesto({
+      cantiereId: lavoro.id,
+      lavoroId: lavoro.id,
+      cliente: lavoro.cliente,
+      titolo: lavoro.titolo,
+    });
+    setInsightAperto(true);
+  }
+
   return (
     <div
-      className="pro-page text-white"
+      className="pro-page text-white pb-24"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <AgendaGiornoNav
+      <AgendaHeader
+        vista={vista}
+        onCambiaVista={cambiaVista}
         giorno={giorno}
         oggi={oggi}
         onGiornoPrecedente={vaiGiornoPrecedente}
         onOggi={vaiOggi}
         onGiornoSuccessivo={vaiGiornoSuccessivo}
+        nascondiNavGiorno={vista === "settimana"}
       />
 
-      <AgendaPreparazioneCard riepilogo={riepilogoPreparazione} />
+      {vista !== "settimana" ? (
+        <AgendaPreparazioneCard riepilogo={riepilogoPreparazione} />
+      ) : null}
 
-      {lavori.length === 0 ? (
-        <div className="ds-empty pro-panel p-8 text-center">
-          <CalendarDays
-            size={32}
-            className="mx-auto text-slate-500 mb-3"
-            aria-hidden="true"
-          />
-          <p className="font-black">Nessun intervento</p>
-          <p className="ds-text-secondary mt-1">
-            Non ci sono lavori programmati per questo giorno.
-          </p>
-        </div>
+      {vista === "settimana" ? (
+        <AgendaSettimanaView
+          giorni={settimana}
+          attivitaPerGiorno={attivitaPerGiorno}
+        />
       ) : (
-        <AgendaTimeline
+        <AgendaGiornoContenuto
           lavori={lavori}
+          attivita={attivita}
           onSegnaCompletato={segnaCompletato}
           completamentoId={completamentoId}
+          onCompletaAttivita={completaAttivita}
+          onModificaAttivita={(item) => {
+            setAttivitaInModifica(item);
+            setFormAperto(true);
+          }}
+          onEliminaAttivita={eliminaAttivita}
+          onInsight={apriInsight}
         />
       )}
+
+      <AgendaToolbar onNuovaAttivita={apriNuovaAttivita} />
+
+      <AttivitaFormSheet
+        aperto={formAperto}
+        onChiudi={() => {
+          setFormAperto(false);
+          setAttivitaInModifica(null);
+        }}
+        onSalva={salvaAttivita}
+        attivita={attivitaInModifica}
+        dataDefault={dataDefaultAttivita}
+      />
+
+      <InsightRapidoSheet
+        aperto={insightAperto}
+        onChiudi={() => setInsightAperto(false)}
+        contesto={insightContesto || {}}
+        onSalva={(dati) => aggiungiInsight(dati)}
+      />
     </div>
   );
 }

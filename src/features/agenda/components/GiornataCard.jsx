@@ -5,8 +5,9 @@ import {
   ChevronRight,
   Clock,
   MapPin,
-  Package,
+  Phone,
   ShoppingCart,
+  Square,
   Wallet,
 } from "lucide-react";
 
@@ -22,12 +23,14 @@ export default function GiornataCard({ riepilogo }) {
 
   const {
     lavori = [],
+    attivita = [],
     totaleLavori = 0,
+    totaleAttivita = 0,
     orePreviste,
     materialiDaComprare = [],
-    materialiDaPortare = [],
+    telefonate = [],
     pagamentiPrevisti = [],
-    lavoriUrgenti = [],
+    urgenze = [],
     haContenuto,
   } = riepilogo;
 
@@ -60,103 +63,149 @@ export default function GiornataCard({ riepilogo }) {
         </p>
       ) : (
         <div className="mt-5 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-3">
               <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
-                Lavori oggi
+                Lavori
               </p>
               <p className="text-2xl font-black mt-1">{totaleLavori}</p>
             </div>
             <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                Attività
+              </p>
+              <p className="text-2xl font-black mt-1">{totaleAttivita}</p>
+            </div>
+            <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-3">
               <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 flex items-center gap-1">
                 <Clock size={12} />
-                Ore previste
+                Ore
               </p>
-              <p className="text-2xl font-black mt-1">{orePreviste?.label || "—"}</p>
+              <p className="text-xl font-black mt-1">{orePreviste?.label || "—"}</p>
             </div>
           </div>
 
           {lavori.length > 0 ? (
-            <ul className="space-y-3">
-              {lavori.map((lavoro) => {
-                const IconaTipo = iconaTipoLavoro(lavoro.tipoLavoro);
-                return (
-                  <li key={lavoro.id}>
-                    <Link
-                      to={lavoro.link}
-                      className="flex items-center gap-3 rounded-[16px] border border-white/12 bg-black/[0.22] p-4 min-h-[72px] active:scale-[0.99] transition-transform"
-                      aria-label={`Apri lavoro ${lavoro.cliente || lavoro.titolo}`}
-                    >
-                      <div
-                        className={`w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 ${classeIconaTipoLavoro(lavoro.tipoLavoro)}`}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2">
+                Lavori
+              </p>
+              <ul className="space-y-3">
+                {lavori.map((lavoro) => {
+                  const IconaTipo = iconaTipoLavoro(lavoro.tipoLavoro);
+                  return (
+                    <li key={lavoro.id}>
+                      <Link
+                        to={lavoro.link}
+                        className="flex items-center gap-3 rounded-[16px] border border-white/12 bg-black/[0.22] p-4 min-h-[72px] active:scale-[0.99] transition-transform"
+                        aria-label={`Apri lavoro ${lavoro.cliente || lavoro.titolo}`}
                       >
-                        <IconaTipo size={18} aria-hidden="true" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        {lavoro.orario ? (
-                          <p className="text-xs font-bold uppercase tracking-wide text-yellow-200 tabular-nums">
-                            {lavoro.orario}
-                            {lavoro.durataStimataLabel
-                              ? ` · ${lavoro.durataStimataLabel}`
-                              : ""}
+                        <div
+                          className={`w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 ${classeIconaTipoLavoro(lavoro.tipoLavoro)}`}
+                        >
+                          <IconaTipo size={18} aria-hidden="true" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          {lavoro.orario ? (
+                            <p className="text-xs font-bold uppercase tracking-wide text-yellow-200 tabular-nums">
+                              {lavoro.orario}
+                              {lavoro.durataStimataLabel
+                                ? ` · ${lavoro.durataStimataLabel}`
+                                : ""}
+                            </p>
+                          ) : null}
+                          <p className="text-base font-bold text-white truncate mt-0.5">
+                            {lavoro.cliente || lavoro.titolo}
                           </p>
-                        ) : null}
-                        <p className="text-base font-bold text-white truncate mt-0.5">
-                          {lavoro.cliente || lavoro.titolo}
-                        </p>
-                        <p className="text-[11px] text-slate-500 uppercase tracking-wide">
-                          {lavoro.tipoLavoroLabel} · {lavoro.statoLabel}
-                        </p>
-                        {lavoro.indirizzo ? (
-                          <p className="text-sm text-slate-400 mt-1 flex items-start gap-1.5">
-                            <MapPin
-                              size={14}
-                              className="shrink-0 mt-0.5 text-slate-500"
-                              aria-hidden="true"
-                            />
-                            <span className="line-clamp-2">{lavoro.indirizzo}</span>
-                          </p>
-                        ) : null}
-                      </div>
-                      <ChevronRight
-                        size={22}
-                        className="text-yellow-200 shrink-0"
-                        strokeWidth={2.5}
-                        aria-hidden="true"
-                      />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+                          {lavoro.indirizzo ? (
+                            <p className="text-sm text-slate-400 mt-1 flex items-start gap-1.5">
+                              <MapPin
+                                size={14}
+                                className="shrink-0 mt-0.5 text-slate-500"
+                                aria-hidden="true"
+                              />
+                              <span className="line-clamp-2">{lavoro.indirizzo}</span>
+                            </p>
+                          ) : null}
+                        </div>
+                        <ChevronRight
+                          size={22}
+                          className="text-yellow-200 shrink-0"
+                          strokeWidth={2.5}
+                          aria-hidden="true"
+                        />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           ) : null}
 
-          {materialiDaComprare.length > 0 ? (
-            <div className="rounded-[14px] border border-amber-400/20 bg-amber-400/10 p-4">
-              <p className="text-sm font-black text-amber-100 flex items-center gap-2">
-                <ShoppingCart size={16} />
-                Materiale da comprare
+          {attivita.length > 0 ? (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2">
+                Attività
               </p>
-              <ul className="mt-2 space-y-1 text-sm text-amber-50/90">
-                {materialiDaComprare.slice(0, 4).map((m) => (
-                  <li key={m.nome}>
-                    {m.nome} · {m.quantita} {m.unita}
+              <ul className="space-y-2">
+                {attivita.map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex items-center gap-3 rounded-[14px] border border-white/10 bg-black/[0.18] px-4 py-3 min-h-[48px]"
+                  >
+                    <span className="text-yellow-300 font-black text-sm w-12 shrink-0">
+                      {item.ora || "—"}
+                    </span>
+                    <span className="flex-1 text-sm font-semibold truncate">
+                      {item.titolo}
+                    </span>
+                    <span className="ds-badge ds-badge-da-iniziare shrink-0">
+                      {item.categoriaLabel || item.categoria}
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
           ) : null}
 
-          {materialiDaPortare.length > 0 ? (
-            <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
-              <p className="text-sm font-black text-slate-200 flex items-center gap-2">
-                <Package size={16} />
-                Materiale da portare
+          {materialiDaComprare.length > 0 ? (
+            <div className="rounded-[14px] border border-amber-400/20 bg-amber-400/10 p-4">
+              <p className="text-sm font-black text-amber-100 flex items-center gap-2">
+                <ShoppingCart size={16} />
+                Da comprare oggi
               </p>
-              <ul className="mt-2 space-y-1 text-sm text-slate-300">
-                {materialiDaPortare.slice(0, 4).map((m) => (
-                  <li key={m.nome}>
-                    {m.nome} · {m.quantita} {m.unita}
+              <ul className="mt-3 space-y-2">
+                {materialiDaComprare.slice(0, 8).map((m) => (
+                  <li
+                    key={m.id || m.nome}
+                    className="flex items-center gap-3 text-sm text-amber-50/90"
+                  >
+                    <Square
+                      size={16}
+                      className="shrink-0 text-amber-300/70"
+                      aria-hidden="true"
+                    />
+                    <span>
+                      {m.nome}
+                      {m.quantita ? ` · ${m.quantita} ${m.unita || "cad"}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {telefonate.length > 0 ? (
+            <div className="rounded-[14px] border border-blue-400/20 bg-blue-400/10 p-4">
+              <p className="text-sm font-black text-blue-100 flex items-center gap-2">
+                <Phone size={16} />
+                Telefonate
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-blue-50/90">
+                {telefonate.slice(0, 4).map((t) => (
+                  <li key={t.id}>
+                    {t.ora ? `${t.ora} · ` : ""}
+                    {t.titolo}
                   </li>
                 ))}
               </ul>
@@ -167,7 +216,7 @@ export default function GiornataCard({ riepilogo }) {
             <div className="rounded-[14px] border border-emerald-400/20 bg-emerald-400/10 p-4">
               <p className="text-sm font-black text-emerald-100 flex items-center gap-2">
                 <Wallet size={16} />
-                Pagamenti previsti
+                Pagamenti
               </p>
               <ul className="mt-2 space-y-1 text-sm text-emerald-50/90">
                 {pagamentiPrevisti.slice(0, 3).map((p) => (
@@ -184,20 +233,15 @@ export default function GiornataCard({ riepilogo }) {
             </div>
           ) : null}
 
-          {lavoriUrgenti.length > 0 ? (
+          {urgenze.length > 0 ? (
             <div className="rounded-[14px] border border-red-400/20 bg-red-400/10 p-4">
               <p className="text-sm font-black text-red-100 flex items-center gap-2">
                 <AlertTriangle size={16} />
-                Lavori urgenti
+                Urgenze
               </p>
               <ul className="mt-2 space-y-1 text-sm text-red-50/90">
-                {lavoriUrgenti.slice(0, 3).map((l) => (
-                  <li key={l.id}>
-                    {l.cliente || l.titolo}
-                    {l.checklist.length > 0
-                      ? ` · ${l.checklist.length} attività`
-                      : ""}
-                  </li>
+                {urgenze.slice(0, 4).map((u) => (
+                  <li key={u.id}>{u.titolo}</li>
                 ))}
               </ul>
             </div>

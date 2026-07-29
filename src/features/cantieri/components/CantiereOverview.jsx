@@ -1,17 +1,19 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Trash2, ClipboardList, MapPin, Navigation, Phone } from "lucide-react";
+import { Trash2, ClipboardList, Lightbulb, MapPin, Navigation, Phone } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { ROUTES, routePreventivo } from "../../../app/routes";
 import { getCantiereAssistant } from "../../../services/assistantService";
 import { formatEuro, normalizzaNumero } from "../../../utils/preventivi";
 import { ottieniFirma } from "../../../domain/firma";
+import { aggiungiInsight } from "../../../domain/insights";
 import { calcolaTotaleCantiere, ottieniVarianti } from "../../../domain/varianti";
 import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
 import { leggiPreventivi } from "../../../repositories/preventiviRepository";
 import { PreventivAISuggestions } from "../../intelligence";
 import CantiereDiarioSection from "../../diario/components/CantiereDiarioSection";
 import CantiereReportPanel from "../../report/components/CantiereReportPanel";
+import InsightRapidoSheet from "../../agenda/components/InsightRapidoSheet";
 import {
   STATI_CANTIERE,
   calcolaAvanzamentoChecklist,
@@ -71,6 +73,7 @@ export default function CantiereOverview({
   const navigate = useNavigate();
   const [dialogoChiusura, setDialogoChiusura] = useState(null);
   const [confermaElimina, setConfermaElimina] = useState(false);
+  const [insightAperto, setInsightAperto] = useState(false);
   const [preventivi] = useDatiLocaliSincronizzati(leggiPreventivi);
   const sezioneModifica = useRef(null);
   const sezioneChecklist = useRef(null);
@@ -295,6 +298,14 @@ export default function CantiereOverview({
               Naviga
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => setInsightAperto(true)}
+            className="btn-secondary min-h-[48px] px-3 flex items-center justify-center gap-2 text-sm font-bold col-span-2"
+          >
+            <Lightbulb size={18} aria-hidden="true" />
+            Idea
+          </button>
         </div>
 
         {cantiere.preventivoId ? (
@@ -627,6 +638,17 @@ export default function CantiereOverview({
           </div>
         </div>
       ) : null}
+
+      <InsightRapidoSheet
+        aperto={insightAperto}
+        onChiudi={() => setInsightAperto(false)}
+        contesto={{
+          cantiereId: cantiere.id,
+          cliente: cantiere.cliente,
+          titolo: cantiere.nome,
+        }}
+        onSalva={(dati) => aggiungiInsight(dati)}
+      />
     </div>
   );
 }

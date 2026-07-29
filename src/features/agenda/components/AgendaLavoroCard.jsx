@@ -1,4 +1,4 @@
-import { Check, MapPin, Navigation, Phone } from "lucide-react";
+import { Check, Lightbulb, MapPin, Navigation, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { formatEuro } from "../../../utils/preventivi";
@@ -11,6 +11,7 @@ export default function AgendaLavoroCard({
   lavoro,
   onSegnaCompletato,
   completamentoInCorso = false,
+  onInsight,
 }) {
   const telLink = lavoro.telefono
     ? `tel:${lavoro.telefono.replace(/\s/g, "")}`
@@ -39,7 +40,9 @@ export default function AgendaLavoroCard({
               <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mt-1">
                 {lavoro.tipoLavoroLabel}
               </p>
-              <h2 className="ds-card-title mt-0.5 truncate">{lavoro.cliente || lavoro.titolo}</h2>
+              <h2 className="ds-card-title mt-0.5 truncate">
+                {lavoro.cliente || lavoro.titolo}
+              </h2>
               {lavoro.cliente && lavoro.titolo !== lavoro.cliente ? (
                 <p className="ds-text-secondary mt-0.5 truncate">{lavoro.titolo}</p>
               ) : null}
@@ -143,6 +146,17 @@ export default function AgendaLavoroCard({
             Fatto
           </div>
         )}
+
+        {onInsight ? (
+          <button
+            type="button"
+            onClick={() => onInsight(lavoro)}
+            className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black col-span-2"
+          >
+            <Lightbulb size={16} />
+            Idea
+          </button>
+        ) : null}
       </div>
     </article>
   );

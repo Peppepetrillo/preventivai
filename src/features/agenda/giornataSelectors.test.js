@@ -44,4 +44,30 @@ describe("giornataSelectors", () => {
     expect(riepilogo.totaleLavori).toBe(0);
     expect(riepilogo.haContenuto).toBe(false);
   });
+
+  it("include attività e telefonate nel riepilogo", () => {
+    const riepilogo = preparaRiepilogoGiornata([cantiere()], OGGI, {
+      attivita: [
+        {
+          id: "a1",
+          titolo: "Chiama grossista",
+          categoria: "telefonata",
+          priorita: "alta",
+          stato: "da-fare",
+          data: "29/07/2026",
+          ora: "07:30",
+        },
+      ],
+      listaSpesa: [
+        { id: "s1", nome: "Tubo 25", quantita: 5, unita: "m", acquistato: false },
+      ],
+    });
+
+    expect(riepilogo.totaleAttivita).toBe(1);
+    expect(riepilogo.telefonate).toHaveLength(1);
+    expect(riepilogo.materialiDaComprare.map((m) => m.nome)).toEqual(
+      expect.arrayContaining(["Differenziale", "Tubo 25"])
+    );
+    expect(riepilogo.urgenze.length).toBeGreaterThanOrEqual(1);
+  });
 });

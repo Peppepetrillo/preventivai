@@ -33,6 +33,10 @@ export const STORAGE_KEYS = {
   sopralluogoSessionAttiva: "preventivai.sopralluogo.sessionAttiva",
   /** Insight di campo — locale only */
   insights: "preventivai.insights",
+  /** Attività personali/amministrative — locale only */
+  attivita: "preventivai.attivita",
+  /** Lista spesa / materiale da acquistare — locale only */
+  listaSpesa: "preventivai.listaSpesa",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -59,6 +63,8 @@ export const STORAGE_FALLBACKS = {
   [STORAGE_KEYS.sopralluogoSessions]: [],
   [STORAGE_KEYS.sopralluogoSessionAttiva]: null,
   [STORAGE_KEYS.insights]: [],
+  [STORAGE_KEYS.attivita]: [],
+  [STORAGE_KEYS.listaSpesa]: [],
 };
 
 export const APP_DATA_KEYS = {

@@ -4,6 +4,7 @@ export default function AgendaTimeline({
   lavori = [],
   onSegnaCompletato,
   completamentoId = null,
+  onInsight,
 }) {
   if (lavori.length === 0) return null;
 
@@ -33,6 +34,7 @@ export default function AgendaTimeline({
             lavoro={lavoro}
             onSegnaCompletato={onSegnaCompletato}
             completamentoInCorso={completamentoId === lavoro.id}
+            onInsight={onInsight}
           />
         </li>
       ))}

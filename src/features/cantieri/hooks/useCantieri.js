@@ -16,6 +16,7 @@ import {
   preparaFotoCantiere,
 } from "../services/cantieriFotoService";
 import { registraEsperienzaCompletamento } from "../../../services/experienceService";
+import { sincronizzaListaSpesaDaCantiere } from "../../../domain/listaSpesa";
 import {
   completaLavoroDaCantiere,
   sincronizzaVarianteSuPreventivo,
@@ -310,14 +311,20 @@ export function useCantieri({
   function aggiungiMateriale() {
     if (!cantiereSelezionato || !nuovoMateriale.nome.trim()) return;
     const materiale = creaMateriale(nuovoMateriale);
+    const materiali = [
+      ...(cantiereSelezionato.materiali || []),
+      materiale,
+    ];
 
     aggiornaSelezionatoConOpzioni({
-      materiali: [
-        ...(cantiereSelezionato.materiali || []),
-        materiale,
-      ],
+      materiali,
     }, {
       eventi: [creaEventoMaterialeAggiunto(materiale)],
+    });
+
+    sincronizzaListaSpesaDaCantiere({
+      ...cantiereSelezionato,
+      materiali,
     });
     setNuovoMateriale(FORM_MATERIALE_INIZIALE);
   }
