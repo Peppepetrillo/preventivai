@@ -13,6 +13,7 @@ export default function BottomSheet({
   children,
   altezza = "auto",
   descrizione,
+  zIndex = 70,
 }) {
   const titoloId = useId();
   const descrizioneId = useId();
@@ -58,7 +59,10 @@ export default function BottomSheet({
   return (
     <AnimatePresence>
       {open ? (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center">
+        <div
+          className="fixed inset-0 flex items-end justify-center"
+          style={{ zIndex }}
+        >
           <motion.button
             type="button"
             aria-label="Chiudi finestra"

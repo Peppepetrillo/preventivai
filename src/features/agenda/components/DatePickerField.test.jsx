@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import DatePickerField, {
@@ -19,31 +19,17 @@ describe("DatePickerField", () => {
     expect(onChange).toHaveBeenCalledWith("30/07/2026");
   });
 
-  it("apre il date picker nativo al tap su Scegli la data", () => {
+  it("apre il calendario custom al tap su Scegli la data", () => {
     const onChange = vi.fn();
     render(
       <DatePickerField value="29/07/2026" onChange={onChange} oggi={oggi} />
     );
 
-    const input = screen.getByLabelText(/Seleziona una data dal calendario/i);
-    const showPicker = vi.fn();
-    input.showPicker = showPicker;
-
     fireEvent.click(screen.getByRole("button", { name: /Scegli la data/i }));
-    expect(showPicker).toHaveBeenCalledTimes(1);
-  });
-
-  it("fallback a click() se showPicker non è disponibile", () => {
-    const onChange = vi.fn();
-    render(
-      <DatePickerField value="29/07/2026" onChange={onChange} oggi={oggi} />
-    );
-
-    const input = screen.getByLabelText(/Seleziona una data dal calendario/i);
-    const clickSpy = vi.spyOn(input, "click");
-
-    fireEvent.click(screen.getByRole("button", { name: /Scegli la data/i }));
-    expect(clickSpy).toHaveBeenCalled();
+    expect(
+      screen.getByRole("dialog", { name: /Scegli la data/i })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("grid", { name: /Calendario/i })).toBeInTheDocument();
   });
 
   it("propaga la data scelta dal calendario in formato IT", () => {
@@ -52,9 +38,16 @@ describe("DatePickerField", () => {
       <DatePickerField value="29/07/2026" onChange={onChange} oggi={oggi} />
     );
 
-    const input = screen.getByLabelText(/Seleziona una data dal calendario/i);
-    fireEvent.change(input, { target: { value: "2026-08-05" } });
-    expect(onChange).toHaveBeenCalledWith("5/8/2026");
+    fireEvent.click(screen.getByRole("button", { name: /Scegli la data/i }));
+
+    const calendario = screen.getByRole("grid", { name: /Calendario/i });
+    fireEvent.click(
+      within(calendario).getByRole("gridcell", {
+        name: "domenica 5 luglio 2026",
+      })
+    );
+
+    expect(onChange).toHaveBeenCalledWith("05/07/2026");
   });
 
   it("converte formati data IT ↔ ISO", () => {
