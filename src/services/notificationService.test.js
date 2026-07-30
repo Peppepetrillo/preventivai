@@ -55,6 +55,22 @@ describe("notificationService", () => {
     expect(service.listPianificate()).toHaveLength(0);
   });
 
+  it("pianifica reminder con minuti personalizzati", () => {
+    const piani = service.planForLavoro(
+      {
+        id: "c1",
+        titolo: "Intervento",
+        cliente: "Rossi",
+        orario: "10:00",
+        startAt: Date.now() + 3_600_000,
+      },
+      { reminderMinutes: 15 }
+    );
+
+    expect(piani[0].type).toBe(NOTIFICATION_TYPES.REMINDER_15MIN);
+    expect(piani[0].reminderMinutes).toBe(15);
+  });
+
   it("pianifica reminder per attività, spesa e promemoria", () => {
     const attivita = service.planForActivity({
       id: "a1",

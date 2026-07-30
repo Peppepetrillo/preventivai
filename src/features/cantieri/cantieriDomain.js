@@ -5,6 +5,7 @@ export const STATI_CANTIERE = [
   "Da avviare",
   "In corso",
   "In pausa",
+  "Rimandato",
   "Completato",
 ];
 

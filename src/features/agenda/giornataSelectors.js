@@ -87,7 +87,9 @@ export function preparaRiepilogoGiornata(
     (lavoro) =>
       lavoro.urgente ||
       lavoro.stato === "in-corso" ||
-      (lavoro.checklist.length > 0 && lavoro.stato !== "completato")
+      (lavoro.checklist.length > 0 &&
+        lavoro.stato !== "completato" &&
+        lavoro.stato !== "rimandato")
   );
 
   const urgenze = [

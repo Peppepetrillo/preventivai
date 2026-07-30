@@ -1,7 +1,7 @@
 import { routeCantiere } from "../../app/routes";
 import { creaLavoroDaCantiere } from "../lavori/lavoriDomain";
 
-/** @typedef {"programmato"|"in-corso"|"completato"} StatoAgenda */
+/** @typedef {"pianificato"|"programmato"|"in-corso"|"completato"|"rimandato"} StatoAgenda */
 
 /**
  * Normalizza una data a mezzanotte locale.
@@ -67,10 +67,12 @@ export function parseDataAgenda(grezzo) {
  */
 export function leggiDataCantiere(cantiere = {}) {
   const grezzo =
+    cantiere.scheduledDate ||
     cantiere.dataIntervento ||
     cantiere.dataProgrammata ||
     cantiere.dataAppuntamento ||
     cantiere.data ||
+    cantiere.extra?.scheduledDate ||
     cantiere.extra?.dataIntervento ||
     cantiere.extra?.dataProgrammata ||
     cantiere.extra?.data ||
@@ -84,8 +86,10 @@ export function leggiDataCantiere(cantiere = {}) {
  */
 export function leggiOrarioCantiere(cantiere = {}) {
   return String(
-    cantiere.orario ||
+    cantiere.scheduledTime ||
+      cantiere.orario ||
       cantiere.ora ||
+      cantiere.extra?.scheduledTime ||
       cantiere.extra?.orario ||
       cantiere.extra?.ora ||
       ""
@@ -109,8 +113,9 @@ export function minutiOrario(orario) {
  */
 export function statoAgendaDaCantiere(stato) {
   if (stato === "Completato") return "completato";
+  if (stato === "Rimandato") return "rimandato";
   if (stato === "In corso" || stato === "In pausa") return "in-corso";
-  return "programmato";
+  return "pianificato";
 }
 
 /**
@@ -120,7 +125,8 @@ export function statoAgendaDaCantiere(stato) {
 export function etichettaStatoAgenda(stato) {
   if (stato === "completato") return "Completato";
   if (stato === "in-corso") return "In corso";
-  return "Programmato";
+  if (stato === "rimandato") return "Rimandato";
+  return "Pianificato";
 }
 
 /**
@@ -130,6 +136,7 @@ export function etichettaStatoAgenda(stato) {
 export function classeBadgeStatoAgenda(stato) {
   if (stato === "completato") return "ds-badge ds-badge-completato";
   if (stato === "in-corso") return "ds-badge ds-badge-in-corso";
+  if (stato === "rimandato") return "ds-badge ds-badge-sospeso";
   return "ds-badge ds-badge-da-iniziare";
 }
 
@@ -215,8 +222,9 @@ export function selezionaInterventiGiorno(cantieri = [], giorno, oggi = new Date
       if (diffOrario !== 0) return diffOrario;
       const peso = (stato) => {
         if (stato === "in-corso") return 0;
-        if (stato === "programmato") return 1;
-        return 2;
+        if (stato === "pianificato" || stato === "programmato") return 1;
+        if (stato === "rimandato") return 2;
+        return 3;
       };
       return peso(a.stato) - peso(b.stato);
     });

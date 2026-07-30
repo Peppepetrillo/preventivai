@@ -59,8 +59,7 @@ describe("Agenda", () => {
     expect(screen.getByText("Villa Rossi")).toBeInTheDocument();
     expect(screen.getAllByText("08:00").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Portare differenziale/)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /^Lavori$/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /^Attività$/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^Timeline$/i })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /^Oggi$/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Nuovo/i })).toBeInTheDocument();
 

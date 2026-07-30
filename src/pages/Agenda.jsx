@@ -7,6 +7,7 @@ import AgendaPreparazioneCard from "../features/agenda/components/AgendaPreparaz
 import AgendaToolbar from "../features/agenda/components/AgendaToolbar";
 import AttivitaFormSheet from "../features/agenda/components/AttivitaFormSheet";
 import InsightRapidoSheet from "../features/agenda/components/InsightRapidoSheet";
+import NuovoLavoroSheet from "../features/agenda/components/NuovoLavoroSheet";
 import {
   AgendaGiornoContenuto,
   default as AgendaSettimanaView,
@@ -30,6 +31,7 @@ export default function Agenda() {
     completamentoId,
     dataDefaultAttivita,
     segnaCompletato,
+    creaLavoro,
     creaAttivita,
     aggiornaAttivita,
     completaAttivita,
@@ -40,7 +42,8 @@ export default function Agenda() {
     setGiorno,
   } = useAgenda();
 
-  const [formAperto, setFormAperto] = useState(false);
+  const [formAttivitaAperto, setFormAttivitaAperto] = useState(false);
+  const [lavoroSheetAperto, setLavoroSheetAperto] = useState(false);
   const [attivitaInModifica, setAttivitaInModifica] = useState(null);
   const [insightAperto, setInsightAperto] = useState(false);
   const [insightContesto, setInsightContesto] = useState(null);
@@ -66,7 +69,7 @@ export default function Agenda() {
 
   function apriNuovaAttivita() {
     setAttivitaInModifica(null);
-    setFormAperto(true);
+    setFormAttivitaAperto(true);
   }
 
   function salvaAttivita(form) {
@@ -129,19 +132,29 @@ export default function Agenda() {
           onCompletaAttivita={completaAttivita}
           onModificaAttivita={(item) => {
             setAttivitaInModifica(item);
-            setFormAperto(true);
+            setFormAttivitaAperto(true);
           }}
           onEliminaAttivita={eliminaAttivita}
           onInsight={apriInsight}
         />
       )}
 
-      <AgendaToolbar onNuovaAttivita={apriNuovaAttivita} />
+      <AgendaToolbar
+        onNuovoLavoro={() => setLavoroSheetAperto(true)}
+        onNuovaAttivita={apriNuovaAttivita}
+      />
+
+      <NuovoLavoroSheet
+        aperto={lavoroSheetAperto}
+        onChiudi={() => setLavoroSheetAperto(false)}
+        onSalva={creaLavoro}
+        dataDefault={dataDefaultAttivita}
+      />
 
       <AttivitaFormSheet
-        aperto={formAperto}
+        aperto={formAttivitaAperto}
         onChiudi={() => {
-          setFormAperto(false);
+          setFormAttivitaAperto(false);
           setAttivitaInModifica(null);
         }}
         onSalva={salvaAttivita}

@@ -1,6 +1,6 @@
 /** @typedef {"cantiere"|"intervento"|"sopralluogo"|"manutenzione"} TipoLavoro */
 
-/** @typedef {"programmato"|"in-corso"|"completato"} StatoLavoro */
+/** @typedef {"pianificato"|"in-corso"|"completato"|"rimandato"} StatoLavoro */
 
 /**
  * Tipologie di lavoro supportate dall'agenda.

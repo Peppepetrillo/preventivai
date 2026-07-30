@@ -1,15 +1,12 @@
-import { Plus } from "lucide-react";
+import { Plus, CheckSquare, HardHat } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { CheckSquare, HardHat } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
-import { ROUTES } from "../../../app/routes";
 
 /**
  * Pulsante + con scelta Nuovo Lavoro / Nuova Attività
  */
-export default function AgendaToolbar({ onNuovaAttivita }) {
+export default function AgendaToolbar({ onNuovoLavoro, onNuovaAttivita }) {
   const [aperto, setAperto] = useState(false);
 
   return (
@@ -30,14 +27,17 @@ export default function AgendaToolbar({ onNuovaAttivita }) {
         descrizione="Cosa vuoi aggiungere all'agenda?"
       >
         <div className="grid gap-3 pb-2">
-          <Link
-            to={ROUTES.cantieri}
-            onClick={() => setAperto(false)}
+          <button
+            type="button"
+            onClick={() => {
+              setAperto(false);
+              onNuovoLavoro?.();
+            }}
             className="btn-primary min-h-[56px] flex items-center justify-center gap-3 text-base font-black"
           >
             <HardHat size={22} />
             Lavoro
-          </Link>
+          </button>
           <button
             type="button"
             onClick={() => {

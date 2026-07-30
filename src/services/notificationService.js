@@ -5,6 +5,8 @@
 
 export const NOTIFICATION_TYPES = Object.freeze({
   REMINDER_SERATA: "reminder-serata",
+  REMINDER_15MIN: "reminder-15min",
+  REMINDER_30MIN: "reminder-30min",
   REMINDER_60MIN: "reminder-60min",
   REMINDER_MATERIALI: "reminder-materiali",
   REMINDER_PAGAMENTO: "reminder-pagamento",
@@ -12,6 +14,7 @@ export const NOTIFICATION_TYPES = Object.freeze({
   REMINDER_ATTIVITA: "reminder-attivita",
   REMINDER_SPESA: "reminder-spesa",
   REMINDER_GENERICO: "reminder-generico",
+  REMINDER_PERSONALIZZATO: "reminder-personalizzato",
 });
 
 export const NOTIFICATION_STATUS = Object.freeze({
@@ -111,31 +114,72 @@ export class NotificationService {
   /**
    * Genera il piano notifiche per un lavoro dell'agenda.
    * @param {object} lavoro
+   * @param {{ reminderMinutes?: number|null }} [opzioni]
    * @returns {NotificationPlan[]}
    */
-  planForLavoro(lavoro = {}) {
+  planForLavoro(lavoro = {}, opzioni = {}) {
     const piani = [];
     const base = {
       lavoroId: String(lavoro.id || ""),
     };
 
-    piani.push(
-      this.schedule({
-        ...base,
-        type: NOTIFICATION_TYPES.REMINDER_SERATA,
-        titolo: "Domani in cantiere",
-        messaggio: `Preparati per ${lavoro.titolo || lavoro.cliente || "il lavoro di domani"}.`,
-      })
-    );
+    const minuti =
+      opzioni.reminderMinutes ??
+      lavoro.reminderMinutes ??
+      (lavoro.reminderEnabled ? 60 : null);
 
-    piani.push(
-      this.schedule({
-        ...base,
-        type: NOTIFICATION_TYPES.REMINDER_60MIN,
-        titolo: "Tra un'ora",
-        messaggio: `Intervento alle ${lavoro.orario || "—"}: ${lavoro.cliente || lavoro.titolo}.`,
-      })
-    );
+    if (minuti != null && Number(minuti) > 0) {
+      const n = Number(minuti);
+      let type = NOTIFICATION_TYPES.REMINDER_PERSONALIZZATO;
+      let titolo = `${n} minuti prima`;
+      if (n === 15) {
+        type = NOTIFICATION_TYPES.REMINDER_15MIN;
+        titolo = "Tra 15 minuti";
+      } else if (n === 30) {
+        type = NOTIFICATION_TYPES.REMINDER_30MIN;
+        titolo = "Tra 30 minuti";
+      } else if (n === 60) {
+        type = NOTIFICATION_TYPES.REMINDER_60MIN;
+        titolo = "Tra un'ora";
+      } else if (n === 24 * 60) {
+        type = NOTIFICATION_TYPES.REMINDER_SERATA;
+        titolo = "Domani in cantiere";
+      }
+
+      const scheduledAt =
+        lavoro.startAt && Number.isFinite(lavoro.startAt)
+          ? lavoro.startAt - n * 60_000
+          : undefined;
+
+      piani.push(
+        this.schedule({
+          ...base,
+          type,
+          titolo,
+          messaggio: `Intervento alle ${lavoro.orario || lavoro.scheduledTime || "—"}: ${lavoro.cliente || lavoro.titolo}.`,
+          scheduledAt,
+          reminderMinutes: n,
+        })
+      );
+    } else {
+      piani.push(
+        this.schedule({
+          ...base,
+          type: NOTIFICATION_TYPES.REMINDER_SERATA,
+          titolo: "Domani in cantiere",
+          messaggio: `Preparati per ${lavoro.titolo || lavoro.cliente || "il lavoro di domani"}.`,
+        })
+      );
+
+      piani.push(
+        this.schedule({
+          ...base,
+          type: NOTIFICATION_TYPES.REMINDER_60MIN,
+          titolo: "Tra un'ora",
+          messaggio: `Intervento alle ${lavoro.orario || "—"}: ${lavoro.cliente || lavoro.titolo}.`,
+        })
+      );
+    }
 
     if ((lavoro.materialiDaComprare || []).length > 0) {
       piani.push(

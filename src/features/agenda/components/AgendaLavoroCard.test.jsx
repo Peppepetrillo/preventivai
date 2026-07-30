@@ -18,8 +18,8 @@ describe("AgendaLavoroCard", () => {
             indirizzo: "Via Roma 12",
             orario: "09:00",
             durataStimataLabel: "1 h",
-            stato: "programmato",
-            statoLabel: "Programmato",
+            stato: "pianificato",
+            statoLabel: "Pianificato",
             statoBadgeClass: "ds-badge ds-badge-da-iniziare",
             checklist: [],
             saldo: 0,
@@ -33,6 +33,7 @@ describe("AgendaLavoroCard", () => {
 
     expect(screen.getByText("Intervento")).toBeInTheDocument();
     expect(screen.getByText("Rossi")).toBeInTheDocument();
+    expect(screen.getByText("Pianificato")).toBeInTheDocument();
     expect(screen.getByText(/Durata prevista: 1 h/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Apri lavoro/i })).toHaveAttribute(
       "href",

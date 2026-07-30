@@ -7,3 +7,5 @@ export {
   leggiDurataStimata,
   risolviTipoLavoro,
 } from "./lavoriDomain";
+export { creaLavoroPianificato } from "./creaLavoroPianificato";
+export * from "./schedulingDomain";

@@ -6,6 +6,9 @@ import {
   useAttivita,
 } from "../../../domain/attivita";
 import { aggiornaCantiere } from "../../cantieri/cantieriDomain";
+import { creaLavoroPianificato } from "../../lavori/creaLavoroPianificato";
+import { creaLavoroDaCantiere } from "../../lavori/lavoriDomain";
+import { notificationService } from "../../../services/notificationService";
 import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
 import { leggiCantieri, salvaCantieri } from "../../../repositories/cantieriRepository";
 import {
@@ -102,12 +105,46 @@ export function useAgenda() {
       setCompletamentoId(cantiereId);
       const aggiornati = cantieri.map((cantiere) =>
         String(cantiere.id) === String(cantiereId)
-          ? aggiornaCantiere(cantiere, { stato: "Completato" })
+          ? aggiornaCantiere(cantiere, {
+              stato: "Completato",
+              statoPianificazione: "completato",
+            })
           : cantiere
       );
       salvaCantieri(aggiornati);
       setCantieri(aggiornati);
       setCompletamentoId(null);
+    },
+    [cantieri, setCantieri]
+  );
+
+  const creaLavoro = useCallback(
+    (form) => {
+      const cantiere = creaLavoroPianificato(form);
+      const aggiornati = [...cantieri, cantiere];
+      salvaCantieri(aggiornati);
+      setCantieri(aggiornati);
+
+      if (cantiere.reminderEnabled) {
+        notificationService.planForLavoro(creaLavoroDaCantiere(cantiere), {
+          reminderMinutes: cantiere.reminderMinutes,
+        });
+      }
+
+      if (cantiere.scheduledDate) {
+        const data = cantiere.scheduledDate;
+        const match = String(data).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (match) {
+          setModalitaSettimana(false);
+          setGiorno(
+            inizioGiornata(
+              new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]))
+            )
+          );
+        }
+      }
+
+      return cantiere;
     },
     [cantieri, setCantieri]
   );
@@ -139,6 +176,7 @@ export function useAgenda() {
     completamentoId,
     dataDefaultAttivita,
     segnaCompletato,
+    creaLavoro,
     creaAttivita,
     aggiornaAttivita,
     completaAttivita,

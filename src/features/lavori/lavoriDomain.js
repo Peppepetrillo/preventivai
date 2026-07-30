@@ -1,14 +1,18 @@
 import { routeCantiere } from "../../app/routes";
 import {
-  classeBadgeStatoAgenda,
-  etichettaStatoAgenda,
-  leggiDataCantiere,
   leggiOrarioCantiere,
   saldoResiduoCantiere,
-  statoAgendaDaCantiere,
   telefonoCantiere,
 } from "../agenda/agendaSelectors";
 import { TIPO_LAVORO } from "./lavoriTypes";
+import {
+  classeBadgeStatoPianificazione,
+  etichettaStatoPianificazione,
+  glifoStatoPianificazione,
+  leggiScheduling,
+  parseDataScheduling,
+  risolviStatoPianificazione,
+} from "./schedulingDomain";
 
 const ETICHETTE_TIPO = {
   [TIPO_LAVORO.CANTIERE]: "Cantiere",
@@ -25,7 +29,9 @@ const ETICHETTE_TIPO = {
 export function risolviTipoLavoro(record = {}) {
   const grezzo = String(
     record.tipoLavoro || record.extra?.tipoLavoro || ""
-  ).trim().toLowerCase();
+  )
+    .trim()
+    .toLowerCase();
 
   if (grezzo === TIPO_LAVORO.SOPRALLUOGO) return TIPO_LAVORO.SOPRALLUOGO;
   if (grezzo === TIPO_LAVORO.MANUTENZIONE) return TIPO_LAVORO.MANUTENZIONE;
@@ -64,14 +70,7 @@ export function formattaDurataStimata(minuti) {
  * @param {object} record
  */
 export function leggiDurataStimata(record = {}) {
-  const grezzo =
-    record.durataStimata ??
-    record.extra?.durataStimata ??
-    record.durataMinuti ??
-    record.extra?.durataMinuti ??
-    null;
-  const valore = Number(grezzo);
-  return Number.isFinite(valore) && valore > 0 ? valore : null;
+  return leggiScheduling(record).estimatedDuration;
 }
 
 /**
@@ -81,24 +80,39 @@ export function leggiDurataStimata(record = {}) {
 export function creaLavoroDaCantiere(cantiere = {}) {
   const checklist = Array.isArray(cantiere.checklist) ? cantiere.checklist : [];
   const materiali = Array.isArray(cantiere.materiali) ? cantiere.materiali : [];
-  const statoAgenda = statoAgendaDaCantiere(cantiere.stato);
+  const scheduling = leggiScheduling(cantiere);
+  const statoAgenda = risolviStatoPianificazione(cantiere);
   const tipoLavoro = risolviTipoLavoro(cantiere);
-  const durataStimata = leggiDurataStimata(cantiere);
+  const durataStimata = scheduling.estimatedDuration;
+  const dataParsed = parseDataScheduling(scheduling.scheduledDate);
 
   return {
     id: cantiere.id,
+    kind: "lavoro",
     tipoLavoro,
     tipoLavoroLabel: etichettaTipoLavoro(tipoLavoro),
     titolo: cantiere.nome || cantiere.cliente || etichettaTipoLavoro(tipoLavoro),
     cliente: cantiere.cliente || "",
     indirizzo: cantiere.indirizzo || "",
-    data: leggiDataCantiere(cantiere),
-    orario: leggiOrarioCantiere(cantiere),
+    data: dataParsed,
+    orario: scheduling.scheduledTime || leggiOrarioCantiere(cantiere),
+    scheduledDate: scheduling.scheduledDate,
+    scheduledTime: scheduling.scheduledTime,
+    estimatedDuration: durataStimata,
     durataStimata,
     durataStimataLabel: formattaDurataStimata(durataStimata),
+    startAt: scheduling.startAt,
+    endAt: scheduling.endAt,
+    reminderEnabled: scheduling.reminderEnabled,
+    reminderMinutes: scheduling.reminderMinutes,
+    priorita: cantiere.priorita || cantiere.extra?.priorita || "media",
     stato: statoAgenda,
-    statoLabel: etichettaStatoAgenda(statoAgenda),
-    statoBadgeClass: classeBadgeStatoAgenda(statoAgenda),
+    /** Alias retrocompat per confronti che usano ancora "programmato" */
+    statoAgendaCompat:
+      statoAgenda === "pianificato" ? "programmato" : statoAgenda,
+    statoLabel: etichettaStatoPianificazione(statoAgenda),
+    statoBadgeClass: classeBadgeStatoPianificazione(statoAgenda),
+    statoGlifo: glifoStatoPianificazione(statoAgenda),
     statoCantiere: cantiere.stato || "Da iniziare",
     checklist: checklist
       .filter((voce) => voce && !voce.completata)
@@ -121,7 +135,11 @@ export function creaLavoroDaCantiere(cantiere = {}) {
     saldo: saldoResiduoCantiere(cantiere),
     telefono: telefonoCantiere(cantiere),
     link: routeCantiere(cantiere.id),
-    urgente: Boolean(cantiere.urgente || cantiere.extra?.urgente),
+    urgente: Boolean(
+      cantiere.urgente ||
+        cantiere.extra?.urgente ||
+        cantiere.priorita === "alta"
+    ),
     cantiere,
   };
 }

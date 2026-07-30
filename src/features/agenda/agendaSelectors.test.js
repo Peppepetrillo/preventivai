@@ -106,7 +106,7 @@ describe("agendaSelectors", () => {
   });
 
   it("mappa gli stati cantiere in stati agenda", () => {
-    expect(statoAgendaDaCantiere("Da iniziare")).toBe("programmato");
+    expect(statoAgendaDaCantiere("Da iniziare")).toBe("pianificato");
     expect(statoAgendaDaCantiere("In corso")).toBe("in-corso");
     expect(statoAgendaDaCantiere("Completato")).toBe("completato");
   });

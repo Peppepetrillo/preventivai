@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
 
 import { routeCantiere } from "../../../app/routes";
-import AgendaActivityCard from "./AgendaActivityCard";
-import AgendaSection from "./AgendaSection";
 import AgendaTimeline from "./AgendaTimeline";
 
 /**
@@ -94,38 +92,35 @@ export function AgendaGiornoContenuto({
   onEliminaAttivita,
   onInsight,
 }) {
-  return (
-    <>
-      <AgendaSection
-        titolo="Lavori"
-        count={lavori.length}
-        empty="Nessun lavoro programmato."
-      >
-        <AgendaTimeline
-          lavori={lavori}
-          onSegnaCompletato={onSegnaCompletato}
-          completamentoId={completamentoId}
-          onInsight={onInsight}
-        />
-      </AgendaSection>
+  const totale = (lavori?.length || 0) + (attivita?.length || 0);
 
-      <AgendaSection
-        titolo="Attività"
-        count={attivita.length}
-        empty="Nessuna attività. Tocca + per aggiungerne una."
-      >
-        <div className="space-y-3">
-          {attivita.map((item) => (
-            <AgendaActivityCard
-              key={item.id}
-              attivita={item}
-              onCompleta={onCompletaAttivita}
-              onModifica={onModificaAttivita}
-              onElimina={onEliminaAttivita}
-            />
-          ))}
-        </div>
-      </AgendaSection>
-    </>
+  if (totale === 0) {
+    return (
+      <div className="ds-empty pro-panel p-8 text-center">
+        <p className="font-black">Giornata libera</p>
+        <p className="ds-text-secondary mt-1">
+          Tocca + per pianificare un lavoro o un&apos;attività.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <section aria-label="Timeline">
+      <div className="flex items-center justify-between gap-3 mb-3 px-0.5">
+        <h2 className="ds-card-title">Timeline</h2>
+        <span className="ds-badge ds-badge-da-iniziare">{totale}</span>
+      </div>
+      <AgendaTimeline
+        lavori={lavori}
+        attivita={attivita}
+        onSegnaCompletato={onSegnaCompletato}
+        completamentoId={completamentoId}
+        onInsight={onInsight}
+        onCompletaAttivita={onCompletaAttivita}
+        onModificaAttivita={onModificaAttivita}
+        onEliminaAttivita={onEliminaAttivita}
+      />
+    </section>
   );
 }
