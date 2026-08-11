@@ -1,16 +1,19 @@
-import { ArrowLeft, PartyPopper, ShoppingCart } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, PartyPopper, Share2, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { ROUTES } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
 import SearchInput from "../components/SearchInput";
 import AcquistiAggregatoRow from "../features/acquisti/components/AcquistiAggregatoRow";
+import AcquistiCondividiSheet from "../features/acquisti/components/AcquistiCondividiSheet";
 import AcquistiGruppoLavoro from "../features/acquisti/components/AcquistiGruppoLavoro";
 import {
   FILTRO_ACQUISTI,
   useAcquistiUi,
   VISTA_ACQUISTI,
 } from "../features/acquisti/hooks/useAcquistiUi";
+import { MODALITA_CONDIVIDI_ACQUISTI } from "../features/acquisti/acquistiTestoService";
 
 const VISTE = [
   { id: VISTA_ACQUISTI.perLavoro, etichetta: "Per lavoro" },
@@ -23,11 +26,12 @@ const FILTRI = [
 ];
 
 /**
- * Pagina Acquisti — UI base Step 8.2.
+ * Pagina Acquisti — UI + condivisione (Step 8.2 / 8.3).
  * Fonte: listaSpesa esistente. Nessun nuovo storage/repository.
  */
 export default function Acquisti() {
   const {
+    lista,
     vista,
     setVista,
     filtro,
@@ -45,6 +49,14 @@ export default function Acquisti() {
     toggleEspanso,
   } = useAcquistiUi();
 
+  const [showCondividi, setShowCondividi] = useState(false);
+  const [messaggio, setMessaggio] = useState("");
+
+  function flash(msg) {
+    setMessaggio(msg);
+    window.setTimeout(() => setMessaggio(""), 2200);
+  }
+
   const sintesiLabel = [
     sintesi.materiali === 1
       ? "1 materiale"
@@ -60,6 +72,11 @@ export default function Acquisti() {
   ]
     .filter(Boolean)
     .join(" · ");
+
+  const modalitaIniziale =
+    vista === VISTA_ACQUISTI.tutto
+      ? MODALITA_CONDIVIDI_ACQUISTI.perFornitore
+      : MODALITA_CONDIVIDI_ACQUISTI.perLavoro;
 
   return (
     <PageWrapper>
@@ -92,14 +109,36 @@ export default function Acquisti() {
                   : sintesiLabel}
               </p>
             </div>
-            <span
-              className="ds-badge-count shrink-0"
-              aria-label={`${sintesi.materiali} da comprare`}
-            >
-              {sintesi.materiali}
-            </span>
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              <span
+                className="ds-badge-count"
+                aria-label={`${sintesi.materiali} da comprare`}
+              >
+                {sintesi.materiali}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowCondividi(true)}
+                className="btn-secondary min-h-[44px] px-3 text-xs font-bold inline-flex items-center gap-1.5"
+                data-testid="acquisti-condividi"
+                aria-label="Condividi"
+              >
+                <Share2 size={16} aria-hidden="true" />
+                Condividi
+              </button>
+            </div>
           </div>
         </header>
+
+        {messaggio ? (
+          <div
+            className="pro-panel px-3.5 py-3 mb-3 text-sm text-yellow-100 border-yellow-300/30"
+            role="status"
+            data-testid="acquisti-flash"
+          >
+            {messaggio}
+          </div>
+        ) : null}
 
         <div
           className="flex gap-2 mb-3 overflow-x-auto pb-0.5"
@@ -217,6 +256,17 @@ export default function Acquisti() {
           </ul>
         )}
       </div>
+
+      {showCondividi ? (
+        <AcquistiCondividiSheet
+          key={`condividi-${modalitaIniziale}`}
+          open={showCondividi}
+          onClose={() => setShowCondividi(false)}
+          voci={lista}
+          modalitaIniziale={modalitaIniziale}
+          onMessaggio={flash}
+        />
+      ) : null}
     </PageWrapper>
   );
 }

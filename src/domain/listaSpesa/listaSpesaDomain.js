@@ -28,6 +28,7 @@ import { normalizzaUnitaMateriale } from "../catalogoMateriali/materialiTypes";
  * @property {string=} titoloLavoro
  * @property {string=} cliente
  * @property {string=} data
+ * @property {number=} prezzoUnitario
  * @property {boolean=} modificatoManualmente
  * @property {string} createdAt
  * @property {string} updatedAt
@@ -89,6 +90,7 @@ function nomeNormalizzato(nome = "") {
  *   titoloLavoro?: string,
  *   cliente?: string,
  *   data?: string,
+ *   prezzoUnitario?: number,
  *   acquistato?: boolean,
  *   modificatoManualmente?: boolean,
  * }} input
@@ -110,6 +112,7 @@ export function creaVoceListaSpesa({
   titoloLavoro = "",
   cliente = "",
   data = "",
+  prezzoUnitario,
   acquistato = false,
   modificatoManualmente = false,
 } = {}) {
@@ -138,6 +141,12 @@ export function creaVoceListaSpesa({
   if (origine) voce.origine = /** @type {OrigineVoceListaSpesa} */ (String(origine));
   if (note) voce.note = String(note).trim();
   if (titoloLavoro) voce.titoloLavoro = String(titoloLavoro).trim();
+  if (prezzoUnitario != null && prezzoUnitario !== "") {
+    const prezzo = Number(prezzoUnitario);
+    if (Number.isFinite(prezzo) && prezzo >= 0) {
+      voce.prezzoUnitario = prezzo;
+    }
+  }
   if (modificatoManualmente) voce.modificatoManualmente = true;
 
   return voce;

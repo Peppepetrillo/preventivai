@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ROUTES } from "../app/routes";
 import { STORAGE_KEYS } from "../app/storageKeys";
@@ -10,6 +10,20 @@ import {
   salvaListaSpesa,
 } from "../domain/listaSpesa";
 import Acquisti from "./Acquisti";
+
+vi.mock("../features/acquisti/acquistiPdfService", async () => {
+  const actual = await vi.importActual("../features/acquisti/acquistiPdfService");
+  return {
+    ...actual,
+    generaPdfAcquisti: vi.fn(async () => ({
+      nomeFile: "lista-acquisti-lavoro.pdf",
+      blob: new Blob(["%PDF"]),
+      blobUrl: "",
+      pagine: 1,
+      doc: {},
+    })),
+  };
+});
 
 function seedVoci(voci) {
   salvaListaSpesa(voci);
@@ -24,6 +38,11 @@ function renderPage() {
       </Routes>
     </MemoryRouter>
   );
+}
+
+function ultimoDialog() {
+  const dialogs = screen.getAllByRole("dialog");
+  return dialogs[dialogs.length - 1];
 }
 
 describe("Acquisti UI Step 8.2", () => {
@@ -313,5 +332,155 @@ describe("Acquisti UI Step 8.2", () => {
     renderPage();
     fireEvent.click(screen.getByTestId("acquisti-vista-tutto"));
     expect(screen.getAllByTestId("acquisti-aggregato")).toHaveLength(2);
+  });
+});
+
+describe("Acquisti UI Step 8.3 condivisione", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.spyOn(window, "open").mockImplementation(() => null);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: vi.fn(async () => undefined) },
+    });
+  });
+
+  it("apre foglio Condividi con testo per lavoro senza prezzi", () => {
+    seedVoci([
+      creaVoceListaSpesa({
+        nome: "Cavo Cat.6",
+        quantita: 100,
+        unita: "m",
+        lavoroId: "c1",
+        cliente: "Rossi",
+        titoloLavoro: "Videosorveglianza",
+        prezzoUnitario: 1,
+      }),
+      creaVoceListaSpesa({
+        nome: "Tubo Ø25",
+        quantita: 60,
+        unita: "m",
+        lavoroId: "c1",
+        cliente: "Rossi",
+        titoloLavoro: "Videosorveglianza",
+      }),
+    ]);
+    renderPage();
+    fireEvent.click(screen.getByTestId("acquisti-condividi"));
+    const dialog = ultimoDialog();
+    expect(within(dialog).getByTestId("acquisti-condividi-sheet")).toBeInTheDocument();
+    const preview = within(dialog).getByTestId("acquisti-condividi-preview");
+    expect(preview.textContent).toContain("Lista materiali");
+    expect(preview.textContent).toContain("Rossi — Videosorveglianza");
+    expect(preview.textContent).toContain("Cavo Cat.6 — 100 m");
+    expect(preview.textContent).not.toMatch(/€/);
+  });
+
+  it("modalità per fornitore aggrega quantità", () => {
+    seedVoci([
+      creaVoceListaSpesa({
+        nome: "Cavo Cat.6",
+        quantita: 100,
+        unita: "m",
+        lavoroId: "c1",
+        varianteId: "var-cat6",
+      }),
+      creaVoceListaSpesa({
+        nome: "Cavo Cat.6",
+        quantita: 50,
+        unita: "m",
+        lavoroId: "c2",
+        varianteId: "var-cat6",
+      }),
+    ]);
+    renderPage();
+    fireEvent.click(screen.getByTestId("acquisti-condividi"));
+    const dialog = ultimoDialog();
+    fireEvent.click(
+      within(dialog).getByTestId("acquisti-condividi-modalita-per-fornitore")
+    );
+    expect(
+      within(dialog).getByTestId("acquisti-condividi-preview").textContent
+    ).toContain("Cavo Cat.6 — 150 m");
+  });
+
+  it("opzione prezzi e WhatsApp", () => {
+    seedVoci([
+      creaVoceListaSpesa({
+        nome: "Cavo",
+        quantita: 10,
+        unita: "m",
+        lavoroId: "c1",
+        cliente: "Rossi",
+        titoloLavoro: "Lavoro",
+        prezzoUnitario: 2,
+      }),
+    ]);
+    renderPage();
+    fireEvent.click(screen.getByTestId("acquisti-condividi"));
+    const dialog = ultimoDialog();
+    fireEvent.click(within(dialog).getByTestId("acquisti-condividi-prezzi"));
+    expect(
+      within(dialog).getByTestId("acquisti-condividi-preview").textContent
+    ).toContain("Totale indicativo:");
+    fireEvent.click(within(dialog).getByTestId("acquisti-condividi-whatsapp"));
+    expect(window.open).toHaveBeenCalled();
+  });
+
+  it("copia testo e PDF", async () => {
+    const { generaPdfAcquisti } = await import(
+      "../features/acquisti/acquistiPdfService"
+    );
+    seedVoci([
+      creaVoceListaSpesa({
+        nome: "Tubo",
+        quantita: 5,
+        unita: "m",
+        lavoroId: "c1",
+        cliente: "A",
+        titoloLavoro: "B",
+      }),
+    ]);
+    renderPage();
+    fireEvent.click(screen.getByTestId("acquisti-condividi"));
+    fireEvent.click(screen.getByTestId("acquisti-condividi-copia"));
+    expect(navigator.clipboard.writeText).toHaveBeenCalled();
+
+    fireEvent.click(screen.getByTestId("acquisti-condividi"));
+    fireEvent.click(screen.getByTestId("acquisti-condividi-pdf"));
+    expect(generaPdfAcquisti).toHaveBeenCalled();
+  });
+
+  it("mostra anche acquistati in condivisione", () => {
+    seedVoci([
+      creaVoceListaSpesa({
+        nome: "Da comprare",
+        quantita: 1,
+        unita: "pz",
+        lavoroId: "c1",
+        cliente: "Rossi",
+        titoloLavoro: "Lavoro",
+      }),
+      creaVoceListaSpesa({
+        nome: "Già preso",
+        quantita: 2,
+        unita: "pz",
+        lavoroId: "c1",
+        cliente: "Rossi",
+        titoloLavoro: "Lavoro",
+        acquistato: true,
+      }),
+    ]);
+    renderPage();
+    fireEvent.click(screen.getByTestId("acquisti-condividi"));
+    const dialog = ultimoDialog();
+    const preview = within(dialog).getByTestId("acquisti-condividi-preview");
+    expect(preview.textContent).toContain("Da comprare");
+    expect(preview.textContent).not.toContain("Già preso");
+
+    fireEvent.click(within(dialog).getByTestId("acquisti-condividi-acquistati"));
+    expect(
+      within(dialog).getByTestId("acquisti-condividi-preview").textContent
+    ).toContain("Già preso");
   });
 });
