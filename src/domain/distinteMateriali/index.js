@@ -63,3 +63,12 @@ export {
   risincronizzaDistintaSeCollegata,
   elencaCantieriPerCollegamento,
 } from "./distintaCantiereService";
+
+export {
+  trovaDistintaCollegataAlPreventivo,
+  elencaDistintePerCollegamentoPreventivo,
+  collegaDistintaAPreventivoSenzaDuplicati,
+  scollegaDistintaDalPreventivo,
+  usaDistintaDopoConversioneCantiere,
+  preventivoHaDistintaCollegata,
+} from "./distintaPreventivoService";

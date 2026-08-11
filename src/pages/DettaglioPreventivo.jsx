@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -47,6 +47,16 @@ import {
   ottieniTimeline,
   trovaCantiereCollegato,
 } from "../domain/workflow";
+import {
+  collegaDistintaAPreventivoSenzaDuplicati,
+  elencaDistintePerCollegamentoPreventivo,
+  scollegaDistintaDalPreventivo,
+  trovaDistintaCollegataAlPreventivo,
+  usaDistintaDopoConversioneCantiere,
+} from "../domain/distinteMateriali/distintaPreventivoService";
+import CollegaDistintaSheet from "../features/distinteMateriali/components/CollegaDistintaSheet";
+import PreventivoDistintaSection from "../features/distinteMateriali/components/PreventivoDistintaSection";
+import UsaDistintaConversioneSheet from "../features/distinteMateriali/components/UsaDistintaConversioneSheet";
 import { generaPdfPreventivo } from "../services/preventiviPdfService";
 import {
   calcolaTotali,
@@ -110,6 +120,10 @@ export default function DettaglioPreventivo() {
   const [pdfAnteprimaUrl, setPdfAnteprimaUrl] = useState("");
   const [pdfAnteprimaAperta, setPdfAnteprimaAperta] = useState(false);
   const [pdfInElaborazione, setPdfInElaborazione] = useState(false);
+  const [distintaTick, setDistintaTick] = useState(0);
+  const [showCollegaDistinta, setShowCollegaDistinta] = useState(false);
+  const [ricercaDistinta, setRicercaDistinta] = useState("");
+  const [showUsaDistinta, setShowUsaDistinta] = useState(false);
 
   const totali = calcolaTotali(lavorazioni, sconto, iva);
   const saldo = calcolaSaldo(totali.totale, acconto);
@@ -138,6 +152,20 @@ export default function DettaglioPreventivo() {
   const timeline = ottieniTimeline(preventivo?.id);
   // timelineTick forza refresh dopo mutazioni workflow
   const timelineKey = `tl-${timelineTick}-${timeline.length}`;
+
+  const distintaCollegata = useMemo(() => {
+    void distintaTick;
+    if (!preventivo?.id) return null;
+    return trovaDistintaCollegataAlPreventivo(preventivo.id);
+  }, [preventivo?.id, distintaTick]);
+
+  const distintePicker = useMemo(() => {
+    void distintaTick;
+    if (!preventivo?.id) return [];
+    return elencaDistintePerCollegamentoPreventivo(ricercaDistinta, {
+      preventivoId: preventivo.id,
+    });
+  }, [preventivo?.id, ricercaDistinta, distintaTick]);
 
   function aggiornaLavorazione(index, campo, valore) {
     setLavorazioni(
@@ -384,23 +412,79 @@ export default function DettaglioPreventivo() {
   function trasformaInCantiere() {
     try {
       salvaModificheSilenzioso();
+      const distinta = trovaDistintaCollegataAlPreventivo(preventivo.id);
+      if (distinta) {
+        setShowUsaDistinta(true);
+        return;
+      }
+      eseguiConversioneCantiere({ usaDistinta: false });
+    } catch (errore) {
+      setMessaggio(errore.message || "Non è stato possibile creare il cantiere.");
+    }
+  }
+
+  function eseguiConversioneCantiere({ usaDistinta }) {
+    try {
+      salvaModificheSilenzioso();
       const risultato = convertiInCantiere(preventivo.id);
       if (!risultato.success) {
         setMessaggio(risultato.error || "Non è stato possibile creare il cantiere.");
+        setShowUsaDistinta(false);
         return;
       }
+
+      if (usaDistinta && risultato.cantiere?.id) {
+        const sync = usaDistintaDopoConversioneCantiere(
+          preventivo.id,
+          risultato.cantiere.id
+        );
+        if (sync.ok && sync.applicata) {
+          setDistintaTick((n) => n + 1);
+        }
+      }
+
       setCantiereId(risultato.cantiere.id);
       setStato(risultato.preventivo.stato || STATI_PREVENTIVO.CONVERTITO);
       setTimelineTick((n) => n + 1);
+      setShowUsaDistinta(false);
       setMessaggio(
         risultato.creato
-          ? "Cantiere creato e collegato al preventivo."
+          ? usaDistinta
+            ? "Cantiere creato con materiali dalla distinta."
+            : "Cantiere creato e collegato al preventivo."
           : "Cantiere già collegato."
       );
       navigate(routeCantiere(risultato.cantiere.id));
     } catch (errore) {
+      setShowUsaDistinta(false);
       setMessaggio(errore.message || "Non è stato possibile creare il cantiere.");
     }
+  }
+
+  function gestisciCollegaDistinta(distintaId) {
+    const risultato = collegaDistintaAPreventivoSenzaDuplicati(
+      distintaId,
+      preventivo.id
+    );
+    if (!risultato.ok) {
+      setMessaggio("Impossibile collegare la distinta.");
+      return;
+    }
+    setDistintaTick((n) => n + 1);
+    setShowCollegaDistinta(false);
+    setRicercaDistinta("");
+    setMessaggio("Distinta collegata al preventivo.");
+  }
+
+  function gestisciScollegaDistinta() {
+    if (!distintaCollegata?.id) return;
+    const risultato = scollegaDistintaDalPreventivo(distintaCollegata.id);
+    if (!risultato.ok) {
+      setMessaggio("Impossibile scollegare la distinta.");
+      return;
+    }
+    setDistintaTick((n) => n + 1);
+    setMessaggio("Distinta scollegata.");
   }
 
   function apriCantiereCollegato() {
@@ -633,6 +717,15 @@ export default function DettaglioPreventivo() {
           </div>
         ) : null}
       </section>
+
+      <PreventivoDistintaSection
+        distinta={distintaCollegata}
+        onCollega={() => {
+          setRicercaDistinta("");
+          setShowCollegaDistinta(true);
+        }}
+        onScollega={gestisciScollegaDistinta}
+      />
 
       <FirmaClienteSection
         preventivo={{ ...datiAggiornati(), stato }}
@@ -973,6 +1066,29 @@ export default function DettaglioPreventivo() {
         onChiudi={chiudiAnteprimaPdf}
         onRigenera={() =>
           generaDocumentoPdf({ salva: false, apriAnteprima: true })
+        }
+      />
+
+      <CollegaDistintaSheet
+        open={showCollegaDistinta}
+        onClose={() => {
+          setShowCollegaDistinta(false);
+          setRicercaDistinta("");
+        }}
+        distinte={distintePicker}
+        distintaSelezionataId={distintaCollegata?.id}
+        ricerca={ricercaDistinta}
+        onRicerca={setRicercaDistinta}
+        onConferma={gestisciCollegaDistinta}
+      />
+
+      <UsaDistintaConversioneSheet
+        open={showUsaDistinta}
+        onClose={() => setShowUsaDistinta(false)}
+        distinta={distintaCollegata}
+        onUsaDistinta={() => eseguiConversioneCantiere({ usaDistinta: true })}
+        onContinuaSenza={() =>
+          eseguiConversioneCantiere({ usaDistinta: false })
         }
       />
     </div>
