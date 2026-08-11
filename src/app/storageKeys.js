@@ -39,6 +39,8 @@ export const STORAGE_KEYS = {
   listaSpesa: "preventivai.listaSpesa",
   /** Catalogo Materiali (famiglie + varianti) — locale only (Sprint 13) */
   catalogoMateriali: "preventivai.catalogoMateriali",
+  /** Distinte Materiali — locale only (Sprint 13) */
+  distinteMateriali: "preventivai.distinteMateriali",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -68,6 +70,7 @@ export const STORAGE_FALLBACKS = {
   [STORAGE_KEYS.attivita]: [],
   [STORAGE_KEYS.listaSpesa]: [],
   [STORAGE_KEYS.catalogoMateriali]: [],
+  [STORAGE_KEYS.distinteMateriali]: [],
 };
 
 export const APP_DATA_KEYS = {
