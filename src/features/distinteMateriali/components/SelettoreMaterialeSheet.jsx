@@ -1,0 +1,265 @@
+import { useMemo, useState } from "react";
+import { ArrowLeft, Plus } from "lucide-react";
+
+import BottomSheet from "../../../components/BottomSheet";
+import NumericInput from "../../../components/NumericInput";
+import SearchInput from "../../../components/SearchInput";
+import { cercaCatalogoMateriali } from "../../../domain/catalogoMateriali/materialiCatalogService";
+import { UNITA_MATERIALE_CANONICHE } from "../../../domain/catalogoMateriali/materialiTypes";
+import CatalogoMaterialiCategorie from "../../catalogoMateriali/components/CatalogoMaterialiCategorie";
+import CatalogoMaterialiFamigliaCard from "../../catalogoMateriali/components/CatalogoMaterialiFamigliaCard";
+import CatalogoMaterialiVarianteRow from "../../catalogoMateriali/components/CatalogoMaterialiVarianteRow";
+import {
+  elencaMetaCategorieMateriale,
+  metaCategoriaMateriale,
+} from "../../catalogoMateriali/catalogoMaterialiUiMeta";
+
+/**
+ * Selettore materiale da catalogo (categorie → famiglia → variante → quantità).
+ */
+export default function SelettoreMaterialeSheet({
+  open,
+  onClose,
+  onConferma,
+  onApriManuale,
+}) {
+  return (
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title="Aggiungi materiale"
+      descrizione="Scegli dal catalogo o inserisci una voce libera."
+      zIndex={80}
+    >
+      {open ? (
+        <SelettoreForm
+          onClose={onClose}
+          onConferma={onConferma}
+          onApriManuale={onApriManuale}
+        />
+      ) : null}
+    </BottomSheet>
+  );
+}
+
+function SelettoreForm({ onClose, onConferma, onApriManuale }) {
+  const categorie = useMemo(() => elencaMetaCategorieMateriale(), []);
+  const [ricerca, setRicerca] = useState("");
+  const [categoriaId, setCategoriaId] = useState(null);
+  const [famiglia, setFamiglia] = useState(null);
+  const [variante, setVariante] = useState(null);
+  const [quantita, setQuantita] = useState(1);
+  const [unita, setUnita] = useState("");
+
+  const famiglie = useMemo(() => {
+    const filtri = { soloAttive: true };
+    if (categoriaId) filtri.categoria = categoriaId;
+    return cercaCatalogoMateriali(ricerca, filtri);
+  }, [ricerca, categoriaId]);
+
+  const vista = variante
+    ? "quantita"
+    : famiglia
+      ? "varianti"
+      : categoriaId || ricerca.trim()
+        ? "famiglie"
+        : "categorie";
+
+  const meta = categoriaId ? metaCategoriaMateriale(categoriaId) : null;
+
+  function indietro() {
+    if (variante) {
+      setVariante(null);
+      return;
+    }
+    if (famiglia) {
+      setFamiglia(null);
+      return;
+    }
+    if (categoriaId) {
+      setCategoriaId(null);
+      return;
+    }
+    if (ricerca.trim()) {
+      setRicerca("");
+    }
+  }
+
+  function conferma() {
+    if (!variante || !famiglia) return;
+    const q = Number(quantita);
+    onConferma?.({
+      famigliaId: famiglia.id,
+      varianteId: variante.id,
+      nome: `${famiglia.nome} — ${variante.etichetta}`,
+      unita: unita || variante.unita || famiglia.unitaDefault || "pz",
+      quantita: Number.isFinite(q) && q > 0 ? q : 1,
+      prezzoUnitario: variante.prezzoIndicativo,
+    });
+    onClose?.();
+  }
+
+  const mostraIndietro =
+    vista !== "categorie" || Boolean(ricerca.trim());
+
+  return (
+    <div className="space-y-3 pb-2">
+      {mostraIndietro ? (
+        <button
+          type="button"
+          onClick={indietro}
+          className="inline-flex items-center gap-1.5 min-h-[44px] text-slate-300 text-sm font-semibold"
+        >
+          <ArrowLeft size={18} aria-hidden="true" />
+          Indietro
+        </button>
+      ) : null}
+
+      {vista !== "quantita" ? (
+        <SearchInput
+          label="Cerca materiale"
+          placeholder="Cerca materiale..."
+          value={ricerca}
+          onChange={(e) => {
+            setRicerca(e.target.value);
+            setFamiglia(null);
+            setVariante(null);
+          }}
+        />
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => {
+          onApriManuale?.();
+          onClose?.();
+        }}
+        className="w-full btn-secondary min-h-[48px] flex items-center justify-center gap-2 text-sm font-bold"
+      >
+        <Plus size={18} aria-hidden="true" />
+        Voce libera
+      </button>
+
+      {vista === "categorie" ? (
+        <CatalogoMaterialiCategorie
+          categorie={categorie}
+          conteggi={Object.fromEntries(
+            categorie.map((c) => [
+              c.id,
+              cercaCatalogoMateriali("", {
+                categoria: c.id,
+                soloAttive: true,
+              }).length,
+            ])
+          )}
+          onApri={(id) => {
+            setCategoriaId(id);
+            setFamiglia(null);
+            setVariante(null);
+          }}
+        />
+      ) : null}
+
+      {vista === "famiglie" ? (
+        <div className="space-y-2">
+          <p className="ds-text-secondary text-xs font-bold uppercase tracking-wide">
+            {ricerca.trim() ? "Risultati" : meta?.label || "Famiglie"}
+          </p>
+          {famiglie.length === 0 ? (
+            <p className="ds-text-secondary text-sm px-1 py-4 text-center">
+              Nessun materiale trovato.
+            </p>
+          ) : (
+            <ul className="space-y-2" role="list">
+              {famiglie.map((f) => (
+                <li key={f.id}>
+                  <CatalogoMaterialiFamigliaCard
+                    famiglia={f}
+                    onApri={() => {
+                      setFamiglia(f);
+                      setVariante(null);
+                      setUnita(f.unitaDefault || "pz");
+                    }}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
+
+      {vista === "varianti" && famiglia ? (
+        <div className="space-y-2">
+          <p className="ds-card-title">{famiglia.nome}</p>
+          <ul className="space-y-2" role="list">
+            {famiglia.varianti
+              .filter((v) => v.attiva !== false)
+              .map((v) => (
+                <li key={v.id}>
+                  <CatalogoMaterialiVarianteRow
+                    variante={v}
+                    unitaDefault={famiglia.unitaDefault}
+                    onApri={(sel) => {
+                      setVariante(sel);
+                      setUnita(sel.unita || famiglia.unitaDefault || "pz");
+                      setQuantita(1);
+                    }}
+                  />
+                </li>
+              ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {vista === "quantita" && variante && famiglia ? (
+        <div className="space-y-4">
+          <div className="pro-panel px-4 py-3">
+            <p className="ds-card-title">
+              {famiglia.nome} — {variante.etichetta}
+            </p>
+            <p className="ds-text-secondary text-sm mt-1">
+              Conferma quantità e unità
+            </p>
+          </div>
+
+          <label className="block">
+            <span className="ds-text-secondary text-xs font-bold uppercase tracking-wide">
+              Quantità
+            </span>
+            <NumericInput
+              className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-white"
+              value={quantita}
+              onChange={(v) => setQuantita(v)}
+              min={0}
+            />
+          </label>
+
+          <label className="block">
+            <span className="ds-text-secondary text-xs font-bold uppercase tracking-wide">
+              Unità
+            </span>
+            <select
+              className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-3 text-white"
+              value={unita}
+              onChange={(e) => setUnita(e.target.value)}
+            >
+              {UNITA_MATERIALE_CANONICHE.map((u) => (
+                <option key={u} value={u}>
+                  {u}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button
+            type="button"
+            onClick={conferma}
+            className="btn-primary w-full min-h-[52px] font-black"
+          >
+            Aggiungi alla distinta
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
