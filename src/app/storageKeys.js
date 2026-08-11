@@ -37,6 +37,8 @@ export const STORAGE_KEYS = {
   attivita: "preventivai.attivita",
   /** Lista spesa / materiale da acquistare — locale only */
   listaSpesa: "preventivai.listaSpesa",
+  /** Catalogo Materiali (famiglie + varianti) — locale only (Sprint 13) */
+  catalogoMateriali: "preventivai.catalogoMateriali",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -65,6 +67,7 @@ export const STORAGE_FALLBACKS = {
   [STORAGE_KEYS.insights]: [],
   [STORAGE_KEYS.attivita]: [],
   [STORAGE_KEYS.listaSpesa]: [],
+  [STORAGE_KEYS.catalogoMateriali]: [],
 };
 
 export const APP_DATA_KEYS = {
