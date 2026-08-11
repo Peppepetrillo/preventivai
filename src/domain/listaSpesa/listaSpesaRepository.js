@@ -52,6 +52,25 @@ export function toggleAcquistatoListaSpesa(id) {
 }
 
 /**
+ * Imposta acquistato su più voci originali (toggle aggregato).
+ * Non crea record aggregati persistenti.
+ *
+ * @param {string[]} ids
+ * @param {boolean} acquistato
+ */
+export function impostaAcquistatoVociListaSpesa(ids = [], acquistato = true) {
+  const set = new Set((ids || []).map((id) => String(id)));
+  if (set.size === 0) return leggiListaSpesa();
+  const prossimo = leggiListaSpesa().map((voce) =>
+    set.has(String(voce.id))
+      ? aggiornaVoceListaSpesa(voce, { acquistato: Boolean(acquistato) })
+      : voce
+  );
+  salvaListaSpesa(prossimo);
+  return prossimo;
+}
+
+/**
  * @param {string} id
  */
 export function eliminaVoceListaSpesa(id) {

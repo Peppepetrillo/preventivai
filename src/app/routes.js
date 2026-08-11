@@ -15,6 +15,7 @@ export const ROUTES = {
   distinteMateriali: "/distinte-materiali",
   nuovaDistintaMateriali: "/distinte-materiali/nuova",
   distintaMateriali: "/distinte-materiali/:id",
+  acquisti: "/acquisti",
   sopralluogo: "/sopralluogo",
   impostazioni: "/impostazioni",
   dettaglioPreventivo: "/preventivo/:id",

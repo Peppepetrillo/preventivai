@@ -54,10 +54,11 @@ export function selezionaDaComprarePerLavoro(voci = [], lavoroId) {
 }
 
 /**
- * Aggrega voci da comprare preservando provenance (voci originali).
- * Non somma unità diverse.
+ * Aggrega voci preservando provenance (voci originali).
+ * Non somma unità diverse. Non persiste nulla.
  *
  * @param {import("./listaSpesaDomain").VoceListaSpesa[]} voci
+ * @param {{ soloDaComprare?: boolean }=} opzioni
  * @returns {Array<{
  *   chiave: string,
  *   nome: string,
@@ -65,14 +66,17 @@ export function selezionaDaComprarePerLavoro(voci = [], lavoroId) {
  *   quantitaTotale: number,
  *   voci: import("./listaSpesaDomain").VoceListaSpesa[],
  *   idsVoci: string[],
+ *   tuttiAcquistati: boolean,
  * }>}
  */
-export function aggregaVociAcquisto(voci = []) {
-  const daComprare = selezionaDaComprare(voci);
+export function aggregaVociAcquisto(voci = [], { soloDaComprare = true } = {}) {
+  const base = soloDaComprare
+    ? selezionaDaComprare(voci)
+    : (voci || []).filter((voce) => voce?.nome);
   /** @type {Map<string, any>} */
   const mappa = new Map();
 
-  for (const voce of daComprare) {
+  for (const voce of base) {
     if (!voce?.nome) continue;
     const chiave = chiaveAggregazioneAcquisto(voce);
     const esistente = mappa.get(chiave);
@@ -94,24 +98,73 @@ export function aggregaVociAcquisto(voci = []) {
     esistente.idsVoci.push(voce.id);
   }
 
-  return [...mappa.values()].sort((a, b) =>
-    a.nome.localeCompare(b.nome, "it")
-  );
+  return [...mappa.values()]
+    .map((agg) => ({
+      ...agg,
+      tuttiAcquistati: agg.voci.every((v) => Boolean(v.acquistato)),
+    }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, "it"));
 }
 
 /** Alias esplicito per vista globale. */
-export function selezionaAcquistiAggregati(voci = []) {
-  return aggregaVociAcquisto(voci);
+export function selezionaAcquistiAggregati(voci = [], opzioni = {}) {
+  return aggregaVociAcquisto(voci, opzioni);
+}
+
+/**
+ * Sintesi compatta per header pagina Acquisti.
+ * @param {import("./listaSpesaDomain").VoceListaSpesa[]} voci
+ */
+export function calcolaSintesiAcquisti(voci = []) {
+  const daComprare = selezionaDaComprare(voci);
+  const lavori = new Set(
+    daComprare.map((v) => String(v.lavoroId || v.cantiereId || "")).filter(Boolean)
+  );
+  const unitaSet = new Set(
+    daComprare.map((v) => chiaveUnitaAcquisto(v.unita)).filter(Boolean)
+  );
+  const quantitaTotale = daComprare.reduce(
+    (sum, v) => sum + (Number(v.quantita) || 0),
+    0
+  );
+  const unitaOmogenea =
+    unitaSet.size === 1
+      ? unitaAcquistoInLettura(daComprare[0]?.unita) || daComprare[0]?.unita
+      : null;
+
+  return {
+    materiali: daComprare.length,
+    lavori: lavori.size,
+    quantitaTotale: unitaOmogenea ? quantitaTotale : null,
+    unita: unitaOmogenea,
+  };
+}
+
+/**
+ * Etichetta badge origine (discreta). Legacy senza origine → null.
+ * @param {string=} origine
+ */
+export function etichettaOrigineAcquisto(origine) {
+  const o = String(origine || "").toLowerCase();
+  if (o === "distinta") return "Distinta";
+  if (o === "catalogo") return "Catalogo";
+  if (o === "cantiere" || o === "manuale") return "Libero";
+  return null;
 }
 
 /**
  * Raggruppa per lavoro/cantiere.
  *
  * @param {import("./listaSpesaDomain").VoceListaSpesa[]} voci
- * @param {{ cantieri?: object[] }=} opzioni
+ * @param {{ cantieri?: object[], soloDaComprare?: boolean }=} opzioni
  */
-export function raggruppaAcquistiPerLavoro(voci = [], { cantieri = [] } = {}) {
-  const daComprare = selezionaDaComprare(voci);
+export function raggruppaAcquistiPerLavoro(
+  voci = [],
+  { cantieri = [], soloDaComprare = true } = {}
+) {
+  const daComprare = soloDaComprare
+    ? selezionaDaComprare(voci)
+    : (voci || []).filter((voce) => voce?.nome);
   const cantieriById = new Map(
     (cantieri || []).map((c) => [String(c.id), c])
   );

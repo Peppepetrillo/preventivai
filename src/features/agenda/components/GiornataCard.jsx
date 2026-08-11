@@ -170,10 +170,19 @@ export default function GiornataCard({ riepilogo }) {
 
           {materialiDaComprare.length > 0 ? (
             <div className="rounded-[14px] border border-amber-400/20 bg-amber-400/10 p-4">
-              <p className="text-sm font-black text-amber-100 flex items-center gap-2">
-                <ShoppingCart size={16} />
-                Da comprare oggi
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-black text-amber-100 flex items-center gap-2">
+                  <ShoppingCart size={16} />
+                  Da comprare oggi
+                </p>
+                <Link
+                  to={ROUTES.acquisti}
+                  className="text-xs font-bold text-amber-100/90 min-h-[44px] inline-flex items-center px-1"
+                  data-testid="home-link-acquisti"
+                >
+                  Apri
+                </Link>
+              </div>
               <ul className="mt-3 space-y-2">
                 {materialiDaComprare.slice(0, 8).map((m) => (
                   <li

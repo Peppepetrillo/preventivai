@@ -11,6 +11,7 @@ import {
   LogOut,
   ClipboardList,
   Package,
+  ShoppingCart,
   Upload,
   X,
 } from "lucide-react";
@@ -196,7 +197,7 @@ export default function Impostazioni() {
 
         <Link
           to={ROUTES.distinteMateriali}
-          className="pro-panel mb-6 p-5 flex items-center gap-4 min-h-[64px]"
+          className="pro-panel mb-3 p-5 flex items-center gap-4 min-h-[64px]"
         >
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-[16px] bg-yellow-400/15 text-yellow-300 shrink-0">
             <ClipboardList size={22} aria-hidden="true" />
@@ -205,6 +206,22 @@ export default function Impostazioni() {
             <p className="ds-card-title">Distinte materiali</p>
             <p className="ds-text-secondary text-sm mt-1">
               Crea, modifica e condividi liste materiali.
+            </p>
+          </div>
+        </Link>
+
+        <Link
+          to={ROUTES.acquisti}
+          className="pro-panel mb-6 p-5 flex items-center gap-4 min-h-[64px]"
+          data-testid="impostazioni-link-acquisti"
+        >
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-[16px] bg-yellow-400/15 text-yellow-300 shrink-0">
+            <ShoppingCart size={22} aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="ds-card-title">Acquisti</p>
+            <p className="ds-text-secondary text-sm mt-1">
+              Cosa comprare per i cantieri, per lavoro o tutto insieme.
             </p>
           </div>
         </Link>

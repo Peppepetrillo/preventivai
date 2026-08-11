@@ -28,6 +28,7 @@ const Listino = lazy(() => import("./pages/Listino"));
 const CatalogoMateriali = lazy(() => import("./pages/CatalogoMateriali"));
 const DistinteMateriali = lazy(() => import("./pages/DistinteMateriali"));
 const DistintaMaterialiEditor = lazy(() => import("./pages/DistintaMaterialiEditor"));
+const Acquisti = lazy(() => import("./pages/Acquisti"));
 const Sopralluogo = lazy(() => import("./pages/Sopralluogo"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
 const DettaglioPreventivo = lazy(() => import("./pages/DettaglioPreventivo"));
@@ -128,6 +129,11 @@ export default function App() {
             <Route
               path={ROUTES.distintaMateriali}
               element={<DistintaMaterialiEditor />}
+            />
+
+            <Route
+              path={ROUTES.acquisti}
+              element={<Acquisti />}
             />
 
             <Route

@@ -16,6 +16,7 @@ export {
   aggiungiVoceListaSpesa,
   aggiornaVoceListaSpesaPerId,
   eliminaVoceListaSpesa,
+  impostaAcquistatoVociListaSpesa,
   leggiDaComprare,
   leggiListaSpesa,
   salvaListaSpesa,
@@ -26,7 +27,9 @@ export {
 } from "./listaSpesaRepository";
 export {
   aggregaVociAcquisto,
+  calcolaSintesiAcquisti,
   chiaveAggregazioneAcquisto,
+  etichettaOrigineAcquisto,
   raggruppaAcquistiPerLavoro,
   selezionaAcquistiAggregati,
   selezionaDaComprare,
