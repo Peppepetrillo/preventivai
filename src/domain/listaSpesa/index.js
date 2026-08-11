@@ -1,9 +1,16 @@
 export {
   aggiornaVoceListaSpesa,
+  allineaAcquistatoDaMaterialeCantiere,
+  chiaveUnitaAcquisto,
+  collegamentoListaCerto,
   creaVoceListaSpesa,
+  rimuoviVoceListaPerMaterialeEliminato,
   selezionaVociDaComprare,
   sincronizzaMaterialiDaCantiere,
   trovaVoceListaCollegata,
+  unitaAcquistoEquivalenti,
+  unitaAcquistoInLettura,
+  voceAncoraCollegataAllaSorgente,
 } from "./listaSpesaDomain";
 export {
   aggiungiVoceListaSpesa,
@@ -12,6 +19,17 @@ export {
   leggiDaComprare,
   leggiListaSpesa,
   salvaListaSpesa,
+  sincronizzaAcquistatoMaterialeSuLista,
+  sincronizzaEliminazioneMaterialeSuLista,
   sincronizzaListaSpesaDaCantiere,
   toggleAcquistatoListaSpesa,
 } from "./listaSpesaRepository";
+export {
+  aggregaVociAcquisto,
+  chiaveAggregazioneAcquisto,
+  raggruppaAcquistiPerLavoro,
+  selezionaAcquistiAggregati,
+  selezionaDaComprare,
+  selezionaDaComprareOggi,
+  selezionaDaComprarePerLavoro,
+} from "./acquistiSelectors";

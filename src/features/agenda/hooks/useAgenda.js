@@ -11,6 +11,7 @@ import { creaLavoroDaCantiere } from "../../lavori/lavoriDomain";
 import { notificationService } from "../../../services/notificationService";
 import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
 import { leggiCantieri, salvaCantieri } from "../../../repositories/cantieriRepository";
+import { leggiListaSpesa } from "../../../domain/listaSpesa";
 import {
   aggiungiGiorni,
   differenzaGiorni,
@@ -25,6 +26,9 @@ import { selezionaInterventiSettimana } from "../settimanaSelectors";
  */
 export function useAgenda() {
   const [cantieri, setCantieri] = useDatiLocaliSincronizzati(leggiCantieri, [
+    APP_EVENTS.cloudSyncAggiornata,
+  ]);
+  const [listaSpesa] = useDatiLocaliSincronizzati(leggiListaSpesa, [
     APP_EVENTS.cloudSyncAggiornata,
   ]);
   const {
@@ -78,8 +82,9 @@ export function useAgenda() {
   }, [modalitaSettimana, settimana, tutteAttivita]);
 
   const riepilogoPreparazione = useMemo(
-    () => preparaRiepilogoGiornoSuccessivo(cantieri, giorno, oggi),
-    [cantieri, giorno, oggi]
+    () =>
+      preparaRiepilogoGiornoSuccessivo(cantieri, giorno, oggi, { listaSpesa }),
+    [cantieri, giorno, oggi, listaSpesa]
   );
 
   const dataDefaultAttivita = useMemo(

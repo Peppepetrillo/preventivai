@@ -18,6 +18,10 @@ import {
 import { registraEsperienzaCompletamento } from "../../../services/experienceService";
 import { sincronizzaListaSpesaDaCantiere } from "../../../domain/listaSpesa";
 import {
+  sincronizzaAcquistatoMaterialeSuLista,
+  sincronizzaEliminazioneMaterialeSuLista,
+} from "../../../domain/listaSpesa/listaSpesaRepository";
+import {
   completaLavoroDaCantiere,
   sincronizzaVarianteSuPreventivo,
 } from "../../../domain/workflow";
@@ -358,12 +362,38 @@ export function useCantieri({
 
   function eliminaMateriale(materialeId) {
     if (!cantiereSelezionato) return;
+    const materialeEliminato = (cantiereSelezionato.materiali || []).find(
+      (materiale) => String(materiale.id) === String(materialeId)
+    );
+    const materiali = (cantiereSelezionato.materiali || []).filter(
+      (materiale) => String(materiale.id) !== String(materialeId)
+    );
 
-    aggiornaSelezionato({
-      materiali: (cantiereSelezionato.materiali || []).filter(
-        (materiale) => String(materiale.id) !== String(materialeId)
-      ),
+    aggiornaSelezionato({ materiali });
+
+    if (materialeEliminato) {
+      sincronizzaEliminazioneMaterialeSuLista(
+        { ...cantiereSelezionato, materiali },
+        materialeEliminato
+      );
+    }
+  }
+
+  function toggleMaterialeAcquistato(materialeId) {
+    if (!cantiereSelezionato) return;
+    let materialeAggiornato = null;
+    const materiali = (cantiereSelezionato.materiali || []).map((item) => {
+      if (String(item.id) !== String(materialeId)) return item;
+      materialeAggiornato = { ...item, acquistato: !item.acquistato };
+      return materialeAggiornato;
     });
+    if (!materialeAggiornato) return;
+
+    aggiornaSelezionato({ materiali });
+    sincronizzaAcquistatoMaterialeSuLista(
+      { ...cantiereSelezionato, materiali },
+      materialeAggiornato
+    );
   }
 
   function sincronizzaVariantePreventivo(variante) {
@@ -625,6 +655,7 @@ export function useCantieri({
     aggiungiMateriale,
     aggiungiMaterialeDaPayload,
     eliminaMateriale,
+    toggleMaterialeAcquistato,
     aggiungiVariante,
     eliminaVariante,
     creaVariante,

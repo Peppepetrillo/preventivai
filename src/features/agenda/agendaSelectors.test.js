@@ -132,6 +132,33 @@ describe("agendaSelectors", () => {
     expect(riepilogo.materiali.daPortare.length).toBeGreaterThan(0);
   });
 
+  it("Mancano via listaSpesa senza doppio conteggio cantiere", () => {
+    const riepilogo = preparaRiepilogoGiornoSuccessivo(
+      [cantiere({ dataIntervento: "30/07/2026" })],
+      OGGI,
+      OGGI,
+      {
+        listaSpesa: [
+          {
+            id: "s1",
+            nome: "Differenziale",
+            quantita: 2,
+            unita: "cad",
+            acquistato: false,
+            lavoroId: "c1",
+            cantiereMaterialeId: "m2",
+          },
+        ],
+      }
+    );
+
+    const diff = riepilogo.materiali.mancanti.filter(
+      (m) => m.nome === "Differenziale"
+    );
+    expect(diff).toHaveLength(1);
+    expect(diff[0].quantita).toBe(2);
+  });
+
   it("etichette navigazione giorno", () => {
     expect(etichettaGiornoNav(OGGI, OGGI)).toBe("Oggi");
     expect(etichettaGiornoNav(aggiungiGiorni(OGGI, -1), OGGI)).toBe("Ieri");

@@ -2,7 +2,9 @@ import { STORAGE_KEYS } from "../../app/storageKeys";
 import { creaRepositoryLocale } from "../../repositories/localStorageRepository";
 import {
   aggiornaVoceListaSpesa,
+  allineaAcquistatoDaMaterialeCantiere,
   creaVoceListaSpesa,
+  rimuoviVoceListaPerMaterialeEliminato,
   selezionaVociDaComprare,
   sincronizzaMaterialiDaCantiere,
 } from "./listaSpesaDomain";
@@ -71,8 +73,47 @@ export function sincronizzaListaSpesaDaCantiere(cantiere) {
   );
 }
 
+/**
+ * Allinea acquistato lista ← materiale cantiere (Step 8.0).
+ * @param {object} cantiere
+ * @param {object} materiale
+ */
+export function sincronizzaAcquistatoMaterialeSuLista(cantiere, materiale) {
+  const prossimo = allineaAcquistatoDaMaterialeCantiere(
+    leggiListaSpesa(),
+    cantiere,
+    materiale
+  );
+  salvaListaSpesa(prossimo);
+  return prossimo;
+}
+
+/**
+ * Policy delete materiale cantiere → lista (Step 8.0).
+ * @param {object} cantiere
+ * @param {object} materialeEliminato
+ */
+export function sincronizzaEliminazioneMaterialeSuLista(
+  cantiere,
+  materialeEliminato
+) {
+  const prossimo = rimuoviVoceListaPerMaterialeEliminato(
+    leggiListaSpesa(),
+    cantiere,
+    materialeEliminato
+  );
+  salvaListaSpesa(prossimo);
+  return prossimo;
+}
+
 export function leggiDaComprare() {
   return selezionaVociDaComprare(leggiListaSpesa());
 }
 
-export { creaVoceListaSpesa, aggiornaVoceListaSpesa, sincronizzaMaterialiDaCantiere };
+export {
+  creaVoceListaSpesa,
+  aggiornaVoceListaSpesa,
+  sincronizzaMaterialiDaCantiere,
+  allineaAcquistatoDaMaterialeCantiere,
+  rimuoviVoceListaPerMaterialeEliminato,
+};

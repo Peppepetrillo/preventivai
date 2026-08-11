@@ -1,4 +1,5 @@
 import { routeCantiere } from "../../app/routes";
+import { selezionaDaComprareOggi } from "../../domain/listaSpesa/acquistiSelectors";
 import { creaLavoroDaCantiere } from "../lavori/lavoriDomain";
 
 /** @typedef {"pianificato"|"programmato"|"in-corso"|"completato"|"rimandato"} StatoAgenda */
@@ -311,23 +312,39 @@ export function etichettaPreparazione(giornoSelezionato, oggi = new Date()) {
 
 /**
  * Riepilogo preparazione per il giorno successivo a quello selezionato.
+ * "Mancano" allineato alla fonte Acquisti quando listaSpesa è fornita.
+ *
  * @param {object[]} cantieri
  * @param {Date} giornoSelezionato
  * @param {Date} [oggi]
+ * @param {{ listaSpesa?: object[] }=} extra
  */
 export function preparaRiepilogoGiornoSuccessivo(
   cantieri = [],
   giornoSelezionato,
-  oggi = new Date()
+  oggi = new Date(),
+  extra = {}
 ) {
   const giornoTarget = aggiungiGiorni(giornoSelezionato, 1);
   const interventi = selezionaInterventiGiorno(cantieri, giornoTarget, oggi);
-  const materiali = aggregaMaterialiGiorno(interventi);
+  const materialiCantiere = aggregaMaterialiGiorno(interventi);
+  const listaSpesa = Array.isArray(extra.listaSpesa) ? extra.listaSpesa : null;
+
+  const mancanti = listaSpesa
+    ? selezionaDaComprareOggi(listaSpesa, interventi).map((voce) => ({
+        nome: voce.nome,
+        quantita: voce.quantita,
+        unita: voce.unita || "cad",
+      }))
+    : materialiCantiere.mancanti;
 
   return {
     giorno: giornoTarget,
     etichetta: etichettaPreparazione(giornoSelezionato, oggi),
     interventi: interventi.length,
-    materiali,
+    materiali: {
+      daPortare: materialiCantiere.daPortare,
+      mancanti,
+    },
   };
 }

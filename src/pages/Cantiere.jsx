@@ -30,6 +30,7 @@ export default function Cantiere() {
     aggiungiMateriale,
     aggiungiMaterialeDaPayload,
     eliminaMateriale,
+    toggleMaterialeAcquistato,
     creaVariante,
     sincronizzaVariantePreventivo,
     approvaVariante,
@@ -88,6 +89,7 @@ export default function Cantiere() {
           onAggiungiMateriale={aggiungiMateriale}
           onAggiungiMaterialeDaPayload={aggiungiMaterialeDaPayload}
           onEliminaMateriale={eliminaMateriale}
+          onToggleMaterialeAcquistato={toggleMaterialeAcquistato}
           onAggiungiFoto={aggiungiFoto}
           onEliminaFoto={eliminaFoto}
           onApriFoto={apriFoto}

@@ -55,6 +55,7 @@ export default function CantiereOverview({
   onAggiungiMateriale,
   onAggiungiMaterialeDaPayload,
   onEliminaMateriale,
+  onToggleMaterialeAcquistato,
   onAggiungiFoto,
   onEliminaFoto,
   onApriFoto,
@@ -212,6 +213,10 @@ export default function CantiereOverview({
   }, [cantiere.preventivoId]);
 
   function toggleMaterialeAcquistato(materialeId) {
+    if (typeof onToggleMaterialeAcquistato === "function") {
+      onToggleMaterialeAcquistato(materialeId);
+      return;
+    }
     if (typeof onAggiornaCampo !== "function") return;
     const materiali = (cantiere.materiali || []).map((item) =>
       String(item.id) === String(materialeId)

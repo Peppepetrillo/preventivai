@@ -59,7 +59,14 @@ describe("giornataSelectors", () => {
         },
       ],
       listaSpesa: [
-        { id: "s1", nome: "Tubo 25", quantita: 5, unita: "m", acquistato: false },
+        {
+          id: "s1",
+          nome: "Tubo 25",
+          quantita: 5,
+          unita: "m",
+          acquistato: false,
+          lavoroId: "c1",
+        },
       ],
     });
 
