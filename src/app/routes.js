@@ -11,6 +11,7 @@ export const ROUTES = {
   dettaglioCantiere: "/cantiere/:id",
   clienti: "/clienti",
   listino: "/listino",
+  catalogoMateriali: "/catalogo-materiali",
   sopralluogo: "/sopralluogo",
   impostazioni: "/impostazioni",
   dettaglioPreventivo: "/preventivo/:id",

@@ -9,11 +9,14 @@ import {
   ImagePlus,
   LockKeyhole,
   LogOut,
+  Package,
   Upload,
   X,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import PageWrapper from "../components/PageWrapper";
+import { ROUTES } from "../app/routes";
 import {
   creaBackupCompleto,
   nomeFileBackup,
@@ -174,6 +177,21 @@ export default function Impostazioni() {
             {messaggio}
           </div>
         )}
+
+        <Link
+          to={ROUTES.catalogoMateriali}
+          className="pro-panel mb-6 p-5 flex items-center gap-4 min-h-[64px]"
+        >
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-[16px] bg-yellow-400/15 text-yellow-300 shrink-0">
+            <Package size={22} aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="ds-card-title">Catalogo Materiali</p>
+            <p className="ds-text-secondary text-sm mt-1">
+              Famiglie e varianti per distinte e cantieri.
+            </p>
+          </div>
+        </Link>
 
         <div className="pro-panel p-5 mb-5">
           <div className="flex items-center gap-4 mb-5">

@@ -25,6 +25,7 @@ const Cantieri = lazy(() => import("./pages/Cantieri"));
 const Cantiere = lazy(() => import("./pages/Cantiere"));
 const Clienti = lazy(() => import("./pages/Clienti"));
 const Listino = lazy(() => import("./pages/Listino"));
+const CatalogoMateriali = lazy(() => import("./pages/CatalogoMateriali"));
 const Sopralluogo = lazy(() => import("./pages/Sopralluogo"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
 const DettaglioPreventivo = lazy(() => import("./pages/DettaglioPreventivo"));
@@ -105,6 +106,11 @@ export default function App() {
             <Route
               path={ROUTES.listino}
               element={<Listino />}
+            />
+
+            <Route
+              path={ROUTES.catalogoMateriali}
+              element={<CatalogoMateriali />}
             />
 
             <Route
