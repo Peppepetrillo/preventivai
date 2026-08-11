@@ -93,7 +93,7 @@ describe("DistinteMateriali UI — elenco", () => {
   it("elimina distinta dopo conferma", () => {
     creaDistintaMateriali({ titolo: "Da eliminare" });
     renderLista();
-    fireEvent.click(screen.getByRole("button", { name: /Elimina/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Elimina" }));
     expect(screen.getByText(/Elimina distinta\?/i)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("distinte-confirm-delete"));
     expect(screen.getByTestId("distinte-empty")).toBeInTheDocument();

@@ -39,6 +39,12 @@ function renderEditor(path = ROUTES.nuovaDistintaMateriali) {
   );
 }
 
+/** Ultimo dialog aperto (AnimatePresence può lasciare quello in uscita). */
+function ultimoDialog() {
+  const dialogs = screen.getAllByRole("dialog");
+  return dialogs[dialogs.length - 1];
+}
+
 describe("DistintaMaterialiEditor UI", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -79,7 +85,7 @@ describe("DistintaMaterialiEditor UI", () => {
     fireEvent.click(screen.getByTestId("distinta-aggiungi-materiale"));
     fireEvent.click(screen.getByTestId("distinta-manuale"));
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = ultimoDialog();
     fireEvent.change(within(dialog).getByPlaceholderText(/Tubo corrugato/i), {
       target: { value: "Materiale libero XYZ" },
     });
@@ -105,7 +111,7 @@ describe("DistintaMaterialiEditor UI", () => {
     fireEvent.click(screen.getByTestId("distinta-aggiungi-materiale"));
     fireEvent.click(screen.getByTestId("distinta-da-catalogo"));
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = ultimoDialog();
     fireEvent.click(
       within(dialog).getByRole("button", { name: /Impianto elettrico/i })
     );
@@ -117,7 +123,8 @@ describe("DistintaMaterialiEditor UI", () => {
       within(dialog).getByRole("button", { name: /Aggiungi alla distinta/i })
     );
 
-    expect(screen.getByText(/Tubo corrugato/i)).toBeInTheDocument();
+    const voci = screen.getByTestId("distinta-voci-list");
+    expect(within(voci).getByText(/Tubo corrugato/i)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("distinta-salva"));
 
     const stored = JSON.parse(
@@ -132,7 +139,7 @@ describe("DistintaMaterialiEditor UI", () => {
     renderEditor();
     fireEvent.click(screen.getByTestId("distinta-aggiungi-materiale"));
     fireEvent.click(screen.getByTestId("distinta-da-catalogo"));
-    const dialog = screen.getByRole("dialog");
+    const dialog = ultimoDialog();
     fireEvent.change(within(dialog).getByLabelText(/Cerca materiale/i), {
       target: { value: "corrugato" },
     });
@@ -156,16 +163,13 @@ describe("DistintaMaterialiEditor UI", () => {
     renderEditor(ROUTES.distintaMateriali.replace(":id", d.id));
 
     fireEvent.click(screen.getByLabelText(/Modifica Cavo prova/i));
-    const dialog = screen.getByRole("dialog");
-    const qty = within(dialog).getAllByRole("spinbutton")[0] ||
-      within(dialog).container.querySelector("input");
-    // NumericInput may not be spinbutton — change via displayed inputs
-    const inputs = within(dialog).container.querySelectorAll("input, select");
-    const qtyInput = [...inputs].find(
-      (el) => el.tagName === "INPUT" && el.type !== "checkbox"
-    );
+    const dialog = ultimoDialog();
+    const qtyLabel = within(dialog).getByText(/^Quantità$/i);
+    const qtyInput = qtyLabel.parentElement.querySelector("input");
     const unitaSelect = within(dialog).getByDisplayValue("m");
+    fireEvent.focus(qtyInput);
     fireEvent.change(qtyInput, { target: { value: "25" } });
+    fireEvent.blur(qtyInput);
     fireEvent.change(unitaSelect, { target: { value: "pz" } });
     fireEvent.click(within(dialog).getByRole("button", { name: /^Salva$/i }));
 
@@ -199,7 +203,7 @@ describe("DistintaMaterialiEditor UI", () => {
     renderEditor(ROUTES.distintaMateriali.replace(":id", d.id));
     fireEvent.click(screen.getByTestId("distinta-condividi"));
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = ultimoDialog();
     expect(within(dialog).getByText(/Ciao Mario/)).toBeInTheDocument();
     expect(within(dialog).getByText(/Tubo corrugato Ø25 — 50 m/)).toBeInTheDocument();
     expect(within(dialog).queryByText(/Totale/)).not.toBeInTheDocument();
@@ -220,7 +224,7 @@ describe("DistintaMaterialiEditor UI", () => {
     });
     renderEditor(ROUTES.distintaMateriali.replace(":id", d.id));
     fireEvent.click(screen.getByTestId("distinta-condividi"));
-    const dialog = screen.getByRole("dialog");
+    const dialog = ultimoDialog();
     fireEvent.click(within(dialog).getByLabelText(/Mostra prezzi/i));
     expect(within(dialog).getByText(/Totale indicativo/)).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole("button", { name: /WhatsApp/i }));
