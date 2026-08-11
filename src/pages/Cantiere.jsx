@@ -28,6 +28,7 @@ export default function Cantiere() {
     eliminaChecklist,
     aggiornaCampoMateriale,
     aggiungiMateriale,
+    aggiungiMaterialeDaPayload,
     eliminaMateriale,
     creaVariante,
     sincronizzaVariantePreventivo,
@@ -85,6 +86,7 @@ export default function Cantiere() {
           onEliminaChecklist={eliminaChecklist}
           onAggiornaCampoMateriale={aggiornaCampoMateriale}
           onAggiungiMateriale={aggiungiMateriale}
+          onAggiungiMaterialeDaPayload={aggiungiMaterialeDaPayload}
           onEliminaMateriale={eliminaMateriale}
           onAggiungiFoto={aggiungiFoto}
           onEliminaFoto={eliminaFoto}

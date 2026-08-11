@@ -111,4 +111,38 @@ describe("CantiereOperativo UX Sprint 4", () => {
     });
     vi.useRealTimers();
   });
+
+  it("offre aggiunta da catalogo o materiale libero", () => {
+    const onPayload = vi.fn();
+    render(
+      <CantiereOperativo
+        cantiere={cantiere}
+        avanzamento={0}
+        nuovaChecklist=""
+        nuovoMateriale={{ nome: "", quantita: "", unita: "cad" }}
+        onImpostaChecklist={vi.fn()}
+        onAggiungiChecklist={vi.fn()}
+        onAggiornaChecklist={vi.fn()}
+        onEliminaChecklist={vi.fn()}
+        onAggiornaCampoMateriale={vi.fn()}
+        onAggiungiMateriale={vi.fn()}
+        onAggiungiMaterialeDaPayload={onPayload}
+        onEliminaMateriale={vi.fn()}
+        onToggleMaterialeAcquistato={vi.fn()}
+        onAggiornaCampo={vi.fn()}
+        onAggiungiFoto={vi.fn()}
+        onEliminaFoto={vi.fn()}
+        onApriFoto={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId("cantiere-aggiungi-materiale"));
+    expect(screen.getByTestId("cantiere-materiale-catalogo")).toBeInTheDocument();
+    expect(screen.getByTestId("cantiere-materiale-libero")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("cantiere-materiale-libero"));
+    expect(
+      screen.getByRole("heading", { name: /Materiale libero/i })
+    ).toBeInTheDocument();
+  });
 });

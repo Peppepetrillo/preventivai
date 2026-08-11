@@ -50,3 +50,16 @@ export {
   cercaDistinteMateriali,
   totaleDistintaMateriali,
 } from "./distintaMaterialiService";
+
+export {
+  proiettaVociDistintaSuMaterialiCantiere,
+  applicaModificaManualeMateriale,
+} from "./distintaProiezione";
+
+export {
+  sincronizzaDistintaSuCantiere,
+  collegaESincronizzaDistintaACantiere,
+  scollegaDistintaDaCantiereSoft,
+  risincronizzaDistintaSeCollegata,
+  elencaCantieriPerCollegamento,
+} from "./distintaCantiereService";

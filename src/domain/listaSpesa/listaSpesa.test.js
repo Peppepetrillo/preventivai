@@ -36,6 +36,67 @@ describe("listaSpesa domain", () => {
     expect(daComprare[0].lavoroId).toBe("c1");
   });
 
+  it("sync ripetuto non crea duplicati e aggiorna quantità", () => {
+    const cantiere = {
+      id: "c2",
+      cliente: "Bianchi",
+      materiali: [
+        {
+          id: "m1",
+          nome: "Tubo",
+          quantita: 10,
+          unita: "m",
+          varianteId: "var-t",
+          distintaVoceId: "dv-1",
+          acquistato: false,
+        },
+      ],
+    };
+    sincronizzaListaSpesaDaCantiere(cantiere);
+    sincronizzaListaSpesaDaCantiere({
+      ...cantiere,
+      materiali: [{ ...cantiere.materiali[0], quantita: 40 }],
+    });
+
+    const daComprare = leggiDaComprare().filter((v) => v.lavoroId === "c2");
+    expect(daComprare).toHaveLength(1);
+    expect(daComprare[0].quantita).toBe(40);
+    expect(daComprare[0].varianteId).toBe("var-t");
+    expect(daComprare[0].distintaVoceId).toBe("dv-1");
+  });
+
+  it("dedup preferisce varianteId e distintaVoceId", () => {
+    sincronizzaListaSpesaDaCantiere({
+      id: "c3",
+      materiali: [
+        {
+          id: "a",
+          nome: "Nome A",
+          quantita: 1,
+          unita: "pz",
+          varianteId: "same-var",
+          distintaVoceId: "dv-a",
+        },
+      ],
+    });
+    sincronizzaListaSpesaDaCantiere({
+      id: "c3",
+      materiali: [
+        {
+          id: "b",
+          nome: "Nome B diverso",
+          quantita: 5,
+          unita: "pz",
+          varianteId: "same-var",
+          distintaVoceId: "dv-b",
+        },
+      ],
+    });
+    const voci = leggiDaComprare().filter((v) => v.lavoroId === "c3");
+    expect(voci).toHaveLength(1);
+    expect(voci[0].quantita).toBe(5);
+  });
+
   it("segna una voce come acquistata", () => {
     const voce = aggiungiVoceListaSpesa({ nome: "Cassetta 503" });
     toggleAcquistatoListaSpesa(voce.id);

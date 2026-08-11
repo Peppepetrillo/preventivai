@@ -53,6 +53,7 @@ export default function CantiereOverview({
   onEliminaChecklist,
   onAggiornaCampoMateriale,
   onAggiungiMateriale,
+  onAggiungiMaterialeDaPayload,
   onEliminaMateriale,
   onAggiungiFoto,
   onEliminaFoto,
@@ -363,6 +364,7 @@ export default function CantiereOverview({
         onEliminaChecklist={onEliminaChecklist}
         onAggiornaCampoMateriale={onAggiornaCampoMateriale}
         onAggiungiMateriale={onAggiungiMateriale}
+        onAggiungiMaterialeDaPayload={onAggiungiMaterialeDaPayload}
         onEliminaMateriale={onEliminaMateriale}
         onToggleMaterialeAcquistato={toggleMaterialeAcquistato}
         onAggiungiFoto={onAggiungiFoto}

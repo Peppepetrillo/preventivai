@@ -14,11 +14,24 @@ import {
 
 /**
  * Unisce materiali da lavori del giorno + lista spesa dedicata.
+ * Evita doppio conteggio quando la lista spesa è proiezione dello stesso
+ * materiale già presente nei cantieri del giorno (stesso nome / ids).
+ *
  * @param {ReturnType<typeof aggregaMaterialiGiorno>} materialiGiorno
  * @param {object[]} listaSpesa
+ * @param {object[]} [lavoriGiorno]
  */
-function unisciMaterialiDaComprare(materialiGiorno, listaSpesa = []) {
+function unisciMaterialiDaComprare(
+  materialiGiorno,
+  listaSpesa = [],
+  lavoriGiorno = []
+) {
   const mappa = new Map();
+  const lavoroIdsGiorno = new Set(
+    (lavoriGiorno || []).map((l) => String(l.id))
+  );
+
+  const chiaviCoperte = new Set();
 
   for (const voce of materialiGiorno.mancanti || []) {
     const chiave = String(voce.nome).trim().toLowerCase();
@@ -28,16 +41,45 @@ function unisciMaterialiDaComprare(materialiGiorno, listaSpesa = []) {
       unita: voce.unita || "cad",
       fonte: "lavoro",
     });
+    chiaviCoperte.add(chiave);
+    if (voce.varianteId) chiaviCoperte.add(`var:${voce.varianteId}`);
+    if (voce.distintaVoceId) chiaviCoperte.add(`dv:${voce.distintaVoceId}`);
+  }
+
+  // Arricchisci chiavi dalle materiali grezze dei cantieri del giorno
+  for (const lavoro of lavoriGiorno || []) {
+    const materiali = lavoro.cantiere?.materiali || [];
+    for (const mat of materiali) {
+      if (!mat || mat.acquistato || !mat.nome) continue;
+      if (mat.varianteId) chiaviCoperte.add(`var:${mat.varianteId}`);
+      if (mat.distintaVoceId) chiaviCoperte.add(`dv:${mat.distintaVoceId}`);
+      chiaviCoperte.add(String(mat.nome).trim().toLowerCase());
+    }
   }
 
   for (const voce of selezionaVociDaComprare(listaSpesa)) {
-    const chiave = String(voce.nome).trim().toLowerCase();
-    if (mappa.has(chiave)) {
-      const esistente = mappa.get(chiave);
+    const nomeChiave = String(voce.nome).trim().toLowerCase();
+    const giaNelGiorno =
+      (voce.varianteId && chiaviCoperte.has(`var:${voce.varianteId}`)) ||
+      (voce.distintaVoceId &&
+        chiaviCoperte.has(`dv:${voce.distintaVoceId}`)) ||
+      (lavoroIdsGiorno.has(String(voce.lavoroId || "")) &&
+        chiaviCoperte.has(nomeChiave));
+
+    // Proiezione già contata dai materiali cantiere del giorno → non sommare.
+    if (giaNelGiorno && mappa.has(nomeChiave)) {
+      continue;
+    }
+
+    if (mappa.has(nomeChiave)) {
+      // Stesso nome ma non dalla stessa proiezione cantiere del giorno:
+      // mantieni quantità già presente (preferisci lavoro) senza sommare cieco.
+      if (mappa.get(nomeChiave).fonte === "lavoro") continue;
+      const esistente = mappa.get(nomeChiave);
       esistente.quantita =
         (Number(esistente.quantita) || 0) + (Number(voce.quantita) || 0);
     } else {
-      mappa.set(chiave, {
+      mappa.set(nomeChiave, {
         id: voce.id,
         nome: voce.nome,
         quantita: voce.quantita,
@@ -70,7 +112,8 @@ export function preparaRiepilogoGiornata(
   const attivitaUrgenti = selezionaAttivitaUrgenti(extra.attivita || [], giorno);
   const materialiDaComprare = unisciMaterialiDaComprare(
     materiali,
-    extra.listaSpesa || []
+    extra.listaSpesa || [],
+    lavori
   );
 
   const pagamentiPrevisti = lavori

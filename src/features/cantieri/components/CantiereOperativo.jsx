@@ -5,17 +5,20 @@ import {
   Circle,
   GripVertical,
   Package,
+  Pencil,
   Plus,
   StickyNote,
   Trash2,
 } from "lucide-react";
 
-import NumericInput from "../../../components/NumericInput";
+import BottomSheet from "../../../components/BottomSheet";
 import SwipeableRow from "../../../components/SwipeableRow";
+import SelettoreMaterialeSheet from "../../distinteMateriali/components/SelettoreMaterialeSheet";
+import VoceDistintaSheet from "../../distinteMateriali/components/VoceDistintaSheet";
 
 /**
  * Sezioni operative Cantiere — UX Premium / zero attrito (Sprint 4).
- * Solo UI: nessun cambio modello / persistenza.
+ * Step 6: aggiunta materiale da catalogo o voce libera.
  */
 export default function CantiereOperativo({
   cantiere,
@@ -29,6 +32,7 @@ export default function CantiereOperativo({
   onEliminaChecklist,
   onAggiornaCampoMateriale,
   onAggiungiMateriale,
+  onAggiungiMaterialeDaPayload,
   onEliminaMateriale,
   onToggleMaterialeAcquistato,
   onAggiornaCampo,
@@ -68,6 +72,10 @@ export default function CantiereOperativo({
   const [undoMateriale, setUndoMateriale] = useState(null);
   const undoTimer = useRef(null);
 
+  const [menuMateriale, setMenuMateriale] = useState(false);
+  const [showCatalogo, setShowCatalogo] = useState(false);
+  const [showManuale, setShowManuale] = useState(false);
+
   useEffect(() => {
     setNotaLocale(cantiere.note || "");
   }, [cantiere.id, cantiere.note]);
@@ -97,6 +105,19 @@ export default function CantiereOperativo({
   function toggleChecklist(voce) {
     flashVoce(voce.id);
     onAggiornaChecklist(voce.id, { completata: !voce.completata });
+  }
+
+  function confermaMateriale(payload, origine) {
+    if (onAggiungiMaterialeDaPayload) {
+      onAggiungiMaterialeDaPayload({ ...payload, origine });
+      return;
+    }
+    if (onAggiornaCampoMateriale && onAggiungiMateriale) {
+      onAggiornaCampoMateriale("nome", payload.nome);
+      onAggiornaCampoMateriale("quantita", payload.quantita);
+      onAggiornaCampoMateriale("unita", payload.unita || "cad");
+      window.setTimeout(() => onAggiungiMateriale(), 0);
+    }
   }
 
   function onCambiaNota(valore) {
@@ -310,36 +331,11 @@ export default function CantiereOperativo({
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-[1fr_90px_80px] mb-3">
-          <input
-            value={nuovoMateriale.nome}
-            onChange={(event) =>
-              onAggiornaCampoMateriale("nome", event.target.value)
-            }
-            placeholder="Materiale"
-            className="input-pro min-h-[48px]"
-          />
-          <NumericInput
-            min="0"
-            value={nuovoMateriale.quantita}
-            inputMode="decimal"
-            onChange={(event) => onAggiornaCampoMateriale("quantita", event)}
-            placeholder="Q.tà"
-            className="input-pro min-h-[48px]"
-          />
-          <input
-            value={nuovoMateriale.unita}
-            onChange={(event) =>
-              onAggiornaCampoMateriale("unita", event.target.value)
-            }
-            placeholder="Unità"
-            className="input-pro min-h-[48px]"
-          />
-        </div>
         <button
           type="button"
-          onClick={onAggiungiMateriale}
+          onClick={() => setMenuMateriale(true)}
           className="w-full btn-secondary min-h-[48px] mb-4 flex items-center justify-center gap-2 font-bold"
+          data-testid="cantiere-aggiungi-materiale"
         >
           <Plus size={18} aria-hidden="true" />
           Aggiungi materiale
@@ -560,6 +556,61 @@ export default function CantiereOperativo({
           </p>
         ) : null}
       </section>
+
+      <BottomSheet
+        open={menuMateriale}
+        onClose={() => setMenuMateriale(false)}
+        title="Aggiungi materiale"
+      >
+        <div className="space-y-2 pb-2">
+          <button
+            type="button"
+            onClick={() => {
+              setMenuMateriale(false);
+              setShowCatalogo(true);
+            }}
+            className="flex min-h-[52px] w-full items-center gap-3 rounded-[16px] border border-white/10 bg-black/30 px-4 text-left"
+            data-testid="cantiere-materiale-catalogo"
+          >
+            <Package size={18} aria-hidden="true" className="text-yellow-300" />
+            <span className="ds-text-primary">Dal catalogo</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMenuMateriale(false);
+              setShowManuale(true);
+            }}
+            className="flex min-h-[52px] w-full items-center gap-3 rounded-[16px] border border-white/10 bg-black/30 px-4 text-left"
+            data-testid="cantiere-materiale-libero"
+          >
+            <Pencil size={18} aria-hidden="true" className="text-slate-300" />
+            <span className="ds-text-primary">Materiale libero</span>
+          </button>
+        </div>
+      </BottomSheet>
+
+      <SelettoreMaterialeSheet
+        open={showCatalogo}
+        onClose={() => setShowCatalogo(false)}
+        onApriManuale={() => {
+          setShowCatalogo(false);
+          setShowManuale(true);
+        }}
+        onConferma={(voce) => {
+          confermaMateriale(voce, "catalogo");
+          setShowCatalogo(false);
+        }}
+      />
+
+      <VoceDistintaSheet
+        open={showManuale}
+        onClose={() => setShowManuale(false)}
+        titolo="Materiale libero"
+        onSalva={(payload) => {
+          confermaMateriale(payload, "manuale");
+        }}
+      />
     </div>
   );
 }

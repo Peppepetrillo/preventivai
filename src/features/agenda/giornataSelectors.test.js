@@ -70,4 +70,26 @@ describe("giornataSelectors", () => {
     );
     expect(riepilogo.urgenze.length).toBeGreaterThanOrEqual(1);
   });
+
+  it("non conta due volte materiali già presenti sul cantiere del giorno", () => {
+    const riepilogo = preparaRiepilogoGiornata([cantiere()], OGGI, {
+      listaSpesa: [
+        {
+          id: "s1",
+          nome: "Differenziale",
+          quantita: 2,
+          unita: "cad",
+          acquistato: false,
+          lavoroId: "c1",
+          distintaVoceId: "dv-diff",
+        },
+      ],
+    });
+
+    const diff = riepilogo.materialiDaComprare.find(
+      (m) => m.nome === "Differenziale"
+    );
+    expect(diff).toBeTruthy();
+    expect(diff.quantita).toBe(2);
+  });
 });

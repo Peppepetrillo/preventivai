@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Plus, Share2 } from "lucide-react";
+import { ArrowLeft, Link2, Plus, Share2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import BottomSheet from "../components/BottomSheet";
 import PageWrapper from "../components/PageWrapper";
 import { ROUTES } from "../app/routes";
+import CollegaCantiereSheet from "../features/distinteMateriali/components/CollegaCantiereSheet";
 import DistintaCondividiSheet from "../features/distinteMateriali/components/DistintaCondividiSheet";
 import DistintaVoceRow from "../features/distinteMateriali/components/DistintaVoceRow";
 import SelettoreMaterialeSheet from "../features/distinteMateriali/components/SelettoreMaterialeSheet";
@@ -14,6 +15,12 @@ import {
   creaDistintaMateriali,
   trovaDistintaPerId,
 } from "../domain/distinteMateriali/distintaMaterialiService";
+import {
+  collegaESincronizzaDistintaACantiere,
+  elencaCantieriPerCollegamento,
+  risincronizzaDistintaSeCollegata,
+  scollegaDistintaDaCantiereSoft,
+} from "../domain/distinteMateriali/distintaCantiereService";
 import { normalizzaUnitaMateriale } from "../domain/catalogoMateriali/materialiTypes";
 
 function emptyDraft() {
@@ -45,12 +52,15 @@ export default function DistintaMaterialiEditor() {
   const [editingVoce, setEditingVoce] = useState(null);
   const [showCondividi, setShowCondividi] = useState(false);
   const [savedDistinta, setSavedDistinta] = useState(null);
+  const [showCollegaCantiere, setShowCollegaCantiere] = useState(false);
+  const [cantieriDisponibili, setCantieriDisponibili] = useState([]);
 
   useEffect(() => {
     if (isNuova) {
       setDraft(emptyDraft());
       setDistintaId(null);
       setNonTrovata(false);
+      setSavedDistinta(null);
       return;
     }
     const d = trovaDistintaPerId(id);
@@ -69,6 +79,10 @@ export default function DistintaMaterialiEditor() {
       voci: Array.isArray(d.voci) ? d.voci : [],
     });
   }, [id, isNuova]);
+
+  useEffect(() => {
+    setCantieriDisponibili(elencaCantieriPerCollegamento());
+  }, [showCollegaCantiere, savedDistinta?.collegamenti?.cantiereId]);
 
   const flash = useCallback((msg) => {
     setMessaggio(msg);
@@ -133,17 +147,71 @@ export default function DistintaMaterialiEditor() {
         setErrore("Impossibile salvare la distinta.");
         return;
       }
-      setSavedDistinta(updated);
+      const sync = risincronizzaDistintaSeCollegata(updated.id);
+      const finale = sync.ok && sync.distinta ? sync.distinta : updated;
+      setSavedDistinta(finale);
       setDraft({
-        titolo: updated.titolo || "",
-        clienteNome: updated.clienteNome || "",
-        note: updated.note || "",
-        voci: Array.isArray(updated.voci) ? updated.voci : [],
+        titolo: finale.titolo || "",
+        clienteNome: finale.clienteNome || "",
+        note: finale.note || "",
+        voci: Array.isArray(finale.voci) ? finale.voci : [],
       });
-      flash("Salvata.");
+      flash(sync.ok ? "Salvata e sincronizzata sul cantiere." : "Salvata.");
     } catch (e) {
       setErrore(e?.message || "Errore salvataggio");
     }
+  }
+
+  function assicuratiSalvata() {
+    const payload = buildPayload();
+    if (isNuova || !distintaId) {
+      const created = creaDistintaMateriali(payload);
+      if (!created) return null;
+      setSavedDistinta(created);
+      setDistintaId(created.id);
+      navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
+        replace: true,
+      });
+      return created;
+    }
+    const updated = aggiornaDistintaMateriali(distintaId, payload);
+    if (!updated) return null;
+    setSavedDistinta(updated);
+    return updated;
+  }
+
+  function gestisciCollegaCantiere(cantiereId) {
+    setErrore("");
+    try {
+      const salvata = assicuratiSalvata();
+      if (!salvata) {
+        setErrore("Salva la distinta prima di collegarla.");
+        return;
+      }
+      const risultato = collegaESincronizzaDistintaACantiere(
+        salvata.id,
+        cantiereId
+      );
+      if (!risultato.ok) {
+        setErrore("Impossibile collegare al cantiere.");
+        return;
+      }
+      setSavedDistinta(risultato.distinta);
+      setShowCollegaCantiere(false);
+      flash("Collegata al cantiere e materiali proiettati.");
+    } catch (e) {
+      setErrore(e?.message || "Errore collegamento");
+    }
+  }
+
+  function gestisciScollegaCantiere() {
+    if (!distintaId) return;
+    const risultato = scollegaDistintaDaCantiereSoft(distintaId);
+    if (risultato.ok) {
+      setSavedDistinta(risultato.distinta);
+      flash("Distinta scollegata (materiali cantiere mantenuti).");
+    }
+    setShowCollegaCantiere(false);
   }
 
   function addVoce(voce) {
@@ -312,6 +380,26 @@ export default function DistintaMaterialiEditor() {
               data-testid="distinta-note"
             />
           </label>
+          <button
+            type="button"
+            onClick={() => {
+              setCantieriDisponibili(elencaCantieriPerCollegamento());
+              setShowCollegaCantiere(true);
+            }}
+            className="btn-secondary w-full min-h-[48px] font-bold inline-flex items-center justify-center gap-2"
+            data-testid="distinta-collega-cantiere"
+          >
+            <Link2 size={16} aria-hidden="true" />
+            {savedDistinta?.collegamenti?.cantiereId
+              ? "Cantiere collegato"
+              : "Collega a cantiere"}
+          </button>
+          {savedDistinta?.collegamenti?.cantiereId ? (
+            <p className="ds-text-secondary text-xs">
+              I materiali vengono proiettati sul cantiere e in lista spesa a ogni
+              salvataggio.
+            </p>
+          ) : null}
         </section>
 
         <section className="mb-4">
@@ -445,6 +533,15 @@ export default function DistintaMaterialiEditor() {
         onClose={() => setShowCondividi(false)}
         distinta={distintaPerCondivisione}
         onMessaggio={(msg) => flash(msg)}
+      />
+
+      <CollegaCantiereSheet
+        open={showCollegaCantiere}
+        onClose={() => setShowCollegaCantiere(false)}
+        cantieri={cantieriDisponibili}
+        cantiereCollegatoId={savedDistinta?.collegamenti?.cantiereId}
+        onCollega={gestisciCollegaCantiere}
+        onScollega={gestisciScollegaCantiere}
       />
     </PageWrapper>
   );

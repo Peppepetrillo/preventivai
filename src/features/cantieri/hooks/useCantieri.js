@@ -308,25 +308,52 @@ export function useCantieri({
     }));
   }
 
-  function aggiungiMateriale() {
-    if (!cantiereSelezionato || !nuovoMateriale.nome.trim()) return;
-    const materiale = creaMateriale(nuovoMateriale);
+  function aggiungiMaterialeDaPayload(input = {}) {
+    if (!cantiereSelezionato) return null;
+    const nome = String(input.nome || "").trim();
+    if (!nome) return null;
+
+    const materiale = creaMateriale({
+      nome,
+      quantita: input.quantita,
+      unita: input.unita || "cad",
+      famigliaId: input.famigliaId,
+      varianteId: input.varianteId,
+      distintaId: input.distintaId,
+      distintaVoceId: input.distintaVoceId,
+      note: input.note,
+      prezzoUnitario: input.prezzoUnitario,
+      origine:
+        input.origine ||
+        (input.famigliaId || input.varianteId ? "catalogo" : "manuale"),
+    });
+
     const materiali = [
       ...(cantiereSelezionato.materiali || []),
       materiale,
     ];
 
-    aggiornaSelezionatoConOpzioni({
-      materiali,
-    }, {
-      eventi: [creaEventoMaterialeAggiunto(materiale)],
-    });
+    aggiornaSelezionatoConOpzioni(
+      { materiali },
+      { eventi: [creaEventoMaterialeAggiunto(materiale)] }
+    );
 
     sincronizzaListaSpesaDaCantiere({
       ...cantiereSelezionato,
       materiali,
     });
     setNuovoMateriale(FORM_MATERIALE_INIZIALE);
+    return materiale;
+  }
+
+  function aggiungiMateriale() {
+    if (!cantiereSelezionato || !nuovoMateriale.nome.trim()) return;
+    aggiungiMaterialeDaPayload({
+      nome: nuovoMateriale.nome,
+      quantita: nuovoMateriale.quantita,
+      unita: nuovoMateriale.unita,
+      origine: "manuale",
+    });
   }
 
   function eliminaMateriale(materialeId) {
@@ -596,6 +623,7 @@ export function useCantieri({
     eliminaChecklist,
     aggiornaCampoMateriale,
     aggiungiMateriale,
+    aggiungiMaterialeDaPayload,
     eliminaMateriale,
     aggiungiVariante,
     eliminaVariante,

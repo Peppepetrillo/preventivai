@@ -3,6 +3,7 @@ export {
   creaVoceListaSpesa,
   selezionaVociDaComprare,
   sincronizzaMaterialiDaCantiere,
+  trovaVoceListaCollegata,
 } from "./listaSpesaDomain";
 export {
   aggiungiVoceListaSpesa,

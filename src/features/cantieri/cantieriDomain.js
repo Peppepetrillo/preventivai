@@ -127,13 +127,40 @@ export function creaVoceChecklist(testo) {
   };
 }
 
-export function creaMateriale({ nome, quantita, unita }) {
-  return {
-    id: new Date().getTime(),
-    nome: nome.trim(),
+export function creaMateriale({
+  nome,
+  quantita,
+  unita,
+  famigliaId,
+  varianteId,
+  distintaId,
+  distintaVoceId,
+  note,
+  origine,
+  prezzoUnitario,
+  modificatoManualmente,
+  distintaOrfana,
+} = {}) {
+  const materiale = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    nome: String(nome || "").trim(),
     quantita: Number(quantita) || 0,
-    unita: unita.trim() || "cad",
+    unita: String(unita || "cad").trim() || "cad",
   };
+
+  if (famigliaId) materiale.famigliaId = String(famigliaId);
+  if (varianteId) materiale.varianteId = String(varianteId);
+  if (distintaId) materiale.distintaId = String(distintaId);
+  if (distintaVoceId) materiale.distintaVoceId = String(distintaVoceId);
+  if (note) materiale.note = String(note).trim();
+  if (origine) materiale.origine = String(origine);
+  if (prezzoUnitario != null && Number.isFinite(Number(prezzoUnitario))) {
+    materiale.prezzoUnitario = Number(prezzoUnitario);
+  }
+  if (modificatoManualmente) materiale.modificatoManualmente = true;
+  if (distintaOrfana) materiale.distintaOrfana = true;
+
+  return materiale;
 }
 
 export function creaFoto({ nome, src }) {
