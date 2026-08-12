@@ -8,6 +8,8 @@ import { routePreventivo } from "../app/routes";
 import { STATI_PREVENTIVO } from "../domain/workflow";
 import DettaglioPreventivo from "./DettaglioPreventivo";
 
+const EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}]/u;
+
 vi.mock("../services/preventiviPdfService", () => ({
   generaPdfPreventivo: vi.fn().mockResolvedValue({
     blob: new Blob(["pdf"]),
@@ -48,6 +50,18 @@ function renderDettaglio(id = "p1") {
       </Routes>
     </MemoryRouter>
   );
+}
+
+function bottoniPrimari() {
+  return screen
+    .getAllByRole("button")
+    .filter((btn) => btn.className.includes("btn-primary"));
+}
+
+function assertNessunaEmojiNeiBottoni() {
+  screen.getAllByRole("button").forEach((btn) => {
+    expect(btn.textContent).not.toMatch(EMOJI_REGEX);
+  });
 }
 
 describe("DettaglioPreventivo UX-2.1", () => {
@@ -211,5 +225,118 @@ describe("DettaglioPreventivo UX-2.1", () => {
     expect(
       within(economico).getByRole("button", { name: /Nuovo incasso/i })
     ).toBeInTheDocument();
+  });
+});
+
+describe("DettaglioPreventivo UX-2.2", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    localStorage.setItem(
+      STORAGE_KEYS.datiAzienda,
+      JSON.stringify({ ragioneSociale: "Test SRL" })
+    );
+  });
+
+  it("una sola btn-primary: hero CTA", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([creaPreventivo()])
+    );
+
+    renderDettaglio();
+
+    const primari = bottoniPrimari();
+    expect(primari).toHaveLength(1);
+    expect(primari[0]).toHaveAttribute("data-testid", "preventivo-hero-cta");
+  });
+
+  it("nessuna emoji nelle CTA e copy footer uniformato", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([creaPreventivo()])
+    );
+
+    renderDettaglio();
+
+    assertNessunaEmojiNeiBottoni();
+    expect(screen.getByTestId("preventivo-salva")).toHaveTextContent(/^Salva$/);
+    expect(screen.getByTestId("preventivo-duplica")).toHaveTextContent(/^Duplica$/);
+    expect(screen.getByTestId("preventivo-elimina")).toHaveTextContent(/^Elimina$/);
+    expect(screen.getByTestId("preventivo-elimina")).toHaveClass("btn-danger");
+  });
+
+  it("Accettato: nessun Inizia cantiere duplicato nelle secondarie", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([
+        creaPreventivo({ id: "p3", stato: STATI_PREVENTIVO.ACCETTATO }),
+      ])
+    );
+
+    renderDettaglio("p3");
+
+    expect(screen.getByTestId("preventivo-hero-cta")).toHaveTextContent(
+      "Inizia cantiere"
+    );
+    expect(
+      screen.queryByTestId("preventivo-workflow-secondarie")
+    ).not.toHaveTextContent("Inizia cantiere");
+  });
+
+  it("Convertito: nessun Apri cantiere duplicato nelle secondarie", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([
+        creaPreventivo({
+          id: "p4",
+          stato: STATI_PREVENTIVO.CONVERTITO,
+          cantiereId: "c1",
+        }),
+      ])
+    );
+    localStorage.setItem(
+      STORAGE_KEYS.cantieri,
+      JSON.stringify([
+        {
+          id: "c1",
+          nome: "Cantiere Mario",
+          cliente: "Mario Rossi",
+          stato: "Da iniziare",
+          preventivoId: "p4",
+        },
+      ])
+    );
+
+    renderDettaglio("p4");
+
+    expect(screen.getByTestId("preventivo-hero-cta")).toHaveTextContent(
+      "Apri cantiere"
+    );
+    const secondarie = screen.queryByTestId("preventivo-workflow-secondarie");
+    if (secondarie) {
+      expect(secondarie).not.toHaveTextContent("Apri cantiere");
+    }
+  });
+
+  it("documenti embedded senza btn-primary extra", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([
+        creaPreventivo({ id: "p2", stato: STATI_PREVENTIVO.INVIATO }),
+      ])
+    );
+
+    renderDettaglio("p2");
+
+    await user.click(
+      screen.getByTestId("preventivo-sezione-documenti").querySelector("summary")
+    );
+
+    expect(bottoniPrimari()).toHaveLength(1);
+    assertNessunaEmojiNeiBottoni();
+    expect(
+      screen.getByRole("button", { name: /Firma ora/i })
+    ).toHaveClass("btn-secondary");
   });
 });

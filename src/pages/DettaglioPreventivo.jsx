@@ -566,8 +566,6 @@ export default function DettaglioPreventivo() {
         confermaRifiuto={confermaRifiuto}
         onInvia={eseguiInvia}
         onAccetta={eseguiAccetta}
-        onConverti={trasformaInCantiere}
-        onApriCantiere={apriCantiereCollegato}
         onRifiuta={eseguiAnnulla}
         onAnnullaRifiuto={() => setConfermaRifiuto(false)}
       />
@@ -836,6 +834,7 @@ export default function DettaglioPreventivo() {
         sectionRef={sezioneDocumentiRef}
       >
         <FirmaClienteSection
+          embedded
           preventivo={{ ...datiAggiornati(), stato }}
           onMessaggio={setMessaggio}
           pdfInElaborazione={pdfInElaborazione}
@@ -845,6 +844,7 @@ export default function DettaglioPreventivo() {
         />
 
         <CondivisioneSection
+          embedded
           preventivo={{ ...datiAggiornati(), stato }}
           onMessaggio={setMessaggio}
           inElaborazione={pdfInElaborazione}
@@ -967,26 +967,28 @@ export default function DettaglioPreventivo() {
           data-testid="preventivo-salva"
         >
           <Save size={20} />
-          Salva modifiche
+          Salva
         </button>
 
         <button
           type="button"
           onClick={duplicaPreventivo}
           className="w-full btn-secondary p-4 min-h-[44px] flex items-center justify-center gap-2"
+          data-testid="preventivo-duplica"
         >
           <Copy size={20} />
-          Duplica preventivo
+          Duplica
         </button>
 
         {!confermaEliminaPreventivo ? (
           <button
             type="button"
             onClick={eliminaPreventivo}
-            className="w-full rounded-[14px] border border-red-400/25 bg-red-500/10 p-4 min-h-[44px] text-base font-bold text-red-100 flex items-center justify-center gap-2"
+            className="w-full btn-danger p-4 min-h-[44px] flex items-center justify-center gap-2"
+            data-testid="preventivo-elimina"
           >
             <Trash2 size={20} />
-            Elimina preventivo
+            Elimina
           </button>
         ) : (
           <div className="grid gap-2 ux-sheet">
@@ -996,7 +998,7 @@ export default function DettaglioPreventivo() {
             <button
               type="button"
               onClick={eliminaPreventivo}
-              className="w-full rounded-[14px] border border-red-400/40 bg-red-500/20 p-4 text-base font-bold text-red-100 min-h-[44px]"
+              className="w-full btn-danger p-4 font-bold min-h-[44px]"
             >
               Conferma elimina
             </button>

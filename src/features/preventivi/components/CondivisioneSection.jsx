@@ -50,6 +50,7 @@ export default function CondivisioneSection({
   preparaDocumento,
   onVisualizzaPdf,
   inElaborazione = false,
+  embedded = false,
 }) {
   const [tick, setTick] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -102,21 +103,37 @@ export default function CondivisioneSection({
   }
 
   const disabilitato = busy || inElaborazione;
+  const Wrapper = embedded ? "div" : "section";
 
   return (
-    <section className="pro-panel p-5 mb-5 space-y-4">
-      <div>
-        <p className="section-label">Documento</p>
-        <h2 className="text-xl font-black mt-1">Condivisione</h2>
-        <p className="text-sm text-slate-400 mt-2">
-          Condivide il PDF già pronto
-          {docInfo.firmato ? " (versione firmata)" : " (versione originale)"}.
-          Non rigenera automaticamente.
-        </p>
-        <p className="text-xs text-slate-500 mt-1 truncate">
-          File: {docInfo.nomeFile}
-        </p>
-      </div>
+    <Wrapper
+      className={embedded ? "space-y-4" : "pro-panel p-5 mb-5 space-y-4"}
+      data-testid="preventivo-condivisione-section"
+    >
+      {!embedded ? (
+        <div>
+          <p className="section-label">Documento</p>
+          <h2 className="ds-section-title mt-1">Condivisione</h2>
+          <p className="ds-text-secondary mt-2">
+            Condivide il PDF già pronto
+            {docInfo.firmato ? " (versione firmata)" : " (versione originale)"}.
+            Non rigenera automaticamente.
+          </p>
+          <p className="text-xs text-slate-500 mt-1 truncate">
+            File: {docInfo.nomeFile}
+          </p>
+        </div>
+      ) : (
+        <>
+          <p className="ds-text-secondary text-sm">
+            Condivide il PDF già pronto
+            {docInfo.firmato ? " (versione firmata)" : " (versione originale)"}.
+          </p>
+          <p className="text-xs text-slate-500 truncate">
+            File: {docInfo.nomeFile}
+          </p>
+        </>
+      )}
 
       <div className="grid gap-2 sm:grid-cols-2">
         <label className="block">
@@ -194,7 +211,7 @@ export default function CondivisioneSection({
               })
             )
           }
-          className="btn-primary min-h-[48px] px-4 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+          className="btn-secondary min-h-[48px] px-4 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
         >
           <Share2 size={16} aria-hidden="true" />
           Condividi
@@ -223,7 +240,7 @@ export default function CondivisioneSection({
           className="btn-secondary min-h-[48px] px-4 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
         >
           <Eye size={16} aria-hidden="true" />
-          Visualizza PDF
+          Anteprima PDF
         </button>
       </div>
 
@@ -231,7 +248,7 @@ export default function CondivisioneSection({
         storico={storico}
         stats={stats}
       />
-    </section>
+    </Wrapper>
   );
 }
 
@@ -244,7 +261,7 @@ function StoricoCondivisioniCard({ storico, stats }) {
     <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.03] px-4 py-4 space-y-3">
       <div>
         <p className="text-sm font-semibold text-white">
-          📤 Storico Condivisioni
+          Storico condivisioni
         </p>
         <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
           <div className="rounded-[12px] border border-white/[0.06] bg-black/20 px-2 py-2">

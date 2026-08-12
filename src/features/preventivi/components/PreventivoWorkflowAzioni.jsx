@@ -1,4 +1,4 @@
-import { Check, HardHat, Send, X } from "lucide-react";
+import { Check, Send, X } from "lucide-react";
 
 import { AZIONI_PREVENTIVO } from "../../../domain/workflow";
 
@@ -10,8 +10,6 @@ export default function PreventivoWorkflowAzioni({
   confermaRifiuto = false,
   onInvia,
   onAccetta,
-  onConverti,
-  onApriCantiere,
   onRifiuta,
   onAnnullaRifiuto,
 }) {
@@ -40,26 +38,6 @@ export default function PreventivoWorkflowAzioni({
         >
           <Check size={16} aria-hidden="true" />
           Accetta
-        </button>
-      ) : null}
-      {azioni.includes(AZIONI_PREVENTIVO.CONVERTI_CANTIERE) ? (
-        <button
-          type="button"
-          onClick={onConverti}
-          className="btn-secondary px-4 py-3 text-sm font-semibold inline-flex items-center gap-2 min-h-[44px]"
-        >
-          <HardHat size={16} aria-hidden="true" />
-          Inizia cantiere
-        </button>
-      ) : null}
-      {azioni.includes(AZIONI_PREVENTIVO.APRI_CANTIERE) ? (
-        <button
-          type="button"
-          onClick={onApriCantiere}
-          className="btn-secondary px-4 py-3 text-sm font-semibold inline-flex items-center gap-2 min-h-[44px]"
-        >
-          <HardHat size={16} aria-hidden="true" />
-          Apri cantiere
         </button>
       ) : null}
       {azioni.includes(AZIONI_PREVENTIVO.ANNULLA) ||

@@ -108,7 +108,7 @@ export function risolviHeroCta({
   }
 
   if (azioni.includes(AZIONI_PREVENTIVO.ACCETTA)) {
-    return { id: HERO_CTA.ACCETTA, label: "Accetta preventivo" };
+    return { id: HERO_CTA.ACCETTA, label: "Accetta" };
   }
 
   return null;

@@ -36,9 +36,9 @@ describe("CondivisioneSection", () => {
     expect(screen.getByRole("button", { name: /^Condividi$/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Scarica PDF/i })).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Visualizza PDF/i })
+      screen.getByRole("button", { name: /Anteprima PDF/i })
     ).toBeInTheDocument();
-    expect(screen.getByText(/Storico Condivisioni/i)).toBeInTheDocument();
+    expect(screen.getByText(/Storico condivisioni/i)).toBeInTheDocument();
     expect(screen.getByText(/Nessuna condivisione ancora/i)).toBeInTheDocument();
   });
 

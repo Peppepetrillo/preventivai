@@ -19,6 +19,7 @@ export default function FirmaClienteSection({
   onMessaggio,
   onRigeneraPdf,
   pdfInElaborazione = false,
+  embedded = false,
 }) {
   const [tick, setTick] = useState(0);
   const [sheetAperto, setSheetAperto] = useState(false);
@@ -94,16 +95,28 @@ export default function FirmaClienteSection({
     ? new Date(firma.dataFirma).toLocaleString("it-IT")
     : "—";
 
+  const Wrapper = embedded ? "div" : "section";
+
   return (
-    <section className="pro-panel p-5 mb-5 space-y-4">
-      <div>
-        <p className="section-label">Documento</p>
-        <h2 className="text-xl font-black mt-1">Firma Cliente</h2>
-        <p className="text-sm text-slate-400 mt-2">
+    <Wrapper
+      className={embedded ? "space-y-4" : "pro-panel p-5 mb-5 space-y-4"}
+      data-testid="preventivo-firma-section"
+    >
+      {!embedded ? (
+        <div>
+          <p className="section-label">Documento</p>
+          <h2 className="ds-section-title mt-1">Firma cliente</h2>
+          <p className="ds-text-secondary mt-2">
+            La firma genera una versione PDF firmata. Il preventivo non viene
+            modificato.
+          </p>
+        </div>
+      ) : (
+        <p className="ds-text-secondary text-sm">
           La firma genera una versione PDF firmata. Il preventivo non viene
           modificato.
         </p>
-      </div>
+      )}
 
       <dl className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
@@ -148,7 +161,7 @@ export default function FirmaClienteSection({
           type="button"
           onClick={apriFirma}
           disabled={!puoFirmare}
-          className="btn-primary min-h-[48px] px-4 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+          className="btn-secondary min-h-[48px] px-4 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
         >
           <PenLine size={16} aria-hidden="true" />
           Firma ora
@@ -160,7 +173,7 @@ export default function FirmaClienteSection({
           className="btn-secondary min-h-[48px] px-4 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
         >
           <Eye size={16} aria-hidden="true" />
-          Visualizza firma
+          Mostra firma
         </button>
         <button
           type="button"
@@ -222,6 +235,6 @@ export default function FirmaClienteSection({
           />
         </div>
       </BottomSheet>
-    </section>
+    </Wrapper>
   );
 }
