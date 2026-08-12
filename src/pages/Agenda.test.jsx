@@ -125,4 +125,17 @@ describe("Agenda", () => {
 
     vi.useRealTimers();
   });
+
+  it("FAB contestuale Agenda resta disponibile", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 29, 10, 0, 0));
+
+    renderAgenda();
+
+    const fabAgenda = screen.getByRole("button", { name: /^Nuovo$/i });
+    expect(fabAgenda.className).toMatch(/fixed/);
+    expect(fabAgenda.className).toMatch(/z-30/);
+
+    vi.useRealTimers();
+  });
 });

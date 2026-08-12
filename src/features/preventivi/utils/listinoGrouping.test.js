@@ -3,10 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   calcolaNumeroVociCarrello,
   creaMappaQuantitaCarrello,
+  creaStatoCategorieAperteDaRicerca,
   filtraListino,
+  haRicercaListinoAttiva,
   quantitaDaMappa,
   quantitaVoceNelCarrello,
   raggruppaListinoPerCategoria,
+  risolviStatoCategorieAperte,
 } from "./listinoGrouping";
 
 describe("listinoGrouping", () => {
@@ -48,5 +51,52 @@ describe("listinoGrouping", () => {
 
     expect(quantitaDaMappa(mappa, { nome: "Punto luce" })).toBe(2);
     expect(calcolaNumeroVociCarrello([{ nome: "A", quantita: 2 }])).toBe(2);
+  });
+
+  it("haRicercaListinoAttiva distingue ricerca vuota da attiva", () => {
+    expect(haRicercaListinoAttiva("")).toBe(false);
+    expect(haRicercaListinoAttiva("   ")).toBe(false);
+    expect(haRicercaListinoAttiva("presa")).toBe(true);
+  });
+
+  it("creaStatoCategorieAperteDaRicerca apre solo con ricerca attiva", () => {
+    const categorie = raggruppaListinoPerCategoria(
+      filtraListino(listino, "presa")
+    );
+
+    expect(creaStatoCategorieAperteDaRicerca(categorie, "")).toBeNull();
+    expect(creaStatoCategorieAperteDaRicerca(categorie, "presa")).toEqual({
+      Impianto: true,
+    });
+  });
+
+  it("risolviStatoCategorieAperte apre categorie con risultati in ricerca", () => {
+    const filtrato = filtraListino(listino, "presa");
+    const categorie = raggruppaListinoPerCategoria(filtrato);
+
+    expect(
+      risolviStatoCategorieAperte({
+        categorie,
+        categorieAperteDefault: ["Illuminazione"],
+        ricerca: "presa",
+        overrideAperte: {},
+      })
+    ).toEqual({ Impianto: true });
+  });
+
+  it("risolviStatoCategorieAperte ripristina default senza ricerca", () => {
+    const categorie = raggruppaListinoPerCategoria(listino);
+
+    expect(
+      risolviStatoCategorieAperte({
+        categorie,
+        categorieAperteDefault: ["Illuminazione"],
+        ricerca: "",
+        overrideAperte: {},
+      })
+    ).toEqual({
+      Illuminazione: true,
+      Impianto: false,
+    });
   });
 });

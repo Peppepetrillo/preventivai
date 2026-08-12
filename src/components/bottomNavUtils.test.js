@@ -1,7 +1,40 @@
 import { describe, expect, it } from "vitest";
 
 import { ROUTES } from "../app/routes";
-import { isVoceAttiva } from "./bottomNavUtils";
+import {
+  isDistintaEditorRoute,
+  isVoceAttiva,
+  shouldShowBottomNav,
+} from "./bottomNavUtils";
+
+describe("bottomNavUtils — editor distinta UX-4.3", () => {
+  it("identifica le route editor distinta", () => {
+    expect(isDistintaEditorRoute(ROUTES.nuovaDistintaMateriali)).toBe(true);
+    expect(isDistintaEditorRoute("/distinte-materiali/d1")).toBe(true);
+    expect(isDistintaEditorRoute(ROUTES.distinteMateriali)).toBe(false);
+    expect(isDistintaEditorRoute("/acquisti")).toBe(false);
+    expect(isDistintaEditorRoute("/catalogo-materiali")).toBe(false);
+  });
+
+  it("mostra BottomNav fuori dall'editor", () => {
+    expect(shouldShowBottomNav({ pathname: ROUTES.distinteMateriali })).toBe(
+      true
+    );
+    expect(shouldShowBottomNav({ pathname: ROUTES.acquisti })).toBe(true);
+    expect(shouldShowBottomNav({ pathname: ROUTES.catalogoMateriali })).toBe(
+      true
+    );
+  });
+
+  it("nasconde BottomNav nell'editor distinta", () => {
+    expect(
+      shouldShowBottomNav({ pathname: ROUTES.nuovaDistintaMateriali })
+    ).toBe(false);
+    expect(
+      shouldShowBottomNav({ pathname: "/distinte-materiali/abc123" })
+    ).toBe(false);
+  });
+});
 
 describe("BottomNav isVoceAttiva RC-2B", () => {
   const voceCantieri = { path: ROUTES.cantieri };

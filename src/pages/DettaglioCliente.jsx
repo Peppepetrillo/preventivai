@@ -125,7 +125,7 @@ export default function DettaglioCliente() {
         {/* CTA principali */}
         <div className="grid grid-cols-2 gap-3 mt-5">
           <Link
-            to={`${ROUTES.nuovoPreventivo}?clienteId=${id}`}
+            to={`${ROUTES.preventivi}?clienteId=${id}`}
             className="btn-primary py-4 flex items-center justify-center gap-2 text-sm font-black"
           >
             <Plus size={18} />
@@ -254,7 +254,7 @@ export default function DettaglioCliente() {
             <p className="font-black">Nessun preventivo</p>
             <p className="text-sm mt-1">Crea il primo preventivo per questo cliente.</p>
             <Link
-              to={`${ROUTES.nuovoPreventivo}?clienteId=${id}`}
+              to={`${ROUTES.preventivi}?clienteId=${id}`}
               className="btn-primary mt-4 inline-flex items-center gap-2 px-5 py-3 text-sm font-black"
             >
               <Plus size={16} />

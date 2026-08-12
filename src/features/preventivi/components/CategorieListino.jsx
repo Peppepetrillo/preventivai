@@ -1,17 +1,19 @@
-import { memo, useId, useMemo, useState } from "react";
+import { memo, useEffect, useId, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 import RigaListino from "./RigaListino";
 import {
-  creaStatoCategorieAperte,
+  haRicercaListinoAttiva,
   quantitaDaMappa,
   raggruppaListinoPerCategoria,
+  risolviStatoCategorieAperte,
 } from "../utils/listinoGrouping";
 
 function CategorieListino({
   listino,
   quantitaPerVoce,
   categorieAperteDefault = [],
+  ricerca = "",
   onAggiungiVoce,
 }) {
   const baseId = useId();
@@ -23,18 +25,22 @@ function CategorieListino({
 
   const [overrideAperte, setOverrideAperte] = useState({});
 
-  const aperte = useMemo(() => {
-    const base = creaStatoCategorieAperte(categorie, categorieAperteDefault);
-    const unite = { ...base };
+  useEffect(() => {
+    if (!haRicercaListinoAttiva(ricerca)) {
+      setOverrideAperte({});
+    }
+  }, [ricerca]);
 
-    categorie.forEach((categoria) => {
-      if (overrideAperte[categoria.nome] !== undefined) {
-        unite[categoria.nome] = overrideAperte[categoria.nome];
-      }
-    });
-
-    return unite;
-  }, [categorie, categorieAperteDefault, overrideAperte]);
+  const aperte = useMemo(
+    () =>
+      risolviStatoCategorieAperte({
+        categorie,
+        categorieAperteDefault,
+        ricerca,
+        overrideAperte,
+      }),
+    [categorie, categorieAperteDefault, overrideAperte, ricerca]
+  );
 
   function toggleCategoria(nome) {
     setOverrideAperte((precedente) => ({
@@ -71,10 +77,7 @@ function CategorieListino({
               aria-expanded={isAperta}
               aria-controls={pannelloId}
             >
-              <span className="font-black text-left">
-                <span aria-hidden="true">{categoria.icona} </span>
-                {categoria.nome}
-              </span>
+              <span className="font-black text-left">{categoria.nome}</span>
               <span className="text-xs text-slate-500 font-bold">
                 {categoria.voci.length}
               </span>

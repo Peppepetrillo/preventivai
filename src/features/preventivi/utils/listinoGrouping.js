@@ -60,6 +60,49 @@ export function creaStatoCategorieAperte(categorie = [], categorieAperte = []) {
   return stato;
 }
 
+export function haRicercaListinoAttiva(ricerca = "") {
+  return ricerca.trim().length > 0;
+}
+
+/**
+ * Con ricerca attiva, apre tutte le categorie presenti nel listino filtrato.
+ * Ritorna null se la ricerca è vuota (usa lo stato normale).
+ */
+export function creaStatoCategorieAperteDaRicerca(categorie = [], ricerca = "") {
+  if (!haRicercaListinoAttiva(ricerca)) {
+    return null;
+  }
+
+  return Object.fromEntries(
+    categorie.map((categoria) => [categoria.nome, true])
+  );
+}
+
+/**
+ * Unisce stato base, ricerca e override manuali dell'utente.
+ */
+export function risolviStatoCategorieAperte({
+  categorie = [],
+  categorieAperteDefault = [],
+  ricerca = "",
+  overrideAperte = {},
+}) {
+  const daRicerca = creaStatoCategorieAperteDaRicerca(categorie, ricerca);
+  const base =
+    daRicerca ??
+    creaStatoCategorieAperte(categorie, categorieAperteDefault);
+
+  const unite = { ...base };
+
+  categorie.forEach((categoria) => {
+    if (overrideAperte[categoria.nome] !== undefined) {
+      unite[categoria.nome] = overrideAperte[categoria.nome];
+    }
+  });
+
+  return unite;
+}
+
 export function creaMappaQuantitaCarrello(lavorazioni = []) {
   const mappa = new Map();
 

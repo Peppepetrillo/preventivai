@@ -5,6 +5,24 @@
 import { ROUTES } from "../app/routes";
 
 /**
+ * True se la route corrente è l'editor Distinta Materiali (nuova o modifica).
+ * La lista `/distinte-materiali` resta fuori.
+ */
+export function isDistintaEditorRoute(pathname = "") {
+  const path = String(pathname || "");
+  if (path === ROUTES.distinteMateriali) return false;
+  if (path === ROUTES.nuovaDistintaMateriali) return true;
+  return path.startsWith(`${ROUTES.distinteMateriali}/`);
+}
+
+/**
+ * True se la BottomNav globale deve essere visibile.
+ */
+export function shouldShowBottomNav(location) {
+  return !isDistintaEditorRoute(location?.pathname || "");
+}
+
+/**
  * True se la voce di menu corrisponde alla route corrente.
  * Regole RC-2B:
  * - Cantieri: /cantieri e /cantiere/:id

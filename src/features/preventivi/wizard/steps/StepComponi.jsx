@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import { Sparkles, Undo2 } from "lucide-react";
+import { Plus, Sparkles, Undo2 } from "lucide-react";
 
 import SearchInput from "../../../../components/SearchInput";
 import { calcolaTotali } from "../../../../utils/preventivi";
@@ -8,6 +8,7 @@ import CategorieListino from "../../components/CategorieListino";
 import CondizioniAvanzate from "../../components/CondizioniAvanzate";
 import ContestoPreventivo from "../../components/ContestoPreventivo";
 import KitRapidiBar from "../../components/KitRapidiBar";
+import LavorazionePersonalizzataSheet from "../../components/LavorazionePersonalizzataSheet";
 import PiuUsatiListino from "../../components/PiuUsatiListino";
 import PreventivoAssistantPanel from "../../components/PreventivoAssistantPanel";
 import PreventivoExpress from "../../components/PreventivoExpress";
@@ -39,6 +40,7 @@ function StepComponi({
 
   const [expressOverride, setExpressOverride] = useState(null);
   const [avanzateAperte, setAvanzateAperte] = useState(false);
+  const [personalizzataAperta, setPersonalizzataAperta] = useState(false);
   const [snapshotExpress, setSnapshotExpress] = useState(null);
   const [feedbackExpress, setFeedbackExpress] = useState("");
 
@@ -160,6 +162,13 @@ function StepComponi({
     onImpostaCliente,
   ]);
 
+  const aggiungiPersonalizzata = useCallback(
+    (lavorazione) => {
+      onAggiornaLavorazioni((correnti) => [...correnti, lavorazione]);
+    },
+    [onAggiornaLavorazioni]
+  );
+
   return (
     <div className="flex flex-col min-h-[calc(100vh-11rem)]">
       <div
@@ -216,6 +225,50 @@ function StepComponi({
           </div>
         ) : null}
 
+        <section aria-labelledby="listino-preventivo-titolo" className="space-y-3">
+          <div className="px-1">
+            <h2 id="listino-preventivo-titolo" className="ds-card-title">
+              Dal tuo listino
+            </h2>
+            <p className="ds-text-secondary text-sm mt-0.5">
+              Tocca una lavorazione per aggiungerla al preventivo.
+            </p>
+          </div>
+
+          <SearchInput
+            label="Cerca lavorazione"
+            placeholder="Cerca lavorazione..."
+            value={ricerca}
+            onChange={(event) => setRicerca(event.target.value)}
+          />
+
+          {!ricerca ? (
+            <PiuUsatiListino
+              voci={piuUsati}
+              quantitaPerVoce={quantitaPerVoce}
+              onAggiungiVoce={aggiungiVoce}
+            />
+          ) : null}
+
+          <CategorieListino
+            listino={listinoFiltrato}
+            ricerca={ricerca}
+            quantitaPerVoce={quantitaPerVoce}
+            categorieAperteDefault={opzione?.categorieAperte || []}
+            onAggiungiVoce={aggiungiVoce}
+          />
+
+          <button
+            type="button"
+            onClick={() => setPersonalizzataAperta(true)}
+            className="w-full btn-secondary min-h-[44px] flex items-center justify-center gap-2"
+            data-testid="aggiungi-lavorazione-personalizzata"
+          >
+            <Plus size={18} aria-hidden="true" />
+            Lavorazione personalizzata
+          </button>
+        </section>
+
         <PreventivoAssistantPanel
           tipoLavoro={tipoLavoro}
           lavorazioni={lavorazioni}
@@ -225,28 +278,6 @@ function StepComponi({
         {opzione?.evidenziaKit ? (
           <KitRapidiBar onAggiungiKit={aggiungiKit} />
         ) : null}
-
-        <SearchInput
-          label="Cerca lavorazione"
-          placeholder="Cerca lavorazione..."
-          value={ricerca}
-          onChange={(event) => setRicerca(event.target.value)}
-        />
-
-        {!ricerca ? (
-          <PiuUsatiListino
-            voci={piuUsati}
-            quantitaPerVoce={quantitaPerVoce}
-            onAggiungiVoce={aggiungiVoce}
-          />
-        ) : null}
-
-        <CategorieListino
-          listino={listinoFiltrato}
-          quantitaPerVoce={quantitaPerVoce}
-          categorieAperteDefault={opzione?.categorieAperte || []}
-          onAggiungiVoce={aggiungiVoce}
-        />
       </div>
 
       <CarrelloPreventivo
@@ -276,6 +307,12 @@ function StepComponi({
         onClose={() => setAvanzateAperte(false)}
         condizioni={condizioni}
         onSalva={onAggiornaCondizioni}
+      />
+
+      <LavorazionePersonalizzataSheet
+        open={personalizzataAperta}
+        onClose={() => setPersonalizzataAperta(false)}
+        onSalva={aggiungiPersonalizzata}
       />
     </div>
   );

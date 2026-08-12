@@ -8,11 +8,15 @@ import {
   Navigate,
   Routes,
   Route,
+  useLocation,
 } from "react-router-dom";
 
 import BottomNav from "./components/BottomNav";
+import { isDistintaEditorRoute } from "./components/bottomNavUtils";
 import AppLock from "./components/AppLock";
 import InstallPrompt from "./components/InstallPrompt";
+import { GlobalCreateProvider } from "./components/globalCreate/GlobalCreateContext";
+import GlobalCreateHost from "./components/globalCreate/GlobalCreateHost";
 import { WizardProvider } from "./features/preventivi/wizard/wizardContext";
 import { ROUTES } from "./app/routes";
 
@@ -48,6 +52,151 @@ function LoadingPage() {
   );
 }
 
+function AppShell() {
+  const location = useLocation();
+  const editorDistinta = isDistintaEditorRoute(location.pathname);
+
+  return (
+    <WizardProvider>
+      <GlobalCreateProvider>
+        <div
+          className={`app-shell${
+            editorDistinta ? " app-shell--distinta-editor" : ""
+          }`}
+        >
+          <Suspense fallback={<LoadingPage />}>
+            <Routes>
+              <Route
+                path={ROUTES.dashboard}
+                element={<Dashboard />}
+              />
+
+              <Route
+                path={ROUTES.preventivi}
+                element={<Preventivi />}
+              />
+
+              <Route
+                path={ROUTES.preventivoIntelligente}
+                element={<PreventivoIntelligente />}
+              />
+
+              <Route
+                path={ROUTES.archivio}
+                element={
+                  <ArchivioPreventivi />
+                }
+              />
+
+              <Route
+                path={ROUTES.incassi}
+                element={<Incassi />}
+              />
+
+              <Route
+                path={ROUTES.cantieri}
+                element={<Cantieri />}
+              />
+
+              <Route
+                path={ROUTES.dettaglioCantiere}
+                element={<Cantiere />}
+              />
+
+              <Route
+                path={ROUTES.clienti}
+                element={<Clienti />}
+              />
+
+              <Route
+                path={ROUTES.listino}
+                element={<Listino />}
+              />
+
+              <Route
+                path={ROUTES.catalogoMateriali}
+                element={<CatalogoMateriali />}
+              />
+
+              <Route
+                path={ROUTES.distinteMateriali}
+                element={<DistinteMateriali />}
+              />
+
+              <Route
+                path={ROUTES.nuovaDistintaMateriali}
+                element={<DistintaMaterialiEditor />}
+              />
+
+              <Route
+                path={ROUTES.distintaMateriali}
+                element={<DistintaMaterialiEditor />}
+              />
+
+              <Route
+                path={ROUTES.acquisti}
+                element={<Acquisti />}
+              />
+
+              <Route
+                path={ROUTES.sopralluogo}
+                element={<Sopralluogo />}
+              />
+
+              <Route
+                path={ROUTES.impostazioni}
+                element={
+                  <Impostazioni />
+                }
+              />
+
+              <Route
+                path={ROUTES.dettaglioPreventivo}
+                element={
+                  <DettaglioPreventivo />
+                }
+              />
+
+              <Route
+                path={ROUTES.dettaglioCliente}
+                element={
+                  <DettaglioCliente />
+                }
+              />
+
+              <Route
+                path={ROUTES.nuovoPreventivo}
+                element={<ScelgaModalitaPreventivo />}
+              />
+
+              <Route
+                path={ROUTES.preventivoManuale}
+                element={<PreventivoManuale />}
+              />
+
+              <Route
+                path={ROUTES.agenda}
+                element={<Agenda />}
+              />
+
+              <Route
+                path="*"
+                element={<Navigate to={ROUTES.dashboard} replace />}
+              />
+            </Routes>
+          </Suspense>
+
+          <BottomNav />
+
+          <GlobalCreateHost />
+
+          <InstallPrompt />
+        </div>
+      </GlobalCreateProvider>
+    </WizardProvider>
+  );
+}
+
 export default function App() {
 
   return (
@@ -56,143 +205,7 @@ export default function App() {
 
     <HashRouter>
 
-      <WizardProvider>
-
-      <div className="app-shell">
-
-        <Suspense fallback={<LoadingPage />}>
-
-          <Routes>
-
-            <Route
-              path={ROUTES.dashboard}
-              element={<Dashboard />}
-            />
-
-            <Route
-              path={ROUTES.preventivi}
-              element={<Preventivi />}
-            />
-
-            <Route
-              path={ROUTES.preventivoIntelligente}
-              element={<PreventivoIntelligente />}
-            />
-
-            <Route
-              path={ROUTES.archivio}
-              element={
-                <ArchivioPreventivi />
-              }
-            />
-
-            <Route
-              path={ROUTES.incassi}
-              element={<Incassi />}
-            />
-
-            <Route
-              path={ROUTES.cantieri}
-              element={<Cantieri />}
-            />
-
-            <Route
-              path={ROUTES.dettaglioCantiere}
-              element={<Cantiere />}
-            />
-
-            <Route
-              path={ROUTES.clienti}
-              element={<Clienti />}
-            />
-
-            <Route
-              path={ROUTES.listino}
-              element={<Listino />}
-            />
-
-            <Route
-              path={ROUTES.catalogoMateriali}
-              element={<CatalogoMateriali />}
-            />
-
-            <Route
-              path={ROUTES.distinteMateriali}
-              element={<DistinteMateriali />}
-            />
-
-            <Route
-              path={ROUTES.nuovaDistintaMateriali}
-              element={<DistintaMaterialiEditor />}
-            />
-
-            <Route
-              path={ROUTES.distintaMateriali}
-              element={<DistintaMaterialiEditor />}
-            />
-
-            <Route
-              path={ROUTES.acquisti}
-              element={<Acquisti />}
-            />
-
-            <Route
-              path={ROUTES.sopralluogo}
-              element={<Sopralluogo />}
-            />
-
-            <Route
-              path={ROUTES.impostazioni}
-              element={
-                <Impostazioni />
-              }
-            />
-
-            <Route
-              path={ROUTES.dettaglioPreventivo}
-              element={
-                <DettaglioPreventivo />
-              }
-            />
-
-            <Route
-              path={ROUTES.dettaglioCliente}
-              element={
-                <DettaglioCliente />
-              }
-            />
-
-            <Route
-              path={ROUTES.nuovoPreventivo}
-              element={<ScelgaModalitaPreventivo />}
-            />
-
-            <Route
-              path={ROUTES.preventivoManuale}
-              element={<PreventivoManuale />}
-            />
-
-            <Route
-              path={ROUTES.agenda}
-              element={<Agenda />}
-            />
-
-            <Route
-              path="*"
-              element={<Navigate to={ROUTES.dashboard} replace />}
-            />
-
-          </Routes>
-
-        </Suspense>
-
-        <BottomNav />
-
-        <InstallPrompt />
-
-      </div>
-
-      </WizardProvider>
+      <AppShell />
 
     </HashRouter>
 

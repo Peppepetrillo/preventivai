@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, PenLine, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, ClipboardList, PenLine, Sparkles } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../app/routes";
 import { leggiClienti } from "../repositories/clientiRepository";
@@ -33,6 +33,10 @@ export default function ScelgaModalitaPreventivo() {
     }
   }
 
+  const wizardLink = clienteId
+    ? `${ROUTES.preventivi}?clienteId=${clienteId}`
+    : ROUTES.preventivi;
+
   const backTo = clienteId
     ? `/cliente/${clienteId}`
     : ROUTES.preventivi;
@@ -57,12 +61,21 @@ export default function ScelgaModalitaPreventivo() {
       {!cliente && (
         <div className="mb-6">
           <p className="section-label">Nuovo preventivo</p>
-          <h1 className="text-2xl font-black mt-1">Come vuoi crearlo?</h1>
+          <h1 className="text-2xl font-black mt-1">Altre modalità</h1>
         </div>
       )}
 
-      <p className="text-slate-400 mb-6 text-sm">
-        Scegli la modalità di creazione.
+      <Link
+        to={wizardLink}
+        className="btn-primary w-full min-h-[44px] flex items-center justify-center gap-2 mb-6"
+        data-testid="scelta-modalita-listino"
+      >
+        <ClipboardList size={18} aria-hidden="true" />
+        Componi dal listino
+      </Link>
+
+      <p className="text-slate-400 mb-4 text-sm">
+        Oppure scegli un&apos;altra modalità.
         {ultimaScelta && (
           <span className="ml-1 text-yellow-300">
             Ultima volta: {ultimaScelta === "intelligente" ? "Preventivo Intelligente" : "Preventivo Manuale"}.
