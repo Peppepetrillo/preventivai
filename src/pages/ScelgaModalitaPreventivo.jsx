@@ -37,54 +37,62 @@ export default function ScelgaModalitaPreventivo() {
     ? `${ROUTES.preventivi}?clienteId=${clienteId}`
     : ROUTES.preventivi;
 
-  const backTo = clienteId
-    ? `/cliente/${clienteId}`
-    : ROUTES.preventivi;
+  const backTo = clienteId ? `/cliente/${clienteId}` : ROUTES.preventivi;
 
   return (
     <div className="pro-page text-white">
       <Link to={backTo} className="ds-back-link mb-6">
         <ArrowLeft size={18} />
-        {cliente ? cliente.nome : "Preventivi"}
+        {cliente ? cliente.nome : "Nuovo preventivo"}
       </Link>
 
-      {cliente && (
+      {cliente ? (
         <div className="pro-panel-strong p-5 mb-6">
-          <p className="section-label">Nuovo preventivo per</p>
+          <p className="section-label">Altre modalità</p>
           <h1 className="text-2xl font-black mt-1">{cliente.nome}</h1>
-          {cliente.indirizzo && (
+          {cliente.indirizzo ? (
             <p className="text-slate-400 text-sm mt-1">{cliente.indirizzo}</p>
-          )}
+          ) : null}
+          <p className="ds-text-secondary mt-3">
+            Flussi alternativi al percorso consigliato Nuovo preventivo.
+          </p>
         </div>
-      )}
-
-      {!cliente && (
+      ) : (
         <div className="mb-6">
-          <p className="section-label">Nuovo preventivo</p>
+          <p className="section-label">Fallback</p>
           <h1 className="text-2xl font-black mt-1">Altre modalità</h1>
+          <p className="ds-text-secondary mt-2">
+            Il percorso consigliato è Nuovo preventivo: cliente, listino e
+            riepilogo in un unico flusso.
+          </p>
         </div>
       )}
 
       <Link
         to={wizardLink}
         className="btn-primary w-full min-h-[44px] flex items-center justify-center gap-2 mb-6"
-        data-testid="scelta-modalita-listino"
+        data-testid="scelta-modalita-wizard"
       >
         <ClipboardList size={18} aria-hidden="true" />
-        Componi dal listino
+        Nuovo preventivo
       </Link>
 
       <p className="text-slate-400 mb-4 text-sm">
-        Oppure scegli un&apos;altra modalità.
-        {ultimaScelta && (
+        Oppure usa un flusso alternativo.
+        {ultimaScelta ? (
           <span className="ml-1 text-yellow-300">
-            Ultima volta: {ultimaScelta === "intelligente" ? "Preventivo Intelligente" : "Preventivo Manuale"}.
+            Ultima volta:{" "}
+            {ultimaScelta === "intelligente"
+              ? "Preventivo Intelligente"
+              : "Preventivo Manuale"}
+            .
           </span>
-        )}
+        ) : null}
       </p>
 
       <div className="space-y-4">
         <button
+          type="button"
           onClick={() => scegli("intelligente")}
           className="w-full pro-panel p-5 text-left hover:border-yellow-300/40 transition active:scale-[0.98]"
         >
@@ -95,20 +103,22 @@ export default function ScelgaModalitaPreventivo() {
             <div>
               <h2 className="text-lg font-black flex items-center gap-2">
                 Preventivo Intelligente
-                {ultimaScelta === "intelligente" && (
+                {ultimaScelta === "intelligente" ? (
                   <span className="text-xs font-normal text-yellow-300 bg-yellow-400/10 px-2 py-0.5 rounded-full">
                     Ultima scelta
                   </span>
-                )}
+                ) : null}
               </h2>
               <p className="text-slate-400 text-sm mt-1">
-                PreventivAI ti guida nella compilazione con suggerimenti e listino integrato.
+                PreventivAI ti guida nella compilazione con suggerimenti e listino
+                integrato.
               </p>
             </div>
           </div>
         </button>
 
         <button
+          type="button"
           onClick={() => scegli("manuale")}
           className="w-full pro-panel p-5 text-left hover:border-yellow-300/40 transition active:scale-[0.98]"
         >
@@ -119,11 +129,11 @@ export default function ScelgaModalitaPreventivo() {
             <div>
               <h2 className="text-lg font-black flex items-center gap-2">
                 Preventivo Manuale
-                {ultimaScelta === "manuale" && (
+                {ultimaScelta === "manuale" ? (
                   <span className="text-xs font-normal text-yellow-300 bg-yellow-400/10 px-2 py-0.5 rounded-full">
                     Ultima scelta
                   </span>
-                )}
+                ) : null}
               </h2>
               <p className="text-slate-400 text-sm mt-1">
                 Aggiungi righe liberamente. Veloce, senza assistente.

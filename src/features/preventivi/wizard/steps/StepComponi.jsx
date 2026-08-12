@@ -19,6 +19,7 @@ import {
   creaMappaQuantitaCarrello,
 } from "../../utils/listinoGrouping";
 import { opzioneTipoLavoro, TIPO_LAVORO } from "../wizardConfig";
+import TipoLavoroSelector from "../components/TipoLavoroSelector";
 
 function StepComponi({
   tipoLavoro,
@@ -31,6 +32,7 @@ function StepComponi({
   onAggiornaCondizioni,
   onAggiornaContesto,
   onImpostaCliente,
+  onImpostaTipoLavoro,
   onImpostaExpressAutoOpen,
   onAvanti,
 }) {
@@ -97,8 +99,10 @@ function StepComponi({
   );
 
   const apriExpress = useCallback(() => {
+    onImpostaTipoLavoro?.(TIPO_LAVORO.express);
+    onImpostaExpressAutoOpen?.(true);
     setExpressOverride(true);
-  }, []);
+  }, [onImpostaTipoLavoro, onImpostaExpressAutoOpen]);
 
   const chiudiExpress = useCallback(() => {
     setExpressOverride(false);
@@ -123,6 +127,8 @@ function StepComponi({
         onImpostaCliente?.(nuovoCliente);
       }
 
+      onImpostaTipoLavoro?.(TIPO_LAVORO.express);
+
       const messaggioAvvisi = avvisi?.length ? ` ${avvisi.join(" ")}` : "";
       const messaggioRiepilogo = riepilogo?.vociTrovate
         ? ` ${riepilogo.vociTrovate} lavorazioni applicate.`
@@ -139,6 +145,7 @@ function StepComponi({
       onAggiornaLavorazioni,
       onAggiornaCondizioni,
       onImpostaCliente,
+      onImpostaTipoLavoro,
     ]
   );
 
@@ -184,11 +191,17 @@ function StepComponi({
             type="button"
             onClick={apriExpress}
             className="shrink-0 min-h-11 px-3 py-2 rounded-[16px] bg-yellow-400/15 border border-yellow-300/30 text-yellow-100 text-sm font-semibold flex items-center gap-1.5"
+            data-testid="apri-express-componi"
           >
             <Sparkles size={16} aria-hidden="true" />
             Express
           </button>
         </div>
+
+        <TipoLavoroSelector
+          tipoLavoro={tipoLavoro}
+          onSeleziona={onImpostaTipoLavoro}
+        />
 
         <ContestoPreventivo
           contesto={contesto}

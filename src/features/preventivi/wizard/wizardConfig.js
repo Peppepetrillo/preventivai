@@ -4,7 +4,8 @@
  * Decisioni approvate:
  * - BottomNav resta visibile (modalità semplificata via WizardContext)
  * - tipoLavoro salvato come metadato sul preventivo (non influenza i calcoli)
- * - Percorso Express come terza scelta iniziale
+ * - Flusso UX-5.2: Cliente → Componi → Riepilogo (tipo lavoro in Componi)
+ * - Express accessibile dal bottone in Componi
  * - Sezione "Più usati" basata su frequenza locale (lavorazioniUsage)
  * - Architettura aperta per "Ripeti ultimo preventivo/cliente" (wizardExtensions)
  */
@@ -15,12 +16,9 @@ export const TIPO_LAVORO = {
   express: "express",
 };
 
+export const TIPO_LAVORO_DEFAULT = TIPO_LAVORO.impianto;
+
 export const WIZARD_STEPS = [
-  {
-    id: "tipo-lavoro",
-    title: "Tipo lavoro",
-    shortTitle: "Lavoro",
-  },
   {
     id: "cliente",
     title: "Cliente",
@@ -33,8 +31,8 @@ export const WIZARD_STEPS = [
   },
   {
     id: "conferma",
-    title: "Conferma",
-    shortTitle: "Conferma",
+    title: "Riepilogo",
+    shortTitle: "Riepilogo",
   },
 ];
 
@@ -65,6 +63,11 @@ export const TIPO_LAVORO_OPZIONI = [
     percorsoExpress: true,
   },
 ];
+
+/** Opzioni segmento in Componi (Express ha bottone dedicato). */
+export const TIPO_LAVORO_OPZIONI_SEGMENTO = TIPO_LAVORO_OPZIONI.filter(
+  (opzione) => !opzione.percorsoExpress
+);
 
 export const CONDIZIONI_DEFAULT = {
   sconto: 0,

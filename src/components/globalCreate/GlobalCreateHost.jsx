@@ -83,8 +83,8 @@ export default function GlobalCreateHost() {
       },
       {
         id: "preventivo",
-        label: "Preventivo",
-        subtitle: "Dal listino prezzi",
+        label: "Nuovo preventivo",
+        subtitle: "Cliente, listino e AI",
         icon: FileText,
         testId: "global-create-preventivo",
         onPress: () => {

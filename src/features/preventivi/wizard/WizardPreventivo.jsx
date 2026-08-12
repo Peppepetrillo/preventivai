@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -9,7 +9,6 @@ import { useWizardPreventivoState } from "./useWizardPreventivoState";
 import { WIZARD_STEPS, indiceStep } from "./wizardConfig";
 import WizardHeader from "./components/WizardHeader";
 import WizardProgress from "./components/WizardProgress";
-import StepTipoLavoro from "./steps/StepTipoLavoro";
 import StepCliente from "./steps/StepCliente";
 import StepComponi from "./steps/StepComponi";
 import StepConferma from "./steps/StepConferma";
@@ -24,17 +23,19 @@ export default function WizardPreventivo() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { attivaWizard, disattivaWizard } = useWizardContext();
+  const clienteIdElaborato = useRef(false);
   const {
     stato,
-    selezionaTipoLavoro,
     selezionaCliente,
     avanti,
     indietro,
+    vaiAStep,
     aggiornaLavorazioni,
     aggiornaCondizioni,
     aggiornaContesto,
     impostaExpressAutoOpen,
     impostaCliente,
+    impostaTipoLavoro,
     totaleStep,
     reset,
   } = useWizardPreventivoState();
@@ -50,13 +51,15 @@ export default function WizardPreventivo() {
 
   useEffect(() => {
     const clienteId = searchParams.get("clienteId");
-    if (!clienteId || stato.cliente) return;
+    if (!clienteId || clienteIdElaborato.current) return;
 
     const cliente = leggiClienti().find((item) => String(item.id) === clienteId);
-    if (cliente?.nome) {
-      impostaCliente(cliente.nome);
-    }
-  }, [searchParams, stato.cliente, impostaCliente]);
+    if (!cliente?.nome) return;
+
+    clienteIdElaborato.current = true;
+    impostaCliente(cliente.nome);
+    vaiAStep("componi");
+  }, [searchParams, impostaCliente, vaiAStep]);
 
   function gestisciIndietro() {
     if (puoAndareIndietro) {
@@ -70,9 +73,6 @@ export default function WizardPreventivo() {
 
   function renderStep() {
     switch (stato.stepId) {
-      case "tipo-lavoro":
-        return <StepTipoLavoro onSeleziona={selezionaTipoLavoro} />;
-
       case "cliente":
         return <StepCliente onSelezionaCliente={selezionaCliente} />;
 
@@ -89,6 +89,7 @@ export default function WizardPreventivo() {
             onAggiornaCondizioni={aggiornaCondizioni}
             onAggiornaContesto={aggiornaContesto}
             onImpostaCliente={impostaCliente}
+            onImpostaTipoLavoro={impostaTipoLavoro}
             onImpostaExpressAutoOpen={impostaExpressAutoOpen}
             onAvanti={avanti}
           />
@@ -116,7 +117,7 @@ export default function WizardPreventivo() {
         subtitle={sottotitolo}
         indiceCorrente={indiceCorrente}
         totaleStep={totaleStep}
-        puoAndareIndietro={puoAndareIndietro || stato.stepId === "tipo-lavoro"}
+        puoAndareIndietro={puoAndareIndietro || stato.stepId === "cliente"}
         onIndietro={gestisciIndietro}
       />
 

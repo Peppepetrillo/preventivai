@@ -127,9 +127,10 @@ export default function DettaglioCliente() {
           <Link
             to={`${ROUTES.preventivi}?clienteId=${id}`}
             className="btn-primary py-4 flex items-center justify-center gap-2 text-sm font-black"
+            data-testid="entry-nuovo-preventivo-cliente"
           >
             <Plus size={18} />
-            Nuovo Preventivo
+            Nuovo preventivo
           </Link>
 
           <button
@@ -258,7 +259,7 @@ export default function DettaglioCliente() {
               className="btn-primary mt-4 inline-flex items-center gap-2 px-5 py-3 text-sm font-black"
             >
               <Plus size={16} />
-              Nuovo Preventivo
+              Nuovo preventivo
             </Link>
           </div>
         )}

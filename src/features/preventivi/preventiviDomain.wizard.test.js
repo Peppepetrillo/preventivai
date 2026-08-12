@@ -42,9 +42,15 @@ describe("creaPreventivo tipoLavoro", () => {
 });
 
 describe("wizardConfig", () => {
-  it("include il percorso express come terza scelta", () => {
-    expect(WIZARD_STEPS).toHaveLength(4);
-    expect(indiceStep("conferma")).toBe(3);
+  it("usa il flusso Cliente → Componi → Riepilogo", () => {
+    expect(WIZARD_STEPS).toHaveLength(3);
+    expect(WIZARD_STEPS.map((step) => step.id)).toEqual([
+      "cliente",
+      "componi",
+      "conferma",
+    ]);
+    expect(WIZARD_STEPS[2].title).toBe("Riepilogo");
+    expect(indiceStep("conferma")).toBe(2);
   });
 });
 

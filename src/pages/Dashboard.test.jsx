@@ -64,8 +64,12 @@ describe("Dashboard Home 2.0", () => {
     expect(screen.getByTestId("home-acquisti-badge")).toHaveTextContent("1");
     expect(screen.getByText("09:30")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Nuovo Preventivo/i })
+      screen.getByRole("link", { name: /Nuovo preventivo/i })
     ).toHaveAttribute("href", "/preventivi");
+    expect(screen.getByTestId("entry-nuovo-preventivo")).toHaveAttribute(
+      "href",
+      "/preventivi"
+    );
     expect(
       screen.getByRole("link", { name: /Nuovo Cantiere/i })
     ).toHaveAttribute("href", "/cantieri?nuovo=1");

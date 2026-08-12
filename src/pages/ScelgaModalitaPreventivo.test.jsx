@@ -36,12 +36,13 @@ describe("ScelgaModalitaPreventivo", () => {
     expect(screen.getByText(/Preventivo Manuale/i)).toBeInTheDocument();
   });
 
-  it("offre il percorso principale dal listino", () => {
+  it("offre il percorso principale Nuovo preventivo", () => {
     renderPage();
-    expect(screen.getByTestId("scelta-modalita-listino")).toHaveAttribute(
+    expect(screen.getByTestId("scelta-modalita-wizard")).toHaveAttribute(
       "href",
       "/preventivi"
     );
+    expect(screen.getByText(/Altre modalità/i)).toBeInTheDocument();
   });
 
   it("mantiene Preventivo Intelligente raggiungibile", () => {

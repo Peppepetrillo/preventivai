@@ -48,7 +48,7 @@ const MENU_WIZARD = [
     icon: Home,
   },
   {
-    nome: "Nuovo",
+    nome: "Preventivo",
     path: ROUTES.preventivi,
     icon: FileText,
   },

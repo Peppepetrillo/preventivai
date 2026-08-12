@@ -31,10 +31,11 @@ import {
 
 const AZIONI_RAPIDE = [
   {
-    titolo: "Nuovo Preventivo",
+    titolo: "Nuovo preventivo",
     link: ROUTES.preventivi,
     icon: Plus,
     primario: true,
+    testId: "entry-nuovo-preventivo",
   },
   {
     titolo: "Nuovo Cantiere",
@@ -170,6 +171,7 @@ export default function Dashboard() {
                 <Link
                   key={azione.titolo}
                   to={azione.link}
+                  data-testid={azione.testId}
                   className={`${
                     azione.primario ? "btn-primary" : "btn-secondary"
                   } min-h-[56px] px-5 flex items-center justify-center gap-3 text-base font-black`}

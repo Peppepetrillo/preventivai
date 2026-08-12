@@ -9,12 +9,13 @@ import {
   indiceStep,
   stepDaIndice,
   TIPO_LAVORO,
+  TIPO_LAVORO_DEFAULT,
   WIZARD_STEPS,
 } from "./wizardConfig";
 import { leggiPrefillWizard } from "../utils/wizardExtensions";
 
 export const WIZARD_AZIONI = {
-  selezionaTipoLavoro: "selezionaTipoLavoro",
+  impostaTipoLavoro: "impostaTipoLavoro",
   selezionaCliente: "selezionaCliente",
   avanti: "avanti",
   indietro: "indietro",
@@ -33,7 +34,7 @@ function statoIniziale() {
 
   return {
     stepId: WIZARD_STEPS[0].id,
-    tipoLavoro: prefill?.tipoLavoro || null,
+    tipoLavoro: prefill?.tipoLavoro || TIPO_LAVORO_DEFAULT,
     cliente: prefill?.cliente || "",
     lavorazioni: prefill?.lavorazioni || [],
     condizioni: {
@@ -58,15 +59,14 @@ function precedenteStepId(stepId) {
 
 function wizardReducer(stato, azione) {
   switch (azione.type) {
-    case WIZARD_AZIONI.selezionaTipoLavoro: {
+    case WIZARD_AZIONI.impostaTipoLavoro: {
       const tipoLavoro = azione.payload;
       const isExpress = tipoLavoro === TIPO_LAVORO.express;
 
       return {
         ...stato,
         tipoLavoro,
-        expressAutoOpen: isExpress,
-        stepId: prossimoStepId(stato.stepId),
+        expressAutoOpen: isExpress ? stato.expressAutoOpen : false,
       };
     }
 
@@ -135,6 +135,7 @@ function wizardReducer(stato, azione) {
       return {
         ...stato,
         ...azione.payload,
+        tipoLavoro: azione.payload?.tipoLavoro || stato.tipoLavoro || TIPO_LAVORO_DEFAULT,
         condizioni: {
           ...CONDIZIONI_DEFAULT,
           ...(azione.payload?.condizioni || {}),
@@ -153,8 +154,8 @@ function wizardReducer(stato, azione) {
 export function useWizardPreventivoState() {
   const [stato, dispatch] = useReducer(wizardReducer, undefined, statoIniziale);
 
-  const selezionaTipoLavoro = useCallback((tipoLavoro) => {
-    dispatch({ type: WIZARD_AZIONI.selezionaTipoLavoro, payload: tipoLavoro });
+  const impostaTipoLavoro = useCallback((tipoLavoro) => {
+    dispatch({ type: WIZARD_AZIONI.impostaTipoLavoro, payload: tipoLavoro });
   }, []);
 
   const selezionaCliente = useCallback((cliente) => {
@@ -208,7 +209,7 @@ export function useWizardPreventivoState() {
   return {
     stato,
     dispatch,
-    selezionaTipoLavoro,
+    impostaTipoLavoro,
     selezionaCliente,
     avanti,
     indietro,

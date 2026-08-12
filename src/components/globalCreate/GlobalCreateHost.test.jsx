@@ -71,7 +71,7 @@ describe("GlobalCreate UX-3", () => {
     const dialog = ultimoDialog();
     expect(within(dialog).getByTestId("global-create-sheet")).toBeInTheDocument();
     expect(within(dialog).getByText("Lavoro")).toBeInTheDocument();
-    expect(within(dialog).getByText("Preventivo")).toBeInTheDocument();
+    expect(within(dialog).getByText("Nuovo preventivo")).toBeInTheDocument();
     expect(within(dialog).getByText("Cliente")).toBeInTheDocument();
     expect(within(dialog).getByText("Attività")).toBeInTheDocument();
     expect(within(dialog).getByText("Distinta materiali")).toBeInTheDocument();
