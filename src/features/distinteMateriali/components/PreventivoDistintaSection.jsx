@@ -17,25 +17,35 @@ export default function PreventivoDistintaSection({
   distinta = null,
   onCollega,
   onScollega,
+  embedded = false,
 }) {
   const nVoci = Array.isArray(distinta?.voci) ? distinta.voci.length : 0;
   const data = formattaData(distinta?.updatedAt || distinta?.createdAt);
+  const Wrapper = embedded ? "div" : "section";
 
   return (
-    <section
-      className="pro-panel p-5 mb-5 space-y-4"
+    <Wrapper
+      className={
+        embedded ? "space-y-4" : "pro-panel p-5 mb-5 space-y-4"
+      }
       data-testid="preventivo-distinta-section"
-      aria-labelledby="preventivo-distinta-title"
+      aria-labelledby={embedded ? undefined : "preventivo-distinta-title"}
     >
-      <div>
-        <p className="section-label">Materiali</p>
-        <h2 id="preventivo-distinta-title" className="text-xl font-black mt-1">
-          Distinta materiali
-        </h2>
-        <p className="text-sm text-slate-400 mt-2">
+      {!embedded ? (
+        <div>
+          <p className="section-label">Materiali</p>
+          <h2 id="preventivo-distinta-title" className="text-xl font-black mt-1">
+            Distinta materiali
+          </h2>
+          <p className="text-sm text-slate-400 mt-2">
+            Collegamento soft: non modifica prezzi, IVA o totali del preventivo.
+          </p>
+        </div>
+      ) : (
+        <p className="ds-text-secondary text-sm">
           Collegamento soft: non modifica prezzi, IVA o totali del preventivo.
         </p>
-      </div>
+      )}
 
       {!distinta ? (
         <button
@@ -85,6 +95,6 @@ export default function PreventivoDistintaSection({
           </div>
         </div>
       )}
-    </section>
+    </Wrapper>
   );
 }
