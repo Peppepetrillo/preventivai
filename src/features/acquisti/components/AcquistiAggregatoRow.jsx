@@ -12,6 +12,7 @@ export default function AcquistiAggregatoRow({
   onToggleEspanso,
   onToggleAggregato,
   onToggleVoce,
+  vociContesto = [],
 }) {
   const preso = Boolean(aggregato.tuttiAcquistati);
   const haProvenance = (aggregato.voci || []).length > 1;
@@ -93,7 +94,11 @@ export default function AcquistiAggregatoRow({
               <div key={voce.id} data-testid="acquisti-provenance-item">
                 <p className="ds-text-secondary text-xs mb-1.5 pl-1">{label}</p>
                 <div className="pl-2 border-l-2 border-white/15">
-                  <AcquistiVoceRow voce={voce} onToggle={onToggleVoce} />
+                  <AcquistiVoceRow
+                    voce={voce}
+                    onToggle={onToggleVoce}
+                    vociContesto={vociContesto}
+                  />
                 </div>
               </div>
             );

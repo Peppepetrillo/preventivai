@@ -95,6 +95,11 @@ export function risolviHeroCta({
     return { id: HERO_CTA.CONVERTI_CANTIERE, label: "Inizia cantiere" };
   }
 
+  // UX-5.4: Accetta è l'azione primaria su Bozza / Inviato
+  if (azioni.includes(AZIONI_PREVENTIVO.ACCETTA)) {
+    return { id: HERO_CTA.ACCETTA, label: "Accetta" };
+  }
+
   if (s === STATI_PREVENTIVO.BOZZA) {
     return { id: HERO_CTA.MODIFICA, label: "Modifica preventivo" };
   }
@@ -105,10 +110,6 @@ export function risolviHeroCta({
 
   if (azioni.includes(AZIONI_PREVENTIVO.INVIA)) {
     return { id: HERO_CTA.SEGNA_INVIATO, label: "Segna inviato" };
-  }
-
-  if (azioni.includes(AZIONI_PREVENTIVO.ACCETTA)) {
-    return { id: HERO_CTA.ACCETTA, label: "Accetta" };
   }
 
   return null;

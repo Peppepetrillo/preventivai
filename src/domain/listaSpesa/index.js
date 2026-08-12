@@ -11,6 +11,7 @@ export {
   unitaAcquistoEquivalenti,
   unitaAcquistoInLettura,
   voceAncoraCollegataAllaSorgente,
+  etichettaPadreAccessorioAcquisto,
 } from "./listaSpesaDomain";
 export {
   aggiungiVoceListaSpesa,

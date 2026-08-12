@@ -1,6 +1,7 @@
 /**
  * Catalogo Materiali — tipi, categorie, unità canoniche.
  * Sprint 13 Step 1: solo domain (niente repository/UI).
+ * UX-6.1a: accessoriSuggeriti (relazioni soft, retrocompatibili).
  */
 
 /**
@@ -12,6 +13,18 @@
  */
 
 /**
+ * Relazione soft verso un accessorio tipico (famiglia e/o variante target).
+ * Almeno uno tra `varianteId` e `famigliaId` deve essere valorizzato.
+ *
+ * @typedef {Object} AccessorioSuggerito
+ * @property {string=} varianteId
+ * @property {string=} famigliaId
+ * @property {number} quantitaPerUnita — moltiplicatore rispetto alla qty del materiale padre (default 1)
+ * @property {boolean} obbligatorio — default false (suggerito, non imposto)
+ * @property {string=} nota
+ */
+
+/**
  * @typedef {Object} VarianteMateriale
  * @property {string} id
  * @property {string} famigliaId
@@ -20,6 +33,7 @@
  * @property {UnitaMateriale=} unita
  * @property {number=} prezzoIndicativo
  * @property {boolean} attiva
+ * @property {AccessorioSuggerito[]=} accessoriSuggeriti
  */
 
 /**
@@ -33,6 +47,7 @@
  * @property {boolean} attiva
  * @property {boolean} personalizzata
  * @property {string=} descrizione
+ * @property {AccessorioSuggerito[]=} accessoriSuggeriti
  * @property {string=} createdAt
  * @property {string=} updatedAt
  */
@@ -150,4 +165,84 @@ export function normalizzaUnitaMateriale(unita = "") {
 
   if (isUnitaCanonica(grezzo)) return grezzo;
   return grezzo;
+}
+
+/**
+ * Normalizza una relazione accessorio. Null se invalida.
+ * Retrocompatibile: campi assenti o array corrotti → ignorati a monte.
+ *
+ * @param {unknown} grezzo
+ * @returns {AccessorioSuggerito|null}
+ */
+export function normalizzaAccessorioSuggerito(grezzo) {
+  if (!grezzo || typeof grezzo !== "object") return null;
+
+  const raw = /** @type {Record<string, unknown>} */ (grezzo);
+  const varianteId = String(raw.varianteId || "").trim() || undefined;
+  const famigliaId = String(raw.famigliaId || "").trim() || undefined;
+
+  if (!varianteId && !famigliaId) return null;
+
+  const quantitaRaw = Number(raw.quantitaPerUnita);
+  const quantitaPerUnita =
+    Number.isFinite(quantitaRaw) && quantitaRaw > 0 ? quantitaRaw : 1;
+
+  /** @type {AccessorioSuggerito} */
+  const accessorio = {
+    quantitaPerUnita,
+    obbligatorio: Boolean(raw.obbligatorio),
+  };
+
+  if (varianteId) accessorio.varianteId = varianteId;
+  if (famigliaId) accessorio.famigliaId = famigliaId;
+
+  const nota = String(raw.nota || "").trim();
+  if (nota) accessorio.nota = nota;
+
+  return accessorio;
+}
+
+/**
+ * @param {unknown} elenco
+ * @returns {AccessorioSuggerito[]}
+ */
+export function normalizzaAccessoriSuggeriti(elenco) {
+  if (!Array.isArray(elenco) || elenco.length === 0) return [];
+
+  /** @type {AccessorioSuggerito[]} */
+  const risultato = [];
+  /** @type {Set<string>} */
+  const visti = new Set();
+
+  for (const grezzo of elenco) {
+    const accessorio = normalizzaAccessorioSuggerito(grezzo);
+    if (!accessorio) continue;
+
+    const chiave = `${accessorio.varianteId || ""}|${accessorio.famigliaId || ""}`;
+    if (visti.has(chiave)) continue;
+    visti.add(chiave);
+    risultato.push(accessorio);
+  }
+
+  return risultato;
+}
+
+/**
+ * Quantità suggerita accessorio = qty padre × quantitaPerUnita.
+ * @param {number} quantitaPadre
+ * @param {AccessorioSuggerito|object} accessorio
+ * @returns {number}
+ */
+export function calcolaQuantitaAccessorioSuggerito(
+  quantitaPadre,
+  accessorio = {}
+) {
+  const padre = Number(quantitaPadre);
+  const qtyPadre = Number.isFinite(padre) && padre > 0 ? padre : 0;
+  const fattore = Number(accessorio?.quantitaPerUnita);
+  const moltiplicatore =
+    Number.isFinite(fattore) && fattore > 0 ? fattore : 1;
+  const grezzo = qtyPadre * moltiplicatore;
+  if (grezzo <= 0) return 0;
+  return Math.max(1, Math.round(grezzo * 1000) / 1000);
 }

@@ -111,4 +111,31 @@ describe("distintaProiezione → cantiere", () => {
     expect(next).toHaveLength(3);
     expect(next.find((m) => m.id === "legacy-1").nome).toBe("Nastro isolante");
   });
+
+  it("proietta parentVoceId sugli accessori", () => {
+    const distinta = {
+      id: "dist-acc",
+      titolo: "BOM accessori",
+      voci: [
+        {
+          id: "voce-padre",
+          nome: "Presa",
+          quantita: 2,
+          unita: "pz",
+        },
+        {
+          id: "voce-acc",
+          nome: "Cassetta 503",
+          quantita: 2,
+          unita: "pz",
+          parentVoceId: "voce-padre",
+          origineAccessorio: "suggerito",
+        },
+      ],
+    };
+    const materiali = proiettaVociDistintaSuMaterialiCantiere([], distinta);
+    const acc = materiali.find((m) => m.distintaVoceId === "voce-acc");
+    expect(acc.parentVoceId).toBe("voce-padre");
+    expect(acc.origineAccessorio).toBe("suggerito");
+  });
 });

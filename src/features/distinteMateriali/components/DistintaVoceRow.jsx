@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Link2, Pencil, Trash2 } from "lucide-react";
 
 /**
  * Riga voce in editor distinta.
@@ -8,6 +8,7 @@ export default function DistintaVoceRow({ voce, onModifica, onElimina }) {
     voce?.prezzoUnitario != null && Number.isFinite(Number(voce.prezzoUnitario))
       ? Number(voce.prezzoUnitario)
       : null;
+  const isAccessorio = Boolean(voce?.parentVoceId);
 
   return (
     <article className="pro-panel px-4 py-3">
@@ -23,6 +24,12 @@ export default function DistintaVoceRow({ voce, onModifica, onElimina }) {
                 })}`
               : ""}
           </p>
+          {isAccessorio ? (
+            <p className="ds-text-secondary text-xs mt-1 inline-flex items-center gap-1">
+              <Link2 size={12} aria-hidden="true" />
+              Accessorio suggerito
+            </p>
+          ) : null}
           {voce.note ? (
             <p className="ds-text-secondary text-xs mt-1 truncate">{voce.note}</p>
           ) : null}

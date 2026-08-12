@@ -1,15 +1,19 @@
 import { CheckCircle, Circle } from "lucide-react";
 
 import { etichettaOrigineAcquisto } from "../../../domain/listaSpesa";
-import { unitaAcquistoInLettura } from "../../../domain/listaSpesa/listaSpesaDomain";
+import {
+  etichettaPadreAccessorioAcquisto,
+  unitaAcquistoInLettura,
+} from "../../../domain/listaSpesa/listaSpesaDomain";
 
 /**
  * Riga voce lista spesa — checkbox aggiorna la voce reale.
  */
-export default function AcquistiVoceRow({ voce, onToggle }) {
+export default function AcquistiVoceRow({ voce, onToggle, vociContesto = [] }) {
   const preso = Boolean(voce.acquistato);
   const unita = unitaAcquistoInLettura(voce.unita) || voce.unita || "pz";
   const origine = etichettaOrigineAcquisto(voce.origine);
+  const etichettaPadre = etichettaPadreAccessorioAcquisto(voce, vociContesto);
 
   return (
     <div
@@ -43,6 +47,15 @@ export default function AcquistiVoceRow({ voce, onToggle }) {
             {voce.quantita} {unita}
           </p>
         </div>
+
+        {etichettaPadre ? (
+          <p
+            className="ds-text-secondary text-xs mt-1"
+            data-testid="acquisti-accessorio-padre"
+          >
+            {etichettaPadre}
+          </p>
+        ) : null}
 
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
           {origine ? (

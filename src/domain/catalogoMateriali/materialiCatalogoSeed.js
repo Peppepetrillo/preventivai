@@ -9,6 +9,28 @@ import {
 } from "./materialiTypes";
 
 /**
+ * @param {object} input
+ * @returns {import("./materialiTypes").AccessorioSuggerito}
+ */
+function accessorio({
+  varianteId,
+  famigliaId,
+  quantitaPerUnita = 1,
+  obbligatorio = false,
+  nota,
+}) {
+  /** @type {import("./materialiTypes").AccessorioSuggerito} */
+  const item = {
+    quantitaPerUnita,
+    obbligatorio: Boolean(obbligatorio),
+  };
+  if (varianteId) item.varianteId = varianteId;
+  if (famigliaId) item.famigliaId = famigliaId;
+  if (nota) item.nota = nota;
+  return Object.freeze(item);
+}
+
+/**
  * @param {string} famigliaId
  * @param {string} slug
  * @param {string} etichetta
@@ -16,7 +38,8 @@ import {
  * @param {object=} extra
  */
 function variante(famigliaId, slug, etichetta, attributi, extra = {}) {
-  return Object.freeze({
+  /** @type {import("./materialiTypes").VarianteMateriale} */
+  const item = {
     id: `${famigliaId}-${slug}`,
     famigliaId,
     etichetta,
@@ -24,7 +47,11 @@ function variante(famigliaId, slug, etichetta, attributi, extra = {}) {
     unita: extra.unita,
     prezzoIndicativo: extra.prezzoIndicativo,
     attiva: extra.attiva !== false,
-  });
+  };
+  if (Array.isArray(extra.accessoriSuggeriti) && extra.accessoriSuggeriti.length) {
+    item.accessoriSuggeriti = Object.freeze([...extra.accessoriSuggeriti]);
+  }
+  return Object.freeze(item);
 }
 
 /**
@@ -38,8 +65,10 @@ function famiglia({
   attributoChiave,
   descrizione = "",
   varianti = [],
+  accessoriSuggeriti = [],
 }) {
-  return Object.freeze({
+  /** @type {import("./materialiTypes").FamigliaMateriale} */
+  const item = {
     id,
     nome,
     categoria,
@@ -49,7 +78,11 @@ function famiglia({
     personalizzata: false,
     attiva: true,
     varianti: Object.freeze(varianti.map((v) => Object.freeze(v))),
-  });
+  };
+  if (Array.isArray(accessoriSuggeriti) && accessoriSuggeriti.length) {
+    item.accessoriSuggeriti = Object.freeze([...accessoriSuggeriti]);
+  }
+  return Object.freeze(item);
 }
 
 /** @type {ReadonlyArray<import("./materialiTypes").FamigliaMateriale>} */
@@ -62,9 +95,36 @@ export const CATALOGO_MATERIALI_SEED = Object.freeze([
     attributoChiave: "diametro",
     descrizione: "Tubo corrugato per posa cavi",
     varianti: [
-      variante("tubo-corrugato", "16", "Ø16", { diametro: "16" }),
-      variante("tubo-corrugato", "20", "Ø20", { diametro: "20" }),
-      variante("tubo-corrugato", "25", "Ø25", { diametro: "25" }),
+      variante("tubo-corrugato", "16", "Ø16", { diametro: "16" }, {
+        accessoriSuggeriti: [
+          accessorio({
+            varianteId: "pressacavo-pg9",
+            famigliaId: "pressacavo",
+            quantitaPerUnita: 1,
+            nota: "Terminazione tipica Ø16",
+          }),
+        ],
+      }),
+      variante("tubo-corrugato", "20", "Ø20", { diametro: "20" }, {
+        accessoriSuggeriti: [
+          accessorio({
+            varianteId: "pressacavo-pg11",
+            famigliaId: "pressacavo",
+            quantitaPerUnita: 1,
+            nota: "Terminazione tipica Ø20",
+          }),
+        ],
+      }),
+      variante("tubo-corrugato", "25", "Ø25", { diametro: "25" }, {
+        accessoriSuggeriti: [
+          accessorio({
+            varianteId: "pressacavo-pg16",
+            famigliaId: "pressacavo",
+            quantitaPerUnita: 1,
+            nota: "Terminazione tipica Ø25",
+          }),
+        ],
+      }),
       variante("tubo-corrugato", "32", "Ø32", { diametro: "32" }),
       variante("tubo-corrugato", "40", "Ø40", { diametro: "40" }),
       variante("tubo-corrugato", "50", "Ø50", { diametro: "50" }),
@@ -225,6 +285,19 @@ export const CATALOGO_MATERIALI_SEED = Object.freeze([
     categoria: CATEGORIA_MATERIALE.ELETTRICO,
     unitaDefault: UNITA_MATERIALE.PZ,
     attributoChiave: "moduli",
+    accessoriSuggeriti: [
+      accessorio({
+        famigliaId: "pressacavo",
+        quantitaPerUnita: 4,
+        nota: "Pressacavi tipici per quadro",
+      }),
+      accessorio({
+        varianteId: "morsetti-a-leva-3-poli",
+        famigliaId: "morsetti",
+        quantitaPerUnita: 1,
+        nota: "Confezione morsetti",
+      }),
+    ],
     varianti: [
       variante("quadro-elettrico", "8-moduli", "8 moduli", { moduli: 8 }),
       variante("quadro-elettrico", "12-moduli", "12 moduli", { moduli: 12 }),
@@ -241,6 +314,13 @@ export const CATALOGO_MATERIALI_SEED = Object.freeze([
     unitaDefault: UNITA_MATERIALE.PZ,
     attributoChiave: "tipo",
     descrizione: "Presa senza vincolo di marca/serie",
+    accessoriSuggeriti: [
+      accessorio({
+        varianteId: "cassetta-503",
+        famigliaId: "cassetta",
+        quantitaPerUnita: 1,
+      }),
+    ],
     varianti: [
       variante("presa-civile", "bipasso", "Bipasso", { tipo: "bipasso" }),
       variante("presa-civile", "schuko", "Schuko", { tipo: "schuko" }),
@@ -256,6 +336,13 @@ export const CATALOGO_MATERIALI_SEED = Object.freeze([
     categoria: CATEGORIA_MATERIALE.ELETTRICO,
     unitaDefault: UNITA_MATERIALE.PZ,
     attributoChiave: "tipo",
+    accessoriSuggeriti: [
+      accessorio({
+        varianteId: "cassetta-503",
+        famigliaId: "cassetta",
+        quantitaPerUnita: 1,
+      }),
+    ],
     varianti: [
       variante("interruttore-comando", "unipolare", "Unipolare", { tipo: "unipolare" }),
       variante("interruttore-comando", "deviatore", "Deviatore", { tipo: "deviatore" }),
@@ -378,6 +465,18 @@ export const CATALOGO_MATERIALI_SEED = Object.freeze([
     categoria: CATEGORIA_MATERIALE.VIDEOSORVEGLIANZA,
     unitaDefault: UNITA_MATERIALE.PZ,
     attributoChiave: "tipo",
+    accessoriSuggeriti: [
+      accessorio({
+        varianteId: "kit-fissaggio-per-telecamera",
+        famigliaId: "kit-fissaggio",
+        quantitaPerUnita: 1,
+      }),
+      accessorio({
+        famigliaId: "cavo-rete-poe",
+        quantitaPerUnita: 1,
+        nota: "Cavo rete / PoE",
+      }),
+    ],
     varianti: [
       variante("telecamera", "dome-ip", "Dome IP", { tipo: "dome-ip" }),
       variante("telecamera", "bullet-ip", "Bullet IP", { tipo: "bullet-ip" }),
@@ -392,6 +491,13 @@ export const CATALOGO_MATERIALI_SEED = Object.freeze([
     categoria: CATEGORIA_MATERIALE.VIDEOSORVEGLIANZA,
     unitaDefault: UNITA_MATERIALE.PZ,
     attributoChiave: "canali",
+    accessoriSuggeriti: [
+      accessorio({
+        famigliaId: "hdd-videosorveglianza",
+        quantitaPerUnita: 1,
+        nota: "Hard disk dedicato",
+      }),
+    ],
     varianti: [
       variante("nvr-dvr", "4-canali", "4 canali", { canali: 4 }),
       variante("nvr-dvr", "8-canali", "8 canali", { canali: 8 }),
@@ -541,6 +647,13 @@ export const CATALOGO_MATERIALI_SEED = Object.freeze([
     categoria: CATEGORIA_MATERIALE.ILLUMINAZIONE,
     unitaDefault: UNITA_MATERIALE.M,
     attributoChiave: "tipo",
+    accessoriSuggeriti: [
+      accessorio({
+        famigliaId: "alimentatore-led",
+        quantitaPerUnita: 1,
+        nota: "Alimentatore dedicato",
+      }),
+    ],
     varianti: [
       variante("striscia-led", "24v-monocromatica", "24V monocromatica", { tipo: "24v-mono" }),
       variante("striscia-led", "24v-rgb", "24V RGB", { tipo: "24v-rgb" }),

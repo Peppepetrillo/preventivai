@@ -7,6 +7,7 @@ import {
   ETICHETTE_CATEGORIA_MATERIALE,
 } from "../../../domain/catalogoMateriali/materialiTypes";
 import { UNITA_OPZIONI_UI } from "../catalogoMaterialiUiMeta";
+import AccessoriSuggeritiSection from "./AccessoriSuggeritiSection";
 
 /**
  * BottomSheet crea/modifica famiglia materiale.
@@ -16,6 +17,7 @@ export default function FamigliaMaterialeSheet({
   onClose,
   famiglia = null,
   categoriaDefault = "elettrico",
+  catalogo = [],
   onCrea,
   onSalva,
   onElimina,
@@ -39,6 +41,7 @@ export default function FamigliaMaterialeSheet({
           key={famiglia?.id ?? "nuova-famiglia"}
           famiglia={famiglia}
           categoriaDefault={categoriaDefault}
+          catalogo={catalogo}
           onClose={onClose}
           onCrea={onCrea}
           onSalva={onSalva}
@@ -53,6 +56,7 @@ export default function FamigliaMaterialeSheet({
 function FamigliaForm({
   famiglia,
   categoriaDefault,
+  catalogo,
   onClose,
   onCrea,
   onSalva,
@@ -81,6 +85,7 @@ function FamigliaForm({
       attributoChiave: String(form.attributoChiave || "tipo").trim() || "tipo",
       descrizione: String(form.descrizione || "").trim(),
       attiva: form.attiva !== false,
+      accessoriSuggeriti: form.accessoriSuggeriti || [],
     };
 
     const ok = isNuova ? onCrea?.(payload) : onSalva?.(famiglia.id, payload);
@@ -178,6 +183,13 @@ function FamigliaForm({
         />
       </label>
 
+      <AccessoriSuggeritiSection
+        accessori={form.accessoriSuggeriti}
+        catalogo={catalogo}
+        escludiFamigliaId={famiglia?.id || ""}
+        onChange={(lista) => aggiorna("accessoriSuggeriti", lista)}
+      />
+
       <button
         type="button"
         onClick={gestisciSalva}
@@ -208,5 +220,8 @@ function formDaFamiglia(famiglia, categoriaDefault) {
     attributoChiave: famiglia?.attributoChiave || "tipo",
     descrizione: famiglia?.descrizione || "",
     attiva: famiglia?.attiva !== false,
+    accessoriSuggeriti: Array.isArray(famiglia?.accessoriSuggeriti)
+      ? famiglia.accessoriSuggeriti
+      : [],
   };
 }

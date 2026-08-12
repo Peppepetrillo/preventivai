@@ -22,13 +22,16 @@ export default function SelettoreMaterialeSheet({
   onClose,
   onConferma,
   onApriManuale,
+  title = "Aggiungi materiale",
+  descrizione = "Scegli dal catalogo o inserisci una voce libera.",
+  labelConferma = "Aggiungi alla distinta",
 }) {
   return (
     <BottomSheet
       open={open}
       onClose={onClose}
-      title="Aggiungi materiale"
-      descrizione="Scegli dal catalogo o inserisci una voce libera."
+      title={title}
+      descrizione={descrizione}
       zIndex={80}
     >
       {open ? (
@@ -36,13 +39,14 @@ export default function SelettoreMaterialeSheet({
           onClose={onClose}
           onConferma={onConferma}
           onApriManuale={onApriManuale}
+          labelConferma={labelConferma}
         />
       ) : null}
     </BottomSheet>
   );
 }
 
-function SelettoreForm({ onClose, onConferma, onApriManuale }) {
+function SelettoreForm({ onClose, onConferma, onApriManuale, labelConferma }) {
   const categorie = useMemo(() => elencaMetaCategorieMateriale(), []);
   const [ricerca, setRicerca] = useState("");
   const [categoriaId, setCategoriaId] = useState(null);
@@ -128,17 +132,19 @@ function SelettoreForm({ onClose, onConferma, onApriManuale }) {
         />
       ) : null}
 
-      <button
-        type="button"
-        onClick={() => {
-          onApriManuale?.();
-          onClose?.();
-        }}
-        className="w-full btn-secondary min-h-[48px] flex items-center justify-center gap-2 text-sm font-bold"
-      >
-        <Plus size={18} aria-hidden="true" />
-        Voce libera
-      </button>
+      {typeof onApriManuale === "function" ? (
+        <button
+          type="button"
+          onClick={() => {
+            onApriManuale();
+            onClose?.();
+          }}
+          className="w-full btn-secondary min-h-[48px] flex items-center justify-center gap-2 text-sm font-bold"
+        >
+          <Plus size={18} aria-hidden="true" />
+          Voce libera
+        </button>
+      ) : null}
 
       {vista === "categorie" ? (
         <CatalogoMaterialiCategorie
@@ -256,7 +262,7 @@ function SelettoreForm({ onClose, onConferma, onApriManuale }) {
             onClick={conferma}
             className="btn-primary w-full min-h-[52px] font-black"
           >
-            Aggiungi alla distinta
+            {labelConferma}
           </button>
         </div>
       ) : null}

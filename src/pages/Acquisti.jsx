@@ -233,6 +233,7 @@ export default function Acquisti() {
                 key={gruppo.lavoroId || "senza-lavoro"}
                 gruppo={gruppo}
                 onToggleVoce={toggleVoce}
+                vociContesto={lista}
               />
             ))}
           </div>
@@ -250,6 +251,7 @@ export default function Acquisti() {
                   onToggleEspanso={toggleEspanso}
                   onToggleAggregato={toggleAggregato}
                   onToggleVoce={toggleVoce}
+                  vociContesto={lista}
                 />
               </li>
             ))}

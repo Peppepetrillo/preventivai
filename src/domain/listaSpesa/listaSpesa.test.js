@@ -103,4 +103,55 @@ describe("listaSpesa domain", () => {
     expect(leggiDaComprare()).toHaveLength(0);
     expect(localStorage.getItem(STORAGE_KEYS.listaSpesa)).toBeTruthy();
   });
+
+  it("propaga parentVoceId e origineAccessorio dal cantiere alla lista", () => {
+    sincronizzaListaSpesaDaCantiere({
+      id: "c-acc",
+      cliente: "Verdi",
+      materiali: [
+        {
+          id: "m-padre",
+          nome: "Presa civile — Bipasso",
+          quantita: 12,
+          unita: "pz",
+          distintaVoceId: "voce-padre",
+          acquistato: false,
+        },
+        {
+          id: "m-acc",
+          nome: "Cassetta — 503",
+          quantita: 12,
+          unita: "pz",
+          distintaVoceId: "voce-acc",
+          parentVoceId: "voce-padre",
+          origineAccessorio: "suggerito",
+          acquistato: false,
+        },
+      ],
+    });
+
+    const voci = leggiDaComprare().filter((v) => v.lavoroId === "c-acc");
+    expect(voci).toHaveLength(2);
+    const accessorio = voci.find((v) => v.nome.startsWith("Cassetta"));
+    expect(accessorio.parentVoceId).toBe("voce-padre");
+    expect(accessorio.origineAccessorio).toBe("suggerito");
+    expect(accessorio.quantita).toBe(12);
+
+    const padre = voci.find((v) => v.distintaVoceId === "voce-padre");
+    expect(padre.parentVoceId).toBeUndefined();
+    expect(padre.origineAccessorio).toBeUndefined();
+  });
+
+  it("retrocompatibile: sync senza parentVoceId resta ok", () => {
+    sincronizzaListaSpesaDaCantiere({
+      id: "c-legacy",
+      materiali: [
+        { id: "m1", nome: "Nastro", quantita: 2, unita: "pz", acquistato: false },
+      ],
+    });
+    const voci = leggiDaComprare().filter((v) => v.lavoroId === "c-legacy");
+    expect(voci).toHaveLength(1);
+    expect(voci[0].parentVoceId).toBeUndefined();
+    expect(voci[0].origineAccessorio).toBeUndefined();
+  });
 });

@@ -19,6 +19,8 @@
  * @property {number} quantita
  * @property {number=} prezzoUnitario
  * @property {string=} note
+ * @property {string=} parentVoceId — voce padre se accessorio espanso (flat)
+ * @property {'suggerito'|'manuale'=} origineAccessorio
  */
 
 /**

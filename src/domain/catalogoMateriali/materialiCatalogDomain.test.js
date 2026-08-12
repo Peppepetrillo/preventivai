@@ -8,14 +8,18 @@ import {
   UNITA_MATERIALE,
   UNITA_MATERIALE_CANONICHE,
   analizzaIntegritaSeed,
+  calcolaQuantitaAccessorioSuggerito,
   contaCatalogoMaterialiSeed,
   creaRiferimentoMateriale,
+  elencaAccessoriSuggeritiPerVariante,
   elencaFamiglieMateriali,
   elencaFamigliePerCategoria,
   isCategoriaMateriale,
   isFamigliaMaterialeId,
   isUnitaCanonica,
   isVarianteMaterialeId,
+  normalizzaAccessoriSuggeriti,
+  normalizzaFamigliaMateriale,
   normalizzaUnitaMateriale,
   trovaFamigliaMateriale,
   trovaVarianteMateriale,
@@ -276,5 +280,134 @@ describe("catalogoMateriali — riferimenti", () => {
     expect(rif?.prezzoUnitario).toBe(1.5);
     expect(rif?.note).toBe("bianche");
     expect(validaRiferimentoMateriale(rif).ok).toBe(true);
+  });
+});
+
+describe("catalogoMateriali — accessoriSuggeriti UX-6.1a", () => {
+  it("normalizza accessori e ignora payload invalidi (retrocompat)", () => {
+    expect(normalizzaAccessoriSuggeriti(undefined)).toEqual([]);
+    expect(normalizzaAccessoriSuggeriti(null)).toEqual([]);
+    expect(normalizzaAccessoriSuggeriti("x")).toEqual([]);
+    expect(
+      normalizzaAccessoriSuggeriti([
+        { varianteId: "cassetta-503", quantitaPerUnita: 2 },
+        { nome: "senza id" },
+        { famigliaId: "pressacavo", obbligatorio: true },
+        { varianteId: "cassetta-503", quantitaPerUnita: 9 },
+      ])
+    ).toEqual([
+      {
+        varianteId: "cassetta-503",
+        quantitaPerUnita: 2,
+        obbligatorio: false,
+      },
+      {
+        famigliaId: "pressacavo",
+        quantitaPerUnita: 1,
+        obbligatorio: true,
+      },
+    ]);
+  });
+
+  it("preserva accessori in normalizzaFamiglia/Variante senza romperli se assenti", () => {
+    const senza = normalizzaFamigliaMateriale({
+      id: "custom-x",
+      nome: "Custom",
+      categoria: "elettrico",
+      unitaDefault: "pz",
+      attributoChiave: "tipo",
+      varianti: [
+        { id: "custom-x-a", famigliaId: "custom-x", etichetta: "A", attributi: {} },
+      ],
+    });
+    expect(senza?.accessoriSuggeriti).toBeUndefined();
+
+    const con = normalizzaFamigliaMateriale({
+      id: "custom-y",
+      nome: "Custom Y",
+      categoria: "elettrico",
+      unitaDefault: "pz",
+      attributoChiave: "tipo",
+      accessoriSuggeriti: [{ famigliaId: "cassetta", quantitaPerUnita: 1 }],
+      varianti: [
+        {
+          id: "custom-y-a",
+          famigliaId: "custom-y",
+          etichetta: "A",
+          attributi: {},
+          accessoriSuggeriti: [{ varianteId: "cassetta-503" }],
+        },
+      ],
+    });
+    expect(con?.accessoriSuggeriti).toHaveLength(1);
+    expect(con?.varianti[0].accessoriSuggeriti?.[0].varianteId).toBe(
+      "cassetta-503"
+    );
+  });
+
+  it("seed: presa e interruttore suggeriscono cassetta 503", () => {
+    const presa = trovaFamigliaMateriale("presa-civile");
+    expect(presa?.accessoriSuggeriti).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          varianteId: "cassetta-503",
+          quantitaPerUnita: 1,
+        }),
+      ])
+    );
+
+    const accessori = elencaAccessoriSuggeritiPerVariante("presa-civile-bipasso");
+    expect(accessori.some((a) => a.varianteId === "cassetta-503")).toBe(true);
+  });
+
+  it("seed: tubo Ø25 suggerisce pressacavo PG16", () => {
+    const accessori = elencaAccessoriSuggeritiPerVariante("tubo-corrugato-25");
+    expect(accessori).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          varianteId: "pressacavo-pg16",
+          famigliaId: "pressacavo",
+        }),
+      ])
+    );
+  });
+
+  it("seed: quadro, telecamera, striscia e nvr hanno relazioni tipiche", () => {
+    expect(
+      elencaAccessoriSuggeritiPerVariante("quadro-elettrico-24-moduli").length
+    ).toBeGreaterThanOrEqual(2);
+    expect(
+      elencaAccessoriSuggeritiPerVariante("telecamera-dome-ip").some(
+        (a) => a.varianteId === "kit-fissaggio-per-telecamera"
+      )
+    ).toBe(true);
+    expect(
+      elencaAccessoriSuggeritiPerVariante("striscia-led-24v-rgb").some(
+        (a) => a.famigliaId === "alimentatore-led"
+      )
+    ).toBe(true);
+    expect(
+      elencaAccessoriSuggeritiPerVariante("nvr-dvr-8-canali").some(
+        (a) => a.famigliaId === "hdd-videosorveglianza"
+      )
+    ).toBe(true);
+  });
+
+  it("calcolaQuantitaAccessorioSuggerito rispetta il moltiplicatore", () => {
+    expect(
+      calcolaQuantitaAccessorioSuggerito(12, { quantitaPerUnita: 1 })
+    ).toBe(12);
+    expect(
+      calcolaQuantitaAccessorioSuggerito(3, { quantitaPerUnita: 4 })
+    ).toBe(12);
+    expect(calcolaQuantitaAccessorioSuggerito(0, { quantitaPerUnita: 1 })).toBe(
+      0
+    );
+  });
+
+  it("integrità seed resta ok con accessori", () => {
+    const report = analizzaIntegritaSeed();
+    expect(report.ok).toBe(true);
+    expect(report.errori).toEqual([]);
   });
 });

@@ -88,7 +88,7 @@ describe("DettaglioPreventivo UX-2.1", () => {
     expect(screen.getByText("Impianto elettrico")).toBeInTheDocument();
   });
 
-  it("Bozza: hero Modifica preventivo e una sola CTA primaria", () => {
+  it("Bozza: hero Accetta e una sola CTA primaria", () => {
     localStorage.setItem(
       STORAGE_KEYS.preventivi,
       JSON.stringify([creaPreventivo()])
@@ -97,12 +97,13 @@ describe("DettaglioPreventivo UX-2.1", () => {
     renderDettaglio();
 
     const hero = screen.getByTestId("preventivo-hero-cta");
-    expect(hero).toHaveTextContent("Modifica preventivo");
+    expect(hero).toHaveTextContent(/^Accetta$/);
     expect(hero).toHaveClass("btn-primary");
     expect(screen.getAllByTestId("preventivo-hero-cta")).toHaveLength(1);
+    expect(screen.getByTestId("workflow-modifica")).toBeInTheDocument();
   });
 
-  it("Inviato: hero Invia di nuovo", () => {
+  it("Inviato: hero Accetta", () => {
     localStorage.setItem(
       STORAGE_KEYS.preventivi,
       JSON.stringify([
@@ -113,11 +114,12 @@ describe("DettaglioPreventivo UX-2.1", () => {
     renderDettaglio("p2");
 
     expect(screen.getByTestId("preventivo-hero-cta")).toHaveTextContent(
-      "Invia di nuovo"
+      /^Accetta$/
     );
     expect(screen.getByTestId("preventivo-stato-badge")).toHaveTextContent(
       "Inviato"
     );
+    expect(screen.getByTestId("workflow-invia-di-nuovo")).toBeInTheDocument();
   });
 
   it("Accettato: hero Inizia cantiere senza duplicati primari", () => {
@@ -173,7 +175,7 @@ describe("DettaglioPreventivo UX-2.1", () => {
     );
   });
 
-  it("workflow Accetta da Inviato senza regressioni", async () => {
+  it("workflow Accetta mostra banner Inizia cantiere", async () => {
     const user = userEvent.setup();
     localStorage.setItem(
       STORAGE_KEYS.preventivi,
@@ -184,11 +186,16 @@ describe("DettaglioPreventivo UX-2.1", () => {
 
     renderDettaglio("p5");
 
-    await user.click(screen.getByRole("button", { name: /^Accetta$/i }));
+    await user.click(screen.getByTestId("preventivo-hero-cta"));
 
     expect(screen.getByTestId("preventivo-stato-badge")).toHaveTextContent(
       "Accettato"
     );
+    expect(screen.getByTestId("banner-post-accettazione")).toBeInTheDocument();
+    expect(screen.getByTestId("banner-inizia-cantiere")).toHaveTextContent(
+      /Inizia cantiere/i
+    );
+    expect(screen.queryByTestId("preventivo-hero-cta")).not.toBeInTheDocument();
   });
 
   it("sezioni Distinta, PDF, pagamenti e totale", async () => {

@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import BottomSheet from "../../../components/BottomSheet";
 import NumericInput from "../../../components/NumericInput";
 import { UNITA_OPZIONI_UI } from "../catalogoMaterialiUiMeta";
+import AccessoriSuggeritiSection from "./AccessoriSuggeritiSection";
 
 /**
  * BottomSheet crea/modifica variante materiale.
@@ -13,6 +14,7 @@ export default function VarianteMaterialeSheet({
   onClose,
   famiglia,
   variante = null,
+  catalogo = [],
   onCrea,
   onSalva,
   onElimina,
@@ -36,6 +38,7 @@ export default function VarianteMaterialeSheet({
           key={variante?.id ?? `nuova-${famiglia.id}`}
           famiglia={famiglia}
           variante={variante}
+          catalogo={catalogo}
           onClose={onClose}
           onCrea={onCrea}
           onSalva={onSalva}
@@ -50,6 +53,7 @@ export default function VarianteMaterialeSheet({
 function VarianteForm({
   famiglia,
   variante,
+  catalogo,
   onClose,
   onCrea,
   onSalva,
@@ -81,6 +85,7 @@ function VarianteForm({
       attributi: { [chiave]: valoreAttributo },
       unita: form.unita || undefined,
       attiva: form.attiva !== false,
+      accessoriSuggeriti: form.accessoriSuggeriti || [],
     };
 
     if (form.prezzoIndicativo !== "" && form.prezzoIndicativo != null) {
@@ -187,6 +192,14 @@ function VarianteForm({
         />
       </label>
 
+      <AccessoriSuggeritiSection
+        accessori={form.accessoriSuggeriti}
+        catalogo={catalogo}
+        escludiFamigliaId={famiglia?.id || ""}
+        escludiVarianteId={variante?.id || ""}
+        onChange={(lista) => aggiorna("accessoriSuggeriti", lista)}
+      />
+
       <button
         type="button"
         onClick={gestisciSalva}
@@ -223,5 +236,8 @@ function formDaVariante(variante, famiglia) {
     prezzoIndicativo:
       variante?.prezzoIndicativo != null ? String(variante.prezzoIndicativo) : "",
     attiva: variante?.attiva !== false,
+    accessoriSuggeriti: Array.isArray(variante?.accessoriSuggeriti)
+      ? variante.accessoriSuggeriti
+      : [],
   };
 }

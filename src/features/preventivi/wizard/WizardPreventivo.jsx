@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -24,6 +24,7 @@ export default function WizardPreventivo() {
   const [searchParams] = useSearchParams();
   const { attivaWizard, disattivaWizard } = useWizardContext();
   const clienteIdElaborato = useRef(false);
+  const [esitoSuccesso, setEsitoSuccesso] = useState(false);
   const {
     stato,
     selezionaCliente,
@@ -61,7 +62,19 @@ export default function WizardPreventivo() {
     vaiAStep("componi");
   }, [searchParams, impostaCliente, vaiAStep]);
 
+  useEffect(() => {
+    if (stato.stepId !== "conferma") {
+      setEsitoSuccesso(false);
+    }
+  }, [stato.stepId]);
+
   function gestisciIndietro() {
+    if (esitoSuccesso) {
+      reset();
+      navigate(ROUTES.dashboard);
+      return;
+    }
+
     if (puoAndareIndietro) {
       indietro();
       return;
@@ -97,7 +110,12 @@ export default function WizardPreventivo() {
 
       case "conferma":
         return (
-          <StepConferma stato={stato} onNuovoPreventivo={reset} />
+          <StepConferma
+            stato={stato}
+            onNuovoPreventivo={reset}
+            onModificaComposizione={indietro}
+            onEsitoCambiato={setEsitoSuccesso}
+          />
         );
 
       default:
@@ -110,22 +128,28 @@ export default function WizardPreventivo() {
       ? `${stato.cliente}`
       : undefined;
 
+  const titoloHeader = esitoSuccesso ? "Creato" : stepCorrente.title;
+
   return (
     <div className="min-h-screen text-white pb-36">
       <WizardHeader
-        title={stepCorrente.title}
+        title={titoloHeader}
         subtitle={sottotitolo}
         indiceCorrente={indiceCorrente}
         totaleStep={totaleStep}
-        puoAndareIndietro={puoAndareIndietro || stato.stepId === "cliente"}
+        puoAndareIndietro={
+          esitoSuccesso ||
+          puoAndareIndietro ||
+          stato.stepId === "cliente"
+        }
         onIndietro={gestisciIndietro}
       />
 
-      <WizardProgress stepId={stato.stepId} />
+      {!esitoSuccesso ? <WizardProgress stepId={stato.stepId} /> : null}
 
       <AnimatePresence mode="wait">
         <motion.div
-          key={stato.stepId}
+          key={esitoSuccesso ? "successo" : stato.stepId}
           initial="iniziale"
           animate="animato"
           exit="uscita"

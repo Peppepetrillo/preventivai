@@ -21,6 +21,10 @@ function creaMaterialeDaVoceDistinta(voce, distintaId) {
   if (voce.famigliaId) materiale.famigliaId = String(voce.famigliaId);
   if (voce.varianteId) materiale.varianteId = String(voce.varianteId);
   if (voce.note) materiale.note = String(voce.note).trim();
+  if (voce.parentVoceId) materiale.parentVoceId = String(voce.parentVoceId);
+  if (voce.origineAccessorio) {
+    materiale.origineAccessorio = String(voce.origineAccessorio);
+  }
   if (
     voce.prezzoUnitario != null &&
     Number.isFinite(Number(voce.prezzoUnitario))
@@ -69,6 +73,10 @@ export function proiettaVociDistintaSuMaterialiCantiere(
       note: voce.note ? String(voce.note).trim() : undefined,
       famigliaId: voce.famigliaId ? String(voce.famigliaId) : undefined,
       varianteId: voce.varianteId ? String(voce.varianteId) : undefined,
+      parentVoceId: voce.parentVoceId ? String(voce.parentVoceId) : undefined,
+      origineAccessorio: voce.origineAccessorio
+        ? String(voce.origineAccessorio)
+        : undefined,
       distintaId: String(distinta.id),
       distintaVoceId: String(voce.id),
       origine: "distinta",

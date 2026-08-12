@@ -483,4 +483,73 @@ describe("Acquisti UI Step 8.3 condivisione", () => {
       within(dialog).getByTestId("acquisti-condividi-preview").textContent
     ).toContain("Già preso");
   });
+
+  it("UX-6.1d: accessorio suggerito mostra per: padre; manuale no", () => {
+    seedVoci([
+      creaVoceListaSpesa({
+        nome: "Presa civile — Bipasso",
+        quantita: 12,
+        unita: "pz",
+        lavoroId: "c1",
+        cliente: "Rossi",
+        titoloLavoro: "Impianto",
+        distintaVoceId: "voce-padre",
+        origine: "distinta",
+      }),
+      creaVoceListaSpesa({
+        nome: "Cassetta — 503",
+        quantita: 12,
+        unita: "pz",
+        lavoroId: "c1",
+        cliente: "Rossi",
+        titoloLavoro: "Impianto",
+        distintaVoceId: "voce-acc",
+        parentVoceId: "voce-padre",
+        origineAccessorio: "suggerito",
+        origine: "distinta",
+      }),
+      creaVoceListaSpesa({
+        nome: "Nastro isolante",
+        quantita: 1,
+        unita: "pz",
+        lavoroId: "c1",
+        cliente: "Rossi",
+        titoloLavoro: "Impianto",
+        origine: "manuale",
+      }),
+    ]);
+    renderPage();
+
+    expect(screen.getByTestId("acquisti-accessorio-padre")).toHaveTextContent(
+      /per: Presa civile — Bipasso/i
+    );
+    expect(screen.getByText("Cassetta — 503")).toBeInTheDocument();
+    expect(screen.getByText("Nastro isolante")).toBeInTheDocument();
+    expect(screen.getAllByTestId("acquisti-accessorio-padre")).toHaveLength(1);
+
+    fireEvent.click(screen.getByTestId("acquisti-condividi"));
+    const preview = within(ultimoDialog()).getByTestId(
+      "acquisti-condividi-preview"
+    ).textContent;
+    expect(preview).toContain("Presa civile — Bipasso");
+    expect(preview).toContain("Cassetta — 503");
+    expect(preview).not.toMatch(/per:/i);
+    expect(preview).not.toMatch(/Accessorio/i);
+  });
+
+  it("UX-6.1d: lista legacy senza parentVoceId non mostra etichetta", () => {
+    seedVoci([
+      creaVoceListaSpesa({
+        nome: "Tubo legacy",
+        quantita: 5,
+        unita: "m",
+        lavoroId: "c1",
+        cliente: "A",
+        titoloLavoro: "B",
+      }),
+    ]);
+    renderPage();
+    expect(screen.getByText("Tubo legacy")).toBeInTheDocument();
+    expect(screen.queryByTestId("acquisti-accessorio-padre")).not.toBeInTheDocument();
+  });
 });

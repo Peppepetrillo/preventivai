@@ -8,6 +8,7 @@ import {
   CATEGORIA_MATERIALE,
   isCategoriaMateriale,
   isUnitaCanonica,
+  normalizzaAccessoriSuggeriti,
   normalizzaUnitaMateriale,
   UNITA_MATERIALE,
 } from "./materialiTypes";
@@ -86,6 +87,11 @@ export function normalizzaVarianteMateriale(grezzo = {}, famigliaId = "") {
     }
   }
 
+  const accessori = normalizzaAccessoriSuggeriti(grezzo.accessoriSuggeriti);
+  if (accessori.length > 0) {
+    variante.accessoriSuggeriti = accessori;
+  }
+
   return variante;
 }
 
@@ -135,6 +141,11 @@ export function normalizzaFamigliaMateriale(grezzo = {}) {
   if (descrizione) famiglia.descrizione = descrizione;
   if (grezzo.createdAt) famiglia.createdAt = String(grezzo.createdAt);
   if (grezzo.updatedAt) famiglia.updatedAt = String(grezzo.updatedAt);
+
+  const accessori = normalizzaAccessoriSuggeriti(grezzo.accessoriSuggeriti);
+  if (accessori.length > 0) {
+    famiglia.accessoriSuggeriti = accessori;
+  }
 
   return famiglia;
 }
@@ -418,6 +429,8 @@ export function analizzaIntegritaSeed(seed = CATALOGO_MATERIALI_SEED) {
   const famiglieViste = new Set();
   /** @type {Set<string>} */
   const variantiViste = new Set();
+  /** @type {Map<string, string>} */
+  const varianteAFamiglia = new Map();
   /** @type {Record<string, number>} */
   const categorie = {};
   let totaleVarianti = 0;
@@ -465,6 +478,7 @@ export function analizzaIntegritaSeed(seed = CATALOGO_MATERIALI_SEED) {
         errori.push(`variante duplicata: ${variante.id}`);
       }
       variantiViste.add(variante.id);
+      varianteAFamiglia.set(variante.id, famiglia.id);
       if (variante.famigliaId !== famiglia.id) {
         errori.push(
           `variante ${variante.id} ha famigliaId ${variante.famigliaId} ≠ ${famiglia.id}`
@@ -490,6 +504,35 @@ export function analizzaIntegritaSeed(seed = CATALOGO_MATERIALI_SEED) {
     }
   }
 
+  for (const famiglia of seed) {
+    if (!famiglia?.id) continue;
+
+    for (const accessorio of famiglia.accessoriSuggeriti || []) {
+      validaAccessorioNelSeed(
+        accessorio,
+        `famiglia ${famiglia.id}`,
+        famiglieViste,
+        variantiViste,
+        varianteAFamiglia,
+        errori
+      );
+    }
+
+    for (const variante of famiglia.varianti || []) {
+      if (!variante?.id) continue;
+      for (const accessorio of variante.accessoriSuggeriti || []) {
+        validaAccessorioNelSeed(
+          accessorio,
+          `variante ${variante.id}`,
+          famiglieViste,
+          variantiViste,
+          varianteAFamiglia,
+          errori
+        );
+      }
+    }
+  }
+
   return {
     ok: errori.length === 0,
     errori,
@@ -499,6 +542,99 @@ export function analizzaIntegritaSeed(seed = CATALOGO_MATERIALI_SEED) {
       categorie,
     },
   };
+}
+
+/**
+ * @param {import("./materialiTypes").AccessorioSuggerito} accessorio
+ * @param {string} contesto
+ * @param {Set<string>} famiglieViste
+ * @param {Set<string>} variantiViste
+ * @param {Map<string, string>} varianteAFamiglia
+ * @param {string[]} errori
+ */
+function validaAccessorioNelSeed(
+  accessorio,
+  contesto,
+  famiglieViste,
+  variantiViste,
+  varianteAFamiglia,
+  errori
+) {
+  if (accessorio.varianteId && !variantiViste.has(accessorio.varianteId)) {
+    errori.push(
+      `accessorio orfano su ${contesto}: varianteId ${accessorio.varianteId}`
+    );
+  }
+  if (accessorio.famigliaId && !famiglieViste.has(accessorio.famigliaId)) {
+    errori.push(
+      `accessorio orfano su ${contesto}: famigliaId ${accessorio.famigliaId}`
+    );
+  }
+  if (
+    accessorio.varianteId &&
+    accessorio.famigliaId &&
+    varianteAFamiglia.has(accessorio.varianteId)
+  ) {
+    const famigliaAttesa = varianteAFamiglia.get(accessorio.varianteId);
+    if (String(famigliaAttesa) !== String(accessorio.famigliaId)) {
+      errori.push(
+        `accessorio incoerente su ${contesto}: variante ${accessorio.varianteId} non appartiene a ${accessorio.famigliaId}`
+      );
+    }
+  }
+}
+
+/**
+ * Unisce accessori di famiglia + variante (variante vince sui duplicati).
+ * Nessuna UI: helper per 6.1c futura.
+ *
+ * @param {string} varianteId
+ * @param {import("./materialiTypes").FamigliaMateriale[]=} catalogo
+ * @returns {import("./materialiTypes").AccessorioSuggerito[]}
+ */
+export function elencaAccessoriSuggeritiPerVariante(
+  varianteId,
+  catalogo = null
+) {
+  const id = String(varianteId || "").trim();
+  if (!id) return [];
+
+  let famiglia = null;
+  let variante = null;
+
+  if (Array.isArray(catalogo) && catalogo.length > 0) {
+    const elenco = normalizzaCatalogoMateriali(catalogo);
+    for (const f of elenco) {
+      const v = f.varianti.find((item) => item.id === id);
+      if (v) {
+        famiglia = f;
+        variante = v;
+        break;
+      }
+    }
+  } else {
+    variante = trovaVarianteMateriale(id);
+    famiglia = variante
+      ? trovaFamigliaMateriale(variante.famigliaId)
+      : null;
+  }
+
+  if (!variante) return [];
+
+  const dallaFamiglia = normalizzaAccessoriSuggeriti(
+    famiglia?.accessoriSuggeriti
+  );
+  const dallaVariante = normalizzaAccessoriSuggeriti(
+    variante.accessoriSuggeriti
+  );
+
+  /** @type {Map<string, import("./materialiTypes").AccessorioSuggerito>} */
+  const mappa = new Map();
+  for (const accessorio of [...dallaFamiglia, ...dallaVariante]) {
+    const chiave = `${accessorio.varianteId || ""}|${accessorio.famigliaId || ""}`;
+    mappa.set(chiave, accessorio);
+  }
+  return [...mappa.values()];
 }
 
 export function contaCatalogoMaterialiSeed() {
@@ -531,6 +667,7 @@ export function creaFamigliaPersonalizzata(input = {}) {
     personalizzata: true,
     attiva: input.attiva !== false,
     varianti: Array.isArray(input.varianti) ? input.varianti : [],
+    accessoriSuggeriti: input.accessoriSuggeriti,
     createdAt: now,
     updatedAt: now,
   });
@@ -558,6 +695,7 @@ export function creaVarianteMateriale(famigliaId, input = {}) {
       unita: input.unita,
       prezzoIndicativo: input.prezzoIndicativo,
       attiva: input.attiva !== false,
+      accessoriSuggeriti: input.accessoriSuggeriti,
     },
     famigliaId
   );

@@ -8,6 +8,9 @@ export {
   isCategoriaMateriale,
   isUnitaCanonica,
   normalizzaUnitaMateriale,
+  normalizzaAccessorioSuggerito,
+  normalizzaAccessoriSuggeriti,
+  calcolaQuantitaAccessorioSuggerito,
 } from "./materialiTypes";
 
 export { CATALOGO_MATERIALI_SEED } from "./materialiCatalogoSeed";
@@ -34,6 +37,7 @@ export {
   cercaFamiglieMateriali,
   creaFamigliaPersonalizzata,
   creaVarianteMateriale,
+  elencaAccessoriSuggeritiPerVariante,
 } from "./materialiCatalogDomain";
 
 export {

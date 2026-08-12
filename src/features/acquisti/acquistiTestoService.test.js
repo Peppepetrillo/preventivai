@@ -162,4 +162,35 @@ describe("acquistiTestoService", () => {
     const match = testo.match(/Cavo Cat\.6 — 150 m/g);
     expect(match).toHaveLength(1);
   });
+
+  it("condivisione resta flat anche con accessori suggeriti", () => {
+    const voci = [
+      creaVoceListaSpesa({
+        nome: "Presa Living Now",
+        quantita: 12,
+        unita: "pz",
+        lavoroId: "c1",
+        cliente: "Rossi",
+        titoloLavoro: "Civile",
+        distintaVoceId: "voce-padre",
+      }),
+      creaVoceListaSpesa({
+        nome: "Cassetta 503",
+        quantita: 12,
+        unita: "pz",
+        lavoroId: "c1",
+        cliente: "Rossi",
+        titoloLavoro: "Civile",
+        parentVoceId: "voce-padre",
+        origineAccessorio: "suggerito",
+      }),
+    ];
+    const testo = generaTestoAcquisti(voci, {
+      modalita: MODALITA_CONDIVIDI_ACQUISTI.perLavoro,
+    });
+    expect(testo).toContain("• Presa Living Now — 12 pz");
+    expect(testo).toContain("• Cassetta 503 — 12 pz");
+    expect(testo).not.toMatch(/per:/i);
+    expect(testo).not.toMatch(/└|├|Accessorio/i);
+  });
 });

@@ -66,11 +66,13 @@ import PreventivoDettaglioHeader from "../features/preventivi/components/Prevent
 import PreventivoHeroCta from "../features/preventivi/components/PreventivoHeroCta";
 import PreventivoSezioneCollapsible from "../features/preventivi/components/PreventivoSezioneCollapsible";
 import PreventivoWorkflowAzioni from "../features/preventivi/components/PreventivoWorkflowAzioni";
+import BannerPostAccettazione from "../features/preventivi/components/BannerPostAccettazione";
 import {
   HERO_CTA,
   filtraAzioniSecondarie,
   risolviHeroCta,
 } from "../features/preventivi/utils/preventivoHeroCta";
+import { messaggioErroreWorkflow } from "../features/preventivi/utils/messaggioErroreWorkflow";
 import { salvaFirma, ottieniFirma } from "../domain/firma";
 import { risolviDocumentoDaCondividere } from "../domain/condivisione";
 import { arricchisciPreventivoLegacy } from "../domain/catalogo";
@@ -115,6 +117,7 @@ export default function DettaglioPreventivo() {
   const [noteIncasso, setNoteIncasso] = useState(preventivo?.noteIncasso || "");
   const [nuovoIncasso, setNuovoIncasso] = useState("");
   const [messaggio, setMessaggio] = useState("");
+  const [bannerPostAccetta, setBannerPostAccetta] = useState(false);
   const [confermaRifiuto, setConfermaRifiuto] = useState(false);
   const [confermaEliminaPreventivo, setConfermaEliminaPreventivo] =
     useState(false);
@@ -307,7 +310,12 @@ export default function DettaglioPreventivo() {
     }
     const risultato = annullaPreventivo(preventivo.id);
     if (!risultato.success) {
-      setMessaggio(risultato.error || "Operazione non riuscita.");
+      setMessaggio(
+        messaggioErroreWorkflow(
+          risultato.error,
+          "Non è stato possibile rifiutare il preventivo."
+        )
+      );
       setConfermaRifiuto(false);
       return;
     }
@@ -400,17 +408,29 @@ export default function DettaglioPreventivo() {
     salvaModificheSilenzioso();
     const risultato = accettaPreventivo(preventivo.id);
     if (!risultato.success) {
-      setMessaggio(risultato.error || "Accettazione non riuscita.");
+      setBannerPostAccetta(false);
+      setMessaggio(
+        messaggioErroreWorkflow(
+          risultato.error,
+          "Non è stato possibile accettare il preventivo."
+        )
+      );
       return;
     }
-    sincronizzaDaWorkflow(risultato.preventivo, "Preventivo accettato.");
+    setBannerPostAccetta(true);
+    sincronizzaDaWorkflow(risultato.preventivo, "");
   }
 
   function eseguiInvia() {
     salvaModificheSilenzioso();
     const risultato = inviaPreventivo(preventivo.id);
     if (!risultato.success) {
-      setMessaggio(risultato.error || "Invio non riuscito.");
+      setMessaggio(
+        messaggioErroreWorkflow(
+          risultato.error,
+          "Non è stato possibile segnare il preventivo come inviato."
+        )
+      );
       return;
     }
     sincronizzaDaWorkflow(risultato.preventivo, "Preventivo segnato come inviato.");
@@ -433,7 +453,12 @@ export default function DettaglioPreventivo() {
       }
       eseguiConversioneCantiere({ usaDistinta: false });
     } catch (errore) {
-      setMessaggio(errore.message || "Non è stato possibile creare il cantiere.");
+      setMessaggio(
+        messaggioErroreWorkflow(
+          errore?.message,
+          "Non è stato possibile creare il cantiere."
+        )
+      );
     }
   }
 
@@ -442,7 +467,12 @@ export default function DettaglioPreventivo() {
       salvaModificheSilenzioso();
       const risultato = convertiInCantiere(preventivo.id);
       if (!risultato.success) {
-        setMessaggio(risultato.error || "Non è stato possibile creare il cantiere.");
+        setMessaggio(
+          messaggioErroreWorkflow(
+            risultato.error,
+            "Non è stato possibile creare il cantiere."
+          )
+        );
         setShowUsaDistinta(false);
         return;
       }
@@ -457,6 +487,7 @@ export default function DettaglioPreventivo() {
         }
       }
 
+      setBannerPostAccetta(false);
       setCantiereId(risultato.cantiere.id);
       setStato(risultato.preventivo.stato || STATI_PREVENTIVO.CONVERTITO);
       setTimelineTick((n) => n + 1);
@@ -471,7 +502,12 @@ export default function DettaglioPreventivo() {
       navigate(routeCantiere(risultato.cantiere.id));
     } catch (errore) {
       setShowUsaDistinta(false);
-      setMessaggio(errore.message || "Non è stato possibile creare il cantiere.");
+      setMessaggio(
+        messaggioErroreWorkflow(
+          errore?.message,
+          "Non è stato possibile creare il cantiere."
+        )
+      );
     }
   }
 
@@ -559,11 +595,23 @@ export default function DettaglioPreventivo() {
         totale={totali.totale}
       />
 
-      <PreventivoHeroCta hero={heroCta} onAzione={gestisciHeroCta} />
+      {bannerPostAccetta && stato === STATI_PREVENTIVO.ACCETTATO ? (
+        <BannerPostAccettazione onIniziaCantiere={trasformaInCantiere} />
+      ) : (
+        <PreventivoHeroCta hero={heroCta} onAzione={gestisciHeroCta} />
+      )}
 
       <PreventivoWorkflowAzioni
         azioni={azioniSecondarie}
         confermaRifiuto={confermaRifiuto}
+        mostraModifica={
+          stato === STATI_PREVENTIVO.BOZZA && heroCta?.id === HERO_CTA.ACCETTA
+        }
+        mostraInviaDiNuovo={
+          stato === STATI_PREVENTIVO.INVIATO && heroCta?.id === HERO_CTA.ACCETTA
+        }
+        onModifica={() => gestisciHeroCta(HERO_CTA.MODIFICA)}
+        onInviaDiNuovo={() => gestisciHeroCta(HERO_CTA.INVIA_DI_NUOVO)}
         onInvia={eseguiInvia}
         onAccetta={eseguiAccetta}
         onRifiuta={eseguiAnnulla}

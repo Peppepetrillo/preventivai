@@ -24,6 +24,8 @@ import { normalizzaUnitaMateriale } from "../catalogoMateriali/materialiTypes";
  * @property {string=} distintaId
  * @property {string=} cantiereMaterialeId
  * @property {OrigineVoceListaSpesa=} origine
+ * @property {string=} parentVoceId — id voce distinta padre (accessorio)
+ * @property {'suggerito'|'manuale'=} origineAccessorio
  * @property {string=} note
  * @property {string=} titoloLavoro
  * @property {string=} cliente
@@ -86,6 +88,8 @@ function nomeNormalizzato(nome = "") {
  *   distintaId?: string,
  *   cantiereMaterialeId?: string,
  *   origine?: OrigineVoceListaSpesa,
+ *   parentVoceId?: string,
+ *   origineAccessorio?: 'suggerito'|'manuale'|string,
  *   note?: string,
  *   titoloLavoro?: string,
  *   cliente?: string,
@@ -108,6 +112,8 @@ export function creaVoceListaSpesa({
   distintaId = "",
   cantiereMaterialeId = "",
   origine = "",
+  parentVoceId = "",
+  origineAccessorio = "",
   note = "",
   titoloLavoro = "",
   cliente = "",
@@ -139,6 +145,12 @@ export function creaVoceListaSpesa({
   if (distintaId) voce.distintaId = String(distintaId);
   if (cantiereMaterialeId) voce.cantiereMaterialeId = String(cantiereMaterialeId);
   if (origine) voce.origine = /** @type {OrigineVoceListaSpesa} */ (String(origine));
+  const parentId = String(parentVoceId || "").trim();
+  if (parentId) voce.parentVoceId = parentId;
+  const origineAcc = String(origineAccessorio || "").trim();
+  if (origineAcc === "suggerito" || origineAcc === "manuale") {
+    voce.origineAccessorio = /** @type {'suggerito'|'manuale'} */ (origineAcc);
+  }
   if (note) voce.note = String(note).trim();
   if (titoloLavoro) voce.titoloLavoro = String(titoloLavoro).trim();
   if (prezzoUnitario != null && prezzoUnitario !== "") {
@@ -309,7 +321,45 @@ function patchDaMateriale(materiale, cantiere) {
   };
   if (materiale.note) patch.note = String(materiale.note).trim();
   if (cantiere.cliente) patch.cliente = cantiere.cliente;
+
+  const parentVoceId = String(materiale.parentVoceId || "").trim();
+  if (parentVoceId) patch.parentVoceId = parentVoceId;
+
+  const origineAccessorio = String(materiale.origineAccessorio || "").trim();
+  if (origineAccessorio === "suggerito" || origineAccessorio === "manuale") {
+    patch.origineAccessorio = /** @type {'suggerito'|'manuale'} */ (
+      origineAccessorio
+    );
+  }
+
   return patch;
+}
+
+/**
+ * Etichetta discreta "per: …" se accessorio suggerito con padre risolvibile.
+ * Retrocompatibile: senza campi → stringa vuota.
+ *
+ * @param {VoceListaSpesa|object} voce
+ * @param {VoceListaSpesa[]=} elenco
+ * @returns {string}
+ */
+export function etichettaPadreAccessorioAcquisto(voce, elenco = []) {
+  if (!voce || typeof voce !== "object") return "";
+  if (String(voce.origineAccessorio || "") !== "suggerito") return "";
+  const parentId = String(voce.parentVoceId || "").trim();
+  if (!parentId) return "";
+
+  const lavoroId = String(voce.lavoroId || voce.cantiereId || "");
+  const padre = (Array.isArray(elenco) ? elenco : []).find((item) => {
+    if (!item) return false;
+    if (String(item.distintaVoceId || "") !== parentId) return false;
+    if (!lavoroId) return true;
+    return String(item.lavoroId || item.cantiereId || "") === lavoroId;
+  });
+
+  const nomePadre = String(padre?.nome || "").trim();
+  if (!nomePadre) return "";
+  return `per: ${nomePadre}`;
 }
 
 /**

@@ -18,6 +18,9 @@ export {
   scollegaCantiere,
   calcolaTotaleMateriali,
   validaDistinta,
+  chiaveAccessorioDistinta,
+  elencaSuggerimentiAccessoriPerVoce,
+  costruisciVociAccessoriSuggeriti,
 } from "./distintaMaterialiDomain";
 
 export {

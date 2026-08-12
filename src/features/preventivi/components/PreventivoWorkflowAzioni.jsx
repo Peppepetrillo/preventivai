@@ -1,4 +1,4 @@
-import { Check, Send, X } from "lucide-react";
+import { Check, PenLine, Send, X } from "lucide-react";
 
 import { AZIONI_PREVENTIVO } from "../../../domain/workflow";
 
@@ -8,18 +8,50 @@ import { AZIONI_PREVENTIVO } from "../../../domain/workflow";
 export default function PreventivoWorkflowAzioni({
   azioni = [],
   confermaRifiuto = false,
+  mostraModifica = false,
+  mostraInviaDiNuovo = false,
+  onModifica,
+  onInviaDiNuovo,
   onInvia,
   onAccetta,
   onRifiuta,
   onAnnullaRifiuto,
 }) {
-  if (!azioni.length && !confermaRifiuto) return null;
+  const haQualcosa =
+    azioni.length > 0 ||
+    confermaRifiuto ||
+    mostraModifica ||
+    mostraInviaDiNuovo;
+
+  if (!haQualcosa) return null;
 
   return (
     <div
       className="flex flex-wrap gap-2 mb-5"
       data-testid="preventivo-workflow-secondarie"
     >
+      {mostraModifica ? (
+        <button
+          type="button"
+          onClick={onModifica}
+          className="btn-secondary px-4 py-3 text-sm font-semibold inline-flex items-center gap-2 min-h-[44px]"
+          data-testid="workflow-modifica"
+        >
+          <PenLine size={16} aria-hidden="true" />
+          Modifica
+        </button>
+      ) : null}
+      {mostraInviaDiNuovo ? (
+        <button
+          type="button"
+          onClick={onInviaDiNuovo}
+          className="btn-secondary px-4 py-3 text-sm font-semibold inline-flex items-center gap-2 min-h-[44px]"
+          data-testid="workflow-invia-di-nuovo"
+        >
+          <Send size={16} aria-hidden="true" />
+          Invia di nuovo
+        </button>
+      ) : null}
       {azioni.includes(AZIONI_PREVENTIVO.INVIA) ? (
         <button
           type="button"

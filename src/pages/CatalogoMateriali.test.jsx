@@ -100,6 +100,50 @@ describe("CatalogoMateriali UI", () => {
     ).toBeInTheDocument();
   });
 
+  it("mostra Va spesso con solo con accessori famiglia validi", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /Impianto elettrico/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Quadro elettrico/i }));
+
+    expect(screen.getByText(/Va spesso con/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Pressacavo$/i)).toBeInTheDocument();
+    expect(screen.getByText(/Morsetti — A leva 3 poli/i)).toBeInTheDocument();
+    expect(screen.getAllByTestId("accessorio-suggerito-row")).toHaveLength(2);
+  });
+
+  it("non mostra Va spesso con in sola lettura se la famiglia non ha accessori", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /Impianto elettrico/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Tubo corrugato/i }));
+
+    expect(screen.queryByText(/Va spesso con/i)).not.toBeInTheDocument();
+  });
+
+  it("in modifica variante mostra accessori suggeriti e permette rimozione", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /Impianto elettrico/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Tubo corrugato/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Ø25/i }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText(/Va spesso con/i)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Pressacavo/i)).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByTestId("accessorio-rimuovi"));
+    expect(
+      within(dialog).getByText(/Nessun accessorio collegato/i)
+    ).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: /Salva modifiche/i }));
+    expect(screen.getByText(/Variante aggiornata/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Ø25/i }));
+    const dialog2 = screen.getByRole("dialog");
+    expect(
+      within(dialog2).getByText(/Nessun accessorio collegato/i)
+    ).toBeInTheDocument();
+  });
+
   it("crea variante personalizzata", () => {
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: /Impianto elettrico/i }));

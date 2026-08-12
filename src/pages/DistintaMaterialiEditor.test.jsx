@@ -123,6 +123,10 @@ describe("DistintaMaterialiEditor UI", () => {
       within(dialog).getByRole("button", { name: /Aggiungi alla distinta/i })
     );
 
+    // UX-6.1c: tubo Ø25 ha accessori → sheet suggeriti (salta)
+    expect(screen.getByText(/^Suggeriti$/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("suggerimenti-salta"));
+
     const voci = screen.getByTestId("distinta-voci-list");
     expect(within(voci).getByText(/Tubo corrugato/i)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("distinta-salva"));
@@ -133,6 +137,46 @@ describe("DistintaMaterialiEditor UI", () => {
     expect(stored[0].voci[0].famigliaId).toBeTruthy();
     expect(stored[0].voci[0].varianteId).toBeTruthy();
     expect(stored[0].voci[0].unita).toBe("m");
+  });
+
+  it("dopo add da catalogo aggiunge accessori suggeriti flat", () => {
+    renderEditor();
+    fireEvent.change(screen.getByTestId("distinta-titolo"), {
+      target: { value: "Con accessori" },
+    });
+    fireEvent.click(screen.getByTestId("distinta-aggiungi-materiale"));
+    fireEvent.click(screen.getByTestId("distinta-da-catalogo"));
+
+    const dialog = ultimoDialog();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: /Impianto elettrico/i })
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: /Presa civile/i })
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: /Bipasso/i }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: /Aggiungi alla distinta/i })
+    );
+
+    expect(screen.getByText(/^Suggeriti$/i)).toBeInTheDocument();
+    expect(screen.getByTestId("suggerimenti-accessori-list")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("suggerimenti-aggiungi"));
+
+    const voci = screen.getByTestId("distinta-voci-list");
+    expect(within(voci).getByText(/Presa civile/i)).toBeInTheDocument();
+    expect(within(voci).getByText(/Cassetta/i)).toBeInTheDocument();
+    expect(within(voci).getByText(/Accessorio suggerito/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("distinta-salva"));
+    const stored = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.distinteMateriali) || "[]"
+    );
+    expect(stored[0].voci.length).toBeGreaterThanOrEqual(2);
+    const accessorio = stored[0].voci.find((v) => v.parentVoceId);
+    expect(accessorio).toBeTruthy();
+    expect(accessorio.origineAccessorio).toBe("suggerito");
+    expect(accessorio.parentVoceId).toBe(stored[0].voci[0].id);
   });
 
   it("ricerca materiale nel selettore", () => {

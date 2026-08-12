@@ -11,6 +11,7 @@ import SearchInput from "../components/SearchInput";
 import CatalogoMaterialiCategorie from "../features/catalogoMateriali/components/CatalogoMaterialiCategorie";
 import CatalogoMaterialiFamigliaCard from "../features/catalogoMateriali/components/CatalogoMaterialiFamigliaCard";
 import CatalogoMaterialiVarianteRow from "../features/catalogoMateriali/components/CatalogoMaterialiVarianteRow";
+import AccessoriSuggeritiSection from "../features/catalogoMateriali/components/AccessoriSuggeritiSection";
 import FamigliaMaterialeSheet from "../features/catalogoMateriali/components/FamigliaMaterialeSheet";
 import VarianteMaterialeSheet from "../features/catalogoMateriali/components/VarianteMaterialeSheet";
 import { useCatalogoMaterialiUi } from "../features/catalogoMateriali/hooks/useCatalogoMaterialiUi";
@@ -269,14 +270,28 @@ export default function CatalogoMateriali() {
                 ))}
               </ul>
             )}
+
+            <div className="mt-4">
+              <AccessoriSuggeritiSection
+                accessori={famigliaAttiva.accessoriSuggeriti}
+                catalogo={catalogo}
+                readOnly
+                nascondiSeVuoto
+              />
+            </div>
           </section>
         ) : null}
 
         <FamigliaMaterialeSheet
           open={Boolean(sheetFamiglia)}
           onClose={() => setSheetFamiglia(null)}
-          famiglia={sheetFamiglia === "nuova" ? null : sheetFamiglia}
+          famiglia={
+            sheetFamiglia === "nuova"
+              ? null
+              : catalogo.find((f) => f.id === sheetFamiglia?.id) || sheetFamiglia
+          }
           categoriaDefault={categoriaId || "elettrico"}
+          catalogo={catalogo}
           onCrea={creaFamiglia}
           onSalva={salvaFamiglia}
           onElimina={eliminaFamiglia}
@@ -287,7 +302,13 @@ export default function CatalogoMateriali() {
           open={Boolean(sheetVariante) && Boolean(famigliaAttiva)}
           onClose={() => setSheetVariante(null)}
           famiglia={famigliaAttiva}
-          variante={sheetVariante === "nuova" ? null : sheetVariante}
+          variante={
+            sheetVariante === "nuova"
+              ? null
+              : famigliaAttiva?.varianti?.find((v) => v.id === sheetVariante?.id) ||
+                sheetVariante
+          }
+          catalogo={catalogo}
           onCrea={creaVariante}
           onSalva={salvaVariante}
           onElimina={eliminaVariante}

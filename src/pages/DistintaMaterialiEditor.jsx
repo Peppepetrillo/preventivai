@@ -9,7 +9,13 @@ import CollegaCantiereSheet from "../features/distinteMateriali/components/Colle
 import DistintaCondividiSheet from "../features/distinteMateriali/components/DistintaCondividiSheet";
 import DistintaVoceRow from "../features/distinteMateriali/components/DistintaVoceRow";
 import SelettoreMaterialeSheet from "../features/distinteMateriali/components/SelettoreMaterialeSheet";
+import SuggerimentiAccessoriSheet from "../features/distinteMateriali/components/SuggerimentiAccessoriSheet";
 import VoceDistintaSheet from "../features/distinteMateriali/components/VoceDistintaSheet";
+import { caricaCatalogoMateriali } from "../domain/catalogoMateriali/materialiCatalogService";
+import {
+  costruisciVociAccessoriSuggeriti,
+  elencaSuggerimentiAccessoriPerVoce,
+} from "../domain/distinteMateriali/distintaMaterialiDomain";
 import {
   aggiornaDistintaMateriali,
   creaDistintaMateriali,
@@ -54,6 +60,9 @@ export default function DistintaMaterialiEditor() {
   const [savedDistinta, setSavedDistinta] = useState(null);
   const [showCollegaCantiere, setShowCollegaCantiere] = useState(false);
   const [cantieriDisponibili, setCantieriDisponibili] = useState([]);
+  const [suggerimentiSession, setSuggerimentiSession] = useState(null);
+
+  const catalogo = useMemo(() => caricaCatalogoMateriali(), []);
 
   useEffect(() => {
     if (isNuova) {
@@ -104,6 +113,8 @@ export default function DistintaMaterialiEditor() {
         unita: normalizzaUnitaMateriale(v.unita) || "pz",
         prezzoUnitario: v.prezzoUnitario,
         note: v.note,
+        parentVoceId: v.parentVoceId,
+        origineAccessorio: v.origineAccessorio,
       })),
     };
   }, [draft]);
@@ -219,10 +230,50 @@ export default function DistintaMaterialiEditor() {
       typeof crypto !== "undefined" && crypto.randomUUID
         ? crypto.randomUUID()
         : `voce-${Date.now()}`;
+    const nuova = { ...voce, id: voce.id || idVoce };
     setDraft((prev) => ({
       ...prev,
-      voci: [...(prev.voci || []), { ...voce, id: voce.id || idVoce }],
+      voci: [...(prev.voci || []), nuova],
     }));
+    return nuova;
+  }
+
+  function addVoceDaCatalogo(voce) {
+    const nuova = addVoce(voce);
+    const suggerimenti = elencaSuggerimentiAccessoriPerVoce(nuova, catalogo, {
+      vociEsistenti: [...(draft.voci || []), nuova],
+    });
+    if (suggerimenti.length > 0) {
+      setSuggerimentiSession({ parent: nuova, items: suggerimenti });
+    }
+    flash("Materiale aggiunto.");
+  }
+
+  function confermaSuggerimenti(selezionati) {
+    const parent = suggerimentiSession?.parent;
+    if (!parent?.id || !Array.isArray(selezionati) || selezionati.length === 0) {
+      setSuggerimentiSession(null);
+      return;
+    }
+    const vociAccessori = costruisciVociAccessoriSuggeriti(
+      parent,
+      selezionati,
+      catalogo
+    );
+    if (vociAccessori.length === 0) {
+      setSuggerimentiSession(null);
+      return;
+    }
+    setDraft((prev) => ({
+      ...prev,
+      voci: [...(prev.voci || []), ...vociAccessori],
+    }));
+    setSuggerimentiSession(null);
+    flash(
+      vociAccessori.length === 1
+        ? "Accessorio aggiunto."
+        : `${vociAccessori.length} accessori aggiunti.`
+    );
   }
 
   function updateVoce(voceId, patch) {
@@ -503,10 +554,15 @@ export default function DistintaMaterialiEditor() {
           setShowSelettore(false);
           setShowManuale(true);
         }}
-        onConferma={(voce) => {
-          addVoce(voce);
-          flash("Materiale aggiunto.");
-        }}
+        onConferma={addVoceDaCatalogo}
+      />
+
+      <SuggerimentiAccessoriSheet
+        open={Boolean(suggerimentiSession)}
+        onClose={() => setSuggerimentiSession(null)}
+        parentVoce={suggerimentiSession?.parent}
+        suggerimenti={suggerimentiSession?.items || []}
+        onConferma={confermaSuggerimenti}
       />
 
       <VoceDistintaSheet

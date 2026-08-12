@@ -3,9 +3,16 @@
  * Entità autonoma: nessun ownership su preventivo/cantiere/lista spesa.
  */
 
-import { creaRiferimentoMateriale } from "../catalogoMateriali/materialiCatalogDomain";
 import {
+  creaRiferimentoMateriale,
+  elencaAccessoriSuggeritiPerVariante,
+  normalizzaCatalogoMateriali,
+  trovaFamigliaMateriale,
+} from "../catalogoMateriali/materialiCatalogDomain";
+import {
+  calcolaQuantitaAccessorioSuggerito,
   isUnitaCanonica,
+  normalizzaAccessoriSuggeriti,
   normalizzaUnitaMateriale,
 } from "../catalogoMateriali/materialiTypes";
 
@@ -116,6 +123,16 @@ export function normalizzaVoceDistinta(grezzo = {}, catalogo) {
 
   const note = String(grezzo.note || "").trim();
   if (note) voce.note = note;
+
+  const parentVoceId = String(grezzo.parentVoceId || "").trim();
+  if (parentVoceId) voce.parentVoceId = parentVoceId;
+
+  const origineAccessorio = String(grezzo.origineAccessorio || "").trim();
+  if (origineAccessorio === "suggerito" || origineAccessorio === "manuale") {
+    voce.origineAccessorio = /** @type {'suggerito'|'manuale'} */ (
+      origineAccessorio
+    );
+  }
 
   return voce;
 }
@@ -473,4 +490,174 @@ export function validaDistinta(distinta) {
   }
 
   return { ok: errori.length === 0, errori };
+}
+
+/**
+ * Chiave stabile per un accessorio suggerito.
+ * @param {{ varianteId?: string, famigliaId?: string }} accessorio
+ */
+export function chiaveAccessorioDistinta(accessorio = {}) {
+  return `${accessorio?.varianteId || ""}|${accessorio?.famigliaId || ""}`;
+}
+
+/**
+ * Elenca accessori suggeriti validi per una voce appena aggiunta.
+ * Progressive disclosure: lista vuota → nessun sheet.
+ *
+ * @param {Pick<import("./distintaMaterialiTypes").VoceDistintaMateriali, 'varianteId'|'famigliaId'|'quantita'|'id'>} voce
+ * @param {ReadonlyArray<object>=} catalogo
+ * @param {{ vociEsistenti?: object[] }=} opzioni
+ * @returns {Array<{
+ *   chiave: string,
+ *   accessorio: object,
+ *   nome: string,
+ *   unita: string,
+ *   quantita: number,
+ *   famigliaId?: string,
+ *   varianteId?: string,
+ *   prezzoUnitario?: number,
+ *   nota?: string,
+ * }>}
+ */
+export function elencaSuggerimentiAccessoriPerVoce(
+  voce,
+  catalogo,
+  { vociEsistenti = [] } = {}
+) {
+  if (!voce || typeof voce !== "object") return [];
+
+  const elenco = Array.isArray(catalogo)
+    ? normalizzaCatalogoMateriali(catalogo)
+    : null;
+
+  let accessori = [];
+  if (voce.varianteId) {
+    accessori = elencaAccessoriSuggeritiPerVariante(
+      voce.varianteId,
+      elenco || undefined
+    );
+  } else if (voce.famigliaId) {
+    const famiglia = elenco
+      ? elenco.find((f) => f.id === String(voce.famigliaId))
+      : trovaFamigliaMateriale(voce.famigliaId);
+    if (famiglia?.attiva === false) return [];
+    accessori = normalizzaAccessoriSuggeriti(famiglia?.accessoriSuggeriti);
+  }
+
+  if (!accessori.length) return [];
+
+  /** @type {Set<string>} */
+  const giaPresenti = new Set();
+  for (const esistente of vociEsistenti || []) {
+    if (!esistente) continue;
+    if (esistente.varianteId) {
+      giaPresenti.add(`${esistente.varianteId}|`);
+      if (esistente.famigliaId) {
+        giaPresenti.add(`${esistente.varianteId}|${esistente.famigliaId}`);
+      }
+    } else if (esistente.famigliaId) {
+      giaPresenti.add(`|${esistente.famigliaId}`);
+    }
+  }
+
+  /** @type {ReturnType<typeof elencaSuggerimentiAccessoriPerVoce>} */
+  const risultato = [];
+
+  for (const accessorio of accessori) {
+    const chiave = chiaveAccessorioDistinta(accessorio);
+    if (
+      giaPresenti.has(chiave) ||
+      (accessorio.varianteId &&
+        giaPresenti.has(`${accessorio.varianteId}|`)) ||
+      (!accessorio.varianteId &&
+        accessorio.famigliaId &&
+        giaPresenti.has(`|${accessorio.famigliaId}`))
+    ) {
+      continue;
+    }
+
+    const quantita = calcolaQuantitaAccessorioSuggerito(
+      voce.quantita,
+      accessorio
+    );
+    if (quantita <= 0) continue;
+
+    const rif = creaRiferimentoMateriale(
+      {
+        famigliaId: accessorio.famigliaId,
+        varianteId: accessorio.varianteId,
+        quantita,
+        note: accessorio.nota,
+      },
+      elenco || undefined
+    );
+    if (!rif) continue;
+
+    // Solo materiali attivi nel catalogo corrente.
+    if (elenco) {
+      const famiglia = elenco.find((f) => f.id === rif.famigliaId);
+      if (!famiglia || famiglia.attiva === false) continue;
+      if (rif.varianteId) {
+        const variante = (famiglia.varianti || []).find(
+          (v) => v.id === rif.varianteId
+        );
+        if (!variante || variante.attiva === false) continue;
+      }
+    }
+
+    risultato.push({
+      chiave,
+      accessorio,
+      nome: rif.nome,
+      unita: rif.unita,
+      quantita: rif.quantita,
+      famigliaId: rif.famigliaId,
+      varianteId: rif.varianteId,
+      prezzoUnitario: rif.prezzoUnitario,
+      nota: accessorio.nota || rif.note,
+    });
+  }
+
+  return risultato;
+}
+
+/**
+ * Espande accessori selezionati in voci flat con parentVoceId.
+ *
+ * @param {import("./distintaMaterialiTypes").VoceDistintaMateriali} parentVoce
+ * @param {Array<object>} suggerimentiSelezionati — output di elencaSuggerimenti...
+ * @param {ReadonlyArray<object>=} catalogo
+ * @returns {import("./distintaMaterialiTypes").VoceDistintaMateriali[]}
+ */
+export function costruisciVociAccessoriSuggeriti(
+  parentVoce,
+  suggerimentiSelezionati = [],
+  catalogo
+) {
+  const parentId = String(parentVoce?.id || "").trim();
+  if (!parentId || !Array.isArray(suggerimentiSelezionati)) return [];
+
+  /** @type {import("./distintaMaterialiTypes").VoceDistintaMateriali[]} */
+  const voci = [];
+
+  for (const item of suggerimentiSelezionati) {
+    if (!item) continue;
+    const voce = normalizzaVoceDistinta(
+      {
+        famigliaId: item.famigliaId,
+        varianteId: item.varianteId,
+        nome: item.nome,
+        unita: item.unita,
+        quantita: item.quantita,
+        prezzoUnitario: item.prezzoUnitario,
+        note: item.nota,
+        parentVoceId: parentId,
+        origineAccessorio: "suggerito",
+      },
+      catalogo
+    );
+    if (voce) voci.push(voce);
+  }
+
+  return voci;
 }

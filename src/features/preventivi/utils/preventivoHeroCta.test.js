@@ -24,7 +24,7 @@ describe("preventivoHeroCta", () => {
     ).toBe("Impianto bagno");
   });
 
-  it("Bozza → Modifica preventivo", () => {
+  it("Bozza → Accetta come CTA primaria", () => {
     expect(
       risolviHeroCta({
         stato: STATI_PREVENTIVO.BOZZA,
@@ -33,16 +33,25 @@ describe("preventivoHeroCta", () => {
           AZIONI_PREVENTIVO.ACCETTA,
         ],
       })
-    ).toEqual({ id: HERO_CTA.MODIFICA, label: "Modifica preventivo" });
+    ).toEqual({ id: HERO_CTA.ACCETTA, label: "Accetta" });
   });
 
-  it("Inviato → Invia di nuovo", () => {
+  it("Inviato → Accetta come CTA primaria", () => {
     expect(
       risolviHeroCta({
         stato: STATI_PREVENTIVO.INVIATO,
         azioniDisponibili: [AZIONI_PREVENTIVO.ACCETTA],
       })
-    ).toEqual({ id: HERO_CTA.INVIA_DI_NUOVO, label: "Invia di nuovo" });
+    ).toEqual({ id: HERO_CTA.ACCETTA, label: "Accetta" });
+  });
+
+  it("Bozza senza Accetta → Modifica preventivo", () => {
+    expect(
+      risolviHeroCta({
+        stato: STATI_PREVENTIVO.BOZZA,
+        azioniDisponibili: [AZIONI_PREVENTIVO.INVIA],
+      })
+    ).toEqual({ id: HERO_CTA.MODIFICA, label: "Modifica preventivo" });
   });
 
   it("Accettato → Inizia cantiere", () => {

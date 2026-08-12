@@ -3,7 +3,11 @@ import AcquistiVoceRow from "./AcquistiVoceRow";
 /**
  * Gruppo voci per lavoro/cantiere.
  */
-export default function AcquistiGruppoLavoro({ gruppo, onToggleVoce }) {
+export default function AcquistiGruppoLavoro({
+  gruppo,
+  onToggleVoce,
+  vociContesto = [],
+}) {
   const titolo = [gruppo.cliente, gruppo.titoloLavoro]
     .filter(Boolean)
     .join(" — ");
@@ -18,7 +22,11 @@ export default function AcquistiGruppoLavoro({ gruppo, onToggleVoce }) {
       <ul className="space-y-2" role="list">
         {(gruppo.voci || []).map((voce) => (
           <li key={voce.id}>
-            <AcquistiVoceRow voce={voce} onToggle={onToggleVoce} />
+            <AcquistiVoceRow
+              voce={voce}
+              onToggle={onToggleVoce}
+              vociContesto={vociContesto}
+            />
           </li>
         ))}
       </ul>

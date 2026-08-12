@@ -7,8 +7,10 @@ import {
   calcolaTotaleMateriali,
   collegaCantiere,
   collegaPreventivo,
+  costruisciVociAccessoriSuggeriti,
   creaDistinta,
   duplicaDistinta,
+  elencaSuggerimentiAccessoriPerVoce,
   modificaVoce,
   normalizzaDistinta,
   normalizzaElencoDistinte,
@@ -263,5 +265,99 @@ describe("distintaMaterialiDomain — collegamenti soft", () => {
     const distinta = creaDistinta({ titolo: "Link" });
     expect(collegaPreventivo(distinta, "  ")).toBeNull();
     expect(collegaCantiere(distinta, "")).toBeNull();
+  });
+});
+
+describe("distintaMaterialiDomain — suggerimenti accessori", () => {
+  it("elenca suggerimenti validi con qty = padre × quantitaPerUnita", () => {
+    const suggerimenti = elencaSuggerimentiAccessoriPerVoce(
+      {
+        id: "voce-tubo",
+        varianteId: "tubo-corrugato-25",
+        famigliaId: "tubo-corrugato",
+        quantita: 10,
+      },
+      CATALOGO_MATERIALI_SEED
+    );
+
+    expect(suggerimenti.length).toBeGreaterThan(0);
+    expect(suggerimenti[0].varianteId).toBe("pressacavo-pg16");
+    expect(suggerimenti[0].quantita).toBe(10);
+  });
+
+  it("elenca accessori famiglia (es. quadro → pressacavo)", () => {
+    const suggerimenti = elencaSuggerimentiAccessoriPerVoce(
+      {
+        id: "voce-quadro",
+        varianteId: "quadro-elettrico-24-moduli",
+        famigliaId: "quadro-elettrico",
+        quantita: 2,
+      },
+      CATALOGO_MATERIALI_SEED
+    );
+
+    expect(suggerimenti.some((s) => s.famigliaId === "pressacavo")).toBe(true);
+    const pressacavo = suggerimenti.find((s) => s.famigliaId === "pressacavo");
+    expect(pressacavo.quantita).toBe(8);
+  });
+
+  it("esclude accessori già presenti in distinta", () => {
+    const suggerimenti = elencaSuggerimentiAccessoriPerVoce(
+      {
+        id: "voce-tubo",
+        varianteId: "tubo-corrugato-25",
+        famigliaId: "tubo-corrugato",
+        quantita: 5,
+      },
+      CATALOGO_MATERIALI_SEED,
+      {
+        vociEsistenti: [
+          {
+            id: "gia",
+            varianteId: "pressacavo-pg16",
+            famigliaId: "pressacavo",
+          },
+        ],
+      }
+    );
+    expect(suggerimenti).toHaveLength(0);
+  });
+
+  it("espande accessori in voci flat con parentVoceId", () => {
+    const parent = {
+      id: "voce-padre",
+      varianteId: "presa-civile-bipasso",
+      famigliaId: "presa-civile",
+      nome: "Presa civile — Bipasso",
+      unita: "pz",
+      quantita: 12,
+    };
+    const suggerimenti = elencaSuggerimentiAccessoriPerVoce(
+      parent,
+      CATALOGO_MATERIALI_SEED
+    );
+    const voci = costruisciVociAccessoriSuggeriti(
+      parent,
+      suggerimenti,
+      CATALOGO_MATERIALI_SEED
+    );
+
+    expect(voci.length).toBeGreaterThan(0);
+    expect(voci[0].parentVoceId).toBe("voce-padre");
+    expect(voci[0].origineAccessorio).toBe("suggerito");
+    expect(voci[0].varianteId).toBe("cassetta-503");
+    expect(voci[0].quantita).toBe(12);
+  });
+
+  it("persiste parentVoceId in normalizzaVoceDistinta", () => {
+    const voce = normalizzaVoceDistinta({
+      nome: "Pressacavo",
+      unita: "pz",
+      quantita: 4,
+      parentVoceId: "voce-padre",
+      origineAccessorio: "suggerito",
+    });
+    expect(voce?.parentVoceId).toBe("voce-padre");
+    expect(voce?.origineAccessorio).toBe("suggerito");
   });
 });
