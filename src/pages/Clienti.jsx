@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronRight,
   Mail,
@@ -7,7 +7,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import PageWrapper from "../components/PageWrapper";
 import SearchInput from "../components/SearchInput";
@@ -55,6 +55,7 @@ function inizialiCliente(nome) {
 }
 
 export default function Clienti() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [clienti, setClienti] = useDatiLocaliSincronizzati(leggiClienti);
   const [limite, setLimite] = useState(PAGINA_LISTA_DEFAULT);
   const [ricerca, setRicerca] = useState("");
@@ -62,6 +63,14 @@ export default function Clienti() {
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
   const [formAperto, setFormAperto] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("nuovo") !== "1") return;
+    setFormAperto(true);
+    const prossimo = new URLSearchParams(searchParams);
+    prossimo.delete("nuovo");
+    setSearchParams(prossimo, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const clientiFiltrati = useMemo(
     () => filtraClientiLocali(clienti, ricerca),

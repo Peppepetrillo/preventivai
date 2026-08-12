@@ -81,14 +81,33 @@ describe("Agenda", () => {
     vi.useRealTimers();
   });
 
-  it("apre il cantiere con un tap", () => {
+  it("apre il cantiere con un tap sulla card", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 6, 29, 10, 0, 0));
 
     renderAgenda();
 
-    const link = screen.getByRole("link", { name: /Apri lavoro/i });
+    const link = screen.getByTestId("agenda-lavoro-link");
     expect(link).toHaveAttribute("href", "/cantiere/c1");
+
+    vi.useRealTimers();
+  });
+
+  it("deseleziona chip Oggi/Domani quando si naviga ad altri giorni", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 29, 10, 0, 0));
+
+    renderAgenda();
+
+    const oggiTab = screen.getByRole("tab", { name: /^Oggi$/i });
+    expect(oggiTab).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.click(screen.getByLabelText("Giorno precedente"));
+    expect(oggiTab).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: /^Domani$/i })).toHaveAttribute(
+      "aria-selected",
+      "false"
+    );
 
     vi.useRealTimers();
   });

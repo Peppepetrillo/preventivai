@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronRight,
   HardHat,
   MapPin,
   Plus,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { routeCantiere } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
@@ -74,6 +74,7 @@ function ordinaCantieriOperativi(cantieri) {
  */
 export default function Cantieri() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     cantieri,
     nuovoCantiere,
@@ -85,6 +86,18 @@ export default function Cantieri() {
   const [ricerca, setRicerca] = useState("");
   const [filtro, setFiltro] = useState("attivi");
   const [formAperto, setFormAperto] = useState(false);
+
+  useEffect(() => {
+    const apriNuovo =
+      searchParams.get("nuovo") === "1" ||
+      searchParams.get("nuovoCantiere") === "1";
+    if (!apriNuovo) return;
+    setFormAperto(true);
+    const prossimo = new URLSearchParams(searchParams);
+    prossimo.delete("nuovo");
+    prossimo.delete("nuovoCantiere");
+    setSearchParams(prossimo, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const cantieriPreparati = useMemo(() => {
     let elenco = filtraCantieriLocali(cantieri, ricerca);

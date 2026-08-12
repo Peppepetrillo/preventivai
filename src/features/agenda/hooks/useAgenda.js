@@ -11,7 +11,7 @@ import { creaLavoroDaCantiere } from "../../lavori/lavoriDomain";
 import { notificationService } from "../../../services/notificationService";
 import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
 import { leggiCantieri, salvaCantieri } from "../../../repositories/cantieriRepository";
-import { leggiListaSpesa } from "../../../domain/listaSpesa";
+import { leggiListaSpesa, selezionaDaComprare } from "../../../domain/listaSpesa";
 import {
   aggiungiGiorni,
   differenzaGiorni,
@@ -50,7 +50,7 @@ export function useAgenda() {
     const diff = differenzaGiorni(giorno, oggi);
     if (diff === 0) return "oggi";
     if (diff === 1) return "domani";
-    return "oggi";
+    return "calendario";
   }, [modalitaSettimana, giorno, oggi]);
 
   const lavori = useMemo(
@@ -167,6 +167,11 @@ export function useAgenda() {
     setGiorno(oggi);
   }, [oggi]);
 
+  const acquistiDaComprare = useMemo(
+    () => selezionaDaComprare(listaSpesa).length,
+    [listaSpesa]
+  );
+
   return {
     cantieri,
     giorno,
@@ -178,6 +183,7 @@ export function useAgenda() {
     settimana,
     attivitaPerGiorno,
     riepilogoPreparazione,
+    acquistiDaComprare,
     completamentoId,
     dataDefaultAttivita,
     segnaCompletato,

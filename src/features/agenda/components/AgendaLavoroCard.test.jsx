@@ -35,10 +35,11 @@ describe("AgendaLavoroCard", () => {
     expect(screen.getByText("Rossi")).toBeInTheDocument();
     expect(screen.getByText("Pianificato")).toBeInTheDocument();
     expect(screen.getByText(/Durata prevista: 1 h/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Apri lavoro/i })).toHaveAttribute(
+    expect(screen.getByTestId("agenda-lavoro-link")).toHaveAttribute(
       "href",
       "/cantiere/c1"
     );
+    expect(screen.queryByText(/Apri lavoro/i)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Chiama/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Naviga/i })).toBeInTheDocument();
     expect(

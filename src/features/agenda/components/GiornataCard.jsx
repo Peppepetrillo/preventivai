@@ -174,6 +174,13 @@ export default function GiornataCard({ riepilogo }) {
                 <p className="text-sm font-black text-amber-100 flex items-center gap-2">
                   <ShoppingCart size={16} />
                   Da comprare oggi
+                  <span
+                    className="ds-badge-count"
+                    data-testid="home-acquisti-badge"
+                    aria-label={`${materialiDaComprare.length} materiali da comprare oggi`}
+                  >
+                    {materialiDaComprare.length}
+                  </span>
                 </p>
                 <Link
                   to={ROUTES.acquisti}

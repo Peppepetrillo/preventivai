@@ -28,6 +28,7 @@ export default function Agenda() {
     settimana,
     attivitaPerGiorno,
     riepilogoPreparazione,
+    acquistiDaComprare,
     completamentoId,
     dataDefaultAttivita,
     segnaCompletato,
@@ -112,6 +113,7 @@ export default function Agenda() {
         onOggi={vaiOggi}
         onGiornoSuccessivo={vaiGiornoSuccessivo}
         nascondiNavGiorno={vista === "settimana"}
+        acquistiDaComprare={acquistiDaComprare}
       />
 
       {vista !== "settimana" ? (

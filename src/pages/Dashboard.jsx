@@ -38,13 +38,13 @@ const AZIONI_RAPIDE = [
   },
   {
     titolo: "Nuovo Cantiere",
-    link: ROUTES.cantieri,
+    link: `${ROUTES.cantieri}?nuovo=1`,
     icon: HardHat,
     primario: false,
   },
   {
     titolo: "Nuovo Cliente",
-    link: ROUTES.clienti,
+    link: `${ROUTES.clienti}?nuovo=1`,
     icon: UserPlus,
     primario: false,
   },
