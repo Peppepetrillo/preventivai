@@ -24,7 +24,7 @@ export default function DettaglioCliente() {
   const cliente = clienti.find((c) => String(c.id) === id);
   const archivio = leggiPreventivi();
 
-  const { cantieri, aggiornaCampoNuovoCantiere, creaCantiere: creaCantiereHook } = useCantieri();
+  const { cantieri, aggiornaCampoNuovoCantiere } = useCantieri();
 
   const [nome, setNome] = useState(cliente?.nome || "");
   const [telefono, setTelefono] = useState(cliente?.telefono || "");

@@ -66,7 +66,7 @@ export function risolviAccessoriSuggeritiValidi(
       continue;
     }
 
-    let famiglia = null;
+    let famiglia;
     let variante = null;
 
     if (accessorio.varianteId) {

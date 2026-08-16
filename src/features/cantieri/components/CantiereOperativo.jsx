@@ -24,7 +24,6 @@ export default function CantiereOperativo({
   cantiere,
   avanzamento,
   nuovaChecklist,
-  nuovoMateriale,
   refs = {},
   onImpostaChecklist,
   onAggiungiChecklist,
@@ -48,7 +47,10 @@ export default function CantiereOperativo({
     inputFoto,
   } = refs;
 
-  const checklist = cantiere.checklist || [];
+  const checklist = useMemo(
+    () => cantiere.checklist || [],
+    [cantiere.checklist]
+  );
   const materiali = cantiere.materiali || [];
   const foto = cantiere.foto || [];
   const anteprimeFoto = foto.slice(0, 6);

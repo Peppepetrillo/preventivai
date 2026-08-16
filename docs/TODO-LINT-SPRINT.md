@@ -1,24 +1,26 @@
-# TODO tecnico — Sprint lint Cleanup
+# TODO tecnico — Lint cleanup residuo (post FASE 5)
 
-**Contesto:** Sprint Stabilizzazione Beta (2026-08-17).  
-**Fuori scope deliberato:** non corretto in quel commit.
+**Contesto:** FASE 5 Beta 0.9 (Lint & Dependency Hygiene).  
+**Stato:** errori lint sicuri corretti; regole rischiose abbassate a **warning**.
 
-## Stato
+## Warning ancora aperti (non errori)
 
-`npm run lint` fallisce con **~46 errori / 4 warning** preesistenti.
+### `react-hooks/set-state-in-effect` (~16)
 
-## Tipologie principali
+Pattern tipici: sync di draft/form quando apre uno sheet, reset nota su cambio cantiere, seed sessione wizard.
 
-- `react-hooks/set-state-in-effect` — `setState` sincrono in `useEffect` (pagine/hook legacy)
-- `no-unused-vars` — import/variabili non usate nei test e in alcuni moduli
+**Perché non forzato in FASE 5:** riscrittura a lazy init / key remount / derived state rischia regressioni UX su Agenda, Cantieri, Distinte, Wizard.
 
-## Obiettivo sprint dedicato
+**File principali:** `PdfAnteprima`, sheet Agenda, `CantiereOperativo`/`Overview`, `DistintaMaterialiEditor`, `Clienti`/`Cantieri`, `PreventivoIntelligente`, …
 
-1. Portare `npm run lint` a exit 0 senza cambiare comportamento utente.
-2. Preferire refactor minimi (lazy init state, subscribe pattern) rispetto a disable di regole.
-3. Non mescolare con feature product.
+### `react-refresh/only-export-components` (~11)
 
-## Non fare in quel sprint
+Export misti componente + helper/costanti (`PdfAnteprima`, `DatePickerField`, `CantiereSegmentBar`, context hooks).
 
-- `npm audit fix` automatico
-- Refactor di dominio/sync solo per far passare il lint
+**Fix corretto:** split in file separati. Solo impatto HMR in dev, non runtime beta.
+
+## Obiettivo sprint dedicato futuro
+
+1. Eliminare i warning `set-state-in-effect` con pattern sicuri, pagina per pagina.
+2. Split export per HMR.
+3. Solo allora rendere lint obbligatorio in CI (già previsto se `npm run lint` = 0 errori).

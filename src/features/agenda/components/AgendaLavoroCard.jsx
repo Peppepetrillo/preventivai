@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { Check, Lightbulb, ChevronRight, MapPin, Navigation, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -19,7 +20,6 @@ export default function AgendaLavoroCard({
   const navLink = lavoro.indirizzo
     ? `https://maps.google.com/?q=${encodeURIComponent(lavoro.indirizzo)}`
     : null;
-  const IconaTipo = iconaTipoLavoro(lavoro.tipoLavoro);
   const titoloLavoro = lavoro.cliente || lavoro.titolo;
 
   return (
@@ -33,7 +33,10 @@ export default function AgendaLavoroCard({
         <div
           className={`w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 ${classeIconaTipoLavoro(lavoro.tipoLavoro)}`}
         >
-          <IconaTipo size={18} aria-hidden="true" />
+          {createElement(iconaTipoLavoro(lavoro.tipoLavoro), {
+            size: 18,
+            "aria-hidden": true,
+          })}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">

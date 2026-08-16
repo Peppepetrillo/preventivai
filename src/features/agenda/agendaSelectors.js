@@ -1,4 +1,3 @@
-import { routeCantiere } from "../../app/routes";
 import { selezionaDaComprareOggi } from "../../domain/listaSpesa/acquistiSelectors";
 import { creaLavoroDaCantiere } from "../lavori/lavoriDomain";
 

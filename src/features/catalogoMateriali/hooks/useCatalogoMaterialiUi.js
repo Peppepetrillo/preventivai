@@ -33,6 +33,7 @@ export function useCatalogoMaterialiUi() {
   const categorie = useMemo(() => elencaMetaCategorieMateriale(), []);
 
   const famiglieVisibili = useMemo(() => {
+    if (!Array.isArray(catalogo)) return [];
     const filtri = {};
     if (categoriaId) filtri.categoria = categoriaId;
     if (soloAttive) filtri.soloAttive = true;

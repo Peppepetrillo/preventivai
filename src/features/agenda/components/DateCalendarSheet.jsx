@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
@@ -61,8 +61,14 @@ export default function DateCalendarSheet({
   onSelect,
   oggi = new Date(),
 }) {
-  const dataSelezionata = parseDataScheduling(value);
-  const oggiNormalizzato = parseDataScheduling(oggi) || new Date();
+  const dataSelezionata = useMemo(
+    () => parseDataScheduling(value),
+    [value]
+  );
+  const oggiNormalizzato = useMemo(
+    () => parseDataScheduling(oggi) || new Date(),
+    [oggi]
+  );
 
   const [meseVisibile, setMeseVisibile] = useState(() => {
     const base = dataSelezionata || oggiNormalizzato;
@@ -73,7 +79,7 @@ export default function DateCalendarSheet({
     if (!open) return;
     const base = dataSelezionata || oggiNormalizzato;
     setMeseVisibile({ anno: base.getFullYear(), mese: base.getMonth() });
-  }, [open, value, oggi]);
+  }, [open, value, oggi, dataSelezionata, oggiNormalizzato]);
 
   const etichettaMese = new Date(meseVisibile.anno, meseVisibile.mese, 1)
     .toLocaleDateString("it-IT", { month: "long", year: "numeric" })

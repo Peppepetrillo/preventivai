@@ -9,11 +9,6 @@ import AgendaTimeline from "./AgendaTimeline";
 export default function AgendaSettimanaView({
   giorni = [],
   attivitaPerGiorno = {},
-  onSegnaCompletato,
-  completamentoId,
-  onCompletaAttivita,
-  onModificaAttivita,
-  onEliminaAttivita,
 }) {
   return (
     <div className="space-y-6">

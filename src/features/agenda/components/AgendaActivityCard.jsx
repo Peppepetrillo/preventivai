@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import {
   classePrioritaAttivita,
   etichettaPriorita,
@@ -13,7 +14,6 @@ export default function AgendaActivityCard({
   onModifica,
   onElimina,
 }) {
-  const Icona = iconaCategoriaAttivita(attivita.categoria);
   const completata = attivita.stato === "completata";
 
   return (
@@ -22,7 +22,10 @@ export default function AgendaActivityCard({
     >
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-[12px] bg-white/10 text-slate-200 flex items-center justify-center shrink-0">
-          <Icona size={18} aria-hidden="true" />
+          {createElement(iconaCategoriaAttivita(attivita.categoria), {
+            size: 18,
+            "aria-hidden": true,
+          })}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">

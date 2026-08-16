@@ -33,7 +33,7 @@ export function generateQualityChecks(preventivo = {}, opzioni = {}) {
     if (!regola || regola.enabled === false) continue;
     if (typeof regola.execute !== "function") continue;
 
-    let esito = null;
+    let esito;
     try {
       esito = regola.execute(preventivo);
     } catch {

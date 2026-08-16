@@ -71,7 +71,6 @@ describe("CategorieListino ricerca intelligente", () => {
   });
 
   it("cancellando la ricerca ripristina lo stato normale", async () => {
-    const user = userEvent.setup();
     const filtrato = filtraListino(LISTINO, "presa");
 
     const { rerender } = renderCategorie({

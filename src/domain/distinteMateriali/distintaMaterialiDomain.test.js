@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { CATALOGO_MATERIALI_SEED } from "../catalogoMateriali/materialiCatalogoSeed";
 import {

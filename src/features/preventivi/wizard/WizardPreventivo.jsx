@@ -68,7 +68,8 @@ export default function WizardPreventivo() {
     if (stato.stepId !== "conferma") {
       salvataggio.resetEsito();
     }
-  }, [stato.stepId, salvataggio.resetEsito]);
+    // salvataggio: oggetto hook; resetEsito è stabile a sufficienza per lo step corrente
+  }, [stato.stepId, salvataggio]);
 
   function gestisciIndietro() {
     if (esitoSuccesso) {

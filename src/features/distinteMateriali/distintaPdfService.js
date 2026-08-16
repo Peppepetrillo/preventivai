@@ -170,7 +170,7 @@ export async function generaPdfDistintaMateriali({
     y += 12;
     setText(doc, settings.coloreTesto);
     applicaFont(doc, settings, "normal", settings.fontSizeBase);
-    y = testoMultilinea(
+    testoMultilinea(
       doc,
       String(distinta.note),
       area.x,

@@ -5,7 +5,6 @@
 import {
   catalogoMaterialiRepository,
   exists as repoExists,
-  load as repoLoad,
   loadRaw,
   replace as repoReplace,
   reset as repoReset,
