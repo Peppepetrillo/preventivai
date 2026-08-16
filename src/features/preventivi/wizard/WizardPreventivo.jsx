@@ -126,6 +126,8 @@ export default function WizardPreventivo() {
             avvisoPdf={salvataggio.avvisoPdf}
             preventivoSalvato={salvataggio.preventivoSalvato}
             pdfGenerato={salvataggio.pdfGenerato}
+            pdfBlob={salvataggio.pdfBlob}
+            pdfNomeFile={salvataggio.pdfNomeFile}
             onSalva={() => salvataggio.salvaEGeneraPdf(stato)}
             onRiprovaPdf={() => salvataggio.riprovaPdf(stato.condizioni)}
             onNuovoPreventivo={gestisciNuovoPreventivo}

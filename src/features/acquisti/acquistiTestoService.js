@@ -8,6 +8,7 @@ import {
   raggruppaAcquistiPerLavoro,
 } from "../../domain/listaSpesa";
 import { unitaAcquistoInLettura } from "../../domain/listaSpesa/listaSpesaDomain";
+import { apriUrlEsterno } from "../../utils/nativeExport";
 
 export const MODALITA_CONDIVIDI_ACQUISTI = {
   perLavoro: "per-lavoro",
@@ -227,7 +228,7 @@ export function apriWhatsAppConTesto(testo, telefono = "") {
     ? `https://wa.me/${phone}?text=${text}`
     : `https://wa.me/?text=${text}`;
   if (typeof window !== "undefined") {
-    window.open(url, "_blank", "noopener,noreferrer");
+    apriUrlEsterno(url);
   }
   return url;
 }

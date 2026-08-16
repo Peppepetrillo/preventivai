@@ -17,6 +17,7 @@ import {
   documentoFirmato,
   nomeFilePdfPreventivo,
 } from "../firma";
+import { apriUrlEsterno, esportaBlob } from "../../utils/nativeExport";
 
 /**
  * @param {Blob|File|null|undefined} file
@@ -111,24 +112,12 @@ export function creaCondivisioneService(deps = {}) {
       return globalThis.navigator.share(payload);
     }),
     openUrl: deps.openUrl || ((url) => {
-      if (typeof globalThis.open === "function") {
-        globalThis.open(url, "_blank", "noopener,noreferrer");
-        return;
-      }
-      if (globalThis.location) {
-        globalThis.location.href = url;
-      }
+      apriUrlEsterno(url);
     }),
-    scaricaBlob: deps.scaricaBlob || ((blob, nomeFile) => {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = nomeFile || "Preventivo.pdf";
-      link.rel = "noopener";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    scaricaBlob: deps.scaricaBlob || (async (blob, nomeFile) => {
+      await esportaBlob(blob, nomeFile || "Preventivo.pdf", {
+        titolo: nomeFile || "Preventivo.pdf",
+      });
     }),
     risolviDocumento:
       deps.risolviDocumento || risolviDocumentoDaCondividere,

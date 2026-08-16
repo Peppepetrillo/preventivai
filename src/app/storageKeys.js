@@ -84,6 +84,5 @@ export const APP_DATA_KEYS = {
 };
 
 export const NATIVE_STORAGE_KEYS = {
-  ...APP_DATA_KEYS,
-  [STORAGE_KEYS.pinAccesso]: STORAGE_FALLBACKS[STORAGE_KEYS.pinAccesso],
+  ...STORAGE_FALLBACKS,
 };

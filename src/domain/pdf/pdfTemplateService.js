@@ -6,6 +6,7 @@
 import jsPDF from "jspdf";
 
 import { calcolaSaldo, formatEuro, normalizzaNumero } from "../../utils/preventivi";
+import { isPiattaformaNativa } from "../../utils/nativeExport";
 import {
   applicaFont,
   areaUtile,
@@ -615,7 +616,7 @@ export async function renderPreventivoPdf(document, opzioni = {}) {
       document.cliente.nome || "cliente"
     }.pdf`.replace(/\s+/g, "_");
 
-  if (opzioni.salva !== false) {
+  if (opzioni.salva !== false && !isPiattaformaNativa()) {
     doc.save(nomeFile);
   }
 

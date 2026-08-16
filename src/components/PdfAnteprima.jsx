@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Download, Share2, X } from "lucide-react";
 
+import { esportaBlob } from "../utils/nativeExport";
+
 const DURATA_MS = 250;
 
 /**
@@ -15,22 +17,15 @@ export function urlPdfFitWidth(blobUrl) {
 }
 
 /**
- * Scarica un PDF da blob URL (solo UI, nessuna generazione).
+ * Scarica/esporta un PDF da blob URL (solo UI, nessuna generazione).
+ * Su iOS Capacitor usa Share invece di <a download>.
  * @param {string} blobUrl
  * @param {string} nomeFile
  */
 export async function scaricaDaBlobUrl(blobUrl, nomeFile = "Preventivo.pdf") {
   const risposta = await fetch(blobUrl);
   const blob = await risposta.blob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = nomeFile;
-  link.rel = "noopener";
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1500);
+  await esportaBlob(blob, nomeFile, { titolo: nomeFile });
 }
 
 /**
@@ -38,7 +33,7 @@ export async function scaricaDaBlobUrl(blobUrl, nomeFile = "Preventivo.pdf") {
  * @param {string} blobUrl
  * @param {string} nomeFile
  * @param {string} titolo
- * @returns {Promise<{ success: boolean, error?: string }>}
+ * @returns {Promise<{ success: boolean, error?: string, fallback?: string }>}
  */
 export async function condividiDaBlobUrl(
   blobUrl,
@@ -47,32 +42,14 @@ export async function condividiDaBlobUrl(
 ) {
   const risposta = await fetch(blobUrl);
   const blob = await risposta.blob();
-  const file = new File([blob], nomeFile, {
-    type: blob.type || "application/pdf",
-  });
-
-  if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-    try {
-      const payload = { files: [file], title: titolo };
-      if (
-        typeof navigator.canShare === "function" &&
-        !navigator.canShare(payload)
-      ) {
-        await navigator.share({ title: titolo, text: titolo, url: blobUrl });
-        return { success: true };
-      }
-      await navigator.share(payload);
-      return { success: true };
-    } catch (errore) {
-      if (errore?.name === "AbortError") {
-        return { success: false, error: "annullato" };
-      }
-      // fallback download
-    }
+  const esito = await esportaBlob(blob, nomeFile, { titolo });
+  if (esito.success) {
+    return {
+      success: true,
+      fallback: esito.metodo === "download" ? "download" : undefined,
+    };
   }
-
-  await scaricaDaBlobUrl(blobUrl, nomeFile);
-  return { success: true, fallback: "download" };
+  return { success: false, error: esito.error || "share_fallito" };
 }
 
 /**

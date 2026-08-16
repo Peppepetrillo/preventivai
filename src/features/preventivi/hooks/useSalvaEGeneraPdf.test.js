@@ -83,7 +83,10 @@ describe("useSalvaEGeneraPdf UX-5.3", () => {
     localStorage.clear();
     isNativePlatform.mockReturnValue(false);
     leggiPreventivi.mockReturnValue([]);
-    generaPdfPreventivo.mockResolvedValue({});
+    generaPdfPreventivo.mockResolvedValue({
+      blob: new Blob(["pdf"], { type: "application/pdf" }),
+      nomeFile: "PREV-1.pdf",
+    });
   });
 
   it("salva il preventivo e genera il PDF", async () => {
@@ -121,6 +124,22 @@ describe("useSalvaEGeneraPdf UX-5.3", () => {
 
     expect(generaPdfPreventivo.mock.calls[0][0].salva).toBe(false);
     expect(result.current.preventivoSalvato).toBeTruthy();
+  });
+
+  it("su Capacitor mantiene il blob PDF per condivisione nativa", async () => {
+    isNativePlatform.mockReturnValue(true);
+    const { result } = renderHook(() => useSalvaEGeneraPdf());
+
+    await act(async () => {
+      await result.current.salvaEGeneraPdf(STATO);
+    });
+
+    await waitFor(() => {
+      expect(result.current.pdfGenerato).toBe(true);
+    });
+
+    expect(result.current.pdfBlob).toBeInstanceOf(Blob);
+    expect(result.current.pdfNomeFile).toBe("PREV-1.pdf");
   });
 
   it("non crea un secondo preventivo al retry", async () => {

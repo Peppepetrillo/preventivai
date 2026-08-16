@@ -18,6 +18,8 @@ export default function StepConferma({
   avvisoPdf = "",
   preventivoSalvato = null,
   pdfGenerato = false,
+  pdfBlob = null,
+  pdfNomeFile = "",
   onSalva,
   onRiprovaPdf,
   onNuovoPreventivo,
@@ -47,6 +49,8 @@ export default function StepConferma({
         condizioni={condizioni}
         lavorazioni={lavorazioni}
         pdfGenerato={pdfGenerato}
+        pdfBlob={pdfBlob}
+        pdfNomeFile={pdfNomeFile}
         avvisoPdf={avvisoPdf}
         inElaborazione={pdfInCorso}
         onRiprovaPdf={gestisciRiprovaPdf}

@@ -9,6 +9,7 @@ import {
   setText,
   testoMultilinea,
 } from "../../../domain/pdf/pdfLayoutService";
+import { isPiattaformaNativa } from "../../../utils/nativeExport";
 
 function riga(valore, fallback = "—") {
   const testo = String(valore ?? "").trim();
@@ -330,7 +331,7 @@ export async function renderCantiereReportPdf(document, opzioni = {}) {
   const blobUrl = URL.createObjectURL(blob);
   const nomeFile = opzioni.nomeFile || "Report_Cantiere.pdf";
 
-  if (opzioni.salva !== false) {
+  if (opzioni.salva !== false && !isPiattaformaNativa()) {
     doc.save(nomeFile);
   }
 

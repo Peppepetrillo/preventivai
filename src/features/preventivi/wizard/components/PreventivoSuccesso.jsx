@@ -3,12 +3,15 @@ import { Link } from "react-router-dom";
 
 import { routePreventivo } from "../../../../app/routes";
 import { formatEuro, calcolaTotali } from "../../../../utils/preventivi";
+import { esportaBlob } from "../../../../utils/nativeExport";
 
 export default function PreventivoSuccesso({
   preventivo,
   condizioni,
   lavorazioni,
   pdfGenerato = false,
+  pdfBlob = null,
+  pdfNomeFile = "",
   avvisoPdf = "",
   inElaborazione = false,
   onRiprovaPdf,
@@ -23,11 +26,19 @@ export default function PreventivoSuccesso({
 
   async function condividi() {
     const testo = `Preventivo ${numero} per ${preventivo.cliente} — Totale ${formatEuro(totali.totale)}`;
+    const titolo = `Preventivo ${numero}`;
+    const nomeFile =
+      pdfNomeFile || `${numero}-${preventivo.cliente || "cliente"}.pdf`.replace(/\s+/g, "_");
+
+    if (pdfBlob) {
+      const esito = await esportaBlob(pdfBlob, nomeFile, { titolo });
+      if (esito.success || esito.error === "annullato") return;
+    }
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Preventivo ${numero}`,
+          title: titolo,
           text: testo,
         });
         return;
@@ -97,7 +108,7 @@ export default function PreventivoSuccesso({
             data-testid="successo-condividi"
           >
             <Share2 size={18} aria-hidden="true" />
-            Condividi riepilogo
+            {pdfBlob ? "Condividi PDF" : "Condividi riepilogo"}
           </button>
         )}
       </div>

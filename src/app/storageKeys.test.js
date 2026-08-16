@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { STORAGE_FALLBACKS, STORAGE_KEYS, APP_DATA_KEYS } from "./storageKeys";
+import { STORAGE_FALLBACKS, STORAGE_KEYS, APP_DATA_KEYS, NATIVE_STORAGE_KEYS } from "./storageKeys";
 
 describe("storageKeys — sync cloud APP_DATA", () => {
   it("include preventivai:esperienze in APP_DATA_KEYS per sync multi-device", () => {
@@ -24,6 +24,15 @@ describe("storageKeys — sync cloud APP_DATA", () => {
 
     for (const chiave of chiaviAttese) {
       expect(chiave in APP_DATA_KEYS).toBe(true);
+    }
+  });
+});
+
+describe("storageKeys — restore nativo Capacitor", () => {
+  it("ripristina tutte le STORAGE_KEYS da Preferences (nessuna perdita a cold start)", () => {
+    for (const chiave of Object.values(STORAGE_KEYS)) {
+      expect(chiave in NATIVE_STORAGE_KEYS).toBe(true);
+      expect(NATIVE_STORAGE_KEYS[chiave]).toEqual(STORAGE_FALLBACKS[chiave]);
     }
   });
 });

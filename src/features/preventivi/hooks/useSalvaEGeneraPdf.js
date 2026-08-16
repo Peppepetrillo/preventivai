@@ -53,6 +53,8 @@ export function useSalvaEGeneraPdf() {
   const [avvisoPdf, setAvvisoPdf] = useState("");
   const [preventivoSalvato, setPreventivoSalvato] = useState(null);
   const [pdfGenerato, setPdfGenerato] = useState(false);
+  const [pdfBlob, setPdfBlob] = useState(null);
+  const [pdfNomeFile, setPdfNomeFile] = useState("");
   const idSalvatoRef = useRef(null);
   const pdfRunIdRef = useRef(0);
 
@@ -61,6 +63,8 @@ export function useSalvaEGeneraPdf() {
     idSalvatoRef.current = null;
     setPreventivoSalvato(null);
     setPdfGenerato(false);
+    setPdfBlob(null);
+    setPdfNomeFile("");
     setErrore("");
     setAvvisoPdf("");
     setPdfInCorso(false);
@@ -140,7 +144,7 @@ export function useSalvaEGeneraPdf() {
     );
     const datiAzienda = leggiDatiAzienda();
 
-    await generaPdfPreventivo({
+    const esito = await generaPdfPreventivo({
       preventivo,
       datiAzienda,
       cliente: preventivo.cliente,
@@ -156,6 +160,11 @@ export function useSalvaEGeneraPdf() {
       // Su Capacitor doc.save() può restare pending: non bloccare il wizard.
       salva: deveScaricarePdfAutomatico(),
     });
+
+    if (esito?.blob) {
+      setPdfBlob(esito.blob);
+      setPdfNomeFile(esito.nomeFile || "");
+    }
 
     setPdfGenerato(true);
     setAvvisoPdf("");
@@ -175,6 +184,8 @@ export function useSalvaEGeneraPdf() {
           if (runId !== pdfRunIdRef.current) return;
           setAvvisoPdf(AVVISO_PDF);
           setPdfGenerato(false);
+          setPdfBlob(null);
+          setPdfNomeFile("");
         } finally {
           if (runId === pdfRunIdRef.current) {
             setPdfInCorso(false);
@@ -222,6 +233,8 @@ export function useSalvaEGeneraPdf() {
       } catch {
         setAvvisoPdf(AVVISO_PDF);
         setPdfGenerato(false);
+        setPdfBlob(null);
+        setPdfNomeFile("");
         return false;
       } finally {
         setPdfInCorso(false);
@@ -237,6 +250,8 @@ export function useSalvaEGeneraPdf() {
     avvisoPdf,
     preventivoSalvato,
     pdfGenerato,
+    pdfBlob,
+    pdfNomeFile,
     salvaPreventivo,
     generaPdf,
     salvaEGeneraPdf,

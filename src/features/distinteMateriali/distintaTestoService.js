@@ -3,6 +3,8 @@
  * Prezzi esclusi di default.
  */
 
+import { apriUrlEsterno } from "../../utils/nativeExport";
+
 /**
  * @param {import("../../domain/distinteMateriali/distintaMaterialiTypes").DistintaMateriali|null|undefined} distinta
  * @param {{ mostraPrezzi?: boolean }=} opzioni
@@ -102,7 +104,7 @@ export function apriWhatsAppConTesto(testo, telefono = "") {
     ? `https://wa.me/${phone}?text=${text}`
     : `https://wa.me/?text=${text}`;
   if (typeof window !== "undefined") {
-    window.open(url, "_blank", "noopener,noreferrer");
+    apriUrlEsterno(url);
   }
   return url;
 }

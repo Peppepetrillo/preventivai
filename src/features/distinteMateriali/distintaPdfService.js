@@ -10,6 +10,7 @@ import {
 } from "../../domain/pdf/pdfLayoutService";
 import { risolviPdfSettings } from "../../domain/pdf/pdfTypes";
 import { calcolaTotaleMateriali } from "../../domain/distinteMateriali/distintaMaterialiDomain";
+import { isPiattaformaNativa } from "../../utils/nativeExport";
 
 /**
  * PDF semplice e professionale della Distinta Materiali.
@@ -184,7 +185,7 @@ export async function generaPdfDistintaMateriali({
   const blobUrl =
     typeof URL !== "undefined" ? URL.createObjectURL(blob) : "";
 
-  if (salva) {
+  if (salva && !isPiattaformaNativa()) {
     doc.save(nomeFile);
   }
 

@@ -14,6 +14,7 @@ import {
   testoMultilinea,
 } from "../../domain/pdf/pdfLayoutService";
 import { risolviPdfSettings } from "../../domain/pdf/pdfTypes";
+import { isPiattaformaNativa } from "../../utils/nativeExport";
 import { MODALITA_CONDIVIDI_ACQUISTI } from "./acquistiTestoService";
 
 /**
@@ -179,7 +180,7 @@ export async function generaPdfAcquisti({
   const blobUrl =
     typeof URL !== "undefined" ? URL.createObjectURL(blob) : "";
 
-  if (salva) {
+  if (salva && !isPiattaformaNativa()) {
     doc.save(nomeFile);
   }
 
