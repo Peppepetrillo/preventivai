@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import { Trash2 } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import NumericInput from "../../../components/NumericInput";
 import { UNITA_COMUNI } from "../listinoCatalogDomain";
 
@@ -54,6 +55,7 @@ function VoceCatalogoForm({
   const isNuova = !voce;
   const [form, setForm] = useState(() => formDaVoce(voce, categorie));
   const [errore, setErrore] = useState("");
+  const [confermaElimina, setConfermaElimina] = useState(false);
 
   function aggiorna(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
@@ -79,13 +81,10 @@ function VoceCatalogoForm({
     if (ok !== false) onClose?.();
   }
 
-  function gestisciElimina() {
+  function confermaEliminazione() {
     if (!voce?.id) return;
-    const conferma = window.confirm(
-      `Eliminare «${voce.nome}» dal listino? L'operazione non si può annullare.`
-    );
-    if (!conferma) return;
     onElimina?.(voce.id);
+    setConfermaElimina(false);
     onClose?.();
   }
 
@@ -195,7 +194,7 @@ function VoceCatalogoForm({
         {!isNuova ? (
           <button
             type="button"
-            onClick={gestisciElimina}
+            onClick={() => setConfermaElimina(true)}
             className="min-w-[48px] min-h-[48px] btn-secondary flex items-center justify-center text-red-300"
             aria-label="Elimina lavorazione"
           >
@@ -217,6 +216,16 @@ function VoceCatalogoForm({
           Salva
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confermaElimina}
+        title={`Eliminare «${voce?.nome || "lavorazione"}» dal listino?`}
+        description="L'operazione non si può annullare."
+        confirmLabel="Elimina"
+        onConfirm={confermaEliminazione}
+        onCancel={() => setConfermaElimina(false)}
+        testId="conferma-elimina-voce"
+      />
     </div>
   );
 }

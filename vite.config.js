@@ -19,9 +19,10 @@ export default defineConfig({
 
     VitePWA({
 
-      registerType: "autoUpdate",
+      // Aggiornamento solo dopo conferma utente (PwaUpdatePrompt).
+      registerType: "prompt",
 
-      // Registrazione SW manuale (salta Capacitor/native).
+      // Registrazione SW solo da PwaUpdatePrompt (salta Capacitor/native).
       injectRegister: false,
 
       includeAssets: [

@@ -3,6 +3,7 @@ import { Eye, FileSignature, PenLine, RefreshCw, Trash2 } from "lucide-react";
 
 import SignatureCanvas from "../../../components/SignatureCanvas";
 import BottomSheet from "../../../components/BottomSheet";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import {
   creaFirma,
   salvaFirma,
@@ -24,6 +25,7 @@ export default function FirmaClienteSection({
   const [tick, setTick] = useState(0);
   const [sheetAperto, setSheetAperto] = useState(false);
   const [anteprimaAperta, setAnteprimaAperta] = useState(false);
+  const [confermaRimuoviFirma, setConfermaRimuoviFirma] = useState(false);
   const [firmatario, setFirmatario] = useState(
     () => preventivo?.cliente || ""
   );
@@ -75,13 +77,12 @@ export default function FirmaClienteSection({
 
   function eliminaFirmaCliente() {
     if (!haFirma) return;
-    const conferma = window.confirm("Rimuovere la firma del cliente?");
-    if (!conferma) return;
     const esito = rimuoviFirma(preventivo.id);
     if (!esito.success) {
       onMessaggio?.("Nessuna firma da rimuovere.");
       return;
     }
+    setConfermaRimuoviFirma(false);
     setAnteprimaAperta(false);
     aggiorna();
     onMessaggio?.("Firma rimossa.");
@@ -177,7 +178,7 @@ export default function FirmaClienteSection({
         </button>
         <button
           type="button"
-          onClick={eliminaFirmaCliente}
+          onClick={() => setConfermaRimuoviFirma(true)}
           disabled={!haFirma}
           className="btn-secondary min-h-[48px] px-4 text-sm font-semibold flex items-center gap-2 text-red-200 disabled:opacity-50"
         >
@@ -235,6 +236,16 @@ export default function FirmaClienteSection({
           />
         </div>
       </BottomSheet>
+
+      <ConfirmDialog
+        open={confermaRimuoviFirma}
+        title="Rimuovere la firma del cliente?"
+        description="La firma salvata verrà eliminata."
+        confirmLabel="Rimuovi"
+        onConfirm={eliminaFirmaCliente}
+        onCancel={() => setConfermaRimuoviFirma(false)}
+        testId="conferma-rimuovi-firma"
+      />
     </Wrapper>
   );
 }

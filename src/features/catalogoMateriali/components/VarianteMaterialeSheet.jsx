@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import { Trash2 } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import NumericInput from "../../../components/NumericInput";
 import { UNITA_OPZIONI_UI } from "../catalogoMaterialiUiMeta";
 import AccessoriSuggeritiSection from "./AccessoriSuggeritiSection";
@@ -64,6 +65,7 @@ function VarianteForm({
   const isNuova = !variante;
   const [form, setForm] = useState(() => formDaVariante(variante, famiglia));
   const [errore, setErrore] = useState("");
+  const [confermaElimina, setConfermaElimina] = useState(false);
 
   function aggiorna(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
@@ -102,13 +104,10 @@ function VarianteForm({
     if (ok !== false && ok != null) onClose?.();
   }
 
-  function gestisciElimina() {
+  function confermaEliminazione() {
     if (!variante?.id) return;
-    const conferma = window.confirm(
-      `Eliminare la variante «${variante.etichetta}»?`
-    );
-    if (!conferma) return;
     onElimina?.(famiglia.id, variante.id, { hard: true });
+    setConfermaElimina(false);
     onClose?.();
   }
 
@@ -211,13 +210,23 @@ function VarianteForm({
       {!isNuova ? (
         <button
           type="button"
-          onClick={gestisciElimina}
+          onClick={() => setConfermaElimina(true)}
           className="btn-danger w-full min-h-[48px] font-bold flex items-center justify-center gap-2"
         >
           <Trash2 size={18} aria-hidden="true" />
           Elimina variante
         </button>
       ) : null}
+
+      <ConfirmDialog
+        open={confermaElimina}
+        title={`Eliminare la variante «${variante?.etichetta || ""}»?`}
+        description="L'operazione non si può annullare."
+        confirmLabel="Elimina"
+        onConfirm={confermaEliminazione}
+        onCancel={() => setConfermaElimina(false)}
+        testId="conferma-elimina-variante"
+      />
     </div>
   );
 }

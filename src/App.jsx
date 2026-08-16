@@ -15,6 +15,7 @@ import BottomNav from "./components/BottomNav";
 import { isDistintaEditorRoute } from "./components/bottomNavUtils";
 import AppLock from "./components/AppLock";
 import InstallPrompt from "./components/InstallPrompt";
+import PwaUpdatePrompt from "./components/PwaUpdatePrompt";
 import { GlobalCreateProvider } from "./components/globalCreate/GlobalCreateContext";
 import GlobalCreateHost from "./components/globalCreate/GlobalCreateHost";
 import { WizardProvider } from "./features/preventivi/wizard/wizardContext";
@@ -191,6 +192,7 @@ function AppShell() {
           <GlobalCreateHost />
 
           <InstallPrompt />
+          <PwaUpdatePrompt />
         </div>
       </GlobalCreateProvider>
     </WizardProvider>

@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import { Trash2 } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import {
   CATEGORIE_MATERIALE,
   ETICHETTE_CATEGORIA_MATERIALE,
@@ -67,6 +68,7 @@ function FamigliaForm({
   const isNuova = !famiglia;
   const [form, setForm] = useState(() => formDaFamiglia(famiglia, categoriaDefault));
   const [errore, setErrore] = useState("");
+  const [confermaElimina, setConfermaElimina] = useState(false);
 
   function aggiorna(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
@@ -92,13 +94,10 @@ function FamigliaForm({
     if (ok !== false && ok != null) onClose?.();
   }
 
-  function gestisciElimina() {
+  function confermaEliminazione() {
     if (!famiglia?.id || !famiglia.personalizzata) return;
-    const conferma = window.confirm(
-      `Eliminare «${famiglia.nome}»? L'operazione non si può annullare.`
-    );
-    if (!conferma) return;
     onElimina?.(famiglia.id, { hard: true });
+    setConfermaElimina(false);
     onClose?.();
   }
 
@@ -201,13 +200,23 @@ function FamigliaForm({
       {!isNuova && famiglia?.personalizzata ? (
         <button
           type="button"
-          onClick={gestisciElimina}
+          onClick={() => setConfermaElimina(true)}
           className="btn-danger w-full min-h-[48px] font-bold flex items-center justify-center gap-2"
         >
           <Trash2 size={18} aria-hidden="true" />
           Elimina
         </button>
       ) : null}
+
+      <ConfirmDialog
+        open={confermaElimina}
+        title={`Eliminare «${famiglia?.nome || "materiale"}»?`}
+        description="L'operazione non si può annullare."
+        confirmLabel="Elimina"
+        onConfirm={confermaEliminazione}
+        onCancel={() => setConfermaElimina(false)}
+        testId="conferma-elimina-famiglia"
+      />
     </div>
   );
 }
