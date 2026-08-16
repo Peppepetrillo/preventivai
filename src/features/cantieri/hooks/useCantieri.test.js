@@ -11,6 +11,7 @@ vi.mock("../../../services/cloudSyncService", () => ({
 
 vi.mock("../services/cantieriFotoService", () => ({
   apriFotoCantiere: vi.fn(),
+  risolviSrcFotoCantiere: vi.fn(async (foto) => foto?.src || ""),
   eliminaStorageFotoCantiere: vi.fn(),
   eliminaStorageFotoCantieri: vi.fn(),
   fileFotoValido: vi.fn(() => true),

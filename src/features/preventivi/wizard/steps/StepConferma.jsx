@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { Pencil, Save } from "lucide-react";
 
 import {
@@ -7,15 +7,21 @@ import {
   formatEuro,
   normalizzaNumero,
 } from "../../../../utils/preventivi";
-import { useSalvaEGeneraPdf } from "../../hooks/useSalvaEGeneraPdf";
 import PreventivoSuccesso from "../components/PreventivoSuccesso";
 import { opzioneTipoLavoro } from "../wizardConfig";
 
 export default function StepConferma({
   stato,
+  inElaborazione = false,
+  pdfInCorso = false,
+  errore = "",
+  avvisoPdf = "",
+  preventivoSalvato = null,
+  pdfGenerato = false,
+  onSalva,
+  onRiprovaPdf,
   onNuovoPreventivo,
   onModificaComposizione,
-  onEsitoCambiato,
 }) {
   const { cliente, tipoLavoro, lavorazioni, condizioni } = stato;
   const opzione = opzioneTipoLavoro(tipoLavoro);
@@ -26,34 +32,13 @@ export default function StepConferma({
   );
   const saldo = calcolaSaldo(totali.totale, condizioni.acconto);
 
-  const {
-    inElaborazione,
-    errore,
-    avvisoPdf,
-    preventivoSalvato,
-    pdfGenerato,
-    salvaEGeneraPdf,
-    riprovaPdf,
-    resetEsito,
-  } = useSalvaEGeneraPdf();
-
-  useEffect(() => {
-    onEsitoCambiato?.(Boolean(preventivoSalvato));
-  }, [preventivoSalvato, onEsitoCambiato]);
-
   const salvaPreventivo = useCallback(async () => {
-    await salvaEGeneraPdf(stato);
-  }, [salvaEGeneraPdf, stato]);
-
-  const gestisciNuovoPreventivo = useCallback(() => {
-    resetEsito();
-    onEsitoCambiato?.(false);
-    onNuovoPreventivo?.();
-  }, [onEsitoCambiato, onNuovoPreventivo, resetEsito]);
+    await onSalva?.();
+  }, [onSalva]);
 
   const gestisciRiprovaPdf = useCallback(async () => {
-    await riprovaPdf(condizioni);
-  }, [condizioni, riprovaPdf]);
+    await onRiprovaPdf?.();
+  }, [onRiprovaPdf]);
 
   if (preventivoSalvato) {
     return (
@@ -63,9 +48,9 @@ export default function StepConferma({
         lavorazioni={lavorazioni}
         pdfGenerato={pdfGenerato}
         avvisoPdf={avvisoPdf}
-        inElaborazione={inElaborazione}
+        inElaborazione={pdfInCorso}
         onRiprovaPdf={gestisciRiprovaPdf}
-        onNuovoPreventivo={gestisciNuovoPreventivo}
+        onNuovoPreventivo={onNuovoPreventivo}
       />
     );
   }

@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 
 import { leggiDatiAzienda } from "../../../repositories/impostazioniRepository";
 import {
@@ -10,6 +11,9 @@ import { generaPdfPreventivo } from "../../../services/preventiviPdfService";
 import { calcolaTotali } from "../../../utils/preventivi";
 import { creaPreventivo, preparaDatiPreventivo } from "../preventiviDomain";
 import { salvaUltimoPreventivo } from "../utils/wizardExtensions";
+
+const AVVISO_PDF =
+  "Preventivo salvato come bozza. PDF non generato. Puoi riprovare.";
 
 function validaStatoWizard(statoWizard) {
   const { cliente, lavorazioni } = statoWizard || {};
@@ -34,20 +38,33 @@ function snapshotUltimo(preventivo, statoWizard) {
   });
 }
 
+function deveScaricarePdfAutomatico() {
+  try {
+    return !Capacitor.isNativePlatform();
+  } catch {
+    return true;
+  }
+}
+
 export function useSalvaEGeneraPdf() {
   const [inElaborazione, setInElaborazione] = useState(false);
+  const [pdfInCorso, setPdfInCorso] = useState(false);
   const [errore, setErrore] = useState("");
   const [avvisoPdf, setAvvisoPdf] = useState("");
   const [preventivoSalvato, setPreventivoSalvato] = useState(null);
   const [pdfGenerato, setPdfGenerato] = useState(false);
   const idSalvatoRef = useRef(null);
+  const pdfRunIdRef = useRef(0);
 
   const resetEsito = useCallback(() => {
+    pdfRunIdRef.current += 1;
     idSalvatoRef.current = null;
     setPreventivoSalvato(null);
     setPdfGenerato(false);
     setErrore("");
     setAvvisoPdf("");
+    setPdfInCorso(false);
+    setInElaborazione(false);
   }, []);
 
   const salvaPreventivo = useCallback(async (statoWizard) => {
@@ -136,12 +153,37 @@ export function useSalvaEGeneraPdf() {
       iva: condizioni.iva,
       acconto: condizioni.acconto,
       totali,
+      // Su Capacitor doc.save() può restare pending: non bloccare il wizard.
+      salva: deveScaricarePdfAutomatico(),
     });
 
     setPdfGenerato(true);
     setAvvisoPdf("");
     return true;
   }, []);
+
+  const avviaPdfInBackground = useCallback(
+    (preventivo, condizioni) => {
+      const runId = ++pdfRunIdRef.current;
+      setPdfInCorso(true);
+      setAvvisoPdf("");
+
+      void (async () => {
+        try {
+          await generaPdf(preventivo, condizioni);
+        } catch {
+          if (runId !== pdfRunIdRef.current) return;
+          setAvvisoPdf(AVVISO_PDF);
+          setPdfGenerato(false);
+        } finally {
+          if (runId === pdfRunIdRef.current) {
+            setPdfInCorso(false);
+          }
+        }
+      })();
+    },
+    [generaPdf]
+  );
 
   const salvaEGeneraPdf = useCallback(
     async (statoWizard) => {
@@ -153,15 +195,9 @@ export function useSalvaEGeneraPdf() {
         const preventivo = await salvaPreventivo(statoWizard);
         if (!preventivo) return null;
 
-        try {
-          await generaPdf(preventivo, statoWizard.condizioni);
-        } catch {
-          setAvvisoPdf(
-            "Preventivo salvato come bozza. PDF non generato. Puoi riprovare."
-          );
-          setPdfGenerato(false);
-        }
-
+        // Successo UI immediato: il PDF non deve bloccare né nascondere lo stato.
+        setInElaborazione(false);
+        avviaPdfInBackground(preventivo, statoWizard.condizioni);
         return preventivo;
       } catch {
         setErrore("Non è stato possibile salvare il preventivo. Riprova.");
@@ -170,27 +206,25 @@ export function useSalvaEGeneraPdf() {
         setInElaborazione(false);
       }
     },
-    [generaPdf, salvaPreventivo]
+    [avviaPdfInBackground, salvaPreventivo]
   );
 
   const riprovaPdf = useCallback(
     async (condizioni) => {
       if (!preventivoSalvato) return false;
 
-      setInElaborazione(true);
+      setPdfInCorso(true);
       setAvvisoPdf("");
 
       try {
         await generaPdf(preventivoSalvato, condizioni);
         return true;
       } catch {
-        setAvvisoPdf(
-          "Preventivo salvato come bozza. PDF non generato. Puoi riprovare."
-        );
+        setAvvisoPdf(AVVISO_PDF);
         setPdfGenerato(false);
         return false;
       } finally {
-        setInElaborazione(false);
+        setPdfInCorso(false);
       }
     },
     [generaPdf, preventivoSalvato]
@@ -198,6 +232,7 @@ export function useSalvaEGeneraPdf() {
 
   return {
     inElaborazione,
+    pdfInCorso,
     errore,
     avvisoPdf,
     preventivoSalvato,

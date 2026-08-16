@@ -21,6 +21,9 @@ export default defineConfig({
 
       registerType: "autoUpdate",
 
+      // Registrazione SW manuale (salta Capacitor/native).
+      injectRegister: false,
+
       includeAssets: [
 
         "favicon.svg",

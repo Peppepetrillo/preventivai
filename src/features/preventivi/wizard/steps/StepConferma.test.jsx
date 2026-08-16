@@ -4,23 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import StepConferma from "./StepConferma";
 
-const salvaEGeneraPdf = vi.fn();
-const riprovaPdf = vi.fn();
-const resetEsito = vi.fn();
-
-vi.mock("../../hooks/useSalvaEGeneraPdf", () => ({
-  useSalvaEGeneraPdf: () => ({
-    inElaborazione: false,
-    errore: "",
-    avvisoPdf: "",
-    preventivoSalvato: null,
-    pdfGenerato: false,
-    salvaEGeneraPdf,
-    riprovaPdf,
-    resetEsito,
-  }),
-}));
-
 const STATO = {
   cliente: "Rossi Mario",
   tipoLavoro: "impianto",
@@ -42,17 +25,23 @@ const STATO = {
   },
 };
 
+const PREVENTIVO = {
+  id: 42,
+  numero: "PREV-42",
+  cliente: "Rossi Mario",
+  lavorazioni: STATO.lavorazioni,
+  stato: "Bozza",
+};
+
 describe("StepConferma UX-5.3", () => {
   beforeEach(() => {
-    salvaEGeneraPdf.mockReset();
-    riprovaPdf.mockReset();
-    resetEsito.mockReset();
+    vi.clearAllMocks();
   });
 
   it("mostra hero riepilogo e CTA Salva preventivo", () => {
     render(
       <MemoryRouter>
-        <StepConferma stato={STATO} />
+        <StepConferma stato={STATO} onSalva={vi.fn()} />
       </MemoryRouter>
     );
 
@@ -65,20 +54,40 @@ describe("StepConferma UX-5.3", () => {
     expect(screen.getByText("Punto luce")).toBeInTheDocument();
   });
 
-  it("invoca salvaEGeneraPdf al tap", async () => {
-    salvaEGeneraPdf.mockResolvedValue({ id: 1 });
+  it("invoca onSalva al tap", async () => {
+    const onSalva = vi.fn().mockResolvedValue(PREVENTIVO);
 
     render(
       <MemoryRouter>
-        <StepConferma stato={STATO} />
+        <StepConferma stato={STATO} onSalva={onSalva} />
       </MemoryRouter>
     );
 
     fireEvent.click(screen.getByTestId("salva-preventivo"));
 
     await waitFor(() => {
-      expect(salvaEGeneraPdf).toHaveBeenCalledWith(STATO);
+      expect(onSalva).toHaveBeenCalled();
     });
+  });
+
+  it("mostra PreventivoSuccesso quando preventivoSalvato è valorizzato", () => {
+    render(
+      <MemoryRouter>
+        <StepConferma
+          stato={STATO}
+          preventivoSalvato={PREVENTIVO}
+          pdfGenerato={false}
+          avvisoPdf="Preventivo salvato come bozza. PDF non generato."
+          onRiprovaPdf={vi.fn()}
+          onNuovoPreventivo={vi.fn()}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByTestId("preventivo-successo")).toBeInTheDocument();
+    expect(screen.getByText(/Preventivo creato/i)).toBeInTheDocument();
+    expect(screen.getByText("PREV-42")).toBeInTheDocument();
+    expect(screen.queryByTestId("salva-preventivo")).not.toBeInTheDocument();
   });
 
   it("chiama onModificaComposizione", () => {
@@ -86,7 +95,11 @@ describe("StepConferma UX-5.3", () => {
 
     render(
       <MemoryRouter>
-        <StepConferma stato={STATO} onModificaComposizione={onModifica} />
+        <StepConferma
+          stato={STATO}
+          onSalva={vi.fn()}
+          onModificaComposizione={onModifica}
+        />
       </MemoryRouter>
     );
 

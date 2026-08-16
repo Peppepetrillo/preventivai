@@ -21,6 +21,7 @@ import {
   eliminaStorageFotoCantieri,
   fileFotoValido,
   preparaFotoCantiere,
+  risolviSrcFotoCantiere,
 } from "./cantieriFotoService";
 
 describe("cantieriFotoService", () => {
@@ -64,17 +65,44 @@ describe("cantieriFotoService", () => {
     ]);
   });
 
-  it("apre l'URL firmato quando la foto ha uno storagePath", async () => {
-    await apriFotoCantiere({
+  it("risolve URL firmato quando la foto ha uno storagePath", async () => {
+    const src = await risolviSrcFotoCantiere({
       src: "data:image/jpeg;base64,locale",
       storagePath: "foto/1.jpg",
     });
 
     expect(creaUrlFirmatoFotoCantiere).toHaveBeenCalledWith("foto/1.jpg");
-    expect(window.open).toHaveBeenCalledWith(
-      "https://foto-firmata.test/foto.jpg",
-      "_blank",
-      "noopener,noreferrer"
-    );
+    expect(src).toBe("https://foto-firmata.test/foto.jpg");
+    expect(window.open).not.toHaveBeenCalled();
+  });
+
+  it("risolve data URL locale per foto offline/pending", async () => {
+    const src = await risolviSrcFotoCantiere({
+      src: "data:image/jpeg;base64,full",
+      miniatura: "data:image/jpeg;base64,thumb",
+      daSincronizzare: true,
+    });
+
+    expect(creaUrlFirmatoFotoCantiere).not.toHaveBeenCalled();
+    expect(src).toBe("data:image/jpeg;base64,full");
+    expect(window.open).not.toHaveBeenCalled();
+  });
+
+  it("usa miniatura se src locale assente", async () => {
+    const src = await risolviSrcFotoCantiere({
+      src: "",
+      miniatura: "data:image/jpeg;base64,thumb",
+    });
+
+    expect(src).toBe("data:image/jpeg;base64,thumb");
+  });
+
+  it("apriFotoCantiere non apre finestre e restituisce lo src", async () => {
+    const src = await apriFotoCantiere({
+      src: "data:image/jpeg;base64,x",
+    });
+
+    expect(src).toBe("data:image/jpeg;base64,x");
+    expect(window.open).not.toHaveBeenCalled();
   });
 });

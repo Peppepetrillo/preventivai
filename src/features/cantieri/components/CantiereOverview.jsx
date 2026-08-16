@@ -19,7 +19,9 @@ import {
   calcolaAvanzamentoChecklist,
   valutaPrerequisitiChiusuraCantiere,
 } from "../cantieriDomain";
+import { risolviSrcFotoCantiere } from "../services/cantieriFotoService";
 import CantiereAssistantPanel from "./CantiereAssistantPanel";
+import CantiereFotoViewer from "./CantiereFotoViewer";
 import CantiereOperativo from "./CantiereOperativo";
 import CantiereSegmentBar from "./CantiereSegmentBar";
 import CantiereVarianti from "./CantiereVarianti";
@@ -68,7 +70,6 @@ export default function CantiereOverview({
   onToggleMaterialeAcquistato,
   onAggiungiFoto,
   onEliminaFoto,
-  onApriFoto,
   onAggiungiNotaDiario,
   onEliminaCantiere,
   onIniziaLavoro,
@@ -88,6 +89,7 @@ export default function CantiereOverview({
   const [dialogoChiusura, setDialogoChiusura] = useState(null);
   const [confermaElimina, setConfermaElimina] = useState(false);
   const [insightAperto, setInsightAperto] = useState(false);
+  const [fotoViewer, setFotoViewer] = useState(null);
   const [preventivi] = useDatiLocaliSincronizzati(leggiPreventivi);
   const sezioneModifica = useRef(null);
   const sezioneChecklist = useRef(null);
@@ -98,6 +100,51 @@ export default function CantiereOverview({
   const sezionePagamenti = useRef(null);
   const sezioneDocumenti = useRef(null);
   const inputFoto = useRef(null);
+
+  const chiudiFotoViewer = useCallback(() => {
+    setFotoViewer(null);
+  }, []);
+
+  const gestisciApriFoto = useCallback(async (foto) => {
+    const titolo = foto?.nome || "Foto cantiere";
+    setFotoViewer({
+      open: true,
+      src: "",
+      titolo,
+      loading: true,
+      errore: "",
+    });
+
+    try {
+      const src = await risolviSrcFotoCantiere(foto);
+      if (!src) {
+        setFotoViewer({
+          open: true,
+          src: "",
+          titolo,
+          loading: false,
+          errore: "Immagine non disponibile.",
+        });
+        return;
+      }
+
+      setFotoViewer({
+        open: true,
+        src,
+        titolo,
+        loading: false,
+        errore: "",
+      });
+    } catch {
+      setFotoViewer({
+        open: true,
+        src: "",
+        titolo,
+        loading: false,
+        errore: "Non riesco ad aprire la foto.",
+      });
+    }
+  }, []);
 
   const attivaTabEScorri = useCallback((tab, callback) => {
     setTabAttivo(tab);
@@ -461,7 +508,7 @@ export default function CantiereOverview({
           onToggleMaterialeAcquistato={toggleMaterialeAcquistato}
           onAggiungiFoto={onAggiungiFoto}
           onEliminaFoto={onEliminaFoto}
-          onApriFoto={onApriFoto}
+          onApriFoto={gestisciApriFoto}
         />
       </div>
 
@@ -557,11 +604,12 @@ export default function CantiereOverview({
           cantiere={cantiere}
           onAddManualNote={onAggiungiNotaDiario}
           onOpenAttachment={(attachment) =>
-            onApriFoto?.({
+            gestisciApriFoto({
               id: attachment.id,
               nome: attachment.alt,
               src: attachment.src,
               miniatura: attachment.thumbnail,
+              storagePath: attachment.storagePath,
             })
           }
         />
@@ -767,6 +815,15 @@ export default function CantiereOverview({
           titolo: cantiere.nome,
         }}
         onSalva={(dati) => aggiungiInsight(dati)}
+      />
+
+      <CantiereFotoViewer
+        open={Boolean(fotoViewer?.open)}
+        src={fotoViewer?.src || ""}
+        titolo={fotoViewer?.titolo || "Foto cantiere"}
+        loading={Boolean(fotoViewer?.loading)}
+        errore={fotoViewer?.errore || ""}
+        onClose={chiudiFotoViewer}
       />
     </div>
   );

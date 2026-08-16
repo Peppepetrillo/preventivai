@@ -40,7 +40,6 @@ export default function Cantiere() {
     completaLavoro,
     aggiungiFoto,
     eliminaFoto,
-    apriFoto,
     aggiungiNotaDiario,
   } = useCantieri({ cantiereId: id });
 
@@ -92,7 +91,6 @@ export default function Cantiere() {
           onToggleMaterialeAcquistato={toggleMaterialeAcquistato}
           onAggiungiFoto={aggiungiFoto}
           onEliminaFoto={eliminaFoto}
-          onApriFoto={apriFoto}
           onAggiungiNotaDiario={aggiungiNotaDiario}
           onEliminaCantiere={gestisciElimina}
           onIniziaLavoro={iniziaLavoro}

@@ -7,6 +7,15 @@ import {
   it,
   vi,
 } from "vitest";
+
+const isNativePlatform = vi.fn(() => false);
+
+vi.mock("@capacitor/core", () => ({
+  Capacitor: {
+    isNativePlatform: () => isNativePlatform(),
+  },
+}));
+
 import InstallPrompt from "./InstallPrompt";
 
 function configuraBrowser({
@@ -37,6 +46,7 @@ function configuraBrowser({
 describe("InstallPrompt", () => {
   beforeEach(() => {
     localStorage.clear();
+    isNativePlatform.mockReturnValue(false);
     configuraBrowser();
   });
 
@@ -46,6 +56,14 @@ describe("InstallPrompt", () => {
     expect(screen.getByRole("heading", { name: /installa preventivai/i }))
       .toBeInTheDocument();
     expect(screen.getByText(/safari -> condividi -> aggiungi a home/i)).toBeInTheDocument();
+  });
+
+  it("non mostra nulla su piattaforma Capacitor/native", () => {
+    isNativePlatform.mockReturnValue(true);
+
+    render(<InstallPrompt />);
+
+    expect(screen.queryByText(/installa preventivai/i)).not.toBeInTheDocument();
   });
 
   it("non mostra nulla se l'app è già in standalone", () => {

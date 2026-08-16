@@ -58,7 +58,7 @@ export default function PreventivoSuccesso({
         </p>
         {pdfGenerato ? (
           <p className="ds-text-secondary text-xs mt-3">
-            PDF scaricato sul dispositivo.
+            PDF generato.
           </p>
         ) : null}
         {avvisoPdf ? (

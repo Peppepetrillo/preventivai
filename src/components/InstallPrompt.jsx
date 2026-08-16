@@ -4,6 +4,7 @@ import {
   useState,
 } from "react";
 
+import { Capacitor } from "@capacitor/core";
 import {
   Download,
   Smartphone,
@@ -40,6 +41,7 @@ function rilevaDispositivo() {
 }
 
 function puoMostrarePrompt() {
+  if (Capacitor.isNativePlatform()) return false;
   if (appInstallata()) return false;
   if (localStorage.getItem(STORAGE_NON_MOSTRARE) === "true") return false;
 
@@ -48,12 +50,15 @@ function puoMostrarePrompt() {
 }
 
 export default function InstallPrompt() {
+  const nativa = Capacitor.isNativePlatform();
   const [visibile, setVisibile] = useState(() => puoMostrarePrompt());
   const [nonMostrare, setNonMostrare] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const dispositivo = useMemo(() => rilevaDispositivo(), []);
 
   useEffect(() => {
+    if (nativa) return undefined;
+
     function gestisciBeforeInstallPrompt(evento) {
       evento.preventDefault();
       setDeferredPrompt(evento);
@@ -72,9 +77,9 @@ export default function InstallPrompt() {
       window.removeEventListener("beforeinstallprompt", gestisciBeforeInstallPrompt);
       window.removeEventListener("appinstalled", gestisciAppInstallata);
     };
-  }, []);
+  }, [nativa]);
 
-  if (!visibile) return null;
+  if (nativa || !visibile) return null;
 
   const istruzioni =
     dispositivo === "ios"

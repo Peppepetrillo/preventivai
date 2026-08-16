@@ -9,11 +9,11 @@ import {
 import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
 import { leggiCantieri, salvaCantieri } from "../../../repositories/cantieriRepository";
 import {
-  apriFotoCantiere,
   eliminaStorageFotoCantiere,
   eliminaStorageFotoCantieri,
   fileFotoValido,
   preparaFotoCantiere,
+  risolviSrcFotoCantiere,
 } from "../services/cantieriFotoService";
 import { registraEsperienzaCompletamento } from "../../../services/experienceService";
 import { sincronizzaListaSpesaDaCantiere } from "../../../domain/listaSpesa";
@@ -610,12 +610,7 @@ export function useCantieri({
   }
 
   async function apriFoto(foto) {
-    try {
-      await apriFotoCantiere(foto);
-    } catch (errore) {
-      console.error("Errore apertura foto:", errore);
-      setMessaggio("Non riesco ad aprire la foto completa.");
-    }
+    return risolviSrcFotoCantiere(foto);
   }
 
   function aggiungiNotaDiario(testo) {

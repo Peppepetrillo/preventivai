@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ROUTES } from "../../../app/routes";
 import { leggiClienti } from "../../../repositories/clientiRepository";
+import { useSalvaEGeneraPdf } from "../hooks/useSalvaEGeneraPdf";
 import { useWizardContext } from "./useWizardContext";
 import { useWizardPreventivoState } from "./useWizardPreventivoState";
 import { WIZARD_STEPS, indiceStep } from "./wizardConfig";
@@ -24,7 +25,7 @@ export default function WizardPreventivo() {
   const [searchParams] = useSearchParams();
   const { attivaWizard, disattivaWizard } = useWizardContext();
   const clienteIdElaborato = useRef(false);
-  const [esitoSuccesso, setEsitoSuccesso] = useState(false);
+  const salvataggio = useSalvaEGeneraPdf();
   const {
     stato,
     selezionaCliente,
@@ -41,6 +42,7 @@ export default function WizardPreventivo() {
     reset,
   } = useWizardPreventivoState();
 
+  const esitoSuccesso = Boolean(salvataggio.preventivoSalvato);
   const indiceCorrente = indiceStep(stato.stepId);
   const puoAndareIndietro = indiceCorrente > 0;
   const stepCorrente = WIZARD_STEPS[indiceCorrente] || WIZARD_STEPS[0];
@@ -64,12 +66,13 @@ export default function WizardPreventivo() {
 
   useEffect(() => {
     if (stato.stepId !== "conferma") {
-      setEsitoSuccesso(false);
+      salvataggio.resetEsito();
     }
-  }, [stato.stepId]);
+  }, [stato.stepId, salvataggio.resetEsito]);
 
   function gestisciIndietro() {
     if (esitoSuccesso) {
+      salvataggio.resetEsito();
       reset();
       navigate(ROUTES.dashboard);
       return;
@@ -82,6 +85,11 @@ export default function WizardPreventivo() {
 
     reset();
     navigate(ROUTES.dashboard);
+  }
+
+  function gestisciNuovoPreventivo() {
+    salvataggio.resetEsito();
+    reset();
   }
 
   function renderStep() {
@@ -112,9 +120,16 @@ export default function WizardPreventivo() {
         return (
           <StepConferma
             stato={stato}
-            onNuovoPreventivo={reset}
+            inElaborazione={salvataggio.inElaborazione}
+            pdfInCorso={salvataggio.pdfInCorso}
+            errore={salvataggio.errore}
+            avvisoPdf={salvataggio.avvisoPdf}
+            preventivoSalvato={salvataggio.preventivoSalvato}
+            pdfGenerato={salvataggio.pdfGenerato}
+            onSalva={() => salvataggio.salvaEGeneraPdf(stato)}
+            onRiprovaPdf={() => salvataggio.riprovaPdf(stato.condizioni)}
+            onNuovoPreventivo={gestisciNuovoPreventivo}
             onModificaComposizione={indietro}
-            onEsitoCambiato={setEsitoSuccesso}
           />
         );
 
@@ -149,7 +164,7 @@ export default function WizardPreventivo() {
 
       <AnimatePresence mode="wait">
         <motion.div
-          key={esitoSuccesso ? "successo" : stato.stepId}
+          key={stato.stepId}
           initial="iniziale"
           animate="animato"
           exit="uscita"
