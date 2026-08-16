@@ -1,5 +1,9 @@
 import { APP_EVENTS, notificaEventoApp } from "../app/events";
-import { APP_DATA_KEYS, STORAGE_KEYS } from "../app/storageKeys";
+import {
+  APP_DATA_KEYS,
+  CLOUD_SYNC_STORAGE_KEYS,
+  STORAGE_KEYS,
+} from "../app/storageKeys";
 import { supabase, supabaseConfigurato } from "../lib/supabaseClient";
 import { leggiStorage, salvaStorage } from "../utils/storage";
 import { comprimiImmagine, generaMiniatura } from "../utils/immagini";
@@ -13,8 +17,8 @@ import {
 } from "./cloudMediaPayload";
 
 const TABELLA_RECORD = "app_records";
-const STORAGE_SYNC = "preventivai-cloud-sync";
-const STORAGE_REVISIONI = "preventivai-cloud-local-revisions";
+const STORAGE_SYNC = CLOUD_SYNC_STORAGE_KEYS.syncMeta;
+const STORAGE_REVISIONI = CLOUD_SYNC_STORAGE_KEYS.revisions;
 const BUCKET_FOTO_CANTIERI = "foto-cantieri";
 
 let sessioneCorrente = null;
@@ -22,31 +26,23 @@ let sincronizzazioneAttiva = false;
 let sincronizzazioneRichiesta = false;
 let canaleRealtime = null;
 
-const STORAGE_CODA = "preventivai-cloud-sync-queue";
-const STORAGE_CODA_ELIMINAZIONE_MEDIA = "preventivai-cloud-media-delete-queue";
+const STORAGE_CODA = CLOUD_SYNC_STORAGE_KEYS.queue;
+const STORAGE_CODA_ELIMINAZIONE_MEDIA = CLOUD_SYNC_STORAGE_KEYS.mediaDelete;
 
 function leggiCodaPersistente() {
-  try {
-    const dato = localStorage.getItem(STORAGE_CODA);
-    return dato ? JSON.parse(dato) : [];
-  } catch (e) {
-    console.error("Errore lettura coda persistente:", e);
-    return [];
-  }
+  const coda = leggiStorage(STORAGE_CODA, []);
+  return Array.isArray(coda) ? coda : [];
 }
 
 function salvaCodaPersistente(codaArray) {
-  try {
-    localStorage.setItem(STORAGE_CODA, JSON.stringify(codaArray));
-  } catch (e) {
-    console.error("Errore salvataggio coda persistente:", e);
-  }
+  void salvaStorage(STORAGE_CODA, Array.isArray(codaArray) ? codaArray : []);
 }
 
 const codaSalvataggi = new Map(leggiCodaPersistente());
 const codaEliminazioneMedia = new Set(leggiCodaEliminazioneMedia());
 
 function aggiungiACoda(chiave, valore) {
+  if (valore === undefined) return;
   codaSalvataggi.set(chiave, valore);
   salvaCodaPersistente(Array.from(codaSalvataggi.entries()));
 }
@@ -63,6 +59,24 @@ function svuotaCoda() {
 
 function chiaveInCodaOffline(chiave) {
   return codaSalvataggi.has(chiave);
+}
+
+/**
+ * Ricarica code in memoria dopo Preferences → localStorage (boot Capacitor).
+ */
+export function ricaricaCodeCloudDaDisco() {
+  codaSalvataggi.clear();
+  for (const entry of leggiCodaPersistente()) {
+    if (!Array.isArray(entry) || entry.length < 2) continue;
+    const [chiave, valore] = entry;
+    if (chiave == null || valore === undefined) continue;
+    codaSalvataggi.set(chiave, valore);
+  }
+
+  codaEliminazioneMedia.clear();
+  for (const path of leggiCodaEliminazioneMedia()) {
+    if (path) codaEliminazioneMedia.add(path);
+  }
 }
 
 function leggiRevisioniLocali() {
@@ -88,24 +102,15 @@ function svuotaRevisioniLocali() {
 }
 
 function leggiCodaEliminazioneMedia() {
-  try {
-    const dato = localStorage.getItem(STORAGE_CODA_ELIMINAZIONE_MEDIA);
-    return dato ? JSON.parse(dato) : [];
-  } catch (errore) {
-    console.error("Errore lettura coda eliminazione media:", errore);
-    return [];
-  }
+  const coda = leggiStorage(STORAGE_CODA_ELIMINAZIONE_MEDIA, []);
+  return Array.isArray(coda) ? coda : [];
 }
 
 function salvaCodaEliminazioneMedia() {
-  try {
-    localStorage.setItem(
-      STORAGE_CODA_ELIMINAZIONE_MEDIA,
-      JSON.stringify(Array.from(codaEliminazioneMedia))
-    );
-  } catch (errore) {
-    console.error("Errore salvataggio coda eliminazione media:", errore);
-  }
+  void salvaStorage(
+    STORAGE_CODA_ELIMINAZIONE_MEDIA,
+    Array.from(codaEliminazioneMedia)
+  );
 }
 
 function accodaEliminazioneMedia(paths) {
@@ -419,6 +424,7 @@ async function inviaCodaSalvataggi() {
 
 export function salvaDatoCloud(chiave, valore) {
   if (!APP_DATA_KEYS[chiave] && !(chiave in APP_DATA_KEYS)) return;
+  if (valore === undefined) return;
 
   salvaRevisioneLocale(chiave, new Date().toISOString());
   aggiungiACoda(chiave, preparaPayloadCloud(chiave, valore));
@@ -432,16 +438,29 @@ export function salvaDatoCloud(chiave, valore) {
 
 export async function salvaDatoCloudImmediato(chiave, valore) {
   if (!APP_DATA_KEYS[chiave] && !(chiave in APP_DATA_KEYS)) return;
+  if (valore === undefined) return;
 
-  rimuoviDaCoda(chiave);
+  const payload = preparaPayloadCloud(chiave, valore);
+  salvaRevisioneLocale(chiave, new Date().toISOString());
 
-  if (!sessioneCorrente?.user) return;
+  // Offline / senza sessione: resta in coda (non perdere il push).
+  if (!sessioneCorrente?.user) {
+    aggiungiACoda(chiave, payload);
+    return;
+  }
 
-  const salvato = await salvaRecordCloud(chiave, preparaPayloadCloud(chiave, valore));
-  salvaRevisioneLocale(
-    chiave,
-    salvato?.updated_at || new Date().toISOString()
-  );
+  try {
+    const salvato = await salvaRecordCloud(chiave, payload);
+    if (!salvato) {
+      aggiungiACoda(chiave, payload);
+      return;
+    }
+    rimuoviDaCoda(chiave);
+    salvaRevisioneLocale(chiave, salvato.updated_at || new Date().toISOString());
+  } catch (errore) {
+    console.error("Errore salvataggio cloud immediato:", errore);
+    aggiungiACoda(chiave, payload);
+  }
 }
 
 export function eliminaFotoCantiereStorage(storagePaths) {

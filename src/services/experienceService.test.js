@@ -89,6 +89,19 @@ describe("experienceService", () => {
     expect(salvate[0].cantiereId).toBe(500);
   });
 
+  it("è idempotente per cantiereId (niente duplicati su doppio completamento)", () => {
+    registraEsperienzaCompletamento(cantiereCompletato);
+    registraEsperienzaCompletamento(cantiereCompletato);
+    registraEsperienzaCompletamento({
+      ...cantiereCompletato,
+      note: "secondo tentativo",
+    });
+
+    expect(recuperaEsperienze().filter((e) => e.cantiereId === 500)).toHaveLength(
+      1
+    );
+  });
+
   it("restituisce null per cantiere nullo", () => {
     expect(creaEsperienzaDaCantiere(null)).toBeNull();
     expect(registraEsperienzaCompletamento(null)).toBeNull();

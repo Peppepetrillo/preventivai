@@ -6,6 +6,7 @@ export function leggiDatoLocale(chiave, fallback) {
 }
 
 export function salvaDatoLocale(chiave, valore) {
+  if (valore === undefined) return Promise.resolve({ ok: false, error: "undefined" });
   const risultato = salvaStorage(chiave, valore);
   salvaDatoCloud(chiave, valore);
   return risultato;

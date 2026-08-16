@@ -145,26 +145,40 @@ export function selezionaAssistantCardsHome(opzioni = {}) {
  *   esperienze?: object[],
  * }} input
  */
-export function calcolaOggi({
-  cantieri = [],
-  preventivi = [],
-  listaSpesa = [],
-  attivita = [],
-  datiAzienda = {},
-  ora = new Date(),
-  esperienze,
-} = {}) {
-  const cantieriAperti = selezionaCantieriAperti(cantieri);
-  const preventiviDaInviare = selezionaPreventiviDaInviare(preventivi);
-  const preventiviInAttesa = selezionaPreventiviInAttesa(preventivi);
-  const materialiDaAcquistare = selezionaDaComprare(listaSpesa);
-  const lavoriInRitardo = selezionaLavoriInRitardo(cantieri, ora);
-  const promemoria = selezionaPromemoriaImminenti(attivita, ora);
-  const giornata = preparaAnteprimaGiornata(cantieri, ora, 5, {
-    attivita,
-    listaSpesa,
+export function calcolaOggi(input = {}) {
+  const sorgente =
+    input && typeof input === "object" && !Array.isArray(input) ? input : {};
+  const {
+    cantieri = [],
+    preventivi = [],
+    listaSpesa = [],
+    attivita = [],
+    datiAzienda = {},
+    ora = new Date(),
+    esperienze,
+  } = sorgente;
+
+  const cantieriSafe = Array.isArray(cantieri) ? cantieri : [];
+  const preventiviSafe = Array.isArray(preventivi) ? preventivi : [];
+  const listaSpesaSafe = Array.isArray(listaSpesa) ? listaSpesa : [];
+  const attivitaSafe = Array.isArray(attivita) ? attivita : [];
+  const datiAziendaSafe =
+    datiAzienda && typeof datiAzienda === "object" ? datiAzienda : {};
+
+  const cantieriAperti = selezionaCantieriAperti(cantieriSafe);
+  const preventiviDaInviare = selezionaPreventiviDaInviare(preventiviSafe);
+  const preventiviInAttesa = selezionaPreventiviInAttesa(preventiviSafe);
+  const materialiDaAcquistare = selezionaDaComprare(listaSpesaSafe);
+  const lavoriInRitardo = selezionaLavoriInRitardo(cantieriSafe, ora);
+  const promemoria = selezionaPromemoriaImminenti(attivitaSafe, ora);
+  const giornata = preparaAnteprimaGiornata(cantieriSafe, ora, 5, {
+    attivita: attivitaSafe,
+    listaSpesa: listaSpesaSafe,
   });
-  const continua = selezionaContinuaDoveHaiLasciato({ cantieri, preventivi });
+  const continua = selezionaContinuaDoveHaiLasciato({
+    cantieri: cantieriSafe,
+    preventivi: preventiviSafe,
+  });
   const assistantCards = selezionaAssistantCardsHome(
     esperienze ? { esperienze } : {}
   );
@@ -217,7 +231,7 @@ export function calcolaOggi({
 
   return {
     saluto: salutoOrario(ora),
-    nome: nomeSalutoDaAzienda(datiAzienda),
+    nome: nomeSalutoDaAzienda(datiAziendaSafe),
     dataLabel: formattaDataGiornata(ora),
     frase: creaFraseGiornata({
       interventiOggi: giornata.totaleLavori,

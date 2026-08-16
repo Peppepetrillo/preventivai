@@ -527,6 +527,9 @@ export function useCantieri({
 
   function completaLavoro() {
     if (!cantiereSelezionato) return { success: false };
+    if (cantiereSelezionato.stato === "Completato") {
+      return { success: true, cantiere: cantiereSelezionato, giaCompletato: true };
+    }
 
     const cantiereCompletatoBase = aggiornaCantiere(cantiereSelezionato, {
       stato: "Completato",

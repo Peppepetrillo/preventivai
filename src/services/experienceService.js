@@ -71,10 +71,17 @@ function calcolaDurataGiorni(dataInizio, dataFine) {
 
 /**
  * Salva una nuova esperienza nel registro locale.
+ * Idempotente per cantiereId: evita duplicati su doppio completamento / sync.
  */
 export function salvaEsperienza(esperienza) {
   if (!esperienza) return;
   const elenco = repository.leggi();
+  if (esperienza.cantiereId != null) {
+    const giaPresente = elenco.some(
+      (voce) => String(voce?.cantiereId) === String(esperienza.cantiereId)
+    );
+    if (giaPresente) return;
+  }
   repository.salva([esperienza, ...elenco]);
 }
 

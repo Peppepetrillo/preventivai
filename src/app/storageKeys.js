@@ -83,6 +83,18 @@ export const APP_DATA_KEYS = {
   [STORAGE_KEYS.esperienze]: STORAGE_FALLBACKS[STORAGE_KEYS.esperienze],
 };
 
+/** Meta sync cloud — devono sopravvivere al wipe WKWebView via Preferences. */
+export const CLOUD_SYNC_STORAGE_KEYS = Object.freeze({
+  queue: "preventivai-cloud-sync-queue",
+  revisions: "preventivai-cloud-local-revisions",
+  mediaDelete: "preventivai-cloud-media-delete-queue",
+  syncMeta: "preventivai-cloud-sync",
+});
+
 export const NATIVE_STORAGE_KEYS = {
   ...STORAGE_FALLBACKS,
+  [CLOUD_SYNC_STORAGE_KEYS.queue]: [],
+  [CLOUD_SYNC_STORAGE_KEYS.revisions]: {},
+  [CLOUD_SYNC_STORAGE_KEYS.mediaDelete]: [],
+  [CLOUD_SYNC_STORAGE_KEYS.syncMeta]: {},
 };

@@ -142,6 +142,35 @@ describe("oggiService", () => {
     expect(snap.frase).toBe("Giornata libera.");
   });
 
+  it("gestisce input null / non-array senza crash", () => {
+    expect(() => calcolaOggi(null)).not.toThrow();
+    expect(() => calcolaOggi(undefined)).not.toThrow();
+    const snap = calcolaOggi({
+      cantieri: null,
+      preventivi: "rotto",
+      listaSpesa: undefined,
+      attivita: null,
+      datiAzienda: null,
+      ora: oggi,
+    });
+    expect(snap.cantieriAperti).toEqual([]);
+    expect(snap.preventiviDaInviare).toEqual([]);
+    expect(snap.materialiDaAcquistare).toEqual([]);
+    expect(snap.vuoto).toBe(true);
+  });
+
+  it("assistant parziale o throw non rompe Home", () => {
+    getDashboardAssistant.mockReturnValue(null);
+    expect(selezionaAssistantCardsHome()).toEqual([]);
+    getDashboardAssistant.mockReturnValue({ cards: null });
+    expect(selezionaAssistantCardsHome()).toEqual([]);
+    getDashboardAssistant.mockImplementation(() => {
+      throw new Error("assistant down");
+    });
+    expect(selezionaAssistantCardsHome()).toEqual([]);
+    expect(calcolaOggi({ ora: oggi }).assistantCards).toEqual([]);
+  });
+
   it("non è vuoto con bozza o materiale", () => {
     expect(
       calcolaOggi({
