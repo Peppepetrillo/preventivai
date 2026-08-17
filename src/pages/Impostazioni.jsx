@@ -10,6 +10,7 @@ import {
   LockKeyhole,
   LogOut,
   Archive,
+  BookOpen,
   ClipboardList,
   Package,
   ShoppingCart,
@@ -193,6 +194,22 @@ export default function Impostazioni() {
             <p className="ds-card-title">Archivio preventivi</p>
             <p className="ds-text-secondary text-sm mt-1">
               Cerca e riapri preventivi inviati o accettati.
+            </p>
+          </div>
+        </Link>
+
+        <Link
+          to={ROUTES.listino}
+          className="pro-panel mb-3 p-5 flex items-center gap-4 min-h-[64px]"
+          data-testid="impostazioni-link-listino"
+        >
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-[16px] bg-yellow-400/15 text-yellow-300 shrink-0">
+            <BookOpen size={22} aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="ds-card-title">Listino prezzi</p>
+            <p className="ds-text-secondary text-sm mt-1">
+              Gestione lavorazioni e prezzi
             </p>
           </div>
         </Link>
