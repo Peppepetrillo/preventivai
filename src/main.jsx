@@ -6,11 +6,17 @@ import CloudAuthProvider from './components/CloudAuthProvider.jsx'
 import { richiediPersistenzaLocale } from './utils/persistenzaLocale.js'
 import { inizializzaStorageNativo } from './utils/storage.js'
 import { ricaricaCodeCloudDaDisco } from './services/cloudSyncService.js'
+import {
+  avviaControlloBackupAutomatico,
+  registraListenerBackupAutomatico,
+} from './domain/backupAutomatico/index.js'
 
 richiediPersistenzaLocale()
 
 await inizializzaStorageNativo()
 ricaricaCodeCloudDaDisco()
+await avviaControlloBackupAutomatico()
+registraListenerBackupAutomatico()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

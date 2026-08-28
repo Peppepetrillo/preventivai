@@ -3,7 +3,8 @@
  * Solo calcolo: nessuna UI, nessun side-effect.
  */
 
-import { ROUTES, routeCantiere, routePreventivo } from "../../app/routes";
+import { ROUTES, routeCantiere, routePreventiviLista } from "../../app/routes";
+import { FILTRI_PREVENTIVO } from "../preventivi/archivioPreventiviUtils";
 import { selezionaDaComprare } from "../../domain/listaSpesa/acquistiSelectors";
 import { preparaAnteprimaGiornata } from "../agenda/giornataSelectors";
 import {
@@ -13,7 +14,8 @@ import {
   salutoOrario,
   selezionaCantieriAperti,
   selezionaContinuaDoveHaiLasciato,
-  selezionaPreventiviInAttesa,
+  selezionaDaFareHome,
+  selezionaSaldiDaIncassare,
 } from "../dashboard/dashboardSelectors";
 import { getDashboardAssistant } from "../../services/assistantService";
 
@@ -167,7 +169,6 @@ export function calcolaOggi(input = {}) {
 
   const cantieriAperti = selezionaCantieriAperti(cantieriSafe);
   const preventiviDaInviare = selezionaPreventiviDaInviare(preventiviSafe);
-  const preventiviInAttesa = selezionaPreventiviInAttesa(preventiviSafe);
   const materialiDaAcquistare = selezionaDaComprare(listaSpesaSafe);
   const lavoriInRitardo = selezionaLavoriInRitardo(cantieriSafe, ora);
   const promemoria = selezionaPromemoriaImminenti(attivitaSafe, ora);
@@ -178,7 +179,20 @@ export function calcolaOggi(input = {}) {
   const continua = selezionaContinuaDoveHaiLasciato({
     cantieri: cantieriSafe,
     preventivi: preventiviSafe,
+    ora,
   });
+  const saldiDaIncassare = selezionaSaldiDaIncassare(cantieriSafe);
+  const daFare = selezionaDaFareHome({
+    cantieri: cantieriSafe,
+    preventivi: preventiviSafe,
+    listaSpesa: listaSpesaSafe,
+    lavoriInRitardo,
+    urgenze: giornata.urgenze || [],
+    promemoria,
+    massimo: 3,
+  });
+  const urgenti =
+    lavoriInRitardo.length + (Array.isArray(giornata.urgenze) ? giornata.urgenze.length : 0);
   const assistantCards = selezionaAssistantCardsHome(
     esperienze ? { esperienze } : {}
   );
@@ -194,10 +208,7 @@ export function calcolaOggi(input = {}) {
       id: "preventivi-inviare",
       etichetta: "Da inviare",
       conteggio: preventiviDaInviare.length,
-      link:
-        preventiviDaInviare[0]?.id
-          ? routePreventivo(preventiviDaInviare[0].id)
-          : ROUTES.preventivi,
+      link: routePreventiviLista({ filtro: FILTRI_PREVENTIVO.BOZZE }),
     },
     {
       id: "materiali",
@@ -234,9 +245,8 @@ export function calcolaOggi(input = {}) {
     nome: nomeSalutoDaAzienda(datiAziendaSafe),
     dataLabel: formattaDataGiornata(ora),
     frase: creaFraseGiornata({
-      interventiOggi: giornata.totaleLavori,
-      preventiviInAttesa: preventiviInAttesa.length,
-      haSaldoDaIncassare: false,
+      lavoriOggi: giornata.totaleLavori,
+      urgenti,
     }),
     riepilogo,
     cantieriAperti,
@@ -247,6 +257,9 @@ export function calcolaOggi(input = {}) {
     assistantCards,
     giornata,
     continua,
+    daFare,
+    saldiDaIncassare,
+    haSaldoDaIncassare: saldiDaIncassare.length > 0,
     vuoto: !haOperativita,
   };
 }

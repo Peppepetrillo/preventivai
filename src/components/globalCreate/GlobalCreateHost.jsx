@@ -4,12 +4,13 @@ import {
   ClipboardList,
   FileText,
   HardHat,
-  UserPlus,
+  Wallet,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { APP_EVENTS } from "../../app/events";
-import { ROUTES } from "../../app/routes";
+import { ROUTES, routeCantierePagamenti, statoNavigazioneCantiere, CANTIERE_SEZIONI } from "../../app/routes";
+import { filtraRecordAttivi } from "../../domain/cestino";
 import { useAttivita } from "../../domain/attivita";
 import AttivitaFormSheet from "../../features/agenda/components/AttivitaFormSheet";
 import NuovoLavoroSheet from "../../features/agenda/components/NuovoLavoroSheet";
@@ -17,14 +18,17 @@ import { creaLavoroPianificato } from "../../features/lavori/creaLavoroPianifica
 import { creaLavoroDaCantiere } from "../../features/lavori/lavoriDomain";
 import { formattaDataLocale } from "../../features/lavori/schedulingDomain";
 import { useDatiLocaliSincronizzati } from "../../hooks/useDatiLocaliSincronizzati";
-import { leggiCantieri, salvaCantieri } from "../../repositories/cantieriRepository";
+import {
+  leggiCantieriTutti,
+  salvaCantieri,
+} from "../../repositories/cantieriRepository";
 import { notificationService } from "../../services/notificationService";
 import GlobalCreateSheet from "./GlobalCreateSheet";
 import { useGlobalCreate } from "./GlobalCreateContext";
 
 /**
- * Host globale: menu Nuovo + sheet annidati (lavoro, attività).
- * Navigazione route per preventivo, cliente, distinta.
+ * Host globale: menu Nuovo + sheet annidati (cantiere, promemoria).
+ * Navigazione route per preventivo, pagamento, lista materiali.
  */
 export default function GlobalCreateHost() {
   const navigate = useNavigate();
@@ -32,7 +36,7 @@ export default function GlobalCreateHost() {
   const [lavoroAperto, setLavoroAperto] = useState(false);
   const [attivitaAperta, setAttivitaAperta] = useState(false);
 
-  const [cantieri, setCantieri] = useDatiLocaliSincronizzati(leggiCantieri, [
+  const [cantieri, setCantieri] = useDatiLocaliSincronizzati(leggiCantieriTutti, [
     APP_EVENTS.cloudSyncAggiornata,
   ]);
   const { crea: creaAttivita } = useAttivita();
@@ -68,12 +72,37 @@ export default function GlobalCreateHost() {
     [creaAttivita, dataDefault]
   );
 
+  const apriPagamenti = useCallback(() => {
+    closeMenu();
+    const attivi = filtraRecordAttivi(cantieri).filter(
+      (c) => c.stato !== "Completato"
+    );
+    if (attivi.length === 1) {
+      navigate(routeCantierePagamenti(attivi[0].id), {
+        state: statoNavigazioneCantiere(CANTIERE_SEZIONI.PAGAMENTI),
+      });
+      return;
+    }
+    navigate(ROUTES.cantieri);
+  }, [cantieri, closeMenu, navigate]);
+
   const actions = useMemo(
     () => [
       {
+        id: "preventivo",
+        label: "Preventivo",
+        subtitle: "Cliente, listino e riepilogo",
+        icon: FileText,
+        testId: "global-create-preventivo",
+        onPress: () => {
+          closeMenu();
+          navigate(ROUTES.preventiviNuovo);
+        },
+      },
+      {
         id: "lavoro",
-        label: "Lavoro",
-        subtitle: "Cantiere o intervento",
+        label: "Cantiere",
+        subtitle: "Nuovo cantiere o intervento",
         icon: HardHat,
         testId: "global-create-lavoro",
         onPress: () => {
@@ -82,29 +111,16 @@ export default function GlobalCreateHost() {
         },
       },
       {
-        id: "preventivo",
-        label: "Nuovo preventivo",
-        subtitle: "Cliente, listino e AI",
-        icon: FileText,
-        testId: "global-create-preventivo",
-        onPress: () => {
-          closeMenu();
-          navigate(ROUTES.preventivi);
-        },
-      },
-      {
-        id: "cliente",
-        label: "Cliente",
-        icon: UserPlus,
-        testId: "global-create-cliente",
-        onPress: () => {
-          closeMenu();
-          navigate(`${ROUTES.clienti}?nuovo=1`);
-        },
+        id: "pagamento",
+        label: "Pagamento cantiere",
+        subtitle: "Registra un pagamento ricevuto",
+        icon: Wallet,
+        testId: "global-create-pagamento",
+        onPress: apriPagamenti,
       },
       {
         id: "attivita",
-        label: "Attività",
+        label: "Promemoria",
         subtitle: "Promemoria o telefonata",
         icon: CheckSquare,
         testId: "global-create-attivita",
@@ -115,7 +131,7 @@ export default function GlobalCreateHost() {
       },
       {
         id: "distinta",
-        label: "Distinta materiali",
+        label: "Lista materiali",
         icon: ClipboardList,
         testId: "global-create-distinta",
         onPress: () => {
@@ -124,7 +140,7 @@ export default function GlobalCreateHost() {
         },
       },
     ],
-    [closeMenu, navigate]
+    [apriPagamenti, closeMenu, navigate]
   );
 
   return (

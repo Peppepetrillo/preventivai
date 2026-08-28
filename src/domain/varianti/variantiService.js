@@ -67,6 +67,12 @@ export function creaVariantiService(deps = {}) {
    */
   function risolviPreventivoOriginale(cantiere) {
     if (!cantiere || typeof cantiere !== "object") return 0;
+    // UX-6.5: lavoro diretto — totale deciso dall'elettricista
+    if (String(cantiere.origine || "") === "diretto") {
+      const diretto = Number(cantiere.totaleLavoro);
+      if (Number.isFinite(diretto) && diretto >= 0) return diretto;
+      return 0;
+    }
     const daImporto = Number(cantiere.preventivoImporto);
     if (Number.isFinite(daImporto)) return daImporto;
     const salvato = Number(cantiere.preventivoOriginaleTotale);

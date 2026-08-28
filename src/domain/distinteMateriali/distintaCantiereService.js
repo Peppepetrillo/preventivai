@@ -4,6 +4,7 @@
 
 import {
   leggiCantieri,
+  leggiCantieriTutti,
   salvaCantieri,
 } from "../../repositories/cantieriRepository";
 import { sincronizzaListaSpesaDaCantiere } from "../listaSpesa";
@@ -14,17 +15,19 @@ import {
   trovaDistintaPerId,
 } from "./distintaMaterialiService";
 import { proiettaVociDistintaSuMaterialiCantiere } from "./distintaProiezione";
+import { isRecordCestinato } from "../cestino";
 
 function trovaCantiere(cantiereId) {
   const id = String(cantiereId || "").trim();
   if (!id) return null;
-  return (
-    leggiCantieri().find((c) => String(c.id) === id) || null
-  );
+  const cantiere =
+    leggiCantieriTutti().find((c) => String(c.id) === id) || null;
+  if (!cantiere || isRecordCestinato(cantiere)) return null;
+  return cantiere;
 }
 
 function persistiCantiere(cantiereAggiornato) {
-  const elenco = leggiCantieri();
+  const elenco = leggiCantieriTutti();
   const prossimo = elenco.map((c) =>
     String(c.id) === String(cantiereAggiornato.id) ? cantiereAggiornato : c
   );

@@ -5,11 +5,14 @@
 
 import { STORAGE_KEYS } from "../../app/storageKeys";
 import { creaCantiereDaPreventivo } from "../../features/cantieri/cantieriDomain";
-import { leggiCantieri, salvaCantieri } from "../../repositories/cantieriRepository";
-import { leggiClienti } from "../../repositories/clientiRepository";
+import {
+  leggiCantieriTutti,
+  salvaCantieri,
+} from "../../repositories/cantieriRepository";
+import { leggiClientiTutti } from "../../repositories/clientiRepository";
 import {
   aggiornaPreventivo,
-  leggiPreventivi,
+  leggiPreventiviTutti,
   salvaPreventivi,
 } from "../../repositories/preventiviRepository";
 import { leggiStorage, salvaStorage } from "../../utils/storage";
@@ -29,12 +32,12 @@ function salvaTimeline(eventi = []) {
 
 /** Istanza di produzione con DI sui repository. */
 export const preventivoWorkflow = creaPreventivoWorkflowService({
-  leggiPreventivi,
+  leggiPreventivi: leggiPreventiviTutti,
   aggiornaPreventivo,
   salvaPreventivi,
-  leggiCantieri,
+  leggiCantieri: leggiCantieriTutti,
   salvaCantieri,
-  leggiClienti,
+  leggiClienti: leggiClientiTutti,
   creaCantiereDaPreventivo,
   leggiTimeline,
   salvaTimeline,

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Trash2, Lightbulb, MapPin, Navigation, Phone } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Lightbulb, MapPin, Navigation, Phone } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { ROUTES, routePreventivo } from "../../../app/routes";
+import ConfirmDialog from "../../../components/ConfirmDialog";
+import { ROUTES, routePreventivo, sezioneDaLocation } from "../../../app/routes";
 import { getCantiereAssistant } from "../../../services/assistantService";
-import { formatEuro, normalizzaNumero } from "../../../utils/preventivi";
 import { ottieniFirma } from "../../../domain/firma";
 import { aggiungiInsight } from "../../../domain/insights";
-import { calcolaTotaleCantiere, ottieniVarianti } from "../../../domain/varianti";
+import { ottieniVarianti } from "../../../domain/varianti";
 import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
 import { leggiPreventivi } from "../../../repositories/preventiviRepository";
 import { PreventivAISuggestions } from "../../intelligence";
@@ -17,15 +17,31 @@ import InsightRapidoSheet from "../../agenda/components/InsightRapidoSheet";
 import {
   STATI_CANTIERE,
   calcolaAvanzamentoChecklist,
+  etichettaTipoIntervento,
+  isCantiereDiretto,
+  testoConfermaEliminaCantiere,
   valutaPrerequisitiChiusuraCantiere,
 } from "../cantieriDomain";
+import {
+  apriWhatsAppConTesto,
+  generaTestoRiepilogoLavoroDiretto,
+} from "../services/lavoroDirettoTestoService";
 import { risolviSrcFotoCantiere } from "../services/cantieriFotoService";
 import CantiereAssistantPanel from "./CantiereAssistantPanel";
 import CantiereFotoViewer from "./CantiereFotoViewer";
 import CantiereOperativo from "./CantiereOperativo";
 import CantiereSegmentBar from "./CantiereSegmentBar";
 import CantiereVarianti from "./CantiereVarianti";
+import DescrizioneInterventoSection from "./DescrizioneInterventoSection";
+import PagamentiSection from "./PagamentiSection";
+import GiornateSection from "./GiornateSection";
 import { CANTIERE_TAB, tabDaSezioneId } from "./cantiereTabs";
+import { riepilogoEconomicoCantiere } from "../services/pagamentiCantiereService";
+import {
+  chiudiPostConversioneCantiere,
+  leggiPostConversioneCantiere,
+} from "../postConversioneUi";
+import { formatEuro } from "../../../utils/preventivi";
 
 function scorriA(elemento) {
   if (!elemento) return;
@@ -79,17 +95,31 @@ export default function CantiereOverview({
   onApprovaVariante,
   onEseguiVariante,
   onAnnullaVariante,
+  onAggiungiGiornata,
+  onAggiornaGiornata,
+  onEliminaGiornata,
+  onAggiungiGiornataRegistro,
+  onAggiornaGiornataRegistro,
+  onEliminaGiornataRegistro,
+  onAggiungiPagamento,
+  onAggiornaPagamento,
+  onEliminaPagamento,
   variantiTick = 0,
   onAggiungiVariante,
   onEliminaVariante,
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const overviewRef = useRef(null);
   const [tabAttivo, setTabAttivo] = useState(CANTIERE_TAB.OPERATIVO);
   const [dialogoChiusura, setDialogoChiusura] = useState(null);
+  const [chiusuraInCorso, setChiusuraInCorso] = useState(false);
   const [confermaElimina, setConfermaElimina] = useState(false);
   const [insightAperto, setInsightAperto] = useState(false);
   const [fotoViewer, setFotoViewer] = useState(null);
+  const [bannerPostConversione, setBannerPostConversione] = useState(() =>
+    leggiPostConversioneCantiere(cantiere?.id)
+  );
   const [preventivi] = useDatiLocaliSincronizzati(leggiPreventivi);
   const sezioneModifica = useRef(null);
   const sezioneChecklist = useRef(null);
@@ -97,7 +127,6 @@ export default function CantiereOverview({
   const sezioneFoto = useRef(null);
   const sezioneNote = useRef(null);
   const sezioneVarianti = useRef(null);
-  const sezionePagamenti = useRef(null);
   const sezioneDocumenti = useRef(null);
   const inputFoto = useRef(null);
 
@@ -153,6 +182,12 @@ export default function CantiereOverview({
 
   const applicaHashNavigazione = useCallback(
     (hash) => {
+      const id = String(hash || "").replace(/^#/, "");
+      if (id === "sezione-modifica") {
+        scorriDopoRender(() => scorriA(sezioneModifica.current));
+        return;
+      }
+
       const tab = tabDaSezioneId(hash);
       if (!tab) return;
       attivaTabEScorri(tab, () => {
@@ -164,9 +199,16 @@ export default function CantiereOverview({
   );
 
   useEffect(() => {
+    const sezione = sezioneDaLocation(location);
+    if (sezione) {
+      applicaHashNavigazione(`#${sezione}`);
+      return;
+    }
     if (!window.location.hash) return;
-    applicaHashNavigazione(window.location.hash);
-  }, [applicaHashNavigazione]);
+    if (window.location.hash.includes("sezione-")) {
+      applicaHashNavigazione(window.location.hash);
+    }
+  }, [location.pathname, location.search, location.state, applicaHashNavigazione]);
 
   useEffect(() => {
     function gestisciHashChange() {
@@ -187,6 +229,14 @@ export default function CantiereOverview({
       if (!link || !root.contains(link)) return;
 
       const hash = link.getAttribute("href");
+      const id = String(hash || "").replace(/^#/, "");
+      if (id === "sezione-modifica") {
+        event.preventDefault();
+        event.stopPropagation();
+        scorriA(sezioneModifica.current);
+        return;
+      }
+
       const tab = tabDaSezioneId(hash);
       if (!tab) return;
 
@@ -207,8 +257,12 @@ export default function CantiereOverview({
     typeof avanzamentoProp === "number"
       ? avanzamentoProp
       : calcolaAvanzamentoChecklist(cantiere.checklist || []);
-  const economico = calcolaTotaleCantiere(cantiere);
+  const diretto = isCantiereDiretto(cantiere);
   const telefono = telefonoCantiere(cantiere);
+  const riepilogoEconomico = useMemo(
+    () => riepilogoEconomicoCantiere(cantiere),
+    [cantiere]
+  );
   const variantiCantiere = useMemo(
     () => {
       void variantiTick;
@@ -239,6 +293,8 @@ export default function CantiereOverview({
   }
 
   function confermaChiusuraComunque() {
+    if (chiusuraInCorso) return;
+    setChiusuraInCorso(true);
     setDialogoChiusura(null);
     onCompletaLavoro?.();
   }
@@ -398,6 +454,65 @@ export default function CantiereOverview({
           <p className="text-slate-500 text-sm">Indirizzo non indicato</p>
         )}
 
+        <div
+          className="grid grid-cols-3 gap-2 pt-1"
+          data-testid="cantiere-header-economico"
+        >
+          <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-3">
+            <p className="ds-text-secondary text-xs">Totale</p>
+            <p
+              className="text-base font-semibold mt-0.5 tabular-nums"
+              data-testid="header-economico-totale"
+            >
+              {formatEuro(riepilogoEconomico.totale)}
+            </p>
+          </div>
+          <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-3">
+            <p className="ds-text-secondary text-xs">Già incassato</p>
+            <p
+              className="text-base font-semibold mt-0.5 tabular-nums"
+              data-testid="header-economico-incassato"
+            >
+              {formatEuro(riepilogoEconomico.incassato)}
+            </p>
+          </div>
+          <div className="rounded-[14px] border border-yellow-400/20 bg-yellow-400/10 p-3">
+            <p className="text-xs text-yellow-100/80">Resta da incassare</p>
+            <p
+              className="text-base font-semibold mt-0.5 tabular-nums text-yellow-100"
+              data-testid="header-economico-rimanenza"
+            >
+              {formatEuro(riepilogoEconomico.rimanenza)}
+            </p>
+          </div>
+        </div>
+
+        <div
+          id="sezione-modifica"
+          ref={sezioneModifica}
+          className="flex flex-wrap items-center gap-3 pt-1 scroll-mt-24"
+          data-testid="cantiere-header-stato"
+        >
+          <select
+            value={cantiere.stato}
+            onChange={(event) => onAggiornaCampo?.({ stato: event.target.value })}
+            className="input-pro min-h-[44px] flex-1 min-w-[140px]"
+            aria-label="Stato cantiere"
+          >
+            {STATI_CANTIERE.map((stato) => (
+              <option key={stato}>{stato}</option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => setConfermaElimina(true)}
+            className="min-h-[44px] px-2 text-sm font-medium text-slate-500 hover:text-red-300"
+            data-testid="cantiere-elimina"
+          >
+            Elimina cantiere
+          </button>
+        </div>
+
         <div className="grid grid-cols-2 gap-2 pt-1">
           {telefono ? (
             <a
@@ -449,28 +564,66 @@ export default function CantiereOverview({
         </div>
       </header>
 
+      {bannerPostConversione ? (
+        <div
+          className="pro-panel p-4 mb-4 border-yellow-300/35 bg-yellow-400/8 space-y-3"
+          data-testid="banner-post-conversione-pagamenti"
+          role="status"
+        >
+          <p className="ds-card-title">Pagamenti nel cantiere</p>
+          <p className="ds-text-secondary text-sm">
+            Da qui in poi registra i pagamenti nel cantiere.
+          </p>
+          {Number(bannerPostConversione.incassatoPreventivo) > 0 ? (
+            <p
+              className="ds-text-secondary text-sm"
+              data-testid="banner-post-conversione-incassato-pre"
+            >
+              Nel preventivo risultano già registrati{" "}
+              {formatEuro(bannerPostConversione.incassatoPreventivo)}.
+              Questo importo non viene trasferito automaticamente: i nuovi
+              pagamenti si registrano qui.
+            </p>
+          ) : null}
+          <button
+            type="button"
+            className="w-full btn-primary min-h-[48px]"
+            data-testid="banner-post-conversione-apri-pagamenti"
+            onClick={() => {
+              setTabAttivo(CANTIERE_TAB.ECONOMICO);
+              chiudiPostConversioneCantiere(cantiere.id);
+              setBannerPostConversione(null);
+              scorriDopoRender(() => {
+                scorriA(document.querySelector("#sezione-pagamenti"));
+              });
+            }}
+          >
+            Apri Pagamenti
+          </button>
+        </div>
+      ) : null}
+
       <CantiereSegmentBar tabAttivo={tabAttivo} onCambiaTab={setTabAttivo} />
 
       <div
         role="tabpanel"
-        aria-label="Operativo"
+        aria-label="Lavoro"
         hidden={tabAttivo !== CANTIERE_TAB.OPERATIVO}
         data-testid="cantiere-panel-operativo"
       >
-        <PreventivAISuggestions
-          scope="cantiere"
-          cantiere={cantiere}
-          cantieri={[cantiere]}
-          preventivi={preventivi}
-          varianti={variantiCantiere}
-        />
-
         <details className="mb-5 group">
           <summary className="list-none cursor-pointer min-h-[44px] flex items-center text-sm font-semibold text-slate-400 hover:text-slate-200">
-            <span className="group-open:hidden">Mostra suggerimenti Assistente</span>
-            <span className="hidden group-open:inline">Nascondi Assistente</span>
+            <span className="group-open:hidden">Mostra suggerimenti</span>
+            <span className="hidden group-open:inline">Nascondi suggerimenti</span>
           </summary>
-          <div className="mt-3">
+          <div className="mt-3 space-y-3">
+            <PreventivAISuggestions
+              scope="cantiere"
+              cantiere={cantiere}
+              cantieri={[cantiere]}
+              preventivi={preventivi}
+              varianti={variantiCantiere}
+            />
             <CantiereAssistantPanel
               cantiere={cantiere}
               loadAssistant={loadAssistant}
@@ -479,10 +632,26 @@ export default function CantiereOverview({
           </div>
         </details>
 
-        <p className="ds-text-secondary mb-4">
-          Checklist, materiali, foto e note operative — cosa serve adesso sul
-          cantiere.
-        </p>
+        {diretto ? (
+          <div className="mb-5">
+            {cantiere.tipoIntervento ? (
+              <p className="ds-badge ds-badge-in-corso mb-3 inline-flex">
+                {etichettaTipoIntervento(cantiere.tipoIntervento)}
+              </p>
+            ) : null}
+            <DescrizioneInterventoSection
+              descrizione={
+                cantiere.descrizioneIntervento || cantiere.descrizione || ""
+              }
+              onSalva={(valore) =>
+                onAggiornaCampo?.({
+                  descrizioneIntervento: valore,
+                  descrizione: valore,
+                })
+              }
+            />
+          </div>
+        ) : null}
 
         <CantiereOperativo
           cantiere={cantiere}
@@ -514,90 +683,64 @@ export default function CantiereOverview({
 
       <div
         role="tabpanel"
-        aria-label="Economico"
+        aria-label="Giornate"
+        hidden={tabAttivo !== CANTIERE_TAB.GIORNATE}
+        data-testid="cantiere-panel-giornate"
+      >
+        <GiornateSection
+          cantiere={cantiere}
+          onAggiungiGiornata={onAggiungiGiornata}
+          onAggiornaGiornata={onAggiornaGiornata}
+          onEliminaGiornata={onEliminaGiornata}
+          onAggiungiGiornataRegistro={onAggiungiGiornataRegistro}
+          onAggiornaGiornataRegistro={onAggiornaGiornataRegistro}
+          onEliminaGiornataRegistro={onEliminaGiornataRegistro}
+        />
+      </div>
+
+      <div
+        role="tabpanel"
+        aria-label="Pagamenti"
         hidden={tabAttivo !== CANTIERE_TAB.ECONOMICO}
         data-testid="cantiere-panel-economico"
       >
-        <div className="mb-5">
-          <CantiereVarianti
-            cantiere={cantiere}
-            sezioneRef={sezioneVarianti}
-            refreshKey={variantiTick}
-            onCreaVariante={onCreaVariante || onAggiungiVariante}
-            onSincronizzaVariantePreventivo={onSincronizzaVariantePreventivo}
-            onApprovaVariante={onApprovaVariante}
-            onEseguiVariante={onEseguiVariante}
-            onAnnullaVariante={onAnnullaVariante || onEliminaVariante}
-          />
-        </div>
-
-        <section
-          id="sezione-pagamenti"
-          ref={sezionePagamenti}
-          className="pro-panel p-5 mb-5 scroll-mt-24"
-          aria-labelledby="pagamenti-title"
-        >
-          <h2 id="pagamenti-title" className="text-xl font-black mb-4">
-            Pagamenti
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
-              <p className="text-sm text-slate-400">Acconto</p>
-              <p className="text-2xl font-black mt-1 tabular-nums">
-                {formatEuro(
-                  normalizzaNumero(
-                    cantiere.incassato ??
-                      cantiere.extra?.incassato ??
-                      cantiere.acconto ??
-                      cantiere.extra?.acconto ??
-                      0
-                  )
-                )}
-              </p>
-            </div>
-            <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
-              <p className="text-sm text-slate-400">Saldo</p>
-              <p className="text-2xl font-black mt-1 tabular-nums">
-                {formatEuro(economico.totaleAggiornato)}
-              </p>
-              {economico.deltaVarianti !== 0 ? (
-                <p className="text-xs text-slate-500 mt-1">
-                  Varianti {economico.deltaVarianti >= 0 ? "+" : ""}
-                  {formatEuro(economico.deltaVarianti)}
-                </p>
-              ) : null}
-            </div>
-            <div className="rounded-[14px] border border-yellow-400/20 bg-yellow-400/10 p-4">
-              <p className="text-sm text-yellow-100/80">Da incassare</p>
-              <p className="text-2xl font-black mt-1 tabular-nums text-yellow-100">
-                {formatEuro(
-                  Math.max(
-                    normalizzaNumero(economico.totaleAggiornato) -
-                      normalizzaNumero(
-                        cantiere.incassato ??
-                          cantiere.extra?.incassato ??
-                          cantiere.acconto ??
-                          cantiere.extra?.acconto ??
-                          0
-                      ),
-                    0
-                  )
-                )}
-              </p>
-            </div>
+        {diretto ? null : (
+          <div className="mb-5">
+            <CantiereVarianti
+              cantiere={cantiere}
+              sezioneRef={sezioneVarianti}
+              refreshKey={variantiTick}
+              onCreaVariante={onCreaVariante || onAggiungiVariante}
+              onSincronizzaVariantePreventivo={onSincronizzaVariantePreventivo}
+              onApprovaVariante={onApprovaVariante}
+              onEseguiVariante={onEseguiVariante}
+              onAnnullaVariante={onAnnullaVariante || onEliminaVariante}
+            />
           </div>
+        )}
+
+        <section className="pro-panel p-5 mb-5">
+          <PagamentiSection
+            cantiere={cantiere}
+            diretto={diretto}
+            onAggiornaTotaleLavoro={(totaleLavoro) =>
+              onAggiornaCampo?.({ totaleLavoro })
+            }
+            onAggiungi={onAggiungiPagamento}
+            onAggiorna={onAggiornaPagamento}
+            onElimina={onEliminaPagamento}
+          />
         </section>
       </div>
 
       <div
         role="tabpanel"
-        aria-label="Documenti"
+        aria-label="Diario"
         hidden={tabAttivo !== CANTIERE_TAB.DOCUMENTI}
         data-testid="cantiere-panel-documenti"
       >
         <p className="ds-text-secondary mb-4">
-          Diario, report e preventivo — cronologia e documentazione del lavoro
-          svolto.
+          Cosa è successo in questo cantiere: note, eventi e documenti.
         </p>
 
         <CantiereDiarioSection
@@ -621,7 +764,7 @@ export default function CantiereOverview({
           aria-labelledby="documenti-title"
         >
           <h2 id="documenti-title" className="text-xl font-black mb-4">
-            Documenti
+            Report e preventivo
           </h2>
           <div className="space-y-2">
             {cantiere.preventivoId ? (
@@ -635,13 +778,31 @@ export default function CantiereOverview({
               </Link>
             ) : (
               <p className="text-sm text-slate-400 py-2">
-                Nessun preventivo collegato.
+                {diretto
+                  ? "Lavoro diretto — nessun preventivo collegato."
+                  : "Nessun preventivo collegato."}
               </p>
             )}
-            <p className="text-xs text-slate-500 px-1">
-              PDF e firma cliente si gestiscono dal dettaglio preventivo.
-            </p>
+            {!diretto ? (
+              <p className="text-xs text-slate-500 px-1">
+                PDF e firma cliente si gestiscono dal dettaglio preventivo.
+              </p>
+            ) : null}
           </div>
+
+          {diretto ? (
+            <button
+              type="button"
+              onClick={() => {
+                const testo = generaTestoRiepilogoLavoroDiretto(cantiere);
+                apriWhatsAppConTesto(testo, telefono);
+              }}
+              className="mt-3 w-full btn-primary min-h-[52px] font-black"
+              data-testid="invia-riepilogo-whatsapp"
+            >
+              Invia al cliente (WhatsApp)
+            </button>
+          ) : null}
 
           <div className="mt-4">
             <CantiereReportPanel cantiere={cantiere} />
@@ -672,62 +833,19 @@ export default function CantiereOverview({
         </section>
       </div>
 
-      <div
-        role="tabpanel"
-        aria-label="Impostazioni"
-        hidden={tabAttivo !== CANTIERE_TAB.IMPOSTAZIONI}
-        data-testid="cantiere-panel-impostazioni"
-      >
-        <section
-          id="sezione-modifica"
-          ref={sezioneModifica}
-          className="pro-panel p-4 mb-5 scroll-mt-24 opacity-90"
-        >
-          <p className="section-label mb-3">Impostazioni</p>
-          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-            <select
-              value={cantiere.stato}
-              onChange={(event) => onAggiornaCampo({ stato: event.target.value })}
-              className="input-pro min-h-[48px]"
-              aria-label="Stato cantiere"
-            >
-              {STATI_CANTIERE.map((stato) => (
-                <option key={stato}>{stato}</option>
-              ))}
-            </select>
-            {!confermaElimina ? (
-              <button
-                type="button"
-                onClick={() => setConfermaElimina(true)}
-                className="rounded-[14px] border border-red-400/25 bg-red-500/10 px-5 min-h-[48px] font-bold text-red-100 flex items-center justify-center gap-2"
-              >
-                <Trash2 size={18} />
-                Elimina
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setConfermaElimina(false);
-                    onEliminaCantiere?.();
-                  }}
-                  className="flex-1 rounded-[14px] border border-red-400/40 bg-red-500/20 px-3 min-h-[48px] font-bold text-red-100"
-                >
-                  Conferma
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfermaElimina(false)}
-                  className="btn-secondary px-3 min-h-[48px] font-bold"
-                >
-                  No
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
+      <ConfirmDialog
+        open={confermaElimina}
+        title="Vuoi spostare questo elemento nel Cestino?"
+        description={testoConfermaEliminaCantiere(cantiere.stato)}
+        confirmLabel="Sposta nel Cestino"
+        cancelLabel="Annulla"
+        onConfirm={() => {
+          setConfermaElimina(false);
+          onEliminaCantiere?.();
+        }}
+        onCancel={() => setConfermaElimina(false)}
+        testId="conferma-elimina-cantiere"
+      />
 
       {(mostraAzioniDaIniziare || mostraAzioniInCorso) && (
         <div
@@ -751,7 +869,7 @@ export default function CantiereOverview({
                 disabled={typeof onCompletaLavoro !== "function"}
                 className="w-full btn-primary min-h-[56px] text-base font-black disabled:opacity-45"
               >
-                Concludi Cantiere
+                Lavoro finito
               </button>
             )}
           </div>
@@ -760,17 +878,18 @@ export default function CantiereOverview({
 
       {dialogoChiusura ? (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 px-4 safe-bottom"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4 safe-bottom safe-top"
           role="dialog"
           aria-modal="true"
           aria-labelledby="chiusura-cantiere-title"
+          data-testid="dialogo-chiusura-cantiere"
         >
-          <div className="w-full max-w-md pro-panel-strong p-5 space-y-4 mb-4 sm:mb-0 ux-sheet">
+          <div className="w-full max-w-md pro-panel-strong p-5 space-y-4 ux-sheet">
             <h2
               id="chiusura-cantiere-title"
               className="text-xl font-black"
             >
-              Prima di chiudere
+              Prima di chiudere il cantiere
             </h2>
             <ul className="space-y-2">
               {dialogoChiusura.mancanze.map((voce) => (
@@ -784,15 +903,17 @@ export default function CantiereOverview({
               ))}
             </ul>
             <p className="text-sm text-slate-400">
-              Puoi comunque chiudere il cantiere.
+              Puoi comunque segnare il lavoro come finito.
             </p>
             <div className="grid gap-2">
               <button
                 type="button"
                 onClick={confermaChiusuraComunque}
-                className="btn-primary min-h-[52px] font-black"
+                disabled={chiusuraInCorso}
+                className="btn-primary min-h-[52px] font-black disabled:opacity-60"
+                data-testid="chiusura-cantiere-conferma"
               >
-                Concludi comunque
+                {chiusuraInCorso ? "Chiusura…" : "Lavoro finito comunque"}
               </button>
               <button
                 type="button"

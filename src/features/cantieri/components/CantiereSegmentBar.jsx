@@ -1,14 +1,14 @@
 export const CANTIERE_SEGMENTI = [
-  { id: "operativo", etichetta: "Operativo" },
-  { id: "economico", etichetta: "Economico" },
-  { id: "documenti", etichetta: "Documenti" },
-  { id: "impostazioni", etichetta: "Impostazioni" },
+  { id: "operativo", etichetta: "Lavoro" },
+  { id: "giornate", etichetta: "Giornate" },
+  { id: "economico", etichetta: "Pagamenti" },
+  { id: "documenti", etichetta: "Diario" },
 ];
 
 export default function CantiereSegmentBar({ tabAttivo, onCambiaTab }) {
   return (
     <div
-      className="flex gap-2 mb-4 overflow-x-auto pb-0.5"
+      className="grid grid-cols-4 gap-2 mb-4"
       role="tablist"
       aria-label="Sezioni cantiere"
     >
@@ -21,7 +21,7 @@ export default function CantiereSegmentBar({ tabAttivo, onCambiaTab }) {
             role="tab"
             aria-selected={attivo}
             onClick={() => onCambiaTab(voce.id)}
-            className={`ds-chip min-h-[44px] ${attivo ? "ds-chip-active" : ""}`}
+            className={`ds-chip min-h-[44px] w-full text-center ${attivo ? "ds-chip-active" : ""}`}
             data-testid={`cantiere-tab-${voce.id}`}
           >
             {voce.etichetta}

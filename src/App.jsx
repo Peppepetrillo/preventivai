@@ -23,6 +23,7 @@ import { ROUTES } from "./app/routes";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Preventivi = lazy(() => import("./pages/Preventivi"));
+const NuovoPreventivoWizard = lazy(() => import("./pages/NuovoPreventivoWizard"));
 const PreventivoIntelligente = lazy(() => import("./pages/PreventivoIntelligente"));
 const ArchivioPreventivi = lazy(() => import("./pages/ArchivioPreventivi"));
 const Incassi = lazy(() => import("./pages/Incassi"));
@@ -36,11 +37,13 @@ const DistintaMaterialiEditor = lazy(() => import("./pages/DistintaMaterialiEdit
 const Acquisti = lazy(() => import("./pages/Acquisti"));
 const Sopralluogo = lazy(() => import("./pages/Sopralluogo"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
+const Cestino = lazy(() => import("./pages/Cestino"));
 const DettaglioPreventivo = lazy(() => import("./pages/DettaglioPreventivo"));
 const DettaglioCliente = lazy(() => import("./pages/DettaglioCliente"));
 const ScelgaModalitaPreventivo = lazy(() => import("./pages/ScelgaModalitaPreventivo"));
 const PreventivoManuale = lazy(() => import("./pages/PreventivoManuale"));
 const Agenda = lazy(() => import("./pages/Agenda"));
+const Altro = lazy(() => import("./pages/Altro"));
 
 function LoadingPage() {
   return (
@@ -70,6 +73,11 @@ function AppShell() {
               <Route
                 path={ROUTES.dashboard}
                 element={<Dashboard />}
+              />
+
+              <Route
+                path={ROUTES.preventiviNuovo}
+                element={<NuovoPreventivoWizard />}
               />
 
               <Route
@@ -145,10 +153,20 @@ function AppShell() {
               />
 
               <Route
+                path={ROUTES.altro}
+                element={<Altro />}
+              />
+
+              <Route
                 path={ROUTES.impostazioni}
                 element={
                   <Impostazioni />
                 }
+              />
+
+              <Route
+                path={ROUTES.cestino}
+                element={<Cestino />}
               />
 
               <Route

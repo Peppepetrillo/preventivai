@@ -25,12 +25,12 @@ vi.mock("../../../services/notificationService", () => ({
 
 const CLIENTE = { id: "c1", nome: "Rossi Mario", telefono: "333", indirizzo: "Via Roma 1" };
 
-function renderWizard(initialPath = ROUTES.preventivi) {
+function renderWizard(initialPath = ROUTES.preventiviNuovo) {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <WizardProvider>
         <Routes>
-          <Route path={ROUTES.preventivi} element={<WizardPreventivo />} />
+          <Route path={ROUTES.preventiviNuovo} element={<WizardPreventivo />} />
         </Routes>
       </WizardProvider>
     </MemoryRouter>
@@ -66,15 +66,15 @@ describe("Wizard Listino → Preventivo", () => {
 
     const link = screen.getByTestId("wizard-altre-modalita");
     expect(link).toHaveAttribute("href", ROUTES.nuovoPreventivo);
-    expect(link).toHaveTextContent(/Altre modalità/i);
+    expect(link).toHaveTextContent(/Altri modi per creare un preventivo/i);
   });
 
   it("propaga clienteId nel link Altre modalità sullo step Cliente", () => {
     render(
-      <MemoryRouter initialEntries={[`${ROUTES.preventivi}?clienteId=c1`]}>
+      <MemoryRouter initialEntries={[`${ROUTES.preventiviNuovo}?clienteId=c1`]}>
         <Routes>
           <Route
-            path={ROUTES.preventivi}
+            path={ROUTES.preventiviNuovo}
             element={<StepCliente onSelezionaCliente={vi.fn()} />}
           />
         </Routes>
@@ -88,7 +88,7 @@ describe("Wizard Listino → Preventivo", () => {
   });
 
   it("salta lo step Cliente con clienteId precompilato", async () => {
-    renderWizard(`${ROUTES.preventivi}?clienteId=c1`);
+    renderWizard(`${ROUTES.preventiviNuovo}?clienteId=c1`);
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: /Dal tuo listino/i })).toBeInTheDocument();
@@ -192,7 +192,7 @@ describe("Wizard Listino → Preventivo", () => {
   });
 
   it("prefill cliente da query clienteId", async () => {
-    renderWizard(`${ROUTES.preventivi}?clienteId=c1`);
+    renderWizard(`${ROUTES.preventiviNuovo}?clienteId=c1`);
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: /Dal tuo listino/i })).toBeInTheDocument();

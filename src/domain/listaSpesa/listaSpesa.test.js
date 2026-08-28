@@ -4,6 +4,8 @@ import { STORAGE_KEYS } from "../../app/storageKeys";
 import {
   aggiungiVoceListaSpesa,
   leggiDaComprare,
+  leggiListaSpesa,
+  rimuoviVociListaSpesaPerCantiere,
   sincronizzaListaSpesaDaCantiere,
   toggleAcquistatoListaSpesa,
 } from "./index";
@@ -153,5 +155,15 @@ describe("listaSpesa domain", () => {
     expect(voci).toHaveLength(1);
     expect(voci[0].parentVoceId).toBeUndefined();
     expect(voci[0].origineAccessorio).toBeUndefined();
+  });
+
+  it("rimuove solo le voci lista spesa del cantiere eliminato", () => {
+    aggiungiVoceListaSpesa({ nome: "Tubo A", lavoroId: "c-a" });
+    aggiungiVoceListaSpesa({ nome: "Cavo B", cantiereId: "c-b" });
+
+    rimuoviVociListaSpesaPerCantiere("c-a");
+    const resto = leggiListaSpesa();
+    expect(resto).toHaveLength(1);
+    expect(resto[0].nome).toBe("Cavo B");
   });
 });

@@ -163,7 +163,7 @@ describe("materialiCatalogService", () => {
   it("CRUD famiglia personalizzata", () => {
     const creata = creaFamigliaCatalogo({
       nome: "Canalina custom",
-      categoria: "elettrico",
+      categoria: "generale",
       unitaDefault: "m",
       attributoChiave: "dimensione",
       descrizione: "Creata dall'utente",
@@ -223,9 +223,9 @@ describe("materialiCatalogService", () => {
     const tubi = cercaCatalogoMateriali("tubo corrugato");
     expect(tubi.some((f) => f.id === "tubo-corrugato")).toBe(true);
 
-    const elettrico = filtraCatalogoPerCategoria("elettrico");
-    expect(elettrico.length).toBeGreaterThan(5);
-    expect(elettrico.every((f) => f.categoria === "elettrico")).toBe(true);
+    const perCategoria = filtraCatalogoPerCategoria("tubi");
+    expect(perCategoria.length).toBeGreaterThan(2);
+    expect(perCategoria.every((f) => f.categoria === "tubi")).toBe(true);
 
     const allarme = cercaCatalogoMateriali("", { categoria: "allarme" });
     expect(allarme.every((f) => f.categoria === "allarme")).toBe(true);
@@ -244,6 +244,67 @@ describe("materialiCatalogService", () => {
     const cassetta = trovaInCatalogo("cassetta");
     expect(cassetta?.varianti.find((v) => v.id === "cassetta-503")?.attiva).toBe(
       false
+    );
+  });
+
+  it("merge su catalogo già popolato: aggiunge seed nuovi e preserva l'utente", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.catalogoMateriali,
+      JSON.stringify([
+        {
+          id: "tubo-corrugato",
+          nome: "Tubo corrugato utente",
+          categoria: "elettrico",
+          unitaDefault: "m",
+          attributoChiave: "diametro",
+          personalizzata: false,
+          attiva: true,
+          varianti: [
+            {
+              id: "tubo-corrugato-25",
+              famigliaId: "tubo-corrugato",
+              etichetta: "Ø25",
+              attributi: { diametro: "25" },
+              attiva: true,
+            },
+          ],
+        },
+        {
+          id: "custom-merge",
+          nome: "Custom merge",
+          categoria: "elettrico",
+          unitaDefault: "pz",
+          attributoChiave: "tipo",
+          personalizzata: true,
+          attiva: true,
+          varianti: [
+            {
+              id: "custom-merge-1",
+              famigliaId: "custom-merge",
+              etichetta: "1",
+              attributi: { tipo: "1" },
+              attiva: true,
+            },
+          ],
+        },
+      ])
+    );
+
+    const catalogo = caricaCatalogoMateriali();
+    expect(catalogo.find((f) => f.id === "tubo-corrugato")?.nome).toBe(
+      "Tubo corrugato utente"
+    );
+    expect(catalogo.find((f) => f.id === "tubo-corrugato")?.categoria).toBe(
+      "tubi"
+    );
+    expect(catalogo.some((f) => f.id === "custom-merge")).toBe(true);
+    expect(catalogo.some((f) => f.id === "cavo-fg16or16")).toBe(true);
+    expect(catalogo.length).toBeGreaterThan(CATALOGO_MATERIALI_SEED.length);
+
+    const diNuovo = caricaCatalogoMateriali();
+    expect(diNuovo).toHaveLength(catalogo.length);
+    expect(diNuovo.find((f) => f.id === "tubo-corrugato")?.nome).toBe(
+      "Tubo corrugato utente"
     );
   });
 

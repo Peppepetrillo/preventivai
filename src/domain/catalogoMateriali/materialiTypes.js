@@ -5,7 +5,7 @@
  */
 
 /**
- * @typedef {"elettrico"|"allarme"|"videosorveglianza"|"rete-dati"|"illuminazione"|"domotica"|"fotovoltaico"|"generale"} CategoriaMateriale
+ * @typedef {"elettrico"|"cavi"|"tubi"|"canalizzazioni"|"cassette"|"serie-civile"|"quadri"|"morsetti"|"illuminazione"|"rete-dati"|"tv-sat"|"videosorveglianza"|"allarme"|"domotica"|"fotovoltaico"|"generale"|"industriale"|"ev"|"automazione"} CategoriaMateriale
  */
 
 /**
@@ -65,13 +65,24 @@
 
 export const CATEGORIA_MATERIALE = Object.freeze({
   ELETTRICO: "elettrico",
-  ALLARME: "allarme",
-  VIDEOSORVEGLIANZA: "videosorveglianza",
-  RETE_DATI: "rete-dati",
+  CAVI: "cavi",
+  TUBI: "tubi",
+  CANALIZZAZIONI: "canalizzazioni",
+  CASSETTE: "cassette",
+  SERIE_CIVILE: "serie-civile",
+  QUADRI: "quadri",
+  MORSETTI: "morsetti",
   ILLUMINAZIONE: "illuminazione",
+  RETE_DATI: "rete-dati",
+  TV_SAT: "tv-sat",
+  VIDEOSORVEGLIANZA: "videosorveglianza",
+  ALLARME: "allarme",
   DOMOTICA: "domotica",
   FOTOVOLTAICO: "fotovoltaico",
   GENERALE: "generale",
+  INDUSTRIALE: "industriale",
+  EV: "ev",
+  AUTOMAZIONE: "automazione",
 });
 
 /** @type {ReadonlyArray<CategoriaMateriale>} */
@@ -79,15 +90,51 @@ export const CATEGORIE_MATERIALE = Object.freeze(
   Object.values(CATEGORIA_MATERIALE)
 );
 
+/**
+ * Categorie in griglia iPhone (senza `elettrico` legacy).
+ * @type {ReadonlyArray<CategoriaMateriale>}
+ */
+export const CATEGORIE_NAVIGAZIONE_MATERIALE = Object.freeze([
+  CATEGORIA_MATERIALE.CAVI,
+  CATEGORIA_MATERIALE.TUBI,
+  CATEGORIA_MATERIALE.CANALIZZAZIONI,
+  CATEGORIA_MATERIALE.CASSETTE,
+  CATEGORIA_MATERIALE.SERIE_CIVILE,
+  CATEGORIA_MATERIALE.QUADRI,
+  CATEGORIA_MATERIALE.MORSETTI,
+  CATEGORIA_MATERIALE.ILLUMINAZIONE,
+  CATEGORIA_MATERIALE.RETE_DATI,
+  CATEGORIA_MATERIALE.TV_SAT,
+  CATEGORIA_MATERIALE.VIDEOSORVEGLIANZA,
+  CATEGORIA_MATERIALE.ALLARME,
+  CATEGORIA_MATERIALE.DOMOTICA,
+  CATEGORIA_MATERIALE.FOTOVOLTAICO,
+  CATEGORIA_MATERIALE.EV,
+  CATEGORIA_MATERIALE.INDUSTRIALE,
+  CATEGORIA_MATERIALE.AUTOMAZIONE,
+  CATEGORIA_MATERIALE.GENERALE,
+]);
+
 export const ETICHETTE_CATEGORIA_MATERIALE = Object.freeze({
   [CATEGORIA_MATERIALE.ELETTRICO]: "Impianto elettrico",
-  [CATEGORIA_MATERIALE.ALLARME]: "Allarme",
-  [CATEGORIA_MATERIALE.VIDEOSORVEGLIANZA]: "Videosorveglianza",
-  [CATEGORIA_MATERIALE.RETE_DATI]: "Rete dati",
+  [CATEGORIA_MATERIALE.CAVI]: "Cavi e conduttori",
+  [CATEGORIA_MATERIALE.TUBI]: "Corrugati e tubazioni",
+  [CATEGORIA_MATERIALE.CANALIZZAZIONI]: "Canalizzazioni",
+  [CATEGORIA_MATERIALE.CASSETTE]: "Scatole e cassette",
+  [CATEGORIA_MATERIALE.SERIE_CIVILE]: "Serie civile",
+  [CATEGORIA_MATERIALE.QUADRI]: "Quadri e protezioni",
+  [CATEGORIA_MATERIALE.MORSETTI]: "Morsetti e connessioni",
   [CATEGORIA_MATERIALE.ILLUMINAZIONE]: "Illuminazione",
+  [CATEGORIA_MATERIALE.RETE_DATI]: "Rete e dati",
+  [CATEGORIA_MATERIALE.TV_SAT]: "TV / SAT",
+  [CATEGORIA_MATERIALE.VIDEOSORVEGLIANZA]: "Videosorveglianza",
+  [CATEGORIA_MATERIALE.ALLARME]: "Antintrusione",
   [CATEGORIA_MATERIALE.DOMOTICA]: "Domotica",
   [CATEGORIA_MATERIALE.FOTOVOLTAICO]: "Fotovoltaico",
-  [CATEGORIA_MATERIALE.GENERALE]: "Materiale generale",
+  [CATEGORIA_MATERIALE.GENERALE]: "Consumo e fissaggio",
+  [CATEGORIA_MATERIALE.INDUSTRIALE]: "Prese e spine industriali",
+  [CATEGORIA_MATERIALE.EV]: "Ricarica EV",
+  [CATEGORIA_MATERIALE.AUTOMAZIONE]: "Automazione",
 });
 
 export const UNITA_MATERIALE = Object.freeze({

@@ -1,6 +1,6 @@
 /**
  * Dialogo di conferma in-app (sostituisce window.confirm).
- * Pattern allineato a DistinteMateriali / DS PreventivAI.
+ * z-[80]: sopra BottomSheet (70) quando annidato in sheet/modali.
  */
 export default function ConfirmDialog({
   open,
@@ -17,13 +17,13 @@ export default function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 p-4 sm:items-center safe-bottom"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 safe-bottom safe-top"
       role="dialog"
       aria-modal="true"
       aria-labelledby={`${testId}-title`}
       data-testid={testId}
     >
-      <div className="pro-panel-strong w-full max-w-md p-5">
+      <div className="pro-panel-strong w-full max-w-md max-h-[min(85dvh,520px)] overflow-y-auto p-5">
         <p id={`${testId}-title`} className="ds-card-title">
           {title}
         </p>

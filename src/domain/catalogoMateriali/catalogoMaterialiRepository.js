@@ -9,6 +9,7 @@ import { STORAGE_FALLBACKS, STORAGE_KEYS } from "../../app/storageKeys";
 import { creaRepositoryLocale } from "../../repositories/localStorageRepository";
 import {
   clonaSeedCatalogoMateriali,
+  mergeCatalogoConSeed,
   normalizzaCatalogoMateriali,
 } from "./materialiCatalogDomain";
 
@@ -43,7 +44,7 @@ export function loadRaw() {
 
 /**
  * Carica il catalogo. Se storage vuoto/corrotto → seed.
- * Non sovrascrive un catalogo già popolato.
+ * Se già popolato → merge conservativo con il seed (non sovrascrive l'utente).
  * @returns {import("./materialiTypes").FamigliaMateriale[]}
  */
 export function load() {
@@ -52,7 +53,13 @@ export function load() {
     repo.salva(seed);
     return normalizzaCatalogoMateriali(seed);
   }
-  return loadRaw();
+  const utente = loadRaw();
+  const { catalogo, changed } = mergeCatalogoConSeed(utente);
+  if (changed) {
+    repo.salva(catalogo);
+    return catalogo;
+  }
+  return utente;
 }
 
 /**

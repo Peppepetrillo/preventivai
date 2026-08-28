@@ -5,7 +5,6 @@
 import {
   catalogoMaterialiRepository,
   exists as repoExists,
-  loadRaw,
   replace as repoReplace,
   reset as repoReset,
   save as repoSave,
@@ -21,20 +20,17 @@ import {
   creaVarianteMateriale,
   elencaFamigliePerCategoria,
   isCatalogoMaterialiPopolato,
-  normalizzaCatalogoMateriali,
   rimuoviFamigliaDalCatalogo,
   rimuoviVarianteDalCatalogo,
 } from "./materialiCatalogDomain";
 import { CATEGORIE_MATERIALE } from "./materialiTypes";
 
 /**
- * Inizializza il catalogo se assente. Idempotente: non duplica/sovrascrive.
+ * Inizializza il catalogo se assente. Se già popolato, merge conservativo col seed.
+ * Idempotente: non duplica e non sovrascrive personalizzazioni.
  * @returns {import("./materialiTypes").FamigliaMateriale[]}
  */
 export function inizializzaCatalogoMateriali() {
-  if (repoExists()) {
-    return normalizzaCatalogoMateriali(loadRaw());
-  }
   return catalogoMaterialiRepository.load();
 }
 

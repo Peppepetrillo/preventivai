@@ -113,7 +113,7 @@ describe("DistintaMaterialiEditor UI", () => {
 
     const dialog = ultimoDialog();
     fireEvent.click(
-      within(dialog).getByRole("button", { name: /Impianto elettrico/i })
+      within(dialog).getByRole("button", { name: /Corrugati e tubazioni/i })
     );
     fireEvent.click(
       within(dialog).getByRole("button", { name: /Tubo corrugato/i })
@@ -149,7 +149,7 @@ describe("DistintaMaterialiEditor UI", () => {
 
     const dialog = ultimoDialog();
     fireEvent.click(
-      within(dialog).getByRole("button", { name: /Impianto elettrico/i })
+      within(dialog).getByRole("button", { name: /Serie civile/i })
     );
     fireEvent.click(
       within(dialog).getByRole("button", { name: /Presa civile/i })
@@ -166,7 +166,7 @@ describe("DistintaMaterialiEditor UI", () => {
     const voci = screen.getByTestId("distinta-voci-list");
     expect(within(voci).getByText(/Presa civile/i)).toBeInTheDocument();
     expect(within(voci).getByText(/Cassetta/i)).toBeInTheDocument();
-    expect(within(voci).getByText(/Accessorio suggerito/i)).toBeInTheDocument();
+    expect(within(voci).getAllByText(/Accessorio suggerito/i).length).toBeGreaterThanOrEqual(1);
 
     fireEvent.click(screen.getByTestId("distinta-salva"));
     const stored = JSON.parse(

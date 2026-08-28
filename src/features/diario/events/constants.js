@@ -18,7 +18,7 @@ export const DIARIO_FILTERS = [
   { id: DIARIO_EVENT_TYPES.NOTA, label: "Note" },
   { id: DIARIO_EVENT_TYPES.MATERIALE, label: "Materiali" },
   { id: DIARIO_EVENT_TYPES.PAGAMENTO, label: "Pagamenti" },
-  { id: DIARIO_EVENT_TYPES.VARIANTE, label: "Varianti" },
+  { id: DIARIO_EVENT_TYPES.VARIANTE, label: "Lavori extra" },
   { id: DIARIO_EVENT_TYPES.CHECKLIST, label: "Checklist" },
 ];
 
@@ -33,5 +33,5 @@ export const DIARIO_EVENT_TYPE_META = {
   [DIARIO_EVENT_TYPES.MATERIALE]: { icon: "🧰", label: "Materiale" },
   [DIARIO_EVENT_TYPES.CHECKLIST]: { icon: "☑️", label: "Checklist" },
   [DIARIO_EVENT_TYPES.PAGAMENTO]: { icon: "💰", label: "Pagamento" },
-  [DIARIO_EVENT_TYPES.VARIANTE]: { icon: "📋", label: "Variante" },
+  [DIARIO_EVENT_TYPES.VARIANTE]: { icon: "📋", label: "Lavoro extra" },
 };

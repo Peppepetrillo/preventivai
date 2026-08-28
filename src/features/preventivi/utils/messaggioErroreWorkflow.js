@@ -6,6 +6,8 @@
  */
 export function messaggioErroreWorkflow(codice, fallback = "") {
   const mappa = {
+    preventivo_cestinato:
+      "Questo preventivo è nel Cestino. Ripristinalo per continuare.",
     preventivo_non_trovato: "Preventivo non trovato.",
     preventivo_chiuso: "Questo preventivo è chiuso e non si può modificare.",
     stato_non_consentito: "Azione non disponibile in questo stato.",

@@ -40,6 +40,8 @@ export default function NuovoLavoroSheet({
   onChiudi,
   onSalva,
   dataDefault = "",
+  title = "Nuovo cantiere",
+  descrizione = "Crea un nuovo cantiere o intervento.",
 }) {
   const [form, setForm] = useState(() => statoIniziale(dataDefault));
 
@@ -62,8 +64,8 @@ export default function NuovoLavoroSheet({
     <BottomSheet
       open={aperto}
       onClose={onChiudi}
-      title="Nuovo lavoro"
-      descrizione="Pianifica senza uscire dall'agenda."
+      title={title}
+      descrizione={descrizione}
     >
       <form onSubmit={invia} className="space-y-5 pb-2">
         <fieldset>

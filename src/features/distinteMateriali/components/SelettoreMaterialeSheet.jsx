@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
-import { ArrowLeft, Plus } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, CheckCircle, Plus } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
 import NumericInput from "../../../components/NumericInput";
 import SearchInput from "../../../components/SearchInput";
-import { cercaCatalogoMateriali } from "../../../domain/catalogoMateriali/materialiCatalogService";
+import { cercaCatalogoMateriali, caricaCatalogoMateriali } from "../../../domain/catalogoMateriali/materialiCatalogService";
 import { UNITA_MATERIALE_CANONICHE } from "../../../domain/catalogoMateriali/materialiTypes";
 import CatalogoMaterialiCategorie from "../../catalogoMateriali/components/CatalogoMaterialiCategorie";
 import CatalogoMaterialiFamigliaCard from "../../catalogoMateriali/components/CatalogoMaterialiFamigliaCard";
@@ -16,6 +16,11 @@ import {
 
 /**
  * Selettore materiale da catalogo (categorie → famiglia → variante → quantità).
+ *
+ * `mantieniApertoDopoConferma` (default false):
+ *   - false → comportamento classico: chiude il BottomSheet dopo ogni conferma.
+ *   - true  → non chiude; torna alla vista varianti della stessa famiglia per
+ *             aggiunta rapida consecutiva. Usato dal flusso Cantiere → Materiali.
  */
 export default function SelettoreMaterialeSheet({
   open,
@@ -25,6 +30,7 @@ export default function SelettoreMaterialeSheet({
   title = "Aggiungi materiale",
   descrizione = "Scegli dal catalogo o inserisci una voce libera.",
   labelConferma = "Aggiungi alla distinta",
+  mantieniApertoDopoConferma = false,
 }) {
   return (
     <BottomSheet
@@ -40,20 +46,38 @@ export default function SelettoreMaterialeSheet({
           onConferma={onConferma}
           onApriManuale={onApriManuale}
           labelConferma={labelConferma}
+          mantieniApertoDopoConferma={mantieniApertoDopoConferma}
         />
       ) : null}
     </BottomSheet>
   );
 }
 
-function SelettoreForm({ onClose, onConferma, onApriManuale, labelConferma }) {
-  const categorie = useMemo(() => elencaMetaCategorieMateriale(), []);
+function SelettoreForm({ onClose, onConferma, onApriManuale, labelConferma, mantieniApertoDopoConferma }) {
+  const catalogo = useMemo(() => caricaCatalogoMateriali(), []);
+  const categorie = useMemo(
+    () => elencaMetaCategorieMateriale({ catalogo }),
+    [catalogo]
+  );
   const [ricerca, setRicerca] = useState("");
   const [categoriaId, setCategoriaId] = useState(null);
   const [famiglia, setFamiglia] = useState(null);
   const [variante, setVariante] = useState(null);
   const [quantita, setQuantita] = useState(1);
   const [unita, setUnita] = useState("");
+
+  // Feedback aggiunta (solo in modalità mantieniApertoDopoConferma)
+  const [feedbackVisbile, setFeedbackVisibile] = useState(false);
+  const [feedbackNome, setFeedbackNome] = useState("");
+  const [contatoreAggiunte, setContatoreAggiunte] = useState(0);
+  const feedbackTimer = useRef(null);
+
+  // Cleanup timer al dismount
+  useEffect(() => {
+    return () => {
+      if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+    };
+  }, []);
 
   const famiglie = useMemo(() => {
     const filtri = { soloAttive: true };
@@ -89,18 +113,36 @@ function SelettoreForm({ onClose, onConferma, onApriManuale, labelConferma }) {
     }
   }
 
+  function mostraFeedback(nome) {
+    if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+    setFeedbackNome(nome);
+    setFeedbackVisibile(true);
+    feedbackTimer.current = setTimeout(() => setFeedbackVisibile(false), 2200);
+  }
+
   function conferma() {
     if (!variante || !famiglia) return;
     const q = Number(quantita);
-    onConferma?.({
+    const payload = {
       famigliaId: famiglia.id,
       varianteId: variante.id,
       nome: `${famiglia.nome} — ${variante.etichetta}`,
       unita: unita || variante.unita || famiglia.unitaDefault || "pz",
       quantita: Number.isFinite(q) && q > 0 ? q : 1,
       prezzoUnitario: variante.prezzoIndicativo,
-    });
-    onClose?.();
+    };
+
+    onConferma?.(payload);
+
+    if (mantieniApertoDopoConferma) {
+      // Resta aperto: torna alle varianti della stessa famiglia per aggiunta rapida.
+      mostraFeedback(`${famiglia.nome} — ${variante.etichetta}`);
+      setContatoreAggiunte((n) => n + 1);
+      setVariante(null);
+      setQuantita(1);
+    } else {
+      onClose?.();
+    }
   }
 
   const mostraIndietro =
@@ -108,14 +150,53 @@ function SelettoreForm({ onClose, onConferma, onApriManuale, labelConferma }) {
 
   return (
     <div className="space-y-3 pb-2">
-      {mostraIndietro ? (
+      {/* Barra superiore: indietro + badge contatore aggiunte */}
+      <div className="flex items-center justify-between gap-2">
+        {mostraIndietro ? (
+          <button
+            type="button"
+            onClick={indietro}
+            className="inline-flex items-center gap-1.5 min-h-[44px] text-slate-300 text-sm font-semibold"
+          >
+            <ArrowLeft size={18} aria-hidden="true" />
+            Indietro
+          </button>
+        ) : (
+          <div />
+        )}
+        {mantieniApertoDopoConferma && contatoreAggiunte > 0 ? (
+          <span className="ds-badge ds-badge-completato shrink-0">
+            {contatoreAggiunte} {contatoreAggiunte === 1 ? "aggiunto" : "aggiunti"}
+          </span>
+        ) : null}
+      </div>
+
+      {/* Toast feedback aggiunta */}
+      {mantieniApertoDopoConferma && feedbackVisbile ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-2 rounded-[14px] border border-emerald-400/25 bg-emerald-500/15 px-3.5 py-2.5"
+        >
+          <CheckCircle size={16} className="text-emerald-300 shrink-0" aria-hidden="true" />
+          <p className="text-sm text-emerald-50 font-semibold truncate">
+            {feedbackNome}
+          </p>
+        </div>
+      ) : null}
+
+      {/* Bottone "Cambia categoria" nella vista varianti (modalità rapida) */}
+      {mantieniApertoDopoConferma && vista === "varianti" && famiglia ? (
         <button
           type="button"
-          onClick={indietro}
-          className="inline-flex items-center gap-1.5 min-h-[44px] text-slate-300 text-sm font-semibold"
+          onClick={() => {
+            setFamiglia(null);
+            setCategoriaId(null);
+          }}
+          className="inline-flex items-center gap-1.5 min-h-[40px] text-slate-400 text-xs font-semibold"
         >
-          <ArrowLeft size={18} aria-hidden="true" />
-          Indietro
+          <ArrowLeft size={14} aria-hidden="true" />
+          Cambia categoria
         </button>
       ) : null}
 
@@ -245,7 +326,7 @@ function SelettoreForm({ onClose, onConferma, onApriManuale, labelConferma }) {
               Unità
             </span>
             <select
-              className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-3 text-white"
+              className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-3 text-base text-white"
               value={unita}
               onChange={(e) => setUnita(e.target.value)}
             >

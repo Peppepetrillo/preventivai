@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 
 import BottomSheet from "../../../components/BottomSheet";
-import { salvaClienti, leggiClienti } from "../../../repositories/clientiRepository";
+import { salvaClienti, leggiClientiTutti } from "../../../repositories/clientiRepository";
 
 export default function NuovoClienteSheet({ open, onClose, onSalvato }) {
   const nomeId = useId();
@@ -42,7 +42,7 @@ export default function NuovoClienteSheet({ open, onClose, onSalvato }) {
       email: email.trim(),
     };
 
-    salvaClienti([...leggiClienti(), nuovoCliente]);
+    salvaClienti([...leggiClientiTutti(), nuovoCliente]);
     onSalvato(nuovoCliente);
     chiudi();
   }

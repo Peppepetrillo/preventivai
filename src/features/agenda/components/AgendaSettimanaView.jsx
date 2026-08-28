@@ -45,7 +45,9 @@ export default function AgendaSettimanaView({
                             </span>
                           </span>
                           <span className="ds-badge ds-badge-da-iniziare shrink-0">
-                            {lavoro.tipoLavoroLabel || "Lavoro"}
+                            {lavoro.kind === "giornata-lavorativa"
+                              ? lavoro.sottotitoloProgrammazione || "Consuntivo"
+                              : lavoro.tipoLavoroLabel || "Lavoro"}
                           </span>
                         </Link>
                       </li>
@@ -81,21 +83,46 @@ export function AgendaGiornoContenuto({
   lavori,
   attivita,
   onSegnaCompletato,
+  onRegistraConsuntivo,
   completamentoId,
   onCompletaAttivita,
   onModificaAttivita,
   onEliminaAttivita,
   onInsight,
+  onRegistraGiornata,
+  onNuovoLavoro,
 }) {
   const totale = (lavori?.length || 0) + (attivita?.length || 0);
 
   if (totale === 0) {
     return (
       <div className="ds-empty pro-panel p-8 text-center">
-        <p className="font-black">Giornata libera</p>
-        <p className="ds-text-secondary mt-1">
-          Tocca + per pianificare un lavoro o un&apos;attività.
+        <p className="ds-card-title">Giornata libera</p>
+        <p className="ds-text-secondary mt-2">
+          Nessun lavoro o promemoria in programma.
         </p>
+        <div className="mt-4 grid gap-2">
+          {onRegistraGiornata ? (
+            <button
+              type="button"
+              onClick={onRegistraGiornata}
+              className="btn-primary min-h-[48px] w-full"
+              data-testid="agenda-empty-registra-consuntivo"
+            >
+              Registra consuntivo
+            </button>
+          ) : null}
+          {onNuovoLavoro ? (
+            <button
+              type="button"
+              onClick={onNuovoLavoro}
+              className="btn-secondary min-h-[48px] w-full"
+              data-testid="agenda-empty-pianifica-cantiere"
+            >
+              Pianifica cantiere
+            </button>
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -110,6 +137,7 @@ export function AgendaGiornoContenuto({
         lavori={lavori}
         attivita={attivita}
         onSegnaCompletato={onSegnaCompletato}
+        onRegistraConsuntivo={onRegistraConsuntivo}
         completamentoId={completamentoId}
         onInsight={onInsight}
         onCompletaAttivita={onCompletaAttivita}

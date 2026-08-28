@@ -1,6 +1,7 @@
 export {
   CATEGORIA_MATERIALE,
   CATEGORIE_MATERIALE,
+  CATEGORIE_NAVIGAZIONE_MATERIALE,
   ETICHETTE_CATEGORIA_MATERIALE,
   UNITA_MATERIALE,
   UNITA_MATERIALE_CANONICHE,
@@ -38,6 +39,8 @@ export {
   creaFamigliaPersonalizzata,
   creaVarianteMateriale,
   elencaAccessoriSuggeritiPerVariante,
+  mergeCatalogoConSeed,
+  CATEGORIA_SEED_PRE_62,
 } from "./materialiCatalogDomain";
 
 export {

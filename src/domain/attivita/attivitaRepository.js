@@ -69,4 +69,22 @@ export function trovaAttivitaPerId(id) {
   return leggiAttivita().find((item) => String(item.id) === String(id)) || null;
 }
 
+/**
+ * Scollega le attività dal cantiere senza cancellarle.
+ * @param {string|number} cantiereId
+ */
+export function scollegaAttivitaDalCantiere(cantiereId) {
+  const id = String(cantiereId ?? "");
+  if (!id) return leggiAttivita();
+
+  const elenco = leggiAttivita();
+  const prossimo = elenco.map((attivita) =>
+    String(attivita?.lavoroId || "") === id
+      ? aggiornaAttivita(attivita, { lavoroId: "" })
+      : attivita
+  );
+  salvaAttivita(prossimo);
+  return prossimo;
+}
+
 export { creaAttivita, aggiornaAttivita, completaAttivita };

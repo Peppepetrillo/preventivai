@@ -183,4 +183,119 @@ describe("agendaSelectors", () => {
     expect(intervento.tipoLavoroLabel).toBe("Intervento");
     expect(intervento.durataStimataLabel).toBe("1 h 15 min");
   });
+
+  it("UX-7.3 espande programmazione in più lavori e ignora dataIntervento", () => {
+    const multi = cantiere({
+      id: "villa",
+      dataIntervento: "29/07/2026",
+      programmazione: [
+        {
+          id: "g1",
+          data: "29/07/2026",
+          operai: 2,
+          orePreviste: 8,
+          attivita: "Tracce e tubazioni",
+          stato: "programmata",
+        },
+        {
+          id: "g2",
+          data: "30/07/2026",
+          operai: 2,
+          orePreviste: 8,
+          attivita: "Cablaggio",
+          stato: "programmata",
+        },
+        {
+          id: "g3",
+          data: "29/07/2026",
+          operai: 1,
+          orePreviste: 4,
+          attivita: "Annullata",
+          stato: "annullata",
+        },
+      ],
+    });
+
+    const oggi = selezionaInterventiGiorno([multi], OGGI, OGGI);
+    expect(oggi).toHaveLength(1);
+    expect(oggi[0].id).toBe("villa:g1");
+    expect(oggi[0].attivitaGiornata).toBe("Tracce e tubazioni");
+    expect(oggi[0].operai).toBe(2);
+    expect(oggi[0].kind).toBe("lavoro-giornata");
+
+    const domani = selezionaInterventiGiorno(
+      [multi],
+      aggiungiGiorni(OGGI, 1),
+      OGGI
+    );
+    expect(domani).toHaveLength(1);
+    expect(domani[0].id).toBe("villa:g2");
+
+    // Nessuna card duplicata dalla sola dataIntervento
+    expect(oggi.filter((l) => String(l.id) === "villa")).toHaveLength(0);
+  });
+
+  it("UX-7.3 senza programmazione mantiene comportamento precedente", () => {
+    const elenco = selezionaInterventiGiorno([cantiere()], OGGI, OGGI);
+    expect(elenco).toHaveLength(1);
+    expect(elenco[0].id).toBe("c1");
+  });
+
+  it("UX-7.4 proietta registro giornate lavorative in Agenda", () => {
+    const conRegistro = cantiere({
+      id: "napoli",
+      dataIntervento: null,
+      registroGiornate: [
+        {
+          id: "r1",
+          data: "29/07/2026",
+          operai: ["Marco"],
+          oreLavorate: 8,
+          attivita: "Tracce",
+          note: "Piano terra",
+        },
+      ],
+    });
+
+    const elenco = selezionaInterventiGiorno([conRegistro], OGGI, OGGI);
+    expect(elenco.some((l) => l.kind === "giornata-lavorativa")).toBe(true);
+    const reg = elenco.find((l) => l.kind === "giornata-lavorativa");
+    expect(reg.sottotitoloProgrammazione).toContain("Marco");
+    expect(reg.sottotitoloProgrammazione).toContain("8h");
+    expect(reg.sottotitoloProgrammazione).toContain("Tracce");
+    expect(reg.link).toBe("/cantiere/napoli?sezione=sezione-registro-lavori");
+    expect(reg.tipoLavoroLabel).toBe("Consuntivo");
+  });
+
+  it("UX-7.4 registro e programmazione coesistono senza confondersi", () => {
+    const misto = cantiere({
+      id: "villa",
+      programmazione: [
+        {
+          id: "g1",
+          data: "29/07/2026",
+          operai: 2,
+          orePreviste: 8,
+          attivita: "Previsto",
+          stato: "programmata",
+        },
+      ],
+      registroGiornate: [
+        {
+          id: "r1",
+          data: "29/07/2026",
+          operai: ["Marco"],
+          oreLavorate: 8,
+          attivita: "Fatto",
+        },
+      ],
+    });
+
+    const elenco = selezionaInterventiGiorno([misto], OGGI, OGGI);
+    expect(elenco).toHaveLength(2);
+    expect(elenco.map((l) => l.kind).sort()).toEqual([
+      "giornata-lavorativa",
+      "lavoro-giornata",
+    ]);
+  });
 });

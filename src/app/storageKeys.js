@@ -41,6 +41,10 @@ export const STORAGE_KEYS = {
   catalogoMateriali: "preventivai.catalogoMateriali",
   /** Distinte Materiali — locale only (Sprint 13) */
   distinteMateriali: "preventivai.distinteMateriali",
+  /** Backup automatico UX-7.2 — config locale, fuori APP_DATA_KEYS / cloud */
+  backupAutomaticoConfig: "preventivai.backupAutomatico.config",
+  /** Ultimo snapshot backup automatico (JSON v1, stesso formato creaBackupCompleto) */
+  backupAutomaticoUltimo: "preventivai.backupAutomatico.ultimo",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -71,6 +75,16 @@ export const STORAGE_FALLBACKS = {
   [STORAGE_KEYS.listaSpesa]: [],
   [STORAGE_KEYS.catalogoMateriali]: [],
   [STORAGE_KEYS.distinteMateriali]: [],
+  [STORAGE_KEYS.backupAutomaticoConfig]: {
+    frequenza: "disattivato",
+    enabled: false,
+    ultimoBackup: null,
+    prossimoBackup: null,
+    stato: "disattivato",
+    ultimoErrore: null,
+    ultimoErroreIl: null,
+  },
+  [STORAGE_KEYS.backupAutomaticoUltimo]: null,
 };
 
 export const APP_DATA_KEYS = {

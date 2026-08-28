@@ -27,6 +27,7 @@ export {
   eliminaAttivitaPerId,
   leggiAttivita,
   salvaAttivita,
+  scollegaAttivitaDalCantiere,
   trovaAttivitaPerId,
 } from "./attivitaRepository";
 export { useAttivita } from "./hooks/useAttivita";

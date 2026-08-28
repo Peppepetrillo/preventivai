@@ -193,6 +193,7 @@ export default function CondivisioneSection({
             )
           }
           className="btn-secondary min-h-[48px] px-4 text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+          data-testid="preventivo-condividi-whatsapp"
         >
           <MessageCircle size={16} aria-hidden="true" />
           Invia WhatsApp

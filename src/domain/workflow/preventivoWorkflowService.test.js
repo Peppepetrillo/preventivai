@@ -77,11 +77,20 @@ describe("preventivoWorkflowTypes", () => {
       calcolaAzioniDisponibili({ stato: STATI_PREVENTIVO.ACCETTATO })
     ).toContain(AZIONI_PREVENTIVO.CONVERTI_CANTIERE);
     expect(
+      calcolaAzioniDisponibili(
+        {
+          stato: STATI_PREVENTIVO.CONVERTITO,
+          cantiereId: 1,
+        },
+        { cantiereCollegato: { id: 1 } }
+      )
+    ).toEqual([AZIONI_PREVENTIVO.APRI_CANTIERE]);
+    expect(
       calcolaAzioniDisponibili({
         stato: STATI_PREVENTIVO.CONVERTITO,
         cantiereId: 1,
       })
-    ).toEqual([AZIONI_PREVENTIVO.APRI_CANTIERE]);
+    ).toEqual([]);
   });
 });
 

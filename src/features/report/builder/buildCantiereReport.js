@@ -13,15 +13,19 @@ import {
   sortDiarioEventsChronologico,
 } from "../../diario/timeline/diarioTimeline";
 import { formatEuro, normalizzaNumero } from "../../../utils/preventivi";
+import {
+  etichettaTipoIntervento,
+  isCantiereDiretto,
+} from "../../cantieri/cantieriDomain";
+import {
+  calcolaRimanenzaCantiere,
+  leggiPagamenti,
+  leggiTotaleIncassato,
+  leggiTotaleCantiereEconomico,
+} from "../../cantieri/services/pagamentiCantiereService";
 
 function valoreIncassato(cantiere = {}) {
-  return normalizzaNumero(
-    cantiere.incassato ??
-      cantiere.extra?.incassato ??
-      cantiere.acconto ??
-      cantiere.extra?.acconto ??
-      0
-  );
+  return leggiTotaleIncassato(cantiere);
 }
 
 function dataDaTimestamp(timestamp) {
@@ -85,8 +89,12 @@ export function buildCantiereReport({
   const eventi = sortDiarioEventsChronologico(
     leggiDiarioCantiere(cantiere).map(serializeDiarioEvent)
   );
+  const diretto = isCantiereDiretto(cantiere);
   const economico = calcolaTotaleCantiere(cantiere);
+  const totaleEconomico = leggiTotaleCantiereEconomico(cantiere);
   const incassato = valoreIncassato(cantiere);
+  const rimanenza = calcolaRimanenzaCantiere(cantiere, totaleEconomico);
+  const elencoPagamenti = leggiPagamenti(cantiere);
   const varianti = cantiere?.id ? ottieniVarianti(cantiere.id, cantiere) : [];
   const variantiApprovate = varianti.filter(
     (variante) =>
@@ -109,7 +117,13 @@ export function buildCantiereReport({
     timestamp: evento.timestamp,
   }));
 
+  const descrizioneIntervento = String(
+    cantiere.descrizioneIntervento || cantiere.descrizione || ""
+  ).trim();
+  const tipoIntervento = etichettaTipoIntervento(cantiere.tipoIntervento);
+
   return {
+    lavoroDiretto: diretto,
     copertina: {
       logo: datiAzienda.logo || null,
       nomeAzienda: datiAzienda.nomeDitta || "PreventivAI",
@@ -119,6 +133,10 @@ export function buildCantiereReport({
         cantiere.preventivoNumero ||
         cantiere.nome ||
         `Cantiere ${cantiere.id || ""}`,
+      tipoIntervento: diretto ? tipoIntervento : "",
+      titoloDocumento: diretto
+        ? "Riepilogo intervento"
+        : "Report Finale di Cantiere",
       dataApertura:
         cantiere.dataCreazione ||
         cantiere.creatoIl ||
@@ -127,25 +145,33 @@ export function buildCantiereReport({
       dataConclusione: risolviDataConclusione(cantiere, eventi),
     },
     riepilogo: {
-      lavorazioni: (cantiere.lavorazioniOrigine || []).map((voce) => ({
-        nome: voce.nome,
-        quantita: normalizzaNumero(voce.quantita, 1),
-        unita: voce.unita || "cad",
-      })),
-      preventivoOrigine: {
-        numero: cantiere.preventivoNumero || preventivo?.numero || "",
-        totale: economico.preventivoOriginale,
-        totaleLabel: formatEuro(economico.preventivoOriginale),
-      },
-      variantiApprovate: variantiApprovate.map((variante) => ({
-        id: variante.id,
-        titolo: variante.titolo || variante.descrizione || "Variante",
-        stato: STATI_VARIANTE_LABEL[variante.stato] || variante.stato,
-        totale: normalizzaNumero(variante.totale ?? variante.importo),
-        totaleLabel: formatEuro(variante.totale ?? variante.importo),
-      })),
-      totaleFinale: economico.totaleAggiornato,
-      totaleFinaleLabel: formatEuro(economico.totaleAggiornato),
+      lavorazioni: diretto
+        ? []
+        : (cantiere.lavorazioniOrigine || []).map((voce) => ({
+            nome: voce.nome,
+            quantita: normalizzaNumero(voce.quantita, 1),
+            unita: voce.unita || "cad",
+          })),
+      preventivoOrigine: diretto
+        ? { numero: "", totale: 0, totaleLabel: formatEuro(0) }
+        : {
+            numero: cantiere.preventivoNumero || preventivo?.numero || "",
+            totale: economico.preventivoOriginale,
+            totaleLabel: formatEuro(economico.preventivoOriginale),
+          },
+      descrizioneIntervento: diretto ? descrizioneIntervento : "",
+      tipoIntervento: diretto ? tipoIntervento : "",
+      variantiApprovate: diretto
+        ? []
+        : variantiApprovate.map((variante) => ({
+            id: variante.id,
+            titolo: variante.titolo || variante.descrizione || "Variante",
+            stato: STATI_VARIANTE_LABEL[variante.stato] || variante.stato,
+            totale: normalizzaNumero(variante.totale ?? variante.importo),
+            totaleLabel: formatEuro(variante.totale ?? variante.importo),
+          })),
+      totaleFinale: totaleEconomico,
+      totaleFinaleLabel: formatEuro(totaleEconomico),
     },
     cronologia,
     fotografie: raccogliFotografie(cantiere, eventi),
@@ -159,14 +185,27 @@ export function buildCantiereReport({
     pagamenti: {
       acconto: incassato,
       accontoLabel: formatEuro(incassato),
-      saldo: Math.max(economico.totaleAggiornato - incassato, 0),
-      saldoLabel: formatEuro(
-        Math.max(economico.totaleAggiornato - incassato, 0)
-      ),
-      totale: economico.totaleAggiornato,
-      totaleLabel: formatEuro(economico.totaleAggiornato),
+      saldo: rimanenza,
+      saldoLabel: formatEuro(rimanenza),
+      totale: totaleEconomico,
+      totaleLabel: formatEuro(totaleEconomico),
+      rimanenza,
+      rimanenzaLabel: formatEuro(rimanenza),
+      incassato,
+      incassatoLabel: formatEuro(incassato),
+      elenco: elencoPagamenti.map((p) => ({
+        id: p.id,
+        data: p.data,
+        importo: p.importo,
+        importoLabel: formatEuro(p.importo),
+        tipo: p.tipo,
+        metodo: p.metodo,
+        note: p.note || "",
+      })),
     },
-    note,
+    note: diretto && descrizioneIntervento
+      ? [descrizioneIntervento, ...note]
+      : note,
     firme: {
       tecnicoLabel: "Firma Tecnico",
       clienteLabel: "Firma Cliente",

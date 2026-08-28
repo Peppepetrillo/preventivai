@@ -1,25 +1,12 @@
 import { createSuggestion } from "../engine/createSuggestion";
 import { PRIORITA } from "../engine/constants";
 import { ROUTES, routeCantiere } from "../../../app/routes";
+import { calcolaRimanenzaCantiere } from "../../cantieri/services/pagamentiCantiereService";
 
 export const RULE_ID = "saldo-da-incassare";
 
 function saldoResiduo(cantiere) {
-  const totale = Number(
-    cantiere?.preventivoOriginaleTotale ??
-      cantiere?.preventivoImporto ??
-      cantiere?.totale ??
-      0
-  );
-  const incassato = Number(
-    cantiere?.incassato ??
-      cantiere?.extra?.incassato ??
-      cantiere?.acconto ??
-      cantiere?.extra?.acconto ??
-      0
-  );
-  if (!(totale > 0)) return 0;
-  return Math.max(totale - incassato, 0);
+  return calcolaRimanenzaCantiere(cantiere);
 }
 
 /**

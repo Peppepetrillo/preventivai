@@ -23,12 +23,49 @@ export function shouldShowBottomNav(location) {
 }
 
 /**
+ * True se il FAB GlobalCreate (centro nav) deve essere visibile.
+ * Su Agenda c'è il FAB contestuale — evita doppio "+".
+ */
+export function shouldShowGlobalCreateFab(location) {
+  const path = location?.pathname || "";
+  if (path === ROUTES.agenda) return false;
+  return shouldShowBottomNav(location);
+}
+
+const ALTRO_HUB_ROUTES = [
+  ROUTES.altro,
+  ROUTES.agenda,
+  ROUTES.clienti,
+  ROUTES.acquisti,
+  ROUTES.listino,
+  ROUTES.catalogoMateriali,
+  ROUTES.distinteMateriali,
+  ROUTES.impostazioni,
+  ROUTES.cestino,
+];
+
+/**
+ * True se la route appartiene all'hub Altro (inclusi figli come dettaglio cliente).
+ */
+export function isAltroHubRoute(pathname = "") {
+  const path = String(pathname || "");
+  if (ALTRO_HUB_ROUTES.includes(path)) return true;
+  if (path.startsWith("/cliente/")) return true;
+  return false;
+}
+
+const PREVENTIVI_ROUTES = [
+  ROUTES.preventivi,
+  ROUTES.preventiviNuovo,
+  ROUTES.archivio,
+  ROUTES.incassi,
+  ROUTES.preventivoIntelligente,
+  ROUTES.preventivoManuale,
+  ROUTES.nuovoPreventivo,
+];
+
+/**
  * True se la voce di menu corrisponde alla route corrente.
- * Regole RC-2B:
- * - Cantieri: /cantieri e /cantiere/:id
- * - Clienti: /clienti e /cliente/:id
- * - Preventivi (path archivio o preventivi): /archivio, /preventivi, /preventivo/:id
- * - Incassi: solo /incassi (non più /preventivo/:id)
  */
 export function isVoceAttiva(location, item) {
   const path = location?.pathname || "";
@@ -39,20 +76,17 @@ export function isVoceAttiva(location, item) {
     return path === ROUTES.cantieri || path.startsWith("/cantiere/");
   }
 
-  if (item.path === ROUTES.clienti) {
-    return path.startsWith("/cliente/");
+  if (item.path === ROUTES.altro) {
+    return isAltroHubRoute(path);
   }
 
-  if (item.path === ROUTES.agenda) {
-    return path === ROUTES.agenda;
+  if (item.path === ROUTES.preventivi) {
+    if (PREVENTIVI_ROUTES.includes(path)) return true;
+    return path.startsWith("/preventivo/");
   }
 
-  if (item.path === ROUTES.archivio || item.path === ROUTES.preventivi) {
-    return (
-      path === ROUTES.archivio ||
-      path === ROUTES.preventivi ||
-      path.startsWith("/preventivo/")
-    );
+  if (item.path === ROUTES.incassi) {
+    return path === ROUTES.incassi;
   }
 
   return false;

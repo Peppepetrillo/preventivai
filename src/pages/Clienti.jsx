@@ -15,6 +15,7 @@ import { routeCliente } from "../app/routes";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import {
   leggiClienti,
+  leggiClientiTutti,
   salvaClienti as salvaClientiRepository,
 } from "../repositories/clientiRepository";
 import {
@@ -86,9 +87,9 @@ export default function Clienti() {
     !listaVuota && clientiFiltrati.length === 0 && Boolean(ricerca.trim());
   const mostraForm = formAperto || listaVuota;
 
-  function salvaClienti(nuoviClienti) {
-    setClienti(nuoviClienti);
-    salvaClientiRepository(nuoviClienti);
+  function salvaClienti(nuoviClientiCompleti) {
+    salvaClientiRepository(nuoviClientiCompleti);
+    setClienti(leggiClienti());
   }
 
   function aggiungiCliente() {
@@ -101,7 +102,7 @@ export default function Clienti() {
       email,
     };
 
-    salvaClienti([...clienti, nuovoCliente]);
+    salvaClienti([...leggiClientiTutti(), nuovoCliente]);
     setNome("");
     setTelefono("");
     setEmail("");
@@ -119,7 +120,7 @@ export default function Clienti() {
         <header className="pro-panel-strong px-4 py-4 mb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="section-label">Rubrica lavori</p>
+              <p className="section-label">Clienti</p>
               <h1 className="ds-page-title mt-1">Clienti</h1>
               <p className="ds-text-secondary mt-2">
                 Cerca e apri un contatto in pochi secondi.

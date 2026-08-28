@@ -37,8 +37,12 @@ export default function NumericInput({
   onBlur,
   inputMode = "decimal",
   selectOnFocus = true,
+  className = "",
   ...props
 }) {
+  // Garantisce font-size ≥ 16px su iOS (previene zoom automatico WKWebView).
+  // I chiamanti possono sovrascrivere aggiungendo classi text-* nella loro className.
+  const classeBase = className.includes("text-") ? className : `text-base ${className}`.trim();
   const [inModifica, setInModifica] = useState(false);
   const [testo, setTesto] = useState(() => valoreVisualizzato(value));
   const valoreInput = inModifica ? testo : valoreVisualizzato(value);
@@ -52,13 +56,14 @@ export default function NumericInput({
       setTesto(valoreVisualizzato(value));
       if (selectOnFocus) {
         const campo = evento.currentTarget;
-        queueMicrotask(() => {
+        // setTimeout > queueMicrotask su WKWebView: la tastiera iOS è pronta dopo ~100ms
+        setTimeout(() => {
           try {
             campo.select();
           } catch {
             /* ignore */
           }
-        });
+        }, 150);
       }
     }
 
@@ -99,6 +104,7 @@ export default function NumericInput({
   return (
     <input
       {...props}
+      className={classeBase}
       type="text"
       inputMode={inputMode}
       value={valoreInput}

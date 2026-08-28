@@ -34,10 +34,10 @@ export default function ScelgaModalitaPreventivo() {
   }
 
   const wizardLink = clienteId
-    ? `${ROUTES.preventivi}?clienteId=${clienteId}`
-    : ROUTES.preventivi;
+    ? `${ROUTES.preventiviNuovo}?clienteId=${clienteId}`
+    : ROUTES.preventiviNuovo;
 
-  const backTo = clienteId ? `/cliente/${clienteId}` : ROUTES.preventivi;
+  const backTo = clienteId ? `/cliente/${clienteId}` : ROUTES.preventiviNuovo;
 
   return (
     <div className="pro-page text-white">
@@ -48,7 +48,7 @@ export default function ScelgaModalitaPreventivo() {
 
       {cliente ? (
         <div className="pro-panel-strong p-5 mb-6">
-          <p className="section-label">Altre modalità</p>
+          <p className="section-label">Opzioni avanzate</p>
           <h1 className="text-2xl font-black mt-1">{cliente.nome}</h1>
           {cliente.indirizzo ? (
             <p className="text-slate-400 text-sm mt-1">{cliente.indirizzo}</p>
@@ -59,8 +59,10 @@ export default function ScelgaModalitaPreventivo() {
         </div>
       ) : (
         <div className="mb-6">
-          <p className="section-label">Fallback</p>
-          <h1 className="text-2xl font-black mt-1">Altre modalità</h1>
+          <p className="section-label">Opzioni avanzate</p>
+          <h1 className="text-2xl font-black mt-1">
+            Altri modi per creare un preventivo
+          </h1>
           <p className="ds-text-secondary mt-2">
             Il percorso consigliato è Nuovo preventivo: cliente, listino e
             riepilogo in un unico flusso.

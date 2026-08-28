@@ -15,7 +15,7 @@ function renderPage(search = "") {
   return render(
     <MemoryRouter initialEntries={[`/nuovo-preventivo${search}`]}>
       <Routes>
-        <Route path="/preventivi" element={<div>Wizard listino</div>} />
+        <Route path="/preventivi/nuovo" element={<div>Wizard listino</div>} />
         <Route path="/nuovo-preventivo" element={<ScelgaModalitaPreventivo />} />
         <Route path="/preventivo-intelligente" element={<div>Intelligente</div>} />
         <Route path="/preventivo-manuale" element={<div>Manuale</div>} />
@@ -40,9 +40,11 @@ describe("ScelgaModalitaPreventivo", () => {
     renderPage();
     expect(screen.getByTestId("scelta-modalita-wizard")).toHaveAttribute(
       "href",
-      "/preventivi"
+      "/preventivi/nuovo"
     );
-    expect(screen.getByText(/Altre modalità/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Altri modi per creare un preventivo/i)
+    ).toBeInTheDocument();
   });
 
   it("mantiene Preventivo Intelligente raggiungibile", () => {

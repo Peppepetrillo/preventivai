@@ -1,9 +1,21 @@
-import { routeCantiere } from "../../app/routes";
+import { routeCantiere, routeCantiereGiornate, routeCantiereGiornateFatto } from "../../app/routes";
 import {
   leggiOrarioCantiere,
   saldoResiduoCantiere,
   telefonoCantiere,
 } from "../agenda/agendaSelectors";
+import {
+  calcolaOreUomo,
+  classeBadgeStatoGiornata,
+  etichettaStatoGiornata,
+  normalizzaStatoGiornata,
+  parseDataProgrammazione,
+  STATI_GIORNATA,
+} from "../cantieri/services/programmazioneCantiereService";
+import {
+  formattaNomiOperai,
+} from "../cantieri/services/registroGiornateService";
+import { giornataProgrammataConsuntivoMancante } from "../agenda/giornataConsuntivoUi";
 import { TIPO_LAVORO } from "./lavoriTypes";
 import {
   classeBadgeStatoPianificazione,
@@ -145,13 +157,137 @@ export function creaLavoroDaCantiere(cantiere = {}) {
 }
 
 /**
+ * Proietta una giornata programmata del cantiere in un Lavoro agenda (UX-7.3).
+ * @param {object} cantiere
+ * @param {object} giornata
+ */
+export function creaLavoroDaGiornataProgrammata(cantiere = {}, giornata = {}) {
+  const base = creaLavoroDaCantiere(cantiere);
+  const statoGiornata = normalizzaStatoGiornata(giornata.stato);
+  const statoAgenda =
+    statoGiornata === "completata"
+      ? "completato"
+      : statoGiornata === "in-corso"
+        ? "in-corso"
+        : statoGiornata === "annullata"
+          ? "rimandato"
+          : "pianificato";
+  const orePreviste = Number(giornata.orePreviste) || 0;
+  const minuti = orePreviste > 0 ? Math.round(orePreviste * 60) : 0;
+  const dataParsed = parseDataProgrammazione(giornata.data);
+  const operai = Math.max(1, Math.round(Number(giornata.operai) || 1));
+  const attivita = String(giornata.attivita || "").trim();
+  const oreUomo = calcolaOreUomo(giornata);
+  const consuntivoMancante = giornataProgrammataConsuntivoMancante(
+    cantiere,
+    giornata
+  );
+
+  return {
+    ...base,
+    id: `${cantiere.id}:${giornata.id}`,
+    cantiereId: cantiere.id,
+    giornataId: giornata.id,
+    kind: "lavoro-giornata",
+    tipoLavoroLabel: "Previsto",
+    data: dataParsed,
+    scheduledDate: giornata.data,
+    dataIntervento: giornata.data,
+    orario: String(giornata.oraInizio || "").trim(),
+    scheduledTime: String(giornata.oraInizio || "").trim(),
+    estimatedDuration: minuti || null,
+    durataStimata: minuti || null,
+    durataStimataLabel: formattaDurataStimata(minuti) || (orePreviste > 0 ? `${orePreviste} h` : ""),
+    orePreviste,
+    oreUomo,
+    operai,
+    attivitaGiornata: attivita,
+    stato: statoAgenda,
+    statoAgendaCompat: statoAgenda === "pianificato" ? "programmato" : statoAgenda,
+    consuntivoMancante,
+    statoLabel:
+      statoGiornata === STATI_GIORNATA.completata
+        ? consuntivoMancante
+          ? "Consuntivo da registrare"
+          : "Fatta"
+        : etichettaStatoGiornata(statoGiornata),
+    statoBadgeClass:
+      consuntivoMancante
+        ? "ds-badge ds-badge-sospeso"
+        : classeBadgeStatoGiornata(statoGiornata),
+    statoGlifo: statoGiornata === "completata" ? "●" : "○",
+    sottotitoloProgrammazione: [
+      attivita,
+      operai > 0 ? `${operai} ${operai === 1 ? "operaio" : "operai"}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    link: routeCantiereGiornate(cantiere.id),
+    giornata,
+  };
+}
+
+/**
+ * Proietta una giornata lavorativa (consuntivo) in un item Agenda (UX-7.4).
+ * @param {object} cantiere
+ * @param {object} giornata
+ */
+export function creaLavoroDaGiornataLavorativa(cantiere = {}, giornata = {}) {
+  const base = creaLavoroDaCantiere(cantiere);
+  const oreLavorate = Number(giornata.oreLavorate) || 0;
+  const minuti = oreLavorate > 0 ? Math.round(oreLavorate * 60) : 0;
+  const dataParsed = parseDataProgrammazione(giornata.data);
+  const nomi = formattaNomiOperai(giornata.operai);
+  const attivita = String(giornata.attivita || "").trim();
+
+  return {
+    ...base,
+    id: `reg-${cantiere.id}-${giornata.id}`,
+    cantiereId: cantiere.id,
+    registroId: giornata.id,
+    kind: "giornata-lavorativa",
+    tipoLavoroLabel: "Consuntivo",
+    data: dataParsed,
+    scheduledDate: giornata.data,
+    dataIntervento: giornata.data,
+    orario: "",
+    scheduledTime: "",
+    estimatedDuration: minuti || null,
+    durataStimata: minuti || null,
+    durataStimataLabel:
+      formattaDurataStimata(minuti) ||
+      (oreLavorate > 0 ? `${oreLavorate} h` : ""),
+    oreLavorate,
+    orePreviste: oreLavorate,
+    operaiNomi: Array.isArray(giornata.operai) ? giornata.operai : [],
+    attivitaGiornata: attivita,
+    noteGiornata: String(giornata.note || "").trim(),
+    stato: "completato",
+    statoAgendaCompat: "completato",
+    statoLabel: "Consuntivo registrato",
+    statoBadgeClass: "ds-badge ds-badge-completato",
+    statoGlifo: "●",
+    sottotitoloProgrammazione: [nomi, oreLavorate > 0 ? `${oreLavorate}h` : "", attivita]
+      .filter(Boolean)
+      .join(" · "),
+    link: routeCantiereGiornateFatto(cantiere.id),
+    giornata,
+  };
+}
+
+/**
  * @param {ReturnType<typeof creaLavoroDaCantiere>[]} lavori
  */
 export function calcolaOrePreviste(lavori = []) {
-  const minuti = lavori.reduce(
-    (acc, lavoro) => acc + (Number(lavoro.durataStimata) || 0),
-    0
-  );
+  const minuti = lavori.reduce((acc, lavoro) => {
+    if (lavoro?.kind === "giornata-lavorativa" && lavoro?.oreLavorate != null) {
+      return acc + Number(lavoro.oreLavorate) * 60;
+    }
+    if (lavoro?.orePreviste != null && Number(lavoro.orePreviste) > 0) {
+      return acc + Number(lavoro.orePreviste) * 60;
+    }
+    return acc + (Number(lavoro.durataStimata) || 0);
+  }, 0);
   return {
     minuti,
     label: formattaDurataStimata(minuti) || "—",

@@ -1,6 +1,20 @@
 import { calcolaAvanzamentoChecklist } from "../cantieri/cantieriDomain";
-import { ROUTES, routeCantiere, routePreventivo } from "../../app/routes";
+import {
+  calcolaRimanenzaCantiere,
+} from "../cantieri/services/pagamentiCantiereService";
+import { ROUTES, routeCantiere, routeCantierePagamenti, routePreventiviLista, routePreventivo } from "../../app/routes";
+import { FILTRI_PREVENTIVO } from "../preventivi/archivioPreventiviUtils";
+import { selezionaDaComprare } from "../../domain/listaSpesa/acquistiSelectors";
+import { formatEuro } from "../../utils/preventivi";
 import { preparaAnteprimaGiornata } from "../agenda/giornataSelectors";
+
+const PRIORITA_DA_FARE = {
+  URGENTE: 1,
+  INCASSO: 2,
+  PREVENTIVO: 3,
+  MATERIALE: 4,
+  PROMEMORIA: 5,
+};
 
 export function selezionaCantieriAperti(cantieri = []) {
   return cantieri.filter((cantiere) => cantiere.stato !== "Completato");
@@ -98,20 +112,7 @@ function preventiviDaInviare(preventivi = []) {
 function haPagamentoDaRegistrare(cantieri = []) {
   return cantieri.some((cantiere) => {
     if (cantiere.stato === "Completato") return false;
-    const totale = Number(
-      cantiere.preventivoOriginaleTotale ??
-        cantiere.totale ??
-        cantiere.extra?.totale ??
-        0
-    );
-    const incassato = Number(
-      cantiere.incassato ??
-        cantiere.extra?.incassato ??
-        cantiere.acconto ??
-        cantiere.extra?.acconto ??
-        0
-    );
-    return totale > 0 && totale - incassato > 0;
+    return calcolaRimanenzaCantiere(cantiere) > 0;
   });
 }
 
@@ -143,15 +144,19 @@ export function selezionaAttenzioni({
         bozze.length === 1
           ? "Preventivo da inviare"
           : `${bozze.length} preventivi da inviare`,
-      link: bozze[0]?.id ? routePreventivo(bozze[0].id) : ROUTES.preventivi,
+      link: routePreventiviLista({ filtro: FILTRI_PREVENTIVO.BOZZE }),
     });
   }
 
   if (haPagamentoDaRegistrare(aperti)) {
+    const saldi = selezionaSaldiDaIncassare(aperti);
+    const target = saldi[0]?.cantiere;
     items.push({
       id: "pagamenti",
       testo: "Pagamenti da registrare",
-      link: ROUTES.incassi,
+      link: target?.id
+        ? routeCantierePagamenti(target.id)
+        : ROUTES.cantieri,
     });
   }
 
@@ -167,6 +172,143 @@ export function selezionaAttenzioni({
   }
 
   return items.slice(0, massimo);
+}
+
+/**
+ * Cantieri con rimanenza da incassare (UX-7.5), ordinati per importo decrescente.
+ * @param {object[]} cantieri
+ */
+export function selezionaSaldiDaIncassare(cantieri = []) {
+  return (cantieri || [])
+    .filter((c) => c && c.stato !== "Completato")
+    .map((cantiere) => ({
+      cantiere,
+      rimanenza: calcolaRimanenzaCantiere(cantiere),
+    }))
+    .filter((voce) => voce.rimanenza > 0)
+    .sort((a, b) => b.rimanenza - a.rimanenza);
+}
+
+/**
+ * Voci "Da fare" per la Home — massimo 3, priorità operativa.
+ * @param {{
+ *   cantieri?: object[],
+ *   preventivi?: object[],
+ *   listaSpesa?: object[],
+ *   lavoriInRitardo?: object[],
+ *   urgenze?: object[],
+ *   promemoria?: object[],
+ *   massimo?: number,
+ * }} opzioni
+ */
+export function selezionaDaFareHome({
+  cantieri = [],
+  preventivi = [],
+  listaSpesa = [],
+  lavoriInRitardo = [],
+  urgenze = [],
+  promemoria = [],
+  massimo = 3,
+} = {}) {
+  const candidati = [];
+
+  for (const cantiere of lavoriInRitardo) {
+    candidati.push({
+      id: `ritardo-${cantiere.id}`,
+      priorita: PRIORITA_DA_FARE.URGENTE,
+      titolo: cantiere.cliente || cantiere.nome || "Cantiere",
+      sottotitolo: "Lavoro in ritardo",
+      link: routeCantiere(cantiere.id),
+      testId: "home-da-fare-ritardo",
+    });
+  }
+
+  for (const urgenza of urgenze) {
+    candidati.push({
+      id: `urgenza-${urgenza.id}`,
+      priorita: PRIORITA_DA_FARE.URGENTE,
+      titolo: urgenza.titolo || "Urgente",
+      sottotitolo: "Da sistemare oggi",
+      link: ROUTES.agenda,
+      testId: "home-da-fare-urgente",
+    });
+  }
+
+  for (const { cantiere, rimanenza } of selezionaSaldiDaIncassare(cantieri)) {
+    candidati.push({
+      id: `incasso-${cantiere.id}`,
+      priorita: PRIORITA_DA_FARE.INCASSO,
+      importoLabel: formatEuro(rimanenza),
+      titolo: cantiere.cliente || cantiere.nome || "Cantiere",
+      sottotitolo: "Resta da incassare",
+      link: routeCantierePagamenti(cantiere.id),
+      testId: "home-da-fare-incasso",
+    });
+  }
+
+  const bozze = (preventivi || []).filter((p) => p?.stato === "Bozza");
+  for (const preventivo of bozze) {
+    const cliente = String(preventivo.cliente || preventivo.numero || "").trim();
+    candidati.push({
+      id: `preventivo-${preventivo.id}`,
+      priorita: PRIORITA_DA_FARE.PREVENTIVO,
+      titolo: cliente ? `Preventivo ${cliente}` : "Preventivo da inviare",
+      sottotitolo: "Da inviare",
+      link: routePreventivo(preventivo.id),
+      testId: "home-da-fare-preventivo",
+    });
+  }
+
+  const materiali = selezionaDaComprare(listaSpesa);
+  if (materiali.length > 0) {
+    candidati.push({
+      id: "materiali",
+      priorita: PRIORITA_DA_FARE.MATERIALE,
+      titolo:
+        materiali.length === 1
+          ? materiali[0].nome
+          : `${materiali.length} materiali`,
+      sottotitolo: "Da comprare",
+      link: ROUTES.acquisti,
+      testId: "home-da-fare-acquisti",
+    });
+  }
+
+  for (const voce of promemoria) {
+    candidati.push({
+      id: `promemoria-${voce.id}`,
+      priorita: PRIORITA_DA_FARE.PROMEMORIA,
+      titolo: voce.titolo || "Promemoria",
+      sottotitolo: [voce.data, voce.ora].filter(Boolean).join(" · ") || "Promemoria",
+      link: ROUTES.agenda,
+      testId: "home-da-fare-promemoria",
+    });
+  }
+
+  const visti = new Set();
+  return candidati
+    .filter((voce) => {
+      if (visti.has(voce.id)) return false;
+      visti.add(voce.id);
+      return true;
+    })
+    .sort((a, b) => a.priorita - b.priorita)
+    .slice(0, massimo);
+}
+
+function formattaUltimaAttivitaRelativa(record = {}, ora = new Date()) {
+  const t = timestampRecord(record);
+  if (!t) return "";
+  const inizioOggi = new Date(ora.getFullYear(), ora.getMonth(), ora.getDate()).getTime();
+  const inizioRecord = new Date(
+    new Date(t).getFullYear(),
+    new Date(t).getMonth(),
+    new Date(t).getDate()
+  ).getTime();
+  const diffGiorni = Math.round((inizioOggi - inizioRecord) / (24 * 60 * 60 * 1000));
+  if (diffGiorni <= 0) return "Ultima attività: oggi";
+  if (diffGiorni === 1) return "Ultima attività: ieri";
+  return `Ultima attività: ${diffGiorni} giorni fa`;
 }
 
 function timestampRecord(record = {}) {
@@ -195,6 +337,7 @@ function timestampRecord(record = {}) {
 export function selezionaContinuaDoveHaiLasciato({
   cantieri = [],
   preventivi = [],
+  ora = new Date(),
 } = {}) {
   const candidati = [
     ...cantieri.map((item) => ({
@@ -225,11 +368,12 @@ export function selezionaContinuaDoveHaiLasciato({
   });
 
   const top = candidati[0];
+  const dettaglioTempo = formattaUltimaAttivitaRelativa(top.item, ora);
   return {
     tipo: top.tipo,
     etichetta: top.etichetta,
     titolo: top.titolo,
-    dettaglio: top.dettaglio,
+    dettaglio: dettaglioTempo || top.dettaglio,
     link: top.link,
   };
 }
@@ -238,22 +382,20 @@ export function selezionaContinuaDoveHaiLasciato({
  * Frase dinamica sotto la data — una sola, priorità operativa.
  */
 export function creaFraseGiornata({
+  lavoriOggi = 0,
   interventiOggi = 0,
-  preventiviInAttesa = 0,
-  haSaldoDaIncassare = false,
+  urgenti = 0,
 } = {}) {
-  if (interventiOggi > 0) {
-    return interventiOggi === 1
-      ? "Hai 1 intervento oggi."
-      : `Hai ${interventiOggi} interventi oggi.`;
+  const totaleLavori = lavoriOggi || interventiOggi;
+  if (totaleLavori > 0) {
+    return totaleLavori === 1
+      ? "Hai 1 lavoro oggi"
+      : `Hai ${totaleLavori} lavori oggi`;
   }
-  if (haSaldoDaIncassare) {
-    return "Oggi hai un saldo da incassare.";
+  if (urgenti > 0) {
+    return urgenti === 1
+      ? "Hai 1 cosa da sistemare"
+      : `Hai ${urgenti} cose da sistemare`;
   }
-  if (preventiviInAttesa > 0) {
-    return preventiviInAttesa === 1
-      ? "Ti aspetta 1 preventivo."
-      : `Ti aspettano ${preventiviInAttesa} preventivi.`;
-  }
-  return "Giornata libera.";
+  return "Oggi non hai lavori programmati";
 }

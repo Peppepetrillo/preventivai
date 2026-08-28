@@ -59,6 +59,63 @@ describe("nativeExport", () => {
     expect(share.mock.calls[0][0].files[0]).toBeInstanceOf(File);
   });
 
+  it("Capacitor native (iPhone o iPad) usa lo stesso percorso share — nessun ramo device", async () => {
+    isNativePlatform.mockReturnValue(true);
+    const share = vi.fn(async () => undefined);
+    vi.stubGlobal("navigator", {
+      share,
+      canShare: () => true,
+    });
+
+    const esito = await esportaBlob(
+      new Blob(['{"app":"PreventivAI"}'], { type: "application/json" }),
+      "preventivai-backup-test.json",
+      { titolo: "Backup PreventivAI" }
+    );
+
+    expect(isPiattaformaNativa()).toBe(true);
+    expect(esito).toEqual({ success: true, metodo: "share" });
+    expect(share.mock.calls[0][0].files[0].type).toContain("json");
+  });
+
+  it("su web con canShare(files) usa Share Sheet (Safari/PWA)", async () => {
+    isNativePlatform.mockReturnValue(false);
+    const share = vi.fn(async () => undefined);
+    vi.stubGlobal("navigator", {
+      share,
+      canShare: (payload) => Array.isArray(payload?.files) && payload.files.length > 0,
+    });
+
+    const esito = await esportaBlob(
+      new Blob(['{"ok":true}'], { type: "application/json" }),
+      "preventivai-backup-2026-08-20.json",
+      { titolo: "Backup PreventivAI" }
+    );
+
+    expect(esito).toEqual({ success: true, metodo: "share" });
+    expect(share).toHaveBeenCalled();
+    expect(share.mock.calls[0][0].files[0].name).toBe(
+      "preventivai-backup-2026-08-20.json"
+    );
+  });
+
+  it("su web se share annullato restituisce annullato", async () => {
+    isNativePlatform.mockReturnValue(false);
+    const abort = Object.assign(new Error("Abort"), { name: "AbortError" });
+    vi.stubGlobal("navigator", {
+      share: vi.fn(async () => {
+        throw abort;
+      }),
+      canShare: () => true,
+    });
+
+    const esito = await esportaBlob(new Blob(["x"]), "b.json", {
+      titolo: "Backup PreventivAI",
+    });
+
+    expect(esito).toEqual({ success: false, error: "annullato" });
+  });
+
   it("apriUrlEsterno su native usa location.href", () => {
     isNativePlatform.mockReturnValue(true);
     const open = vi.fn();

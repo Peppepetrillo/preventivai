@@ -8,14 +8,30 @@ import {
   Save,
   Trash2,
 } from "lucide-react";
-import { ROUTES, routeCantiere, routePreventivo } from "../app/routes";
+import {
+  ROUTES,
+  routeCantiere,
+  routeCantierePagamenti,
+  routePreventivo,
+  statoNavigazioneCantiere,
+  CANTIERE_SEZIONI,
+} from "../app/routes";
+import {
+  marcaPostConversioneCantiere,
+} from "../features/cantieri/postConversioneUi";
 import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
 import {
-  eliminaPreventivo as eliminaPreventivoRepository,
-  leggiPreventivi,
+  leggiPreventiviTutti,
   salvaNuovoPreventivo,
   salvaPreventivi,
+  trovaPreventivo,
 } from "../repositories/preventiviRepository";
+import {
+  isRecordCestinato,
+  ripristina,
+  spostaNelCestino,
+  TIPI_CESTINO,
+} from "../domain/cestino";
 import {
   aggiornaCampoLavorazione,
   duplicaPreventivo as duplicaDatiPreventivo,
@@ -29,7 +45,6 @@ import {
 } from "../features/preventivi/incassiDomain";
 import {
   EVENTI_WORKFLOW,
-  EVENTI_WORKFLOW_LABEL,
   STATI_PREVENTIVO,
   accettaPreventivo,
   annullaPreventivo,
@@ -69,7 +84,9 @@ import PreventivoWorkflowAzioni from "../features/preventivi/components/Preventi
 import BannerPostAccettazione from "../features/preventivi/components/BannerPostAccettazione";
 import {
   HERO_CTA,
+  etichettaEventoWorkflowUi,
   filtraAzioniSecondarie,
+  isPagamentiSuCantiere,
   risolviHeroCta,
 } from "../features/preventivi/utils/preventivoHeroCta";
 import { messaggioErroreWorkflow } from "../features/preventivi/utils/messaggioErroreWorkflow";
@@ -85,15 +102,14 @@ export default function DettaglioPreventivo() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const archivio = leggiPreventivi();
-  const indicePreventivo = archivio.findIndex(
-    (p) => String(p.id) === String(id)
-  );
-  const preventivoGrezzo = archivio[indicePreventivo];
+  const preventivoGrezzo = trovaPreventivo(id, { includiCestinati: true });
   const preventivo = preventivoGrezzo
     ? arricchisciPreventivoLegacy(preventivoGrezzo)
     : null;
+  const nelCestino = isRecordCestinato(preventivoGrezzo);
   const datiAzienda = leggiDatiAzienda();
+  const [cestinoTick, setCestinoTick] = useState(0);
+  void cestinoTick;
 
   const [cliente, setCliente] = useState(preventivo?.cliente || "");
   const [stato, setStato] = useState(
@@ -218,26 +234,30 @@ export default function DettaglioPreventivo() {
     });
   }
 
+  function persistiPreventivoCorrente(prossimo) {
+    salvaPreventivi(
+      leggiPreventiviTutti().map((item) =>
+        String(item.id) === String(id) ? prossimo : item
+      )
+    );
+  }
+
   function aggiornaIncassoPreventivo(prossimoPreventivo) {
     setIncassato(prossimoPreventivo.incassato);
     setNoteIncasso(prossimoPreventivo.noteIncasso || "");
-    salvaPreventivi(
-      archivio.map((item, index) =>
-        index === indicePreventivo
-          ? preparaDatiPreventivo({
-              preventivo: prossimoPreventivo,
-              cliente,
-              stato: stato || "Bozza",
-              lavorazioni,
-              sconto: normalizzaNumero(sconto),
-              iva: normalizzaNumero(iva),
-              validita: normalizzaNumero(validita, 30),
-              pagamento: pagamento.trim(),
-              acconto: normalizzaNumero(acconto),
-              note,
-            })
-          : item
-      )
+    persistiPreventivoCorrente(
+      preparaDatiPreventivo({
+        preventivo: prossimoPreventivo,
+        cliente,
+        stato: stato || "Bozza",
+        lavorazioni,
+        sconto: normalizzaNumero(sconto),
+        iva: normalizzaNumero(iva),
+        validita: normalizzaNumero(validita, 30),
+        pagamento: pagamento.trim(),
+        acconto: normalizzaNumero(acconto),
+        note,
+      })
     );
   }
 
@@ -275,17 +295,13 @@ export default function DettaglioPreventivo() {
   }
 
   function salvaModifiche() {
-    const archivioAggiornato = archivio.map((item, index) =>
-      index === indicePreventivo ? datiAggiornati() : item
-    );
-
-    salvaPreventivi(archivioAggiornato);
+    persistiPreventivoCorrente(datiAggiornati());
     setMessaggio("Preventivo aggiornato sul dispositivo.");
   }
 
   function duplicaPreventivo() {
     const nuovoPreventivo = duplicaDatiPreventivo({
-      archivio,
+      archivio: leggiPreventiviTutti(),
       datiPreventivo: datiAggiornati(),
       cliente,
     });
@@ -299,8 +315,8 @@ export default function DettaglioPreventivo() {
       setConfermaEliminaPreventivo(true);
       return;
     }
-    eliminaPreventivoRepository(preventivo.id);
-    navigate(ROUTES.archivio);
+    spostaNelCestino(TIPI_CESTINO.preventivo, preventivo.id);
+    navigate(ROUTES.preventivi);
   }
 
   function eseguiAnnulla() {
@@ -437,10 +453,7 @@ export default function DettaglioPreventivo() {
   }
 
   function salvaModificheSilenzioso() {
-    const archivioAggiornato = leggiPreventivi().map((item, index) =>
-      index === indicePreventivo ? datiAggiornati() : item
-    );
-    salvaPreventivi(archivioAggiornato);
+    persistiPreventivoCorrente(datiAggiornati());
   }
 
   function trasformaInCantiere() {
@@ -492,14 +505,13 @@ export default function DettaglioPreventivo() {
       setStato(risultato.preventivo.stato || STATI_PREVENTIVO.CONVERTITO);
       setTimelineTick((n) => n + 1);
       setShowUsaDistinta(false);
-      setMessaggio(
-        risultato.creato
-          ? usaDistinta
-            ? "Cantiere creato con materiali dalla distinta."
-            : "Cantiere creato e collegato al preventivo."
-          : "Cantiere già collegato."
-      );
-      navigate(routeCantiere(risultato.cantiere.id));
+      const incassatoPre = Number(incassato) || 0;
+      marcaPostConversioneCantiere(risultato.cantiere.id, {
+        incassatoPreventivo: incassatoPre,
+      });
+      navigate(routeCantierePagamenti(risultato.cantiere.id), {
+        state: statoNavigazioneCantiere(CANTIERE_SEZIONI.PAGAMENTI),
+      });
     } catch (errore) {
       setShowUsaDistinta(false);
       setMessaggio(
@@ -541,10 +553,25 @@ export default function DettaglioPreventivo() {
     navigate(routeCantiere(cantiereCollegatoId));
   }
 
+  function scorriElemento(elemento) {
+    if (elemento && typeof elemento.scrollIntoView === "function") {
+      elemento.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
   function apriSezione(ref) {
     if (!ref?.current) return;
     ref.current.open = true;
-    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    scorriElemento(ref.current);
+  }
+
+  function apriCondivisionePreventivo() {
+    apriSezione(sezioneDocumentiRef);
+    window.requestAnimationFrame(() => {
+      scorriElemento(
+        document.querySelector('[data-testid="preventivo-condivisione-section"]')
+      );
+    });
   }
 
   function gestisciHeroCta(heroId) {
@@ -553,7 +580,7 @@ export default function DettaglioPreventivo() {
         apriSezione(sezioneLavorazioniRef);
         break;
       case HERO_CTA.INVIA_DI_NUOVO:
-        apriSezione(sezioneDocumentiRef);
+        apriCondivisionePreventivo();
         break;
       case HERO_CTA.ACCETTA:
         eseguiAccetta();
@@ -566,6 +593,9 @@ export default function DettaglioPreventivo() {
         break;
       case HERO_CTA.SEGNA_INVIATO:
         eseguiInvia();
+        break;
+      case HERO_CTA.CONDIVIDI:
+        apriCondivisionePreventivo();
         break;
       default:
         break;
@@ -580,11 +610,59 @@ export default function DettaglioPreventivo() {
     );
   }
 
+  if (nelCestino) {
+    return (
+      <div className="pro-page text-white">
+        <Link to={ROUTES.preventivi} className="ds-back-link mb-5">
+          <ArrowLeft size={18} />
+          Preventivi
+        </Link>
+        <div className="pro-panel p-5 space-y-4" data-testid="preventivo-nel-cestino">
+          <p className="section-label">Cestino</p>
+          <h1 className="ds-page-title">
+            {preventivo.numero || `Preventivo ${preventivo.id}`}
+          </h1>
+          <p className="ds-text-secondary">
+            Questo preventivo è nel Cestino. Ripristinalo per modificarlo o
+            continuare il workflow.
+          </p>
+          <p className="ds-text-primary">{preventivo.cliente || "Cliente"}</p>
+          <div className="grid gap-3">
+            <button
+              type="button"
+              className="btn-primary min-h-[48px]"
+              data-testid="preventivo-ripristina-cestino"
+              onClick={() => {
+                ripristina(TIPI_CESTINO.preventivo, preventivo.id);
+                setCestinoTick((n) => n + 1);
+              }}
+            >
+              Ripristina
+            </button>
+            <button
+              type="button"
+              className="btn-secondary min-h-[48px]"
+              onClick={() => navigate(ROUTES.preventivi)}
+            >
+              Torna indietro
+            </button>
+            <Link
+              to={ROUTES.cestino}
+              className="btn-secondary min-h-[48px] flex items-center justify-center"
+            >
+              Apri Cestino
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="pro-page text-white">
-      <Link to={ROUTES.archivio} className="ds-back-link mb-5">
+      <Link to={ROUTES.preventivi} className="ds-back-link mb-5">
         <ArrowLeft size={18} />
-        Archivio
+        Preventivi
       </Link>
 
       <PreventivoDettaglioHeader
@@ -603,12 +681,12 @@ export default function DettaglioPreventivo() {
 
       <PreventivoWorkflowAzioni
         azioni={azioniSecondarie}
+        stato={stato}
         confermaRifiuto={confermaRifiuto}
-        mostraModifica={
-          stato === STATI_PREVENTIVO.BOZZA && heroCta?.id === HERO_CTA.ACCETTA
-        }
+        mostraModifica={false}
         mostraInviaDiNuovo={
-          stato === STATI_PREVENTIVO.INVIATO && heroCta?.id === HERO_CTA.ACCETTA
+          stato === STATI_PREVENTIVO.INVIATO &&
+          heroCta?.id === HERO_CTA.ACCETTA
         }
         onModifica={() => gestisciHeroCta(HERO_CTA.MODIFICA)}
         onInviaDiNuovo={() => gestisciHeroCta(HERO_CTA.INVIA_DI_NUOVO)}
@@ -702,8 +780,8 @@ export default function DettaglioPreventivo() {
 
       <PreventivoSezioneCollapsible
         id="materiali"
-        titolo="Materiali"
-        sottotitolo="Distinta collegata"
+        titolo="Lista materiali"
+        sottotitolo="Materiali collegati"
       >
         <PreventivoDistintaSection
           distinta={distintaCollegata}
@@ -718,8 +796,8 @@ export default function DettaglioPreventivo() {
 
       <PreventivoSezioneCollapsible
         id="economico"
-        titolo="Economico"
-        sottotitolo={`Saldo ${formatEuro(saldo)}`}
+        titolo="Prezzo e pagamenti"
+        sottotitolo={`Totale ${formatEuro(totali.totale)}`}
       >
         <label className="block">
           <span className="text-sm text-slate-400">Cliente</span>
@@ -734,144 +812,223 @@ export default function DettaglioPreventivo() {
           <span className="text-sm text-slate-400">Stato</span>
           <select
             value={stato}
-            onChange={(event) => setStato(event.target.value)}
+            onChange={(event) => {
+              const prossimo = event.target.value;
+              if (
+                prossimo === STATI_PREVENTIVO.CONVERTITO ||
+                prossimo === STATI_PREVENTIVO.LAVORO_COMPLETATO
+              ) {
+                if (!cantiereCollegatoId) {
+                  window.alert(
+                    "Non puoi impostare questo stato senza un cantiere collegato.\nUsa «Inizia cantiere» dal percorso normale."
+                  );
+                  return;
+                }
+                const messaggioConferma =
+                  "Correzione manuale dello stato.\nQuesta azione non crea né chiude automaticamente il cantiere.";
+                if (!window.confirm(messaggioConferma)) {
+                  return;
+                }
+              }
+              setStato(prossimo);
+            }}
             className="mt-2 input-pro"
             data-testid="preventivo-stato-select"
           >
             <option value={STATI_PREVENTIVO.BOZZA}>Bozza</option>
             <option value={STATI_PREVENTIVO.INVIATO}>Inviato</option>
             <option value={STATI_PREVENTIVO.ACCETTATO}>Accettato</option>
-            <option value={STATI_PREVENTIVO.CONVERTITO}>In cantiere</option>
-            <option value={STATI_PREVENTIVO.LAVORO_COMPLETATO}>
-              Lavoro completato
-            </option>
-            <option value={STATI_PREVENTIVO.RIFIUTATO}>Rifiutato</option>
+            {cantiereCollegatoId ||
+            stato === STATI_PREVENTIVO.CONVERTITO ? (
+              <option value={STATI_PREVENTIVO.CONVERTITO}>In cantiere</option>
+            ) : null}
+            {cantiereCollegatoId ||
+            stato === STATI_PREVENTIVO.LAVORO_COMPLETATO ? (
+              <option value={STATI_PREVENTIVO.LAVORO_COMPLETATO}>
+                Lavoro finito
+              </option>
+            ) : null}
+            <option value={STATI_PREVENTIVO.RIFIUTATO}>Non accettato</option>
           </select>
+          {!cantiereCollegatoId &&
+          (stato === STATI_PREVENTIVO.CONVERTITO ||
+            stato === STATI_PREVENTIVO.LAVORO_COMPLETATO) ? (
+            <p
+              className="ds-text-secondary text-sm mt-2"
+              data-testid="preventivo-stato-orfano-hint"
+            >
+              Stato senza cantiere collegato. Correggi lo stato (es. Accettato)
+              oppure usa il percorso «Inizia cantiere» quando disponibile.
+            </p>
+          ) : null}
         </label>
 
-        <div className="grid grid-cols-2 gap-3">
-          <label>
-            <span className="text-sm text-slate-400">Sconto %</span>
-            <NumericInput
-              min="0"
-              value={sconto}
-              inputMode="decimal"
-              onChange={setSconto}
-              className="mt-2 input-pro"
-            />
-          </label>
-          <label>
-            <span className="text-sm text-slate-400">IVA %</span>
-            <NumericInput
-              min="0"
-              value={iva}
-              inputMode="decimal"
-              onChange={setIva}
-              className="mt-2 input-pro"
-            />
-          </label>
-        </div>
+        <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4 space-y-4">
+          <h3 className="ds-section-title">Prezzo</h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-3">
-          <label>
-            <span className="text-sm text-slate-400">Validità giorni</span>
-            <NumericInput
-              min="0"
-              value={validita}
-              inputMode="numeric"
-              onChange={setValidita}
-              className="mt-2 input-pro"
-            />
-          </label>
-          <label>
-            <span className="text-sm text-slate-400">Pagamento</span>
-            <input
-              value={pagamento}
-              onChange={(event) => setPagamento(event.target.value)}
-              className="mt-2 input-pro"
-            />
-          </label>
-        </div>
+          <div className="grid grid-cols-2 gap-3">
+            <label>
+              <span className="text-sm text-slate-400">Sconto %</span>
+              <NumericInput
+                min="0"
+                value={sconto}
+                inputMode="decimal"
+                onChange={setSconto}
+                className="mt-2 input-pro"
+              />
+            </label>
+            <label>
+              <span className="text-sm text-slate-400">IVA %</span>
+              <NumericInput
+                min="0"
+                value={iva}
+                inputMode="decimal"
+                onChange={setIva}
+                className="mt-2 input-pro"
+              />
+            </label>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label>
-            <span className="text-sm text-slate-400">Acconto</span>
-            <NumericInput
-              min="0"
-              value={acconto}
-              inputMode="decimal"
-              onChange={setAcconto}
-              className="mt-2 input-pro"
-            />
-          </label>
-          <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
-            <span className="text-sm text-slate-400">Saldo previsto</span>
-            <p className="text-2xl font-bold mt-1" data-testid="preventivo-saldo">
-              {formatEuro(saldo)}
+          <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-3">
+            <label>
+              <span className="text-sm text-slate-400">Validità giorni</span>
+              <NumericInput
+                min="0"
+                value={validita}
+                inputMode="numeric"
+                onChange={setValidita}
+                className="mt-2 input-pro"
+              />
+            </label>
+            <label>
+              <span className="text-sm text-slate-400">Modalità di pagamento</span>
+              <input
+                value={pagamento}
+                onChange={(event) => setPagamento(event.target.value)}
+                className="mt-2 input-pro"
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label>
+              <span className="text-sm text-slate-400">Acconto concordato</span>
+              <NumericInput
+                min="0"
+                value={acconto}
+                inputMode="decimal"
+                onChange={setAcconto}
+                className="mt-2 input-pro"
+              />
+            </label>
+            <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
+              <span className="text-sm text-slate-400">Saldo previsto</span>
+              <p className="text-2xl font-bold mt-1" data-testid="preventivo-saldo">
+                {formatEuro(saldo)}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm text-slate-400">Imponibile</p>
+            <p className="ds-text-primary mt-1">{formatEuro(totali.imponibile)}</p>
+            <p className="text-sm text-slate-400 mt-3">Totale IVA incl.</p>
+            <p className="text-xl font-bold mt-1" data-testid="preventivo-totale-economico">
+              {formatEuro(totali.totale)}
             </p>
           </div>
         </div>
 
-        <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
-          <p className="text-sm text-slate-400">Imponibile</p>
-          <p className="ds-text-primary mt-1">{formatEuro(totali.imponibile)}</p>
-          <p className="text-sm text-slate-400 mt-3">Totale IVA incl.</p>
-          <p className="text-xl font-bold mt-1" data-testid="preventivo-totale-economico">
-            {formatEuro(totali.totale)}
-          </p>
-        </div>
-
-        <div className="pt-2 border-t border-white/[0.06] space-y-4">
-          <h3 className="ds-section-title">Incasso</h3>
-          <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-[14px] border border-yellow-300/20 bg-yellow-400/5 p-4 space-y-4">
+          <h3 className="ds-section-title">Pagamenti</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
-              <p className="text-sm text-slate-400">Totale</p>
-              <p className="text-xl font-bold mt-1">{formatEuro(totali.totale)}</p>
-            </div>
-            <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
-              <p className="text-sm text-slate-400">Incassato</p>
+              <p className="text-sm text-slate-400">Già incassato</p>
               <p className="text-xl font-bold mt-1" data-testid="preventivo-incassato">
                 {formatEuro(incassato)}
               </p>
             </div>
             <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4">
-              <p className="text-sm text-slate-400">Da incassare</p>
+              <p className="text-sm text-slate-400">Resta da incassare</p>
               <p className="text-xl font-bold mt-1" data-testid="preventivo-da-incassare">
                 {formatEuro(daIncassare)}
               </p>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
-            <NumericInput
-              min="0"
-              value={nuovoIncasso}
-              inputMode="decimal"
-              onChange={setNuovoIncasso}
-              placeholder="Nuovo incasso"
-              className="input-pro"
-            />
-            <button
-              type="button"
-              onClick={registraNuovoIncasso}
-              className="btn-secondary px-5 py-4 min-h-[44px]"
-            >
-              Nuovo incasso
-            </button>
-            <button
-              type="button"
-              onClick={segnaSaldato}
-              className="btn-secondary px-5 py-4 min-h-[44px]"
-            >
-              Segna saldato
-            </button>
-          </div>
-          <textarea
-            value={noteIncasso}
-            onChange={(event) => setNoteIncasso(event.target.value)}
-            rows="2"
-            placeholder="Note incasso"
-            className="input-pro resize-none"
-          />
+          {isPagamentiSuCantiere(
+            { stato, cantiereId: cantiereCollegatoId },
+            cantiereCollegatoId
+          ) ? (
+            <div className="space-y-3" data-testid="preventivo-pagamenti-readonly">
+              <p className="ds-text-secondary text-sm">
+                Questo preventivo è ora in cantiere.
+                <br />
+                I nuovi pagamenti si registrano nel cantiere.
+              </p>
+              {Number(incassato) > 0 ? (
+                <p
+                  className="ds-text-secondary text-sm"
+                  data-testid="preventivo-incassato-pre-cantiere"
+                >
+                  Nel preventivo risultano già registrati {formatEuro(incassato)}{" "}
+                  prima del passaggio in cantiere.
+                </p>
+              ) : null}
+              {noteIncasso ? (
+                <p className="ds-text-secondary text-sm">
+                  Note: {noteIncasso}
+                </p>
+              ) : null}
+              {cantiereCollegatoId ? (
+                <Link
+                  to={routeCantierePagamenti(cantiereCollegatoId)}
+                  className="btn-primary inline-flex items-center justify-center min-h-[48px] px-5"
+                  data-testid="preventivo-apri-pagamenti-cantiere"
+                >
+                  Apri pagamenti cantiere
+                </Link>
+              ) : (
+                <p className="ds-text-secondary text-sm">
+                  Nessun cantiere collegato. Correggi lo stato oppure usa «Inizia
+                  cantiere» quando il preventivo è Accettato.
+                </p>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
+                <NumericInput
+                  min="0"
+                  value={nuovoIncasso}
+                  inputMode="decimal"
+                  onChange={setNuovoIncasso}
+                  placeholder="Importo ricevuto"
+                  className="input-pro"
+                />
+                <button
+                  type="button"
+                  onClick={registraNuovoIncasso}
+                  className="btn-secondary px-5 py-4 min-h-[44px]"
+                >
+                  Registra pagamento
+                </button>
+                <button
+                  type="button"
+                  onClick={segnaSaldato}
+                  className="btn-secondary px-5 py-4 min-h-[44px]"
+                >
+                  Segna saldato
+                </button>
+              </div>
+              <textarea
+                value={noteIncasso}
+                onChange={(event) => setNoteIncasso(event.target.value)}
+                rows="2"
+                placeholder="Note pagamento"
+                className="input-pro resize-none"
+              />
+            </>
+          )}
         </div>
       </PreventivoSezioneCollapsible>
 
@@ -988,6 +1145,8 @@ export default function DettaglioPreventivo() {
                   EVENTI_WORKFLOW.CANTIERE_CREATO,
                   EVENTI_WORKFLOW.PREVENTIVO_CONVERTITO,
                   EVENTI_WORKFLOW.PREVENTIVO_ANNULLATO,
+                  EVENTI_WORKFLOW.PREVENTIVO_RIFIUTATO,
+                  EVENTI_WORKFLOW.LAVORO_COMPLETATO,
                 ].includes(e.tipo)
               )
               .map((evento) => (
@@ -997,9 +1156,7 @@ export default function DettaglioPreventivo() {
                 >
                   <span className="text-yellow-200/80 shrink-0">•</span>
                   <span>
-                    {evento.label ||
-                      EVENTI_WORKFLOW_LABEL[evento.tipo] ||
-                      evento.tipo}
+                    {etichettaEventoWorkflowUi(evento.tipo, evento.label)}
                   </span>
                 </li>
               ))}
@@ -1041,14 +1198,18 @@ export default function DettaglioPreventivo() {
         ) : (
           <div className="grid gap-2 ux-sheet">
             <p className="text-sm text-red-100/90 text-center">
-              Eliminare definitivamente questo preventivo?
+              Vuoi spostare questo elemento nel Cestino?
+            </p>
+            <p className="text-xs text-slate-400 text-center">
+              L&apos;elemento verrà spostato nel Cestino e potrai ripristinarlo
+              in seguito.
             </p>
             <button
               type="button"
               onClick={eliminaPreventivo}
               className="w-full btn-danger p-4 font-bold min-h-[44px]"
             >
-              Conferma elimina
+              Sposta nel Cestino
             </button>
             <button
               type="button"

@@ -13,7 +13,8 @@ export default function BannerPostAccettazione({ onIniziaCantiere }) {
       <div>
         <p className="ds-card-title">Preventivo accettato</p>
         <p className="ds-text-secondary text-sm mt-1">
-          Pronto per partire. Crea il cantiere per lavorare sul campo.
+          Pronto per partire. Crea il cantiere per lavorare sul campo. I
+          pagamenti si registrano nel tab Pagamenti del cantiere.
         </p>
       </div>
       <button

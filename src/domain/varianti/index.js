@@ -28,4 +28,7 @@ export {
   esportaPdfVariantiNonDisponibile,
 } from "./variantiPdf";
 
-export { resetVarianti } from "./variantiRepository";
+export {
+  eliminaVariantiPerCantiere,
+  resetVarianti,
+} from "./variantiRepository";

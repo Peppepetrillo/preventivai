@@ -1,5 +1,7 @@
 import {
   AZIONI_PREVENTIVO,
+  EVENTI_WORKFLOW,
+  EVENTI_WORKFLOW_LABEL,
   STATI_PREVENTIVO,
   normalizzaStatoPreventivo,
 } from "../../../domain/workflow";
@@ -11,6 +13,7 @@ export const HERO_CTA = Object.freeze({
   CONVERTI_CANTIERE: "converti_cantiere",
   APRI_CANTIERE: "apri_cantiere",
   SEGNA_INVIATO: "segna_inviato",
+  CONDIVIDI: "condividi",
 });
 
 const MAP_HERO_A_AZIONE = Object.freeze({
@@ -18,6 +21,15 @@ const MAP_HERO_A_AZIONE = Object.freeze({
   [HERO_CTA.APRI_CANTIERE]: AZIONI_PREVENTIVO.APRI_CANTIERE,
   [HERO_CTA.ACCETTA]: AZIONI_PREVENTIVO.ACCETTA,
   [HERO_CTA.SEGNA_INVIATO]: AZIONI_PREVENTIVO.INVIA,
+});
+
+/** Label eventi timeline solo UI (non modifica eventi persistiti). */
+const EVENTI_WORKFLOW_LABEL_UI = Object.freeze({
+  [EVENTI_WORKFLOW.PREVENTIVO_CONVERTITO]: "Diventato cantiere",
+  [EVENTI_WORKFLOW.CANTIERE_CREATO]: "Cantiere creato",
+  [EVENTI_WORKFLOW.PREVENTIVO_ANNULLATO]: "Non accettato",
+  [EVENTI_WORKFLOW.PREVENTIVO_RIFIUTATO]: "Non accettato",
+  [EVENTI_WORKFLOW.LAVORO_COMPLETATO]: "Lavoro finito",
 });
 
 /**
@@ -36,13 +48,29 @@ export function etichettaStatoUi(stato) {
     case STATI_PREVENTIVO.CONVERTITO:
       return "In cantiere";
     case STATI_PREVENTIVO.LAVORO_COMPLETATO:
-      return "Lavoro completato";
+      return "Lavoro finito";
     case STATI_PREVENTIVO.RIFIUTATO:
     case STATI_PREVENTIVO.ANNULLATO:
-      return "Rifiutato";
+      return "Non accettato";
     default:
       return s;
   }
+}
+
+/**
+ * Label evento cronologia per UI (ignora label legacy salvate come "Preventivo convertito").
+ * @param {string=} tipo
+ * @param {string=} labelSalvata
+ */
+export function etichettaEventoWorkflowUi(tipo, labelSalvata) {
+  if (tipo && EVENTI_WORKFLOW_LABEL_UI[tipo]) {
+    return EVENTI_WORKFLOW_LABEL_UI[tipo];
+  }
+  const grezzo = String(labelSalvata || "").trim();
+  if (/convertito/i.test(grezzo)) return "Diventato cantiere";
+  if (/annullato|rifiutato/i.test(grezzo)) return "Non accettato";
+  if (tipo && EVENTI_WORKFLOW_LABEL[tipo]) return EVENTI_WORKFLOW_LABEL[tipo];
+  return grezzo || String(tipo || "");
 }
 
 /**
@@ -95,24 +123,41 @@ export function risolviHeroCta({
     return { id: HERO_CTA.CONVERTI_CANTIERE, label: "Inizia cantiere" };
   }
 
-  // UX-5.4: Accetta è l'azione primaria su Bozza / Inviato
-  if (azioni.includes(AZIONI_PREVENTIVO.ACCETTA)) {
-    return { id: HERO_CTA.ACCETTA, label: "Accetta" };
+  if (s === STATI_PREVENTIVO.BOZZA) {
+    return { id: HERO_CTA.CONDIVIDI, label: "Condividi preventivo" };
   }
 
-  if (s === STATI_PREVENTIVO.BOZZA) {
-    return { id: HERO_CTA.MODIFICA, label: "Modifica preventivo" };
+  if (s === STATI_PREVENTIVO.INVIATO && azioni.includes(AZIONI_PREVENTIVO.ACCETTA)) {
+    return { id: HERO_CTA.ACCETTA, label: "Cliente ha accettato" };
   }
 
   if (s === STATI_PREVENTIVO.INVIATO) {
-    return { id: HERO_CTA.INVIA_DI_NUOVO, label: "Invia di nuovo" };
+    return { id: HERO_CTA.INVIA_DI_NUOVO, label: "Condividi di nuovo" };
   }
 
   if (azioni.includes(AZIONI_PREVENTIVO.INVIA)) {
-    return { id: HERO_CTA.SEGNA_INVIATO, label: "Segna inviato" };
+    return { id: HERO_CTA.SEGNA_INVIATO, label: "Segna come inviato" };
   }
 
   return null;
+}
+
+/**
+ * True se i nuovi pagamenti vanno registrati nel cantiere (non sul preventivo).
+ * Solo UI — non modifica dominio.
+ * @param {{ stato?: string, cantiereId?: string|number|null }=} preventivo
+ * @param {string|number|null=} cantiereCollegatoId
+ */
+export function isPagamentiSuCantiere(preventivo, cantiereCollegatoId = null) {
+  const s = normalizzaStatoPreventivo(preventivo?.stato);
+  if (
+    s === STATI_PREVENTIVO.CONVERTITO ||
+    s === STATI_PREVENTIVO.LAVORO_COMPLETATO
+  ) {
+    return true;
+  }
+  if (preventivo?.cantiereId || cantiereCollegatoId) return true;
+  return false;
 }
 
 /**

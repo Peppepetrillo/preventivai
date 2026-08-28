@@ -3,6 +3,9 @@ import { Capacitor } from "@capacitor/core";
 /**
  * Helper export/apertura URL sicuri su Capacitor (WKWebView).
  * Nessuna nuova feature: solo evitare doc.save / <a download> / window.open inaffidabili.
+ *
+ * Capacitor.isNativePlatform() è true sia su iPhone sia su iPad:
+ * stesso percorso Share Sheet (UX-6.6). Non serve un ramo device-specific.
  */
 
 export function isPiattaformaNativa() {
@@ -15,7 +18,7 @@ export function isPiattaformaNativa() {
 
 /**
  * Su web: download via <a download>.
- * Su native: Web Share API con File (unico percorso affidabile su iPhone).
+ * Su native / Safari-PWA con file sharing: Web Share API con File.
  * @param {Blob} blob
  * @param {string} nomeFile
  * @param {{ titolo?: string }=} opzioni
@@ -32,7 +35,11 @@ export async function esportaBlob(blob, nomeFile, opzioni = {}) {
     type: blob.type || "application/pdf",
   });
 
-  if (isPiattaformaNativa() && typeof navigator !== "undefined" && navigator.share) {
+  const nativo = isPiattaformaNativa();
+  const puoShare =
+    typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  if (nativo && puoShare) {
     try {
       const payload = { files: [file], title: titolo };
       if (typeof navigator.canShare === "function" && !navigator.canShare(payload)) {
@@ -47,6 +54,26 @@ export async function esportaBlob(blob, nomeFile, opzioni = {}) {
       }
       // Nessun fallback download su native: non funziona in WKWebView.
       return { success: false, error: errore?.message || "share_fallito" };
+    }
+  }
+
+  // UX-6.6: Safari / PWA iPhone — Share Sheet se supporta File
+  if (
+    !nativo &&
+    puoShare &&
+    typeof navigator.canShare === "function"
+  ) {
+    const payload = { files: [file], title: titolo };
+    if (navigator.canShare(payload)) {
+      try {
+        await navigator.share(payload);
+        return { success: true, metodo: "share" };
+      } catch (errore) {
+        if (errore?.name === "AbortError") {
+          return { success: false, error: "annullato" };
+        }
+        // Fall-through al download tradizionale.
+      }
     }
   }
 

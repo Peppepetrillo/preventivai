@@ -534,7 +534,7 @@ function PreventivoSuggeritoCard({ proposal, onCrea, creazioneInCorso }) {
       className="pro-panel-strong px-4 py-4 mt-3"
       aria-labelledby="preventivo-suggerito-title"
     >
-      <p className="section-label">Economico</p>
+      <p className="section-label">Prezzo</p>
       <h2 id="preventivo-suggerito-title" className="ds-section-title mt-1">
         Preventivo suggerito
       </h2>

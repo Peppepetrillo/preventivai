@@ -5,6 +5,7 @@ import {
   allineaAcquistatoDaMaterialeCantiere,
   creaVoceListaSpesa,
   rimuoviVoceListaPerMaterialeEliminato,
+  rimuoviVociListaPerCantiere,
   selezionaVociDaComprare,
   sincronizzaMaterialiDaCantiere,
 } from "./listaSpesaDomain";
@@ -127,6 +128,16 @@ export function sincronizzaEliminazioneMaterialeSuLista(
 
 export function leggiDaComprare() {
   return selezionaVociDaComprare(leggiListaSpesa());
+}
+
+/**
+ * Elimina le voci lista spesa del cantiere (lavoroId / cantiereId).
+ * @param {string|number} cantiereId
+ */
+export function rimuoviVociListaSpesaPerCantiere(cantiereId) {
+  const prossimo = rimuoviVociListaPerCantiere(leggiListaSpesa(), cantiereId);
+  salvaListaSpesa(prossimo);
+  return prossimo;
 }
 
 export {

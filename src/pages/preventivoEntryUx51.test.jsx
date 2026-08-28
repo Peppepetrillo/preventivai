@@ -29,9 +29,9 @@ describe("UX-5.1 entry unico preventivo", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByTestId("entry-nuovo-preventivo")).toHaveAttribute(
+    expect(screen.getByTestId("home-nuovo-preventivo")).toHaveAttribute(
       "href",
-      ROUTES.preventivi
+      ROUTES.preventiviNuovo
     );
   });
 
@@ -54,7 +54,7 @@ describe("UX-5.1 entry unico preventivo", () => {
 
     expect(screen.getByTestId("entry-nuovo-preventivo-cliente")).toHaveAttribute(
       "href",
-      `${ROUTES.preventivi}?clienteId=99`
+      `${ROUTES.preventiviNuovo}?clienteId=99`
     );
   });
 });

@@ -9,10 +9,18 @@ export function unificaTimelineGiorno(lavori = [], attivita = []) {
   const items = [
     ...lavori.map((lavoro) => ({
       id: `lavoro-${lavoro.id}`,
-      kind: "lavoro",
+      kind:
+        lavoro.kind === "giornata-lavorativa"
+          ? "giornata-lavorativa"
+          : lavoro.kind === "lavoro-giornata"
+            ? "lavoro-giornata"
+            : "lavoro",
       ora: lavoro.orario || lavoro.scheduledTime || "",
       titolo: lavoro.cliente || lavoro.titolo,
-      sottotitolo: lavoro.tipoLavoroLabel || "Lavoro",
+      sottotitolo:
+        lavoro.sottotitoloProgrammazione ||
+        lavoro.tipoLavoroLabel ||
+        "Lavoro",
       stato: lavoro.stato,
       statoLabel: lavoro.statoLabel,
       statoGlifo: lavoro.statoGlifo || "○",

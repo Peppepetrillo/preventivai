@@ -1,5 +1,15 @@
 import { selezionaDaComprareOggi } from "../../domain/listaSpesa/acquistiSelectors";
-import { creaLavoroDaCantiere } from "../lavori/lavoriDomain";
+import {
+  giornatePerGiorno,
+  haProgrammazioneMultiGiorno,
+} from "../cantieri/services/programmazioneCantiereService";
+import { calcolaRimanenzaCantiere } from "../cantieri/services/pagamentiCantiereService";
+import { registroPerGiorno } from "../cantieri/services/registroGiornateService";
+import {
+  creaLavoroDaCantiere,
+  creaLavoroDaGiornataLavorativa,
+  creaLavoroDaGiornataProgrammata,
+} from "../lavori/lavoriDomain";
 
 /** @typedef {"pianificato"|"programmato"|"in-corso"|"completato"|"rimandato"} StatoAgenda */
 
@@ -141,26 +151,11 @@ export function classeBadgeStatoAgenda(stato) {
 }
 
 /**
- * Saldo residuo da incassare (stessa logica intelligence, solo lettura).
+ * Saldo residuo da incassare (allineato a pagamenti[] / UX-7.5).
  * @param {object} cantiere
  */
 export function saldoResiduoCantiere(cantiere = {}) {
-  const totale = Number(
-    cantiere.preventivoOriginaleTotale ??
-      cantiere.preventivoImporto ??
-      cantiere.totale ??
-      cantiere.extra?.totale ??
-      0
-  );
-  const incassato = Number(
-    cantiere.incassato ??
-      cantiere.extra?.incassato ??
-      cantiere.acconto ??
-      cantiere.extra?.acconto ??
-      0
-  );
-  if (!(totale > 0)) return 0;
-  return Math.max(totale - incassato, 0);
+  return calcolaRimanenzaCantiere(cantiere);
 }
 
 /**
@@ -177,13 +172,60 @@ export function telefonoCantiere(cantiere = {}) {
 }
 
 /**
- * Determina se un cantiere appartiene al giorno selezionato.
- * Senza data esplicita: solo cantieri aperti compaiono su "oggi".
+ * Trasforma un cantiere in intervento agenda (alias Lavoro).
+ * @param {object} cantiere
+ */
+export function creaInterventoAgenda(cantiere = {}) {
+  return creaLavoroDaCantiere(cantiere);
+}
+
+/**
+ * Espande un cantiere in uno o più lavori agenda per il giorno.
+ * Include programmazione (UX-7.3) e registro lavorativo (UX-7.4).
+ * @param {object} cantiere
+ * @param {Date} giorno
+ */
+export function espandiCantiereInLavoriGiorno(cantiere, giorno) {
+  const registro = registroPerGiorno(cantiere, giorno).map((giornata) =>
+    creaLavoroDaGiornataLavorativa(cantiere, giornata)
+  );
+
+  if (haProgrammazioneMultiGiorno(cantiere)) {
+    const programmate = giornatePerGiorno(cantiere, giorno).map((giornata) =>
+      creaLavoroDaGiornataProgrammata(cantiere, giornata)
+    );
+    return [...programmate, ...registro];
+  }
+
+  const dataProgrammata = leggiDataCantiere(cantiere);
+  const giornoNorm = inizioGiornata(giorno);
+  const items = [];
+
+  if (dataProgrammata && dataProgrammata.getTime() === giornoNorm.getTime()) {
+    items.push(creaInterventoAgenda(cantiere));
+  } else if (!dataProgrammata && registro.length === 0) {
+    // Cantiere aperto senza data (solo "oggi"): il filtro ha già validato.
+    items.push(creaInterventoAgenda(cantiere));
+  }
+
+  return [...items, ...registro];
+}
+
+/**
+ * Un cantiere compare nel giorno se ha programmazione, registro, data legacy o (oggi) aperto.
  * @param {object} cantiere
  * @param {Date} giorno
  * @param {Date} oggi
  */
 export function cantiereAppartieneAlGiorno(cantiere, giorno, oggi) {
+  if (registroPerGiorno(cantiere, giorno).length > 0) {
+    return true;
+  }
+
+  if (haProgrammazioneMultiGiorno(cantiere)) {
+    return giornatePerGiorno(cantiere, giorno).length > 0;
+  }
+
   const dataProgrammata = leggiDataCantiere(cantiere);
   if (dataProgrammata) {
     return dataProgrammata.getTime() === inizioGiornata(giorno).getTime();
@@ -194,14 +236,6 @@ export function cantiereAppartieneAlGiorno(cantiere, giorno, oggi) {
 
   const stato = cantiere.stato || "Da iniziare";
   return stato !== "Completato";
-}
-
-/**
- * Trasforma un cantiere in intervento agenda (alias Lavoro).
- * @param {object} cantiere
- */
-export function creaInterventoAgenda(cantiere = {}) {
-  return creaLavoroDaCantiere(cantiere);
 }
 
 /**
@@ -216,7 +250,7 @@ export function selezionaInterventiGiorno(cantieri = [], giorno, oggi = new Date
 
   return cantieri
     .filter((c) => c && cantiereAppartieneAlGiorno(c, giornoNorm, oggiNorm))
-    .map(creaInterventoAgenda)
+    .flatMap((c) => espandiCantiereInLavoriGiorno(c, giornoNorm))
     .sort((a, b) => {
       const diffOrario = minutiOrario(a.orario) - minutiOrario(b.orario);
       if (diffOrario !== 0) return diffOrario;

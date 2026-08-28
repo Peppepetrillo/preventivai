@@ -85,16 +85,58 @@
  * @property {number|string=} clienteId
  * @property {string=} dataCreazione
  * @property {string=} dataAccettazione
- * @property {"preventivo"|string=} origine
+ * @property {"preventivo"|"diretto"|string=} origine
  * @property {LavorazionePreventivo[]=} lavorazioniOrigine
  * @property {number=} preventivoOriginaleTotale Snapshot economico del preventivo iniziale
  * @property {string=} descrizione
+ * @property {string=} tipoIntervento Tipologia intervento (lavoro diretto UX-6.5)
+ * @property {string=} descrizioneIntervento Descrizione lavoro diretto
+ * @property {number=} totaleLavoro Prezzo lavoro diretto (solo origine diretto)
+ * @property {number=} incassato Cache totale incassato (sincronizzata da pagamenti[])
+ * @property {number=} acconto Alias legacy di incassato (retrocompatibilità)
+ * @property {PagamentoCantiere[]=} pagamenti Registro pagamenti (UX-7.5, source of truth)
  * @property {object=} extra
  * @property {VarianteCantiere[]=} varianti Extra in cantiere (non alterano il preventivo)
  * @property {"cantiere"|"intervento"|"sopralluogo"|"manutenzione"|string=} tipoLavoro Tipologia agenda
  * @property {string=} dataIntervento Data programmata (DD/MM/YYYY)
  * @property {string=} orario Orario programmato (HH:mm)
  * @property {number=} durataStimata Durata prevista in minuti
+ * @property {GiornataProgrammata[]=} programmazione Giornate programmate (UX-7.3)
+ * @property {GiornataLavorativa[]=} registroGiornate Consuntivo ore reali (UX-7.4)
+ */
+
+/**
+ * @typedef {Object} PagamentoCantiere
+ * @property {string} id
+ * @property {string} data DD/MM/YYYY
+ * @property {number} importo > 0
+ * @property {"acconto"|"saldo"|"altro"|string} tipo
+ * @property {"contanti"|"bonifico"|"pos"|"altro"|string} metodo
+ * @property {string=} note
+ */
+
+/**
+ * @typedef {Object} GiornataProgrammata
+ * @property {string} id
+ * @property {string} data DD/MM/YYYY
+ * @property {number} operai Numero operai (v1, senza anagrafica)
+ * @property {number} orePreviste Ore di presenza previste
+ * @property {string=} attivita Descrizione attività della giornata
+ * @property {string=} note
+ * @property {"programmata"|"in-corso"|"completata"|"annullata"|string} stato
+ * @property {string=} oraInizio HH:mm opzionale
+ */
+
+/**
+ * @typedef {Object} GiornataLavorativa
+ * @property {string} id
+ * @property {string} data DD/MM/YYYY
+ * @property {string=} cantiereId
+ * @property {string[]} operai Nomi liberi (non anagrafica)
+ * @property {number} oreLavorate Ore effettivamente lavorate
+ * @property {string=} attivita Lavoro svolto
+ * @property {string=} note
+ * @property {string=} giornataProgrammataId Link opzionale a programmazione
  */
 
 /**

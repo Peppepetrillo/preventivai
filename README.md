@@ -37,13 +37,14 @@ npm run open:android
 
 | Area | Route |
 |------|--------|
-| Home | `/` |
-| Nuovo preventivo (wizard) | `/preventivi` |
-| Archivio preventivi | `/archivio` |
+| Home (Oggi) | `/` |
+| Preventivi (lista) | `/preventivi` |
+| Nuovo preventivo (wizard) | `/preventivi/nuovo` |
 | Dettaglio preventivo | `/preventivo/:id` |
 | Cantieri (lista) | `/cantieri` |
 | Dettaglio cantiere | `/cantiere/:id` |
-| Incassi / Clienti / Listino / Impostazioni | rispettive route in `src/app/routes.js` |
+| Altro (hub) | `/altro` |
+| Agenda / Clienti / Impostazioni | sotto `/altro` — vedi `src/app/routes.js` |
 
 ## Sicurezza (RC-3)
 

@@ -3,6 +3,7 @@ import {
   HardHat,
   PenLine,
   Send,
+  Share2,
 } from "lucide-react";
 
 import { HERO_CTA } from "../utils/preventivoHeroCta";
@@ -14,6 +15,7 @@ const ICONE = {
   [HERO_CTA.CONVERTI_CANTIERE]: HardHat,
   [HERO_CTA.APRI_CANTIERE]: HardHat,
   [HERO_CTA.SEGNA_INVIATO]: Send,
+  [HERO_CTA.CONDIVIDI]: Share2,
 };
 
 /**

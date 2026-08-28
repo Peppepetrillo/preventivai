@@ -58,8 +58,9 @@ export default defineConfig({
           "minimal-ui",
         ],
 
-        orientation:
-          "portrait",
+        // Cap iOS: orientamenti da Info.plist (iPhone portrait, iPad tutte).
+        // PWA: "any" consente landscape su iPad installata; iPhone resta usabile.
+        orientation: "any",
 
         scope: "/",
 

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { ROUTES } from "../app/routes";
 import {
+  isAltroHubRoute,
   isDistintaEditorRoute,
   isVoceAttiva,
   shouldShowBottomNav,
+  shouldShowGlobalCreateFab,
 } from "./bottomNavUtils";
 
 describe("bottomNavUtils — editor distinta UX-4.3", () => {
@@ -36,13 +38,11 @@ describe("bottomNavUtils — editor distinta UX-4.3", () => {
   });
 });
 
-describe("BottomNav isVoceAttiva RC-2B", () => {
+describe("BottomNav isVoceAttiva UX-8.1", () => {
   const voceCantieri = { path: ROUTES.cantieri };
   const voceIncassi = { path: ROUTES.incassi };
-  const voceArchivio = { path: ROUTES.archivio };
   const vocePreventivi = { path: ROUTES.preventivi };
-  const voceClienti = { path: ROUTES.clienti };
-  const voceAgenda = { path: ROUTES.agenda };
+  const voceAltro = { path: ROUTES.altro };
 
   it("evidenzia Cantieri su lista e dettaglio", () => {
     expect(isVoceAttiva({ pathname: "/cantieri" }, voceCantieri)).toBe(true);
@@ -56,24 +56,44 @@ describe("BottomNav isVoceAttiva RC-2B", () => {
     expect(isVoceAttiva({ pathname: "/incassi" }, voceIncassi)).toBe(true);
   });
 
-  it("evidenzia la sezione Preventivi su archivio, wizard e dettaglio", () => {
-    expect(isVoceAttiva({ pathname: "/archivio" }, voceArchivio)).toBe(true);
-    expect(isVoceAttiva({ pathname: "/preventivi" }, voceArchivio)).toBe(true);
+  it("evidenzia Preventivi su lista, wizard nuovo, archivio e dettaglio", () => {
+    expect(isVoceAttiva({ pathname: "/archivio" }, vocePreventivi)).toBe(true);
+    expect(isVoceAttiva({ pathname: "/preventivi" }, vocePreventivi)).toBe(true);
     expect(
-      isVoceAttiva({ pathname: "/preventivo/9" }, voceArchivio)
+      isVoceAttiva({ pathname: "/preventivi/nuovo" }, vocePreventivi)
     ).toBe(true);
     expect(
       isVoceAttiva({ pathname: "/preventivo/9" }, vocePreventivi)
     ).toBe(true);
+    expect(
+      isVoceAttiva({ pathname: "/nuovo-preventivo" }, vocePreventivi)
+    ).toBe(true);
   });
 
-  it("evidenzia Clienti sul dettaglio cliente", () => {
-    expect(isVoceAttiva({ pathname: "/cliente/3" }, voceClienti)).toBe(true);
-    expect(isVoceAttiva({ pathname: "/" }, voceClienti)).toBe(false);
+  it("evidenzia Altro sull'hub e sulle route collegate", () => {
+    expect(isVoceAttiva({ pathname: ROUTES.altro }, voceAltro)).toBe(true);
+    expect(isVoceAttiva({ pathname: ROUTES.agenda }, voceAltro)).toBe(true);
+    expect(isVoceAttiva({ pathname: ROUTES.clienti }, voceAltro)).toBe(true);
+    expect(isVoceAttiva({ pathname: "/cliente/3" }, voceAltro)).toBe(true);
+    expect(isVoceAttiva({ pathname: ROUTES.impostazioni }, voceAltro)).toBe(true);
+    expect(isVoceAttiva({ pathname: ROUTES.cestino }, voceAltro)).toBe(true);
+    expect(isVoceAttiva({ pathname: ROUTES.acquisti }, voceAltro)).toBe(true);
+    expect(isVoceAttiva({ pathname: "/" }, voceAltro)).toBe(false);
   });
 
-  it("evidenzia Agenda solo sulla route agenda", () => {
-    expect(isVoceAttiva({ pathname: "/agenda" }, voceAgenda)).toBe(true);
-    expect(isVoceAttiva({ pathname: "/cantieri" }, voceAgenda)).toBe(false);
+  it("evidenzia Altro sul Cestino", () => {
+    expect(isVoceAttiva({ pathname: ROUTES.cestino }, voceAltro)).toBe(true);
+  });
+
+  it("isAltroHubRoute copre le route dell'hub", () => {
+    expect(isAltroHubRoute(ROUTES.listino)).toBe(true);
+    expect(isAltroHubRoute(ROUTES.catalogoMateriali)).toBe(true);
+    expect(isAltroHubRoute(ROUTES.distinteMateriali)).toBe(true);
+    expect(isAltroHubRoute("/preventivi")).toBe(false);
+  });
+
+  it("nasconde GlobalCreate FAB su Agenda", () => {
+    expect(shouldShowGlobalCreateFab({ pathname: ROUTES.agenda })).toBe(false);
+    expect(shouldShowGlobalCreateFab({ pathname: ROUTES.dashboard })).toBe(true);
   });
 });

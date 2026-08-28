@@ -76,7 +76,7 @@ export default function CantiereVarianti({
     try {
       const titolo = String(form.titolo || form.descrizione || "").trim();
       if (!titolo) {
-        setErrore("Inserisci un titolo per la variante.");
+        setErrore("Inserisci un titolo per il lavoro extra.");
         return;
       }
       const risultato = onCreaVariante?.({
@@ -89,7 +89,7 @@ export default function CantiereVarianti({
         note: form.note,
       });
       if (risultato && risultato.success === false) {
-        setErrore(risultato.error || "Impossibile salvare la variante.");
+        setErrore(risultato.error || "Impossibile salvare il lavoro extra.");
         return;
       }
       resetForm();
@@ -102,7 +102,7 @@ export default function CantiereVarianti({
         setDialogoPreventivo(risultato.variante);
       }
     } catch (e) {
-      setErrore(e.message || "Impossibile salvare la variante.");
+      setErrore(e.message || "Impossibile salvare il lavoro extra.");
     }
   }
 
@@ -130,7 +130,7 @@ export default function CantiereVarianti({
           <ClipboardList size={22} className="text-yellow-300" aria-hidden="true" />
           <div>
             <h3 id="varianti-title" className="text-xl font-black">
-              Varianti
+              Lavori extra
             </h3>
             <p className="text-sm text-slate-400 mt-1">
               Extra e modifiche richieste dal cliente.
@@ -144,7 +144,7 @@ export default function CantiereVarianti({
           className="btn-primary px-4 py-3 min-h-11 flex items-center gap-2"
         >
           <Plus size={18} aria-hidden="true" />
-          Nuova Variante
+          Nuovo lavoro extra
         </button>
       </div>
 
@@ -159,7 +159,7 @@ export default function CantiereVarianti({
         </div>
         <div className="rounded-[14px] border border-white/10 bg-black/[0.14] p-4">
           <p className="text-xs uppercase tracking-wide text-slate-500 font-bold">
-            Varianti
+            Lavori extra
           </p>
           <p
             className={`text-2xl font-black mt-2 ${
@@ -273,7 +273,7 @@ export default function CantiereVarianti({
         </p>
         {riepilogo.varianti.length === 0 ? (
           <p className="text-slate-500 text-center py-4">
-            Nessuna variante registrata.
+            Nessun lavoro extra registrato.
           </p>
         ) : (
           <ul className="space-y-2">
@@ -394,8 +394,8 @@ export default function CantiereVarianti({
               Aggiornare anche il preventivo?
             </h2>
             <p className="text-sm text-slate-400 leading-relaxed">
-              La variante è già sul cantiere. Puoi copiarla anche sul preventivo
-              collegato.
+              Il lavoro extra è già sul cantiere. Puoi copiarlo anche sul
+              preventivo collegato.
             </p>
             <div className="grid gap-2">
               <button

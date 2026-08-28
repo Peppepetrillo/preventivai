@@ -151,4 +151,25 @@ describe("buildCantiereReport", () => {
       "Cliente preferisce passare il corrugato nel controsoffitto.",
     ]);
   });
+
+  it("per lavoro diretto espone descrizione e nasconde preventivo", () => {
+    const report = buildCantiereReport({
+      cantiere: {
+        ...cantiere,
+        origine: "diretto",
+        tipoIntervento: "Riparazione",
+        descrizioneIntervento: "Sostituito magnetotermico.",
+        totaleLavoro: 180,
+        preventivoNumero: "",
+        lavorazioniOrigine: [],
+      },
+    });
+
+    expect(report.lavoroDiretto).toBe(true);
+    expect(report.copertina.titoloDocumento).toMatch(/Riepilogo intervento/i);
+    expect(report.riepilogo.descrizioneIntervento).toContain("magnetotermico");
+    expect(report.riepilogo.tipoIntervento).toBe("Riparazione");
+    expect(report.riepilogo.lavorazioni).toEqual([]);
+    expect(report.riepilogo.preventivoOrigine.numero).toBe("");
+  });
 });

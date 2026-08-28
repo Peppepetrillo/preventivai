@@ -124,24 +124,38 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
   beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn();
     window.location.hash = "";
+    sessionStorage.clear();
   });
 
-  it("mostra segment bar con esattamente 4 tab", () => {
+  it("mostra segment bar con 4 tab principali", () => {
     renderOverview();
 
     expect(screen.getByRole("tablist", { name: /Sezioni cantiere/i })).toBeInTheDocument();
     expect(screen.getAllByRole("tab")).toHaveLength(4);
-    expect(tab("Operativo")).toBeInTheDocument();
-    expect(tab("Economico")).toBeInTheDocument();
-    expect(tab("Documenti")).toBeInTheDocument();
-    expect(tab("Impostazioni")).toBeInTheDocument();
+    expect(tab("Lavoro")).toBeInTheDocument();
+    expect(tab("Giornate")).toBeInTheDocument();
+    expect(tab("Pagamenti")).toBeInTheDocument();
+    expect(tab("Diario")).toBeInTheDocument();
   });
 
-  it("seleziona Operativo di default", () => {
+  it("mostra riepilogo economico in header", () => {
     renderOverview();
 
-    expect(tab("Operativo")).toHaveAttribute("aria-selected", "true");
-    expect(tab("Economico")).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByTestId("cantiere-header-economico")).toBeInTheDocument();
+    expect(screen.getByTestId("header-economico-totale")).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("cantiere-header-economico")).getByText(
+        "Resta da incassare"
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("cantiere-header-stato")).toBeInTheDocument();
+  });
+
+  it("seleziona Lavoro di default", () => {
+    renderOverview();
+
+    expect(tab("Lavoro")).toHaveAttribute("aria-selected", "true");
+    expect(tab("Pagamenti")).toHaveAttribute("aria-selected", "false");
     expect(screen.getByTestId("cantiere-panel-operativo")).not.toHaveAttribute("hidden");
     expect(screen.getByTestId("cantiere-panel-economico")).toHaveAttribute("hidden");
   });
@@ -165,7 +179,7 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
     const operativo = screen.getByTestId("cantiere-panel-operativo");
 
     expect(
-      within(operativo).getByRole("heading", { name: /Oggi devo fare/i })
+      within(operativo).getByRole("heading", { name: /^Da fare$/i })
     ).toBeVisible();
     expect(
       within(operativo).getByRole("heading", { name: /Da comprare/i })
@@ -179,55 +193,99 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
     ).not.toBeInTheDocument();
     expect(screen.getByDisplayValue("Posare tubi")).toBeVisible();
     expect(screen.getByText("Tubo")).toBeVisible();
-    expect(
-      within(operativo).getByText(/note operative/i)
-    ).toBeInTheDocument();
   });
 
   it("tab Documenti: diario, preventivo e report", () => {
     renderOverview();
 
-    fireEvent.click(tab("Documenti"));
+    fireEvent.click(tab("Diario"));
     const documenti = screen.getByTestId("cantiere-panel-documenti");
 
-    expect(tab("Documenti")).toHaveAttribute("aria-selected", "true");
-    expect(
-      within(documenti).getByRole("heading", { name: /^Diario$/i })
-    ).toBeVisible();
+    expect(tab("Diario")).toHaveAttribute("aria-selected", "true");
+    expect(within(documenti).getByTestId("diario-timeline")).toBeVisible();
     expect(within(documenti).getByTestId("cantiere-link-preventivo")).toBeVisible();
     expect(within(documenti).getByTestId("cantiere-report-panel")).toBeVisible();
     expect(within(documenti).getByText("Punto luce")).toBeVisible();
     expect(
-      within(documenti).getByText(/cronologia e documentazione/i)
+      within(documenti).getByText(/cosa è successo in questo cantiere/i)
     ).toBeInTheDocument();
+  });
+
+  it("tab Giornate: previsto e fatto", () => {
+    renderOverview();
+
+    fireEvent.click(tab("Giornate"));
+
+    expect(tab("Giornate")).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByTestId("cantiere-panel-giornate")).not.toHaveAttribute("hidden");
+    expect(screen.getByTestId("cantiere-programmazione")).toBeInTheDocument();
+    expect(screen.getByTestId("cantiere-registro-lavori")).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { name: /^Previsto$/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("heading", { name: /^Fatto$/i }).length).toBeGreaterThan(0);
   });
 
   it("tab Economico: varianti e pagamenti", () => {
     renderOverview();
 
-    fireEvent.click(tab("Economico"));
+    fireEvent.click(tab("Pagamenti"));
 
-    expect(tab("Economico")).toHaveAttribute("aria-selected", "true");
+    expect(tab("Pagamenti")).toHaveAttribute("aria-selected", "true");
     expect(screen.getByTestId("cantiere-varianti")).toBeVisible();
-    expect(screen.getByRole("heading", { name: /Pagamenti/i })).toBeVisible();
+    expect(screen.getByTestId("cantiere-pagamenti")).toBeVisible();
     expect(screen.getByTestId("cantiere-panel-operativo")).toHaveAttribute("hidden");
   });
 
-  it("tab Impostazioni: stato ed elimina", () => {
+  it("header: stato ed elimina cantiere", () => {
     renderOverview();
 
-    fireEvent.click(tab("Impostazioni"));
+    expect(screen.getByRole("combobox", { name: "Stato cantiere" })).toBeVisible();
+    expect(screen.getByTestId("cantiere-elimina")).toBeInTheDocument();
+  });
 
-    expect(tab("Impostazioni")).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByLabelText("Stato cantiere")).toBeVisible();
-    expect(screen.getByRole("button", { name: /Elimina/i })).toBeVisible();
+  it("ConfirmDialog: Annulla non elimina, Elimina conferma", () => {
+    const onEliminaCantiere = vi.fn();
+    renderOverview({ onEliminaCantiere });
+
+    fireEvent.click(screen.getByTestId("cantiere-elimina"));
+
+    expect(screen.getByTestId("conferma-elimina-cantiere")).toBeInTheDocument();
+    expect(
+      screen.getByText("Vuoi spostare questo elemento nel Cestino?")
+    ).toBeVisible();
+    expect(screen.getByText(/spostato nel Cestino/i)).toBeVisible();
+
+    fireEvent.click(screen.getByTestId("conferma-elimina-cantiere-cancel"));
+    expect(onEliminaCantiere).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("conferma-elimina-cantiere")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("cantiere-elimina"));
+    fireEvent.click(screen.getByTestId("conferma-elimina-cantiere-confirm"));
+    expect(onEliminaCantiere).toHaveBeenCalledTimes(1);
+  });
+
+  it("ConfirmDialog: copy per In corso punta al Cestino", () => {
+    renderOverview({
+      cantiere: { ...cantiereEsempio, stato: "In corso" },
+    });
+
+    fireEvent.click(screen.getByTestId("cantiere-elimina"));
+    expect(screen.getByText(/spostato nel Cestino/i)).toBeVisible();
+  });
+
+  it("ConfirmDialog: copy per Completato punta al Cestino", () => {
+    renderOverview({
+      cantiere: { ...cantiereEsempio, stato: "Completato" },
+    });
+
+    fireEvent.click(screen.getByTestId("cantiere-elimina"));
+    expect(screen.getByText(/spostato nel Cestino/i)).toBeVisible();
   });
 
   it("tab Documenti: diario timeline e quick note", () => {
     const onAggiungiNotaDiario = vi.fn();
     renderOverview({ onAggiungiNotaDiario });
 
-    fireEvent.click(tab("Documenti"));
+    fireEvent.click(tab("Diario"));
     const documenti = screen.getByTestId("cantiere-panel-documenti");
 
     expect(within(documenti).getByTestId("diario-timeline")).toBeVisible();
@@ -240,11 +298,11 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
   it("assistente diario attiva tab Documenti", async () => {
     renderOverview();
 
-    fireEvent.click(screen.getByText(/Mostra suggerimenti Assistente/i));
+    fireEvent.click(screen.getByText(/Mostra suggerimenti/i));
     fireEvent.click(screen.getByRole("button", { name: "Assistente diario" }));
 
     await waitFor(() => {
-      expect(tab("Documenti")).toHaveAttribute("aria-selected", "true");
+      expect(tab("Diario")).toHaveAttribute("aria-selected", "true");
       expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
     });
   });
@@ -256,7 +314,7 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
     window.dispatchEvent(new HashChangeEvent("hashchange"));
 
     await waitFor(() => {
-      expect(tab("Documenti")).toHaveAttribute("aria-selected", "true");
+      expect(tab("Diario")).toHaveAttribute("aria-selected", "true");
     });
   });
 
@@ -281,18 +339,18 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: /Concludi Cantiere/i })
+      screen.getByRole("button", { name: /Lavoro finito/i })
     ).toBeInTheDocument();
   });
 
   it("assistente materiali attiva tab Operativo e scroll", async () => {
     renderOverview();
 
-    fireEvent.click(screen.getByText(/Mostra suggerimenti Assistente/i));
+    fireEvent.click(screen.getByText(/Mostra suggerimenti/i));
     fireEvent.click(screen.getByRole("button", { name: "Assistente materiali" }));
 
     await waitFor(() => {
-      expect(tab("Operativo")).toHaveAttribute("aria-selected", "true");
+      expect(tab("Lavoro")).toHaveAttribute("aria-selected", "true");
       expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
     });
   });
@@ -300,11 +358,11 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
   it("assistente varianti attiva tab Economico", async () => {
     renderOverview();
 
-    fireEvent.click(screen.getByText(/Mostra suggerimenti Assistente/i));
+    fireEvent.click(screen.getByText(/Mostra suggerimenti/i));
     fireEvent.click(screen.getByRole("button", { name: "Assistente varianti" }));
 
     await waitFor(() => {
-      expect(tab("Economico")).toHaveAttribute("aria-selected", "true");
+      expect(tab("Pagamenti")).toHaveAttribute("aria-selected", "true");
       expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
     });
   });
@@ -316,37 +374,126 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
     window.dispatchEvent(new HashChangeEvent("hashchange"));
 
     await waitFor(() => {
-      expect(tab("Documenti")).toHaveAttribute("aria-selected", "true");
+      expect(tab("Diario")).toHaveAttribute("aria-selected", "true");
     });
   });
 
-  it("hash #sezione-modifica attiva tab Impostazioni", async () => {
+  it("hash #sezione-modifica scrolla allo stato in header", async () => {
     renderOverview();
 
     window.location.hash = "#sezione-modifica";
     window.dispatchEvent(new HashChangeEvent("hashchange"));
 
     await waitFor(() => {
-      expect(tab("Impostazioni")).toHaveAttribute("aria-selected", "true");
+      expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+      expect(screen.getByTestId("cantiere-header-stato")).toBeInTheDocument();
     });
   });
 
   it("non duplica id sezione-varianti nel DOM", () => {
     renderOverview();
 
-    fireEvent.click(tab("Economico"));
+    fireEvent.click(tab("Pagamenti"));
 
     expect(document.querySelectorAll("#sezione-varianti")).toHaveLength(1);
+  });
+
+  it("query ?sezione=sezione-pagamenti attiva tab Pagamenti", async () => {
+    render(
+      <MemoryRouter initialEntries={["/cantiere/1?sezione=sezione-pagamenti"]}>
+        <CantiereOverview
+          cantiere={cantiereEsempio}
+          onIniziaLavoro={vi.fn()}
+          onCompletaLavoro={vi.fn()}
+          onAggiornaCampo={vi.fn()}
+          nuovaChecklist=""
+          nuovoMateriale={{ nome: "", quantita: "", unita: "cad" }}
+        />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(tab("Pagamenti")).toHaveAttribute("aria-selected", "true");
+    });
+  });
+
+  it("query ?sezione=sezione-programmazione attiva tab Giornate", async () => {
+    render(
+      <MemoryRouter
+        initialEntries={["/cantiere/1?sezione=sezione-programmazione"]}
+      >
+        <CantiereOverview
+          cantiere={cantiereEsempio}
+          onIniziaLavoro={vi.fn()}
+          onCompletaLavoro={vi.fn()}
+          onAggiornaCampo={vi.fn()}
+          nuovaChecklist=""
+          nuovoMateriale={{ nome: "", quantita: "", unita: "cad" }}
+        />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(tab("Giornate")).toHaveAttribute("aria-selected", "true");
+    });
+  });
+
+  it("query ?sezione=sezione-registro-lavori attiva tab Giornate", async () => {
+    render(
+      <MemoryRouter
+        initialEntries={["/cantiere/1?sezione=sezione-registro-lavori"]}
+      >
+        <CantiereOverview
+          cantiere={cantiereEsempio}
+          onIniziaLavoro={vi.fn()}
+          onCompletaLavoro={vi.fn()}
+          onAggiornaCampo={vi.fn()}
+          nuovaChecklist=""
+          nuovoMateriale={{ nome: "", quantita: "", unita: "cad" }}
+        />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(tab("Giornate")).toHaveAttribute("aria-selected", "true");
+    });
   });
 
   it("assistente collassato ma azioni raggiungibili", async () => {
     renderOverview();
 
-    fireEvent.click(screen.getByText(/Mostra suggerimenti Assistente/i));
+    fireEvent.click(screen.getByText(/Mostra suggerimenti/i));
     expect(screen.getByTestId("cantiere-assistant")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Assistente foto" }));
     await waitFor(() => {
       expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
     });
+  });
+
+  it("UX-8.6 banner post-conversione con Apri Pagamenti", async () => {
+    const { marcaPostConversioneCantiere } = await import(
+      "../postConversioneUi"
+    );
+    marcaPostConversioneCantiere(1, { incassatoPreventivo: 80 });
+
+    renderOverview();
+
+    expect(
+      screen.getByTestId("banner-post-conversione-pagamenti")
+    ).toHaveTextContent(/registra i pagamenti nel cantiere/i);
+    expect(
+      screen.getByTestId("banner-post-conversione-incassato-pre")
+    ).toHaveTextContent(/80/);
+
+    fireEvent.click(
+      screen.getByTestId("banner-post-conversione-apri-pagamenti")
+    );
+
+    expect(
+      screen.queryByTestId("banner-post-conversione-pagamenti")
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("cantiere-panel-economico")).not.toHaveAttribute(
+      "hidden"
+    );
   });
 });

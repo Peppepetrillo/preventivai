@@ -30,7 +30,10 @@ export function useCatalogoMaterialiUi() {
     setCatalogo(caricaCatalogoMateriali());
   }, []);
 
-  const categorie = useMemo(() => elencaMetaCategorieMateriale(), []);
+  const categorie = useMemo(
+    () => elencaMetaCategorieMateriale({ catalogo }),
+    [catalogo]
+  );
 
   const famiglieVisibili = useMemo(() => {
     if (!Array.isArray(catalogo)) return [];

@@ -1,4 +1,6 @@
 import { creaEventoCantiereCreato } from "../diario/events/cantiereCreato";
+import { calcolaTotaleCantiere } from "../../domain/varianti";
+import { calcolaSaldo, normalizzaNumero } from "../../utils/preventivi";
 
 export const STATI_CANTIERE = [
   "Da iniziare",
@@ -9,18 +11,137 @@ export const STATI_CANTIERE = [
   "Completato",
 ];
 
-export function creaCantiere({ nome, cliente, indirizzo }) {
+/** Origine cantiere: da preventivo oppure lavoro diretto (UX-6.5). */
+export const ORIGINE_CANTIERE = Object.freeze({
+  PREVENTIVO: "preventivo",
+  DIRETTO: "diretto",
+});
+
+/**
+ * Tipi intervento per lavori diretti (separati da tipoLavoro agenda).
+ */
+export const TIPI_INTERVENTO = Object.freeze([
+  "Riparazione",
+  "Manutenzione",
+  "Modifica impianto",
+  "Installazione",
+  "Ricerca guasto",
+  "Sopralluogo/intervento",
+  "Altro",
+]);
+
+/**
+ * @param {object=} cantiere
+ * @returns {boolean}
+ */
+export function isCantiereDiretto(cantiere = {}) {
+  return String(cantiere?.origine || "") === ORIGINE_CANTIERE.DIRETTO;
+}
+
+/**
+ * Totale lavoro diretto (prezzo deciso dall'elettricista).
+ * @param {object=} cantiere
+ */
+export function leggiTotaleLavoroDiretto(cantiere = {}) {
+  const grezzo = Number(cantiere?.totaleLavoro);
+  if (!Number.isFinite(grezzo) || grezzo < 0) return 0;
+  return grezzo;
+}
+
+/**
+ * Acconto / incassato (pagamenti[] SoT se presente, altrimenti catena legacy).
+ * @param {object=} cantiere
+ */
+export function leggiAccontoCantiere(cantiere = {}) {
+  if (Array.isArray(cantiere?.pagamenti)) {
+    return cantiere.pagamenti.reduce((acc, grezzo) => {
+      const importo = normalizzaNumero(grezzo?.importo);
+      return acc + (importo > 0 ? importo : 0);
+    }, 0);
+  }
+  return normalizzaNumero(
+    cantiere?.incassato ??
+      cantiere?.extra?.incassato ??
+      cantiere?.acconto ??
+      cantiere?.extra?.acconto ??
+      0
+  );
+}
+
+/**
+ * Saldo / rimanenza.
+ * Totale: diretto → totaleLavoro; preventivo → totaleOverride oppure preventivo+varianti.
+ * @param {object=} cantiere
+ * @param {number=} totaleOverride
+ */
+export function calcolaSaldoCantiere(cantiere = {}, totaleOverride) {
+  let totale;
+  if (totaleOverride != null && Number.isFinite(Number(totaleOverride))) {
+    totale = Math.max(Number(totaleOverride), 0);
+  } else if (isCantiereDiretto(cantiere)) {
+    totale = leggiTotaleLavoroDiretto(cantiere);
+  } else {
+    totale = Math.max(
+      Number(calcolaTotaleCantiere(cantiere).totaleAggiornato) || 0,
+      0
+    );
+  }
+  return calcolaSaldo(totale, leggiAccontoCantiere(cantiere));
+}
+
+/**
+ * @param {string=} tipo
+ */
+export function etichettaTipoIntervento(tipo) {
+  const valore = String(tipo || "").trim();
+  if (TIPI_INTERVENTO.includes(valore)) return valore;
+  return valore || "Intervento";
+}
+
+/**
+ * Creazione manuale = lavoro diretto (UX-6.5).
+ * @param {{
+ *   nome?: string,
+ *   cliente?: string,
+ *   indirizzo?: string,
+ *   tipoIntervento?: string,
+ *   descrizioneIntervento?: string,
+ *   totaleLavoro?: number|string,
+ *   note?: string,
+ * }} input
+ */
+export function creaCantiere({
+  nome,
+  cliente,
+  indirizzo,
+  tipoIntervento = "",
+  descrizioneIntervento = "",
+  totaleLavoro = 0,
+  note = "",
+} = {}) {
+  const descrizione = String(descrizioneIntervento || "").trim();
+  const tipo = String(tipoIntervento || "").trim();
+  const totale = Math.max(normalizzaNumero(totaleLavoro), 0);
+
   const cantiere = {
     id: new Date().getTime(),
-    nome: nome.trim(),
-    cliente: cliente.trim(),
-    indirizzo: indirizzo.trim(),
+    nome: String(nome || "").trim(),
+    cliente: String(cliente || "").trim(),
+    indirizzo: String(indirizzo || "").trim(),
     stato: "Da iniziare",
     tipoLavoro: "cantiere",
+    origine: ORIGINE_CANTIERE.DIRETTO,
+    tipoIntervento: tipo || "Altro",
+    descrizioneIntervento: descrizione,
+    descrizione,
+    totaleLavoro: totale,
+    incassato: 0,
+    acconto: 0,
+    pagamenti: [],
     checklist: [],
     materiali: [],
     foto: [],
-    note: "",
+    note: String(note || "").trim(),
     preventivoOriginaleTotale: 0,
     varianti: [],
     creatoIl: new Date().toLocaleDateString("it-IT"),
@@ -102,6 +223,9 @@ export function creaCantiereDaPreventivo(
     note: notePreventivo || `Creato dal preventivo ${riferimento}.`,
     preventivoOriginaleTotale,
     varianti: [],
+    incassato: 0,
+    acconto: 0,
+    pagamenti: [],
     creatoIl: dataCreazione,
     aggiornatoIl: dataCreazione,
   };
@@ -200,19 +324,10 @@ export function valutaPrerequisitiChiusuraCantiere(
     });
   }
 
-  const totale = Number(
-    cantiere.preventivoOriginaleTotale ??
-      cantiere.preventivoImporto ??
-      cantiere.totale ??
-      0
-  );
-  const incassato = Number(
-    cantiere.incassato ??
-      cantiere.extra?.incassato ??
-      cantiere.acconto ??
-      cantiere.extra?.acconto ??
-      0
-  );
+  const totale = isCantiereDiretto(cantiere)
+    ? leggiTotaleLavoroDiretto(cantiere)
+    : Math.max(Number(calcolaTotaleCantiere(cantiere).totaleAggiornato) || 0, 0);
+  const incassato = leggiAccontoCantiere(cantiere);
   if (totale > 0 && incassato < totale) {
     mancanze.push({
       id: "pagamenti",
@@ -252,4 +367,14 @@ export function valutaPrerequisitiChiusuraCantiere(
     mancanze,
     ok: mancanze.length === 0,
   };
+}
+
+/**
+ * Copy ConfirmDialog per spostamento cantiere nel Cestino (UX-7.1).
+ * Lo stato non cambia il messaggio: soft delete uniforme.
+ * @param {string=} stato
+ */
+export function testoConfermaEliminaCantiere(stato) {
+  void stato;
+  return "L'elemento verrà spostato nel Cestino e potrai ripristinarlo in seguito.";
 }

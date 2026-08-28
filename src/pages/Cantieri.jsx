@@ -76,12 +76,13 @@ export default function Cantieri() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const {
-    cantieri,
+    cantieriAttivi,
     nuovoCantiere,
     messaggio,
     aggiornaCampoNuovoCantiere,
     aggiungiCantiere,
   } = useCantieri();
+  const cantieri = cantieriAttivi;
   const [limite, setLimite] = useState(PAGINA_LISTA_DEFAULT);
   const [ricerca, setRicerca] = useState("");
   const [filtro, setFiltro] = useState("attivi");
@@ -256,8 +257,8 @@ export default function Cantieri() {
               </div>
               <p className="ds-card-title">Nessun cantiere ancora</p>
               <p className="ds-text-secondary mt-2 max-w-sm mx-auto">
-                Crea il primo cantiere o converti un preventivo accettato: lo
-                ritrovi qui ogni giorno.
+                Crea il primo cantiere, oppure apri un preventivo accettato e
+                tocca Inizia cantiere. Lo ritrovi qui ogni giorno.
               </p>
               <div className="mt-6 text-left max-w-lg mx-auto">
                 <NuovoCantiereForm
@@ -320,8 +321,8 @@ export default function Cantieri() {
                             <span className="ds-badge ds-badge-varianti">
                               {economico.numeroVarianti}{" "}
                               {economico.numeroVarianti === 1
-                                ? "variante"
-                                : "varianti"}
+                                ? "lavoro extra"
+                                : "lavori extra"}
                               {economico.deltaVarianti !== 0
                                 ? ` · ${economico.deltaVarianti > 0 ? "+" : ""}${formatEuro(economico.deltaVarianti)}`
                                 : ""}

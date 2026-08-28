@@ -125,7 +125,7 @@ function VarianteForm({
         </span>
         <input
           id={`${baseId}-etichetta`}
-          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-white"
+          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-base text-white"
           value={form.etichetta}
           onChange={(e) => aggiorna("etichetta", e.target.value)}
           placeholder="Es. Ø25"
@@ -138,7 +138,7 @@ function VarianteForm({
           {famiglia.attributoChiave || "Attributo"}
         </span>
         <input
-          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-white"
+          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-base text-white"
           value={form.valoreAttributo}
           onChange={(e) => aggiorna("valoreAttributo", e.target.value)}
           placeholder="Valore attributo"
@@ -150,7 +150,7 @@ function VarianteForm({
           Unità (opzionale)
         </span>
         <select
-          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-3 text-white"
+          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-3 text-base text-white"
           value={form.unita}
           onChange={(e) => aggiorna("unita", e.target.value)}
         >
@@ -168,7 +168,7 @@ function VarianteForm({
           Prezzo indicativo (opzionale)
         </span>
         <NumericInput
-          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-white"
+          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-base text-white"
           value={form.prezzoIndicativo}
           onChange={(valore) => aggiorna("prezzoIndicativo", valore)}
           placeholder="0,00"

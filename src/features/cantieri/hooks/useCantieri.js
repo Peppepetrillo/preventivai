@@ -7,10 +7,17 @@ import {
   aggiornaCantiere,
 } from "../cantieriDomain";
 import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
-import { leggiCantieri, salvaCantieri } from "../../../repositories/cantieriRepository";
+import {
+  leggiCantieriTutti,
+  salvaCantieri,
+} from "../../../repositories/cantieriRepository";
+import { filtraRecordAttivi } from "../../../domain/cestino";
+import {
+  spostaNelCestino,
+  TIPI_CESTINO,
+} from "../../../domain/cestino";
 import {
   eliminaStorageFotoCantiere,
-  eliminaStorageFotoCantieri,
   fileFotoValido,
   preparaFotoCantiere,
   risolviSrcFotoCantiere,
@@ -40,11 +47,31 @@ import { creaEventoNotaAggiunta } from "../../diario/events/notaAggiunta";
 import { creaEventoPagamentoRegistrato } from "../../diario/events/pagamentoRegistrato";
 import { creaEventoStatoCambiato } from "../../diario/events/statoCambiato";
 import { creaEventoVariante } from "../../diario/events/varianteAggiunta";
+import {
+  aggiungiGiornataProgrammata,
+  aggiornaGiornataProgrammata,
+  eliminaGiornataProgrammata,
+} from "../services/programmazioneCantiereService";
+import {
+  aggiungiGiornataLavorativa,
+  aggiornaGiornataLavorativa,
+  eliminaGiornataLavorativa,
+} from "../services/registroGiornateService";
+import {
+  aggiungiPagamento as aggiungiPagamentoDomain,
+  aggiornaPagamento as aggiornaPagamentoDomain,
+  creaIdPagamento,
+  eliminaPagamento as eliminaPagamentoDomain,
+  leggiTotaleIncassato,
+} from "../services/pagamentiCantiereService";
 
 const FORM_CANTIERE_INIZIALE = {
   nome: "",
   cliente: "",
   indirizzo: "",
+  tipoIntervento: "Riparazione",
+  descrizioneIntervento: "",
+  totaleLavoro: "",
 };
 
 const FORM_MATERIALE_INIZIALE = {
@@ -67,13 +94,7 @@ function appendDiarioEvents(cantiere, eventi = []) {
 }
 
 function valoreIncassato(cantiere = {}) {
-  return Number(
-    cantiere.incassato ??
-      cantiere.extra?.incassato ??
-      cantiere.acconto ??
-      cantiere.extra?.acconto ??
-      0
-  );
+  return leggiTotaleIncassato(cantiere);
 }
 
 /**
@@ -88,9 +109,13 @@ export function useCantieri({
 } = {}) {
   const idEsterno = cantiereId || cantiereInizialeId || "";
 
-  const [cantieri, setCantieri] = useDatiLocaliSincronizzati(leggiCantieri);
+  const [cantieri, setCantieri] = useDatiLocaliSincronizzati(leggiCantieriTutti);
+  const cantieriAttivi = useMemo(
+    () => filtraRecordAttivi(cantieri),
+    [cantieri]
+  );
   const [cantiereSelezionatoIdInterno, setCantiereSelezionatoIdInterno] =
-    useState(() => idEsterno || cantieri[0]?.id || "");
+    useState(() => idEsterno || cantieriAttivi[0]?.id || "");
   const [nuovoCantiere, setNuovoCantiere] = useState(FORM_CANTIERE_INIZIALE);
   const [nuovaChecklist, setNuovaChecklist] = useState("");
   const [nuovoMateriale, setNuovoMateriale] = useState(FORM_MATERIALE_INIZIALE);
@@ -109,8 +134,8 @@ export function useCantieri({
       (cantiere) => String(cantiere.id) === String(cantiereSelezionatoId)
     );
     if (idEsterno) return trovato || null;
-    return trovato || cantieri[0] || null;
-  }, [cantieri, cantiereSelezionatoId, idEsterno]);
+    return trovato || cantieriAttivi[0] || null;
+  }, [cantieri, cantieriAttivi, cantiereSelezionatoId, idEsterno]);
 
   const avanzamento = cantiereSelezionato
     ? calcolaAvanzamentoChecklist(cantiereSelezionato.checklist || [])
@@ -217,15 +242,17 @@ export function useCantieri({
   function eliminaCantiere() {
     if (!cantiereSelezionato) return false;
 
-    eliminaStorageFotoCantieri(cantiereSelezionato.foto || []);
-
-    const cantieriAggiornati = cantieri.filter(
-      (cantiere) => String(cantiere.id) !== String(cantiereSelezionato.id)
+    const esito = spostaNelCestino(
+      TIPI_CESTINO.cantiere,
+      cantiereSelezionato.id
     );
+    if (!esito.success) return false;
 
-    salvaListaCantieri(cantieriAggiornati);
-    setCantiereSelezionatoId(cantieriAggiornati[0]?.id || "");
-    setMessaggio("Cantiere eliminato.");
+    const cantieriAggiornati = leggiCantieriTutti();
+    setCantieri(cantieriAggiornati);
+    const ancoraAttivi = filtraRecordAttivi(cantieriAggiornati);
+    setCantiereSelezionatoId(ancoraAttivi[0]?.id || "");
+    setMessaggio("Elemento spostato nel Cestino.");
     return true;
   }
 
@@ -553,7 +580,7 @@ export function useCantieri({
     }
 
     registraEsperienzaCompletamento(cantiereCompletato);
-    setMessaggio("🏁 Lavoro completato.");
+    setMessaggio("Lavoro finito.");
     return { success: true, cantiere: cantiereCompletato };
   }
 
@@ -631,8 +658,158 @@ export function useCantieri({
     );
   }
 
+  function aggiungiGiornata(input) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    try {
+      const aggiornato = aggiornaCantiereConEventi(
+        cantiereSelezionato.id,
+        (precedente) =>
+          aggiornaCantiere(aggiungiGiornataProgrammata(precedente, input), {})
+      );
+      return { success: true, cantiere: aggiornato };
+    } catch (errore) {
+      return { success: false, error: errore?.message || "giornata_non_valida" };
+    }
+  }
+
+  function aggiornaGiornata(giornataId, modifiche) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    const aggiornato = aggiornaCantiereConEventi(
+      cantiereSelezionato.id,
+      (precedente) =>
+        aggiornaCantiere(
+          aggiornaGiornataProgrammata(precedente, giornataId, modifiche),
+          {}
+        )
+    );
+    return { success: true, cantiere: aggiornato };
+  }
+
+  function eliminaGiornata(giornataId) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    const aggiornato = aggiornaCantiereConEventi(
+      cantiereSelezionato.id,
+      (precedente) =>
+        aggiornaCantiere(eliminaGiornataProgrammata(precedente, giornataId), {})
+    );
+    return { success: true, cantiere: aggiornato };
+  }
+
+  function aggiungiGiornataRegistro(input) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    try {
+      const aggiornato = aggiornaCantiereConEventi(
+        cantiereSelezionato.id,
+        (precedente) =>
+          aggiornaCantiere(aggiungiGiornataLavorativa(precedente, input), {})
+      );
+      return { success: true, cantiere: aggiornato };
+    } catch (errore) {
+      return { success: false, error: errore?.message || "giornata_non_valida" };
+    }
+  }
+
+  function aggiornaGiornataRegistro(giornataId, modifiche) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    const aggiornato = aggiornaCantiereConEventi(
+      cantiereSelezionato.id,
+      (precedente) =>
+        aggiornaCantiere(
+          aggiornaGiornataLavorativa(precedente, giornataId, modifiche),
+          {}
+        )
+    );
+    return { success: true, cantiere: aggiornato };
+  }
+
+  function eliminaGiornataRegistro(giornataId) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    const aggiornato = aggiornaCantiereConEventi(
+      cantiereSelezionato.id,
+      (precedente) =>
+        aggiornaCantiere(eliminaGiornataLavorativa(precedente, giornataId), {})
+    );
+    return { success: true, cantiere: aggiornato };
+  }
+
+  function aggiungiPagamento(input) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    try {
+      const pagamentoId = String(input?.id || creaIdPagamento());
+      let pagamentoSalvato = null;
+      const aggiornato = aggiornaCantiereConEventi(
+        cantiereSelezionato.id,
+        (precedente) => {
+          const next = aggiungiPagamentoDomain(precedente, {
+            ...input,
+            id: pagamentoId,
+          });
+          pagamentoSalvato =
+            next.pagamenti.find((p) => String(p.id) === pagamentoId) || null;
+          const evento = pagamentoSalvato
+            ? creaEventoPagamentoRegistrato(
+                {
+                  pagamentoId: pagamentoSalvato.id,
+                  importo: pagamentoSalvato.importo,
+                  tipo: pagamentoSalvato.tipo,
+                  metodo: pagamentoSalvato.metodo,
+                },
+                next.incassato
+              )
+            : null;
+          return appendDiarioEvents(aggiornaCantiere(next, {}), [evento]);
+        }
+      );
+      return { success: true, cantiere: aggiornato, pagamento: pagamentoSalvato };
+    } catch (errore) {
+      return { success: false, error: errore?.message || "pagamento_non_valido" };
+    }
+  }
+
+  function aggiornaPagamento(pagamentoId, modifiche) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    try {
+      let pagamentoSalvato = null;
+      const aggiornato = aggiornaCantiereConEventi(
+        cantiereSelezionato.id,
+        (precedente) => {
+          const next = aggiornaPagamentoDomain(precedente, pagamentoId, modifiche);
+          pagamentoSalvato =
+            next.pagamenti.find((p) => String(p.id) === String(pagamentoId)) ||
+            null;
+          const evento = pagamentoSalvato
+            ? creaEventoPagamentoRegistrato(
+                {
+                  pagamentoId: pagamentoSalvato.id,
+                  importo: pagamentoSalvato.importo,
+                  tipo: pagamentoSalvato.tipo,
+                  metodo: pagamentoSalvato.metodo,
+                },
+                next.incassato
+              )
+            : null;
+          return appendDiarioEvents(aggiornaCantiere(next, {}), [evento]);
+        }
+      );
+      return { success: true, cantiere: aggiornato, pagamento: pagamentoSalvato };
+    } catch (errore) {
+      return { success: false, error: errore?.message || "pagamento_non_valido" };
+    }
+  }
+
+  function eliminaPagamento(pagamentoId) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    const aggiornato = aggiornaCantiereConEventi(
+      cantiereSelezionato.id,
+      (precedente) =>
+        aggiornaCantiere(eliminaPagamentoDomain(precedente, pagamentoId), {})
+    );
+    return { success: true, cantiere: aggiornato };
+  }
+
   return {
     cantieri,
+    cantieriAttivi,
     cantiereSelezionato,
     nuovoCantiere,
     nuovaChecklist,
@@ -667,5 +844,14 @@ export function useCantieri({
     eliminaFoto,
     apriFoto,
     aggiungiNotaDiario,
+    aggiungiGiornata,
+    aggiornaGiornata,
+    eliminaGiornata,
+    aggiungiGiornataRegistro,
+    aggiornaGiornataRegistro,
+    eliminaGiornataRegistro,
+    aggiungiPagamento,
+    aggiornaPagamento,
+    eliminaPagamento,
   };
 }

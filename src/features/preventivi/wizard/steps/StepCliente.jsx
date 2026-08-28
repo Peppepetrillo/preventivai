@@ -23,7 +23,7 @@ export default function StepCliente({ onSelezionaCliente }) {
         className="flex items-center justify-center min-h-[44px] py-3 text-sm font-semibold text-slate-400 hover:text-slate-200"
         data-testid="wizard-altre-modalita"
       >
-        Altre modalità
+        Altri modi per creare un preventivo
       </Link>
     </div>
   );

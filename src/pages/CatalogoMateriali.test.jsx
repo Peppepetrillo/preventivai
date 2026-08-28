@@ -32,31 +32,36 @@ describe("CatalogoMateriali UI", () => {
       screen.getByRole("heading", { name: /Catalogo Materiali/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Impianto elettrico/i })
+      screen.getByRole("button", { name: /Corrugati e tubazioni/i })
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Allarme/i })).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Materiale generale/i })
+      screen.getByRole("button", { name: /Antintrusione/i })
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Consumo e fissaggio/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Impianto elettrico/i })
+    ).not.toBeInTheDocument();
   });
 
   it("filtra per categoria e mostra famiglie", () => {
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: /Impianto elettrico/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Corrugati e tubazioni/i }));
     expect(
-      screen.getByRole("heading", { name: /Impianto elettrico/i })
+      screen.getByRole("heading", { name: /Corrugati e tubazioni/i })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Tubo corrugato/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Cavo multipolare/i })
+      screen.getByRole("button", { name: /Tubo rigido/i })
     ).toBeInTheDocument();
   });
 
   it("apre famiglia e visualizza varianti", () => {
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: /Impianto elettrico/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Corrugati e tubazioni/i }));
     fireEvent.click(screen.getByRole("button", { name: /Tubo corrugato/i }));
     expect(
       screen.getByRole("heading", { name: /Tubo corrugato/i })
@@ -75,10 +80,10 @@ describe("CatalogoMateriali UI", () => {
     ).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/Cerca materiale/i), {
-      target: { value: "Ø25" },
+      target: { value: "3G2,5" },
     });
     expect(
-      screen.getByRole("button", { name: /Tubo corrugato/i })
+      screen.getByRole("button", { name: /Cavo FG16OR16/i })
     ).toBeInTheDocument();
   });
 
@@ -102,18 +107,19 @@ describe("CatalogoMateriali UI", () => {
 
   it("mostra Va spesso con solo con accessori famiglia validi", () => {
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: /Impianto elettrico/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Quadri e protezioni/i }));
     fireEvent.click(screen.getByRole("button", { name: /Quadro elettrico/i }));
 
     expect(screen.getByText(/Va spesso con/i)).toBeInTheDocument();
     expect(screen.getByText(/^Pressacavo$/i)).toBeInTheDocument();
     expect(screen.getByText(/Morsetti — A leva 3 poli/i)).toBeInTheDocument();
-    expect(screen.getAllByTestId("accessorio-suggerito-row")).toHaveLength(2);
+    expect(screen.getByText(/^Guida DIN$/i)).toBeInTheDocument();
+    expect(screen.getAllByTestId("accessorio-suggerito-row")).toHaveLength(3);
   });
 
   it("non mostra Va spesso con in sola lettura se la famiglia non ha accessori", () => {
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: /Impianto elettrico/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Corrugati e tubazioni/i }));
     fireEvent.click(screen.getByRole("button", { name: /Tubo corrugato/i }));
 
     expect(screen.queryByText(/Va spesso con/i)).not.toBeInTheDocument();
@@ -121,7 +127,7 @@ describe("CatalogoMateriali UI", () => {
 
   it("in modifica variante mostra accessori suggeriti e permette rimozione", () => {
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: /Impianto elettrico/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Corrugati e tubazioni/i }));
     fireEvent.click(screen.getByRole("button", { name: /Tubo corrugato/i }));
     fireEvent.click(screen.getByRole("button", { name: /Ø25/i }));
 
@@ -146,22 +152,22 @@ describe("CatalogoMateriali UI", () => {
 
   it("crea variante personalizzata", () => {
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: /Impianto elettrico/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Corrugati e tubazioni/i }));
     fireEvent.click(screen.getByRole("button", { name: /Tubo corrugato/i }));
     fireEvent.click(screen.getByRole("button", { name: /^Nuova variante$/i }));
 
     fireEvent.change(screen.getByPlaceholderText(/Ø25/i), {
-      target: { value: "Ø63" },
+      target: { value: "Ø75" },
     });
     fireEvent.click(screen.getByRole("button", { name: /Salva variante/i }));
 
     expect(screen.getByText(/Variante aggiunta/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Ø63/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Ø75/i })).toBeInTheDocument();
   });
 
   it("modifica e disattiva variante", () => {
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: /Impianto elettrico/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Corrugati e tubazioni/i }));
     fireEvent.click(screen.getByRole("button", { name: /Tubo corrugato/i }));
     fireEvent.click(screen.getByRole("button", { name: /Ø25/i }));
 
@@ -186,8 +192,8 @@ describe("CatalogoMateriali UI", () => {
 
   it("navigazione indietro tra livelli", () => {
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: /Allarme/i }));
-    expect(screen.getByRole("heading", { name: /^Allarme$/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Antintrusione/i }));
+    expect(screen.getByRole("heading", { name: /^Antintrusione$/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Indietro/i }));
     expect(
       screen.getByRole("heading", { name: /Catalogo Materiali/i })

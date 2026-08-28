@@ -11,16 +11,25 @@ describe("NuovoCantiereForm", () => {
 
     render(
       <NuovoCantiereForm
-        cantiere={{ nome: "", cliente: "", indirizzo: "" }}
+        cantiere={{
+          nome: "",
+          cliente: "",
+          indirizzo: "",
+          tipoIntervento: "Riparazione",
+          descrizioneIntervento: "",
+        }}
         onAggiornaCampo={onAggiornaCampo}
         onCreaCantiere={onCreaCantiere}
       />
     );
 
-    await user.type(screen.getByPlaceholderText("Nome cantiere"), "A");
+    await user.click(screen.getByRole("button", { name: /^Manutenzione$/i }));
+    expect(onAggiornaCampo).toHaveBeenCalledWith("tipoIntervento", "Manutenzione");
+
+    await user.type(screen.getByPlaceholderText("Nome lavoro"), "A");
     await user.type(screen.getByPlaceholderText("Cliente"), "B");
     await user.type(screen.getByPlaceholderText("Indirizzo"), "C");
-    await user.click(screen.getByRole("button", { name: /crea/i }));
+    await user.click(screen.getByRole("button", { name: /crea lavoro/i }));
 
     expect(onAggiornaCampo).toHaveBeenCalledWith("nome", "A");
     expect(onAggiornaCampo).toHaveBeenCalledWith("cliente", "B");

@@ -95,6 +95,27 @@ export function eliminaVariante(id) {
 }
 
 /**
+ * Elimina varianti e timeline appartenenti esclusivamente al cantiere.
+ * @param {string|number} cantiereId
+ * @returns {number} varianti rimosse
+ */
+export function eliminaVariantiPerCantiere(cantiereId) {
+  const id = String(cantiereId ?? "");
+  if (!id) return 0;
+
+  const elenco = leggiTutteVarianti();
+  const prossimo = elenco.filter((v) => String(v.cantiereId) !== id);
+  scriviTutteVarianti(prossimo);
+
+  const timeline = leggiTimelineVarianti();
+  scriviTimelineVarianti(
+    timeline.filter((evento) => String(evento?.cantiereId) !== id)
+  );
+
+  return elenco.length - prossimo.length;
+}
+
+/**
  * @returns {object[]}
  */
 export function leggiTimelineVarianti() {

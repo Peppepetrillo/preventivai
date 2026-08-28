@@ -234,9 +234,9 @@ export default function CantiereOperativo({
             <p className="section-label">Priorità</p>
             <h2
               id="oggi-devo-fare-title"
-              className="text-2xl sm:text-3xl font-black tracking-tight mt-1"
+              className="ds-card-title mt-1"
             >
-              Oggi devo fare
+              Da fare
             </h2>
           </div>
           <div className="text-right shrink-0">
@@ -601,8 +601,11 @@ export default function CantiereOperativo({
         }}
         onConferma={(voce) => {
           confermaMateriale(voce, "catalogo");
-          setShowCatalogo(false);
+          // Non chiude: mantieniApertoDopoConferma gestisce il reset interno
         }}
+        mantieniApertoDopoConferma
+        title="Dal catalogo"
+        labelConferma="Aggiungi"
       />
 
       <VoceDistintaSheet

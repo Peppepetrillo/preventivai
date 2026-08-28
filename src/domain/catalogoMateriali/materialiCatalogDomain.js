@@ -200,21 +200,197 @@ export function elencaFamiglieMateriali() {
 }
 
 /**
- * @param {string} id
- * @returns {import("./materialiTypes").FamigliaMateriale|null}
+ * Categoria originale del seed pre UX-6.2.
+ * Migrazione idempotente: sposta solo se la famiglia seed è ancora su questa categoria.
+ * Famiglie personalizzate e famiglie già spostate dall'utente non vengono toccate.
  */
-export function trovaFamigliaMateriale(id) {
-  if (!id) return null;
-  return FAMIGLIE_BY_ID.get(String(id).trim()) || null;
+export const CATEGORIA_SEED_PRE_62 = Object.freeze({
+  "tubo-corrugato": CATEGORIA_MATERIALE.ELETTRICO,
+  "tubo-rigido": CATEGORIA_MATERIALE.ELETTRICO,
+  canalina: CATEGORIA_MATERIALE.ELETTRICO,
+  "cavo-unipolare": CATEGORIA_MATERIALE.ELETTRICO,
+  "cavo-multipolare": CATEGORIA_MATERIALE.ELETTRICO,
+  cassetta: CATEGORIA_MATERIALE.ELETTRICO,
+  "scatola-derivazione": CATEGORIA_MATERIALE.ELETTRICO,
+  magnetotermico: CATEGORIA_MATERIALE.ELETTRICO,
+  differenziale: CATEGORIA_MATERIALE.ELETTRICO,
+  contattore: CATEGORIA_MATERIALE.ELETTRICO,
+  "quadro-elettrico": CATEGORIA_MATERIALE.ELETTRICO,
+  "presa-civile": CATEGORIA_MATERIALE.ELETTRICO,
+  "interruttore-comando": CATEGORIA_MATERIALE.ELETTRICO,
+  morsetti: CATEGORIA_MATERIALE.ELETTRICO,
+  fascette: CATEGORIA_MATERIALE.ELETTRICO,
+  "presa-industriale": CATEGORIA_MATERIALE.ELETTRICO,
+  "canalina-pavimento": CATEGORIA_MATERIALE.GENERALE,
+  pressacavo: CATEGORIA_MATERIALE.GENERALE,
+});
+
+function chiaveAccessorio(accessorio) {
+  return `${accessorio?.varianteId || ""}|${accessorio?.famigliaId || ""}`;
+}
+
+function indiceDaCatalogo(catalogo) {
+  const elenco = normalizzaCatalogoMateriali(catalogo);
+  const famiglie = new Map(elenco.map((f) => [f.id, f]));
+  /** @type {Map<string, import("./materialiTypes").VarianteMateriale>} */
+  const varianti = new Map();
+  for (const famiglia of elenco) {
+    for (const variante of famiglia.varianti) {
+      varianti.set(variante.id, variante);
+    }
+  }
+  return { elenco, famiglie, varianti };
+}
+
+/**
+ * Unisce il catalogo utente con il seed senza sovrascrivere personalizzazioni.
+ * @param {unknown} catalogoUtente
+ * @param {ReadonlyArray<import("./materialiTypes").FamigliaMateriale>=} seed
+ * @returns {{ catalogo: import("./materialiTypes").FamigliaMateriale[], changed: boolean }}
+ */
+export function mergeCatalogoConSeed(
+  catalogoUtente,
+  seed = CATALOGO_MATERIALI_SEED
+) {
+  const utente = normalizzaCatalogoMateriali(catalogoUtente);
+  const seedNorm = normalizzaCatalogoMateriali(seed);
+  /** @type {Map<string, import("./materialiTypes").FamigliaMateriale>} */
+  const byId = new Map(utente.map((f) => [f.id, f]));
+  let changed = false;
+
+  for (const famigliaSeed of seedNorm) {
+    const esistente = byId.get(famigliaSeed.id);
+    if (!esistente) {
+      byId.set(famigliaSeed.id, famigliaSeed);
+      changed = true;
+      continue;
+    }
+    if (esistente.personalizzata) continue;
+
+    const fuso = fondiFamigliaSeed(esistente, famigliaSeed);
+    if (fuso.changed) {
+      byId.set(famigliaSeed.id, fuso.famiglia);
+      changed = true;
+    }
+  }
+
+  /** @type {import("./materialiTypes").FamigliaMateriale[]} */
+  const catalogo = [];
+  const visti = new Set();
+  for (const famiglia of utente) {
+    catalogo.push(byId.get(famiglia.id));
+    visti.add(famiglia.id);
+  }
+  for (const famigliaSeed of seedNorm) {
+    if (visti.has(famigliaSeed.id)) continue;
+    catalogo.push(byId.get(famigliaSeed.id));
+  }
+
+  return { catalogo, changed };
+}
+
+/**
+ * @param {import("./materialiTypes").FamigliaMateriale} utente
+ * @param {import("./materialiTypes").FamigliaMateriale} seed
+ */
+function fondiFamigliaSeed(utente, seed) {
+  let changed = false;
+  let categoria = utente.categoria;
+  const originalePre62 = CATEGORIA_SEED_PRE_62[seed.id];
+  if (
+    originalePre62 &&
+    utente.categoria === originalePre62 &&
+    seed.categoria !== originalePre62
+  ) {
+    categoria = seed.categoria;
+    changed = true;
+  }
+
+  const variantiById = new Map(utente.varianti.map((v) => [v.id, v]));
+  /** @type {import("./materialiTypes").VarianteMateriale[]} */
+  const varianti = [...utente.varianti];
+  for (const varianteSeed of seed.varianti) {
+    if (variantiById.has(varianteSeed.id)) continue;
+    varianti.push(varianteSeed);
+    variantiById.set(varianteSeed.id, varianteSeed);
+    changed = true;
+  }
+
+  const accessoriUtente = utente.accessoriSuggeriti || [];
+  const chiaviAccessori = new Set(accessoriUtente.map(chiaveAccessorio));
+  const accessori = [...accessoriUtente];
+  for (const accessorioSeed of seed.accessoriSuggeriti || []) {
+    const chiave = chiaveAccessorio(accessorioSeed);
+    if (chiaviAccessori.has(chiave)) continue;
+    accessori.push(accessorioSeed);
+    chiaviAccessori.add(chiave);
+    changed = true;
+  }
+
+  const seedVariantiById = new Map(seed.varianti.map((v) => [v.id, v]));
+  const variantiFuse = varianti.map((variante) => {
+    const varianteSeed = seedVariantiById.get(variante.id);
+    if (!varianteSeed?.accessoriSuggeriti?.length) return variante;
+    const esistenti = variante.accessoriSuggeriti || [];
+    const chiavi = new Set(esistenti.map(chiaveAccessorio));
+    const prossimi = [...esistenti];
+    let accChanged = false;
+    for (const accessorioSeed of varianteSeed.accessoriSuggeriti) {
+      const chiave = chiaveAccessorio(accessorioSeed);
+      if (chiavi.has(chiave)) continue;
+      prossimi.push(accessorioSeed);
+      chiavi.add(chiave);
+      accChanged = true;
+    }
+    if (!accChanged) return variante;
+    changed = true;
+    return { ...variante, accessoriSuggeriti: prossimi };
+  });
+
+  if (!changed) return { famiglia: utente, changed: false };
+
+  /** @type {import("./materialiTypes").FamigliaMateriale} */
+  const famiglia = {
+    ...utente,
+    categoria,
+    varianti: variantiFuse,
+  };
+  if (accessori.length > 0) {
+    famiglia.accessoriSuggeriti = accessori;
+  } else {
+    delete famiglia.accessoriSuggeriti;
+  }
+  return { famiglia, changed: true };
 }
 
 /**
  * @param {string} id
+ * @param {ReadonlyArray<import("./materialiTypes").FamigliaMateriale>=} catalogo
+ * @returns {import("./materialiTypes").FamigliaMateriale|null}
+ */
+export function trovaFamigliaMateriale(id, catalogo) {
+  if (!id) return null;
+  const chiave = String(id).trim();
+  if (Array.isArray(catalogo) && catalogo.length > 0) {
+    const trovata = indiceDaCatalogo(catalogo).famiglie.get(chiave);
+    if (trovata) return trovata;
+  }
+  return FAMIGLIE_BY_ID.get(chiave) || null;
+}
+
+/**
+ * @param {string} id
+ * @param {ReadonlyArray<import("./materialiTypes").FamigliaMateriale>=} catalogo
  * @returns {import("./materialiTypes").VarianteMateriale|null}
  */
-export function trovaVarianteMateriale(id) {
+export function trovaVarianteMateriale(id, catalogo) {
   if (!id) return null;
-  return VARIANTI_BY_ID.get(String(id).trim()) || null;
+  const chiave = String(id).trim();
+  if (Array.isArray(catalogo) && catalogo.length > 0) {
+    const trovata = indiceDaCatalogo(catalogo).varianti.get(chiave);
+    if (trovata) return trovata;
+  }
+  return VARIANTI_BY_ID.get(chiave) || null;
 }
 
 /**
@@ -264,7 +440,12 @@ export function cercaFamiglieMateriali(catalogo = [], query = "") {
       famiglia.categoria,
       famiglia.descrizione,
       famiglia.attributoChiave,
-      ...famiglia.varianti.map((v) => `${v.etichetta} ${v.id}`),
+      ...famiglia.varianti.map((v) => {
+        const attributi = Object.entries(v.attributi || {})
+          .map(([k, val]) => `${k} ${val}`)
+          .join(" ");
+        return `${v.etichetta} ${v.id} ${attributi}`;
+      }),
     ]
       .join(" ")
       .toLowerCase();

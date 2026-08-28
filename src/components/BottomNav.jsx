@@ -1,19 +1,20 @@
 import {
-  Home,
-  HardHat,
-  Settings,
-  Users,
   FileText,
-  List,
+  HardHat,
+  Home,
+  LayoutGrid,
   Plus,
 } from "lucide-react";
 
 import { Link, useLocation } from "react-router-dom";
 
 import { ROUTES } from "../app/routes";
-import { useWizardContext } from "../features/preventivi/wizard/useWizardContext";
 import { useGlobalCreate } from "./globalCreate/GlobalCreateContext";
-import { isVoceAttiva, shouldShowBottomNav } from "./bottomNavUtils";
+import {
+  isVoceAttiva,
+  shouldShowBottomNav,
+  shouldShowGlobalCreateFab,
+} from "./bottomNavUtils";
 
 const MENU_COMPLETO = [
   {
@@ -22,66 +23,51 @@ const MENU_COMPLETO = [
     icon: Home,
   },
   {
-    nome: "Lavori",
-    path: ROUTES.cantieri,
-    icon: HardHat,
+    nome: "Preventivi",
+    path: ROUTES.preventivi,
+    icon: FileText,
   },
   {
     tipo: "create",
   },
   {
-    nome: "Clienti",
-    path: ROUTES.clienti,
-    icon: Users,
+    nome: "Cantieri",
+    path: ROUTES.cantieri,
+    icon: HardHat,
   },
   {
     nome: "Altro",
-    path: ROUTES.impostazioni,
-    icon: Settings,
-  },
-];
-
-const MENU_WIZARD = [
-  {
-    nome: "Home",
-    path: ROUTES.dashboard,
-    icon: Home,
-  },
-  {
-    nome: "Preventivo",
-    path: ROUTES.preventivi,
-    icon: FileText,
-  },
-  {
-    nome: "Clienti",
-    path: ROUTES.clienti,
-    icon: Users,
-  },
-  {
-    nome: "Listino",
-    path: ROUTES.listino,
-    icon: List,
+    path: ROUTES.altro,
+    icon: LayoutGrid,
   },
 ];
 
 export default function BottomNav() {
   const location = useLocation();
-  const { attivo: wizardAttivo } = useWizardContext();
   const { menuOpen, openMenu } = useGlobalCreate();
 
   if (!shouldShowBottomNav(location)) {
     return null;
   }
 
-  const menu = wizardAttivo ? MENU_WIZARD : MENU_COMPLETO;
-  const modalitaCompatta = wizardAttivo;
+  const mostraFabGlobale = shouldShowGlobalCreateFab(location);
 
   return (
     <nav className="ds-bottom-nav" aria-label="Navigazione principale">
       <div className="ds-bottom-nav-inner">
         <div className="flex items-end justify-around gap-0.5">
-          {menu.map((item) => {
+          {MENU_COMPLETO.map((item) => {
             if (item.tipo === "create") {
+              if (!mostraFabGlobale) {
+                return (
+                  <div
+                    key="create-spacer-agenda"
+                    className="min-w-0 flex-1 max-w-[72px] min-h-[44px]"
+                    aria-hidden="true"
+                  />
+                );
+              }
+
               if (menuOpen) {
                 return (
                   <div
@@ -123,9 +109,7 @@ export default function BottomNav() {
                 data-testid={`bottom-nav-${item.nome.toLowerCase()}`}
               >
                 <div
-                  className={`rounded-[16px] flex items-center justify-center transition-colors duration-200 ${
-                    modalitaCompatta ? "w-11 h-11" : "w-10 h-10"
-                  } ${
+                  className={`rounded-[16px] flex items-center justify-center transition-colors duration-200 w-10 h-10 ${
                     attivo
                       ? "bg-yellow-400 text-slate-950"
                       : "text-slate-400"

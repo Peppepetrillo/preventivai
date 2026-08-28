@@ -88,7 +88,8 @@ describe("DettaglioPreventivo UX-2.1", () => {
     expect(screen.getByText("Impianto elettrico")).toBeInTheDocument();
   });
 
-  it("Bozza: hero Accetta e una sola CTA primaria", () => {
+  it("Bozza: hero Condividi preventivo e una sola CTA primaria", async () => {
+    const user = userEvent.setup();
     localStorage.setItem(
       STORAGE_KEYS.preventivi,
       JSON.stringify([creaPreventivo()])
@@ -97,13 +98,21 @@ describe("DettaglioPreventivo UX-2.1", () => {
     renderDettaglio();
 
     const hero = screen.getByTestId("preventivo-hero-cta");
-    expect(hero).toHaveTextContent(/^Accetta$/);
+    expect(hero).toHaveTextContent(/^Condividi preventivo$/);
     expect(hero).toHaveClass("btn-primary");
     expect(screen.getAllByTestId("preventivo-hero-cta")).toHaveLength(1);
-    expect(screen.getByTestId("workflow-modifica")).toBeInTheDocument();
+    expect(screen.getByText("Ho inviato al cliente")).toBeInTheDocument();
+
+    await user.click(hero);
+
+    expect(screen.getByTestId("preventivo-sezione-documenti")).toHaveAttribute(
+      "open"
+    );
+    expect(screen.getByTestId("preventivo-condivisione-section")).toBeVisible();
+    expect(screen.getByTestId("preventivo-condividi-whatsapp")).toBeInTheDocument();
   });
 
-  it("Inviato: hero Accetta", () => {
+  it("Inviato: hero Cliente ha accettato", () => {
     localStorage.setItem(
       STORAGE_KEYS.preventivi,
       JSON.stringify([
@@ -114,7 +123,7 @@ describe("DettaglioPreventivo UX-2.1", () => {
     renderDettaglio("p2");
 
     expect(screen.getByTestId("preventivo-hero-cta")).toHaveTextContent(
-      /^Accetta$/
+      /^Cliente ha accettato$/
     );
     expect(screen.getByTestId("preventivo-stato-badge")).toHaveTextContent(
       "Inviato"
@@ -230,7 +239,7 @@ describe("DettaglioPreventivo UX-2.1", () => {
       /50,00/
     );
     expect(
-      within(economico).getByRole("button", { name: /Nuovo incasso/i })
+      within(economico).getByRole("button", { name: /Registra pagamento/i })
     ).toBeInTheDocument();
   });
 });
@@ -345,5 +354,107 @@ describe("DettaglioPreventivo UX-2.2", () => {
     expect(
       screen.getByRole("button", { name: /Firma ora/i })
     ).toHaveClass("btn-secondary");
+  });
+});
+
+describe("DettaglioPreventivo UX-8.6", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    localStorage.setItem(
+      STORAGE_KEYS.datiAzienda,
+      JSON.stringify({ ragioneSociale: "Test SRL" })
+    );
+  });
+
+  it("In cantiere: pagamenti read-only e CTA Apri pagamenti cantiere", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([
+        creaPreventivo({
+          id: "p4",
+          stato: STATI_PREVENTIVO.CONVERTITO,
+          cantiereId: "c1",
+          incassato: 200,
+          totale: 1220,
+        }),
+      ])
+    );
+    localStorage.setItem(
+      STORAGE_KEYS.cantieri,
+      JSON.stringify([
+        {
+          id: "c1",
+          nome: "Cantiere Mario",
+          cliente: "Mario Rossi",
+          stato: "Da iniziare",
+          preventivoId: "p4",
+        },
+      ])
+    );
+
+    renderDettaglio("p4");
+
+    expect(screen.getByTestId("preventivo-stato-badge")).toHaveTextContent(
+      "In cantiere"
+    );
+    expect(screen.queryByText("Convertito")).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByTestId("preventivo-sezione-economico").querySelector("summary")
+    );
+
+    expect(
+      screen.getByTestId("preventivo-pagamenti-readonly")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Registra pagamento/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Segna saldato/i })
+    ).not.toBeInTheDocument();
+    const cta = screen.getByTestId("preventivo-apri-pagamenti-cantiere");
+    expect(cta).toHaveTextContent("Apri pagamenti cantiere");
+    expect(cta).toHaveAttribute("href", "/cantiere/c1?sezione=sezione-pagamenti");
+    expect(
+      screen.getByTestId("preventivo-incassato-pre-cantiere")
+    ).toHaveTextContent(/200/);
+  });
+
+  it("Bozza: secondaria Ho inviato al cliente", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([creaPreventivo()])
+    );
+
+    renderDettaglio();
+
+    expect(screen.getByTestId("workflow-invia")).toHaveTextContent(
+      "Ho inviato al cliente"
+    );
+    expect(screen.getByTestId("workflow-accetta")).toBeInTheDocument();
+  });
+
+  it("senza cantiere: select non propone In cantiere / Lavoro finito", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([creaPreventivo({ id: "p-bozza" })])
+    );
+
+    renderDettaglio("p-bozza");
+
+    await user.click(
+      screen.getByTestId("preventivo-sezione-economico").querySelector("summary")
+    );
+
+    const select = screen.getByTestId("preventivo-stato-select");
+    const valori = Array.from(select.querySelectorAll("option")).map(
+      (o) => o.value
+    );
+    expect(valori).not.toContain(STATI_PREVENTIVO.CONVERTITO);
+    expect(valori).not.toContain(STATI_PREVENTIVO.LAVORO_COMPLETATO);
+    expect(valori).toContain(STATI_PREVENTIVO.BOZZA);
+    expect(valori).toContain(STATI_PREVENTIVO.ACCETTATO);
   });
 });

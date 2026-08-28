@@ -1,5 +1,5 @@
-import WizardPreventivo from "../features/preventivi/wizard/WizardPreventivo";
+import ListaPreventivi from "../features/preventivi/components/ListaPreventivi";
 
 export default function Preventivi() {
-  return <WizardPreventivo />;
+  return <ListaPreventivi />;
 }

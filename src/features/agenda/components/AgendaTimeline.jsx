@@ -10,6 +10,7 @@ export default function AgendaTimeline({
   lavori = [],
   attivita = [],
   onSegnaCompletato,
+  onRegistraConsuntivo,
   completamentoId = null,
   onInsight,
   onCompletaAttivita,
@@ -30,10 +31,13 @@ export default function AgendaTimeline({
           statoLabel={item.statoLabel}
           isLast={index === items.length - 1}
         >
-          {item.kind === "lavoro" ? (
+          {item.kind === "lavoro" ||
+          item.kind === "lavoro-giornata" ||
+          item.kind === "giornata-lavorativa" ? (
             <AgendaLavoroCard
               lavoro={item.payload}
               onSegnaCompletato={onSegnaCompletato}
+              onRegistraConsuntivo={onRegistraConsuntivo}
               completamentoInCorso={completamentoId === item.payload.id}
               onInsight={onInsight}
             />

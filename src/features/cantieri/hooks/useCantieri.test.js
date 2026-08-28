@@ -107,7 +107,7 @@ describe("useCantieri", () => {
     });
 
     expect(result.current.cantiereSelezionato.stato).toBe("Completato");
-    expect(result.current.messaggio).toBe("🏁 Lavoro completato.");
+    expect(result.current.messaggio).toBe("Lavoro finito.");
   });
 
   it("avvia il lavoro impostando lo stato In corso", () => {
@@ -197,5 +197,32 @@ describe("useCantieri", () => {
     );
 
     expect(result.current.cantiereSelezionato).toBeNull();
+  });
+
+  it("sposta un cantiere nel Cestino in qualsiasi stato senza richiedere Completato", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.cantieri,
+      JSON.stringify([
+        { id: "c-attivo", nome: "Attivo", stato: "In corso", foto: [] },
+        { id: "c-altro", nome: "Altro", stato: "Da iniziare", foto: [] },
+      ])
+    );
+
+    const { result } = renderHook(() =>
+      useCantieri({ cantiereId: "c-attivo" })
+    );
+
+    let ok;
+    act(() => {
+      ok = result.current.eliminaCantiere();
+    });
+
+    expect(ok).toBe(true);
+    expect(result.current.cantieriAttivi).toHaveLength(1);
+    expect(result.current.cantieriAttivi[0].id).toBe("c-altro");
+    expect(result.current.messaggio).toBe("Elemento spostato nel Cestino.");
+    const salvati = JSON.parse(localStorage.getItem(STORAGE_KEYS.cantieri));
+    expect(salvati).toHaveLength(2);
+    expect(salvati.find((c) => c.id === "c-attivo").deletedAt).toBeTruthy();
   });
 });

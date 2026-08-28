@@ -48,3 +48,12 @@ describe("storageKeys — restore nativo Capacitor", () => {
     }
   });
 });
+
+describe("storageKeys — backup automatico UX-7.2", () => {
+  it("config e snapshot sono native ma fuori APP_DATA_KEYS / cloud sync", () => {
+    expect(STORAGE_KEYS.backupAutomaticoConfig in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.backupAutomaticoUltimo in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.backupAutomaticoConfig in NATIVE_STORAGE_KEYS).toBe(true);
+    expect(STORAGE_KEYS.backupAutomaticoUltimo in NATIVE_STORAGE_KEYS).toBe(true);
+  });
+});

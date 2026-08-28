@@ -194,7 +194,9 @@ export function calcolaAzioniDisponibili(
   }
 
   if (stato === STATI_PREVENTIVO.CONVERTITO) {
-    azioni.push(AZIONI_PREVENTIVO.APRI_CANTIERE);
+    if (cantiereCollegato) {
+      azioni.push(AZIONI_PREVENTIVO.APRI_CANTIERE);
+    }
     return azioni;
   }
 

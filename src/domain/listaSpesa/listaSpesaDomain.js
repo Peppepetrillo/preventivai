@@ -516,3 +516,27 @@ export function sincronizzaMaterialiDaCantiere(elenco = [], cantiere = {}) {
 export function selezionaVociDaComprare(elenco = []) {
   return elenco.filter((voce) => voce && !voce.acquistato && voce.nome);
 }
+
+/**
+ * Voce lista spesa del cantiere (lavoroId o cantiereId).
+ * @param {object} voce
+ * @param {string|number} cantiereId
+ */
+export function voceListaAppartieneAlCantiere(voce, cantiereId) {
+  const id = String(cantiereId ?? "");
+  if (!id) return false;
+  return (
+    String(voce?.lavoroId || "") === id || String(voce?.cantiereId || "") === id
+  );
+}
+
+/**
+ * Rimuove tutte le voci del cantiere, lasciando intatte le altre.
+ * @param {VoceListaSpesa[]} elenco
+ * @param {string|number} cantiereId
+ */
+export function rimuoviVociListaPerCantiere(elenco = [], cantiereId) {
+  return (Array.isArray(elenco) ? elenco : []).filter(
+    (voce) => !voceListaAppartieneAlCantiere(voce, cantiereId)
+  );
+}

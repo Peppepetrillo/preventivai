@@ -1,12 +1,15 @@
 import { Check, PenLine, Send, X } from "lucide-react";
 
-import { AZIONI_PREVENTIVO } from "../../../domain/workflow";
+import { AZIONI_PREVENTIVO, STATI_PREVENTIVO, normalizzaStatoPreventivo } from "../../../domain/workflow";
 
 /**
  * Azioni workflow secondarie (non hero).
+ * Bozza: primaria implicita = Condividi; secondaria naturale = "Ho inviato al cliente";
+ * "Cliente ha accettato" resta ma in stile discreto (power-user).
  */
 export default function PreventivoWorkflowAzioni({
   azioni = [],
+  stato,
   confermaRifiuto = false,
   mostraModifica = false,
   mostraInviaDiNuovo = false,
@@ -24,6 +27,9 @@ export default function PreventivoWorkflowAzioni({
     mostraInviaDiNuovo;
 
   if (!haQualcosa) return null;
+
+  const isBozza = normalizzaStatoPreventivo(stato) === STATI_PREVENTIVO.BOZZA;
+  const labelInvia = isBozza ? "Ho inviato al cliente" : "Segna come inviato";
 
   return (
     <div
@@ -57,19 +63,25 @@ export default function PreventivoWorkflowAzioni({
           type="button"
           onClick={onInvia}
           className="btn-secondary px-4 py-3 text-sm font-semibold inline-flex items-center gap-2 min-h-[44px]"
+          data-testid="workflow-invia"
         >
           <Send size={16} aria-hidden="true" />
-          Segna inviato
+          {labelInvia}
         </button>
       ) : null}
       {azioni.includes(AZIONI_PREVENTIVO.ACCETTA) ? (
         <button
           type="button"
           onClick={onAccetta}
-          className="btn-secondary px-4 py-3 text-sm font-semibold inline-flex items-center gap-2 min-h-[44px]"
+          className={
+            isBozza
+              ? "px-3 py-2 text-sm text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline min-h-[44px] inline-flex items-center gap-1.5"
+              : "btn-secondary px-4 py-3 text-sm font-semibold inline-flex items-center gap-2 min-h-[44px]"
+          }
+          data-testid="workflow-accetta"
         >
-          <Check size={16} aria-hidden="true" />
-          Accetta
+          {!isBozza ? <Check size={16} aria-hidden="true" /> : null}
+          Cliente ha accettato
         </button>
       ) : null}
       {azioni.includes(AZIONI_PREVENTIVO.ANNULLA) ||

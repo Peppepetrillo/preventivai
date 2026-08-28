@@ -118,7 +118,7 @@ describe("Agenda", () => {
 
     renderAgenda();
 
-    fireEvent.click(screen.getByRole("button", { name: /Segna completato/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Lavoro finito/i }));
 
     const cantieri = JSON.parse(localStorage.getItem(STORAGE_KEYS.cantieri) || "[]");
     expect(cantieri[0].stato).toBe("Completato");
@@ -126,15 +126,165 @@ describe("Agenda", () => {
     vi.useRealTimers();
   });
 
-  it("FAB contestuale Agenda resta disponibile", () => {
+  it("FAB contestuale Agenda è l'unico + visibile", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 6, 29, 10, 0, 0));
 
     renderAgenda();
 
-    const fabAgenda = screen.getByRole("button", { name: /^Nuovo$/i });
-    expect(fabAgenda.className).toMatch(/fixed/);
-    expect(fabAgenda.className).toMatch(/z-30/);
+    expect(screen.getByTestId("agenda-toolbar-plus")).toBeInTheDocument();
+    expect(screen.queryByTestId("global-create-fab")).not.toBeInTheDocument();
+
+    vi.useRealTimers();
+  });
+
+  it("giornata libera mostra CTA consuntivo e cantiere", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 30, 10, 0, 0));
+
+    localStorage.setItem(STORAGE_KEYS.cantieri, JSON.stringify([]));
+
+    renderAgenda();
+
+    expect(screen.getByTestId("agenda-empty-registra-consuntivo")).toBeVisible();
+    expect(screen.getByTestId("agenda-empty-pianifica-cantiere")).toBeVisible();
+
+    vi.useRealTimers();
+  });
+
+  it("segna giornata prevista senza creare registroGiornate", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 29, 10, 0, 0));
+
+    localStorage.setItem(
+      STORAGE_KEYS.cantieri,
+      JSON.stringify([
+        {
+          id: "c1",
+          nome: "Villa Rossi",
+          cliente: "Rossi",
+          stato: "In corso",
+          programmazione: [
+            {
+              id: "g1",
+              data: "29/07/2026",
+              oraInizio: "08:00",
+              orePreviste: 4,
+              operai: 1,
+              attivita: "Tracce",
+              stato: "programmata",
+            },
+          ],
+          registroGiornate: [],
+        },
+      ])
+    );
+
+    renderAgenda();
+
+    fireEvent.click(screen.getByTestId("agenda-segna-giornata-fatta"));
+
+    const cantieri = JSON.parse(localStorage.getItem(STORAGE_KEYS.cantieri) || "[]");
+    expect(cantieri[0].programmazione[0].stato).toBe("completata");
+    expect(cantieri[0].registroGiornate).toEqual([]);
+
+    expect(screen.getByTestId("consuntivo-dopo-previsto")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("consuntivo-dopo-previsto-confirm")
+    ).toHaveTextContent("Registra consuntivo");
+
+    fireEvent.click(screen.getByTestId("consuntivo-dopo-previsto-confirm"));
+
+    expect(screen.getByTestId("registro-cantiere")).toHaveValue("c1");
+    expect(screen.getByTestId("registro-operai")).toHaveValue("Io");
+    expect(screen.getByTestId("registro-attivita")).toHaveValue("Tracce");
+
+    vi.useRealTimers();
+  });
+
+  it("Più tardi non crea registroGiornate e lascia CTA consuntivo", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 29, 10, 0, 0));
+
+    localStorage.setItem(
+      STORAGE_KEYS.cantieri,
+      JSON.stringify([
+        {
+          id: "c1",
+          nome: "Villa Rossi",
+          cliente: "Rossi",
+          stato: "In corso",
+          programmazione: [
+            {
+              id: "g1",
+              data: "29/07/2026",
+              oraInizio: "08:00",
+              orePreviste: 4,
+              operai: 1,
+              attivita: "Tracce",
+              stato: "programmata",
+            },
+          ],
+          registroGiornate: [],
+        },
+      ])
+    );
+
+    renderAgenda();
+
+    fireEvent.click(screen.getByTestId("agenda-segna-giornata-fatta"));
+    fireEvent.click(screen.getByTestId("consuntivo-dopo-previsto-cancel"));
+
+    const cantieri = JSON.parse(localStorage.getItem(STORAGE_KEYS.cantieri) || "[]");
+    expect(cantieri[0].programmazione[0].stato).toBe("completata");
+    expect(cantieri[0].registroGiornate).toEqual([]);
+
+    expect(screen.getByText("Consuntivo da registrare")).toBeInTheDocument();
+    expect(screen.getByTestId("agenda-registra-consuntivo")).toBeInTheDocument();
+    expect(screen.queryByTestId("agenda-consuntivo-registrato")).not.toBeInTheDocument();
+
+    vi.useRealTimers();
+  });
+
+  it("Segna giornata fatta e Lavoro finito restano distinti", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 29, 10, 0, 0));
+
+    localStorage.setItem(
+      STORAGE_KEYS.cantieri,
+      JSON.stringify([
+        {
+          id: "c1",
+          nome: "Villa Rossi",
+          cliente: "Rossi",
+          stato: "In corso",
+          dataIntervento: "29/07/2026",
+          orario: "08:00",
+        },
+        {
+          id: "c2",
+          nome: "Condominio Verdi",
+          cliente: "Verdi",
+          stato: "In corso",
+          programmazione: [
+            {
+              id: "g1",
+              data: "29/07/2026",
+              oraInizio: "14:00",
+              orePreviste: 4,
+              operai: 1,
+              attivita: "Tracce",
+              stato: "programmata",
+            },
+          ],
+        },
+      ])
+    );
+
+    renderAgenda();
+
+    expect(screen.getByTestId("agenda-lavoro-finito")).toBeInTheDocument();
+    expect(screen.getByTestId("agenda-segna-giornata-fatta")).toBeInTheDocument();
 
     vi.useRealTimers();
   });

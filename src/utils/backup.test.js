@@ -51,3 +51,69 @@ describe("backup esperienze RC-2A", () => {
     );
   });
 });
+
+describe("backup UX-6.6 struttura e UX-6.5 round-trip", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("crea backup JSON valido con app, versione e dati", () => {
+    const backup = creaBackupCompleto();
+    expect(backup.app).toBe("PreventivAI");
+    expect(backup.versione).toBe(1);
+    expect(backup.creatoIl).toBeTruthy();
+    expect(backup.dati).toBeTypeOf("object");
+    expect(STORAGE_KEYS.cantieri in backup.dati).toBe(true);
+    expect(STORAGE_KEYS.catalogoMateriali in backup.dati).toBe(false);
+  });
+
+  it("round-trip cantiere lavoro diretto UX-6.5 senza perdita campi", async () => {
+    const cantiereDiretto = {
+      id: "c-dir-1",
+      nome: "Riparazione quadro",
+      cliente: "Rossi",
+      origine: "diretto",
+      tipoIntervento: "Riparazione",
+      descrizioneIntervento: "Sostituito magnetotermico.",
+      totaleLavoro: 180,
+      incassato: 50,
+      acconto: 50,
+      pagamenti: [
+        {
+          id: "pay-legacy",
+          data: "01/08/2026",
+          importo: 50,
+          tipo: "acconto",
+          metodo: "contanti",
+        },
+      ],
+      checklist: [],
+      materiali: [],
+      foto: [],
+    };
+    salvaStorage(STORAGE_KEYS.cantieri, [cantiereDiretto]);
+
+    const backup = creaBackupCompleto();
+    const esportato = backup.dati[STORAGE_KEYS.cantieri][0];
+    expect(esportato.origine).toBe("diretto");
+    expect(esportato.tipoIntervento).toBe("Riparazione");
+    expect(esportato.descrizioneIntervento).toContain("magnetotermico");
+    expect(esportato.totaleLavoro).toBe(180);
+    expect(esportato.incassato).toBe(50);
+    expect(esportato.pagamenti).toHaveLength(1);
+
+    localStorage.clear();
+    await ripristinaBackupCompleto(backup);
+
+    const ripristinato = leggiStorage(STORAGE_KEYS.cantieri, [])[0];
+    expect(ripristinato.origine).toBe("diretto");
+    expect(ripristinato.tipoIntervento).toBe("Riparazione");
+    expect(ripristinato.descrizioneIntervento).toBe(
+      "Sostituito magnetotermico."
+    );
+    expect(ripristinato.totaleLavoro).toBe(180);
+    expect(ripristinato.incassato).toBe(50);
+    expect(ripristinato.acconto).toBe(50);
+    expect(ripristinato.pagamenti[0].importo).toBe(50);
+  });
+});

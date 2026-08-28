@@ -9,23 +9,31 @@ import {
   ImagePlus,
   LockKeyhole,
   LogOut,
-  Archive,
-  BookOpen,
-  ClipboardList,
-  Package,
-  ShoppingCart,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import PageWrapper from "../components/PageWrapper";
+import ConfirmDialog from "../components/ConfirmDialog";
 import { ROUTES } from "../app/routes";
 import {
   creaBackupCompleto,
   nomeFileBackup,
   ripristinaBackupCompleto,
 } from "../utils/backup";
+import { esportaBlob } from "../utils/nativeExport";
+import {
+  ETICHETTE_FREQUENZA,
+  ETICHETTE_STATO,
+  FREQUENZE_BACKUP,
+  formattaDataOraBackup,
+  impostaFrequenzaBackupAutomatico,
+  leggiConfigBackupAutomatico,
+  ottieniSnapshotPerEsportazione,
+  rifrescaStatoConfig,
+} from "../domain/backupAutomatico";
 import {
   leggiDatiAzienda,
   salvaDatiAzienda,
@@ -63,6 +71,84 @@ export default function Impostazioni() {
   );
   const [messaggio, setMessaggio] = useState("");
   const [salvataggioPin, setSalvataggioPin] = useState(false);
+  const [configBackupAuto, setConfigBackupAuto] = useState(() =>
+    rifrescaStatoConfig(leggiConfigBackupAutomatico())
+  );
+  const [confermaRipristinoAuto, setConfermaRipristinoAuto] = useState(false);
+
+  async function cambiaFrequenzaBackupAutomatico(frequenza) {
+    const esito = await impostaFrequenzaBackupAutomatico(frequenza);
+    setConfigBackupAuto(rifrescaStatoConfig(esito.config));
+    if (!esito.success) {
+      setMessaggio(
+        "Impossibile salvare le impostazioni del backup automatico."
+      );
+      return;
+    }
+    if (frequenza === FREQUENZE_BACKUP.disattivato) {
+      setMessaggio("Backup automatico disattivato.");
+    } else {
+      setMessaggio("Backup automatico aggiornato.");
+    }
+  }
+
+  async function esportaUltimoBackupAutomatico() {
+    const snapshot = ottieniSnapshotPerEsportazione();
+    if (!snapshot.disponibile) {
+      setMessaggio(
+        "Nessun backup automatico disponibile. Attendi il primo aggiornamento o apri l'app con il backup attivo."
+      );
+      return;
+    }
+
+    try {
+      const contenuto = JSON.stringify(snapshot.backup, null, 2);
+      const blob = new Blob([contenuto], { type: "application/json" });
+      const data =
+        snapshot.backup?.creatoIl?.slice(0, 10) ||
+        new Date().toISOString().slice(0, 10);
+      const esito = await esportaBlob(blob, `preventivai-backup-auto-${data}.json`, {
+        titolo: "Backup automatico PreventivAI",
+      });
+
+      if (esito.success) {
+        setMessaggio(
+          esito.metodo === "download"
+            ? "Ultimo backup automatico esportato."
+            : "Ultimo backup automatico pronto per la condivisione."
+        );
+        return;
+      }
+      if (esito.error === "annullato") {
+        setMessaggio("Esportazione annullata.");
+        return;
+      }
+      setMessaggio("Impossibile esportare l'ultimo backup automatico.");
+    } catch {
+      setMessaggio("Impossibile esportare l'ultimo backup automatico.");
+    }
+  }
+
+  async function eseguiRipristinoUltimoBackupAutomatico() {
+    const snapshot = ottieniSnapshotPerEsportazione();
+    if (!snapshot.disponibile) {
+      setMessaggio("Nessun backup automatico da ripristinare.");
+      setConfermaRipristinoAuto(false);
+      return;
+    }
+
+    try {
+      await ripristinaBackupCompleto(snapshot.backup);
+      setMessaggio("Backup automatico ripristinato. Ricarico l'app...");
+      window.location.reload();
+    } catch {
+      setMessaggio("Impossibile ripristinare il backup automatico.");
+      setConfermaRipristinoAuto(false);
+    }
+  }
+
+  const statoBackupLabel =
+    ETICHETTE_STATO[configBackupAuto.stato] || configBackupAuto.stato;
 
   function salvaDati() {
     salvaDatiAzienda({
@@ -96,16 +182,33 @@ export default function Impostazioni() {
     reader.readAsDataURL(file);
   }
 
-  function esportaBackup() {
-    const backup = creaBackupCompleto();
-    const contenuto = JSON.stringify(backup, null, 2);
-    const blob = new Blob([contenuto], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = nomeFileBackup();
-    link.click();
-    URL.revokeObjectURL(url);
+  async function esportaBackup() {
+    try {
+      const backup = creaBackupCompleto();
+      const contenuto = JSON.stringify(backup, null, 2);
+      const blob = new Blob([contenuto], { type: "application/json" });
+      const esito = await esportaBlob(blob, nomeFileBackup(), {
+        titolo: "Backup PreventivAI",
+      });
+
+      if (esito.success) {
+        setMessaggio(
+          esito.metodo === "download"
+            ? "Backup esportato."
+            : "Backup pronto per la condivisione."
+        );
+        return;
+      }
+
+      if (esito.error === "annullato") {
+        setMessaggio("Esportazione annullata.");
+        return;
+      }
+
+      setMessaggio("Impossibile esportare il backup.");
+    } catch {
+      setMessaggio("Impossibile esportare il backup.");
+    }
   }
 
   function importaBackup(event) {
@@ -183,79 +286,17 @@ export default function Impostazioni() {
         )}
 
         <Link
-          to={ROUTES.archivio}
-          className="pro-panel mb-3 p-5 flex items-center gap-4 min-h-[64px]"
-          data-testid="impostazioni-link-archivio"
-        >
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-[16px] bg-yellow-400/15 text-yellow-300 shrink-0">
-            <Archive size={22} aria-hidden="true" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="ds-card-title">Archivio preventivi</p>
-            <p className="ds-text-secondary text-sm mt-1">
-              Cerca e riapri preventivi inviati o accettati.
-            </p>
-          </div>
-        </Link>
-
-        <Link
-          to={ROUTES.listino}
-          className="pro-panel mb-3 p-5 flex items-center gap-4 min-h-[64px]"
-          data-testid="impostazioni-link-listino"
-        >
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-[16px] bg-yellow-400/15 text-yellow-300 shrink-0">
-            <BookOpen size={22} aria-hidden="true" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="ds-card-title">Listino prezzi</p>
-            <p className="ds-text-secondary text-sm mt-1">
-              Gestione lavorazioni e prezzi
-            </p>
-          </div>
-        </Link>
-
-        <Link
-          to={ROUTES.catalogoMateriali}
-          className="pro-panel mb-3 p-5 flex items-center gap-4 min-h-[64px]"
-        >
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-[16px] bg-yellow-400/15 text-yellow-300 shrink-0">
-            <Package size={22} aria-hidden="true" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="ds-card-title">Catalogo Materiali</p>
-            <p className="ds-text-secondary text-sm mt-1">
-              Famiglie e varianti per distinte e cantieri.
-            </p>
-          </div>
-        </Link>
-
-        <Link
-          to={ROUTES.distinteMateriali}
-          className="pro-panel mb-3 p-5 flex items-center gap-4 min-h-[64px]"
-        >
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-[16px] bg-yellow-400/15 text-yellow-300 shrink-0">
-            <ClipboardList size={22} aria-hidden="true" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="ds-card-title">Distinte materiali</p>
-            <p className="ds-text-secondary text-sm mt-1">
-              Crea, modifica e condividi liste materiali.
-            </p>
-          </div>
-        </Link>
-
-        <Link
-          to={ROUTES.acquisti}
+          to={ROUTES.cestino}
           className="pro-panel mb-6 p-5 flex items-center gap-4 min-h-[64px]"
-          data-testid="impostazioni-link-acquisti"
+          data-testid="impostazioni-link-cestino"
         >
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-[16px] bg-yellow-400/15 text-yellow-300 shrink-0">
-            <ShoppingCart size={22} aria-hidden="true" />
+            <Trash2 size={22} aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="ds-card-title">Acquisti</p>
+            <p className="ds-card-title">Cestino</p>
             <p className="ds-text-secondary text-sm mt-1">
-              Cosa comprare per i cantieri, per lavoro o tutto insieme.
+              Ripristina o elimina definitivamente clienti, cantieri e preventivi.
             </p>
           </div>
         </Link>
@@ -505,8 +546,10 @@ export default function Impostazioni() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <button
+              type="button"
               onClick={esportaBackup}
               className="w-full btn-secondary p-5 text-lg flex items-center justify-center gap-2"
+              data-testid="esporta-backup"
             >
               <Download size={20} />
               Esporta backup
@@ -523,6 +566,113 @@ export default function Impostazioni() {
               />
             </label>
           </div>
+
+          <div
+            className="mt-6 pt-6 border-t border-white/10 space-y-4"
+            data-testid="backup-automatico-sezione"
+          >
+            <div>
+              <p className="section-label">Backup automatico</p>
+              <p className="ds-text-secondary text-sm mt-2 leading-relaxed">
+                Il backup automatico salva una copia locale dei tuoi dati.
+                Per conservare il file fuori dall&apos;app usa Esporta backup.
+              </p>
+            </div>
+
+            <fieldset>
+              <legend className="ds-text-primary text-sm font-medium mb-2">
+                Frequenza
+              </legend>
+              <div className="grid gap-2">
+                {Object.values(FREQUENZE_BACKUP).map((freq) => (
+                  <label
+                    key={freq}
+                    className="flex items-center gap-3 min-h-[44px] cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="backup-automatico-frequenza"
+                      value={freq}
+                      checked={configBackupAuto.frequenza === freq}
+                      onChange={() => cambiaFrequenzaBackupAutomatico(freq)}
+                      data-testid={`backup-auto-freq-${freq}`}
+                      className="h-4 w-4 accent-yellow-400"
+                    />
+                    <span className="ds-text-primary">
+                      {ETICHETTE_FREQUENZA[freq]}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <dl className="grid gap-2 text-sm">
+              <div className="flex justify-between gap-3">
+                <dt className="ds-text-secondary">Ultimo backup automatico</dt>
+                <dd className="ds-text-primary text-right" data-testid="backup-auto-ultimo">
+                  {formattaDataOraBackup(configBackupAuto.ultimoBackup)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="ds-text-secondary">Prossimo backup</dt>
+                <dd className="ds-text-primary text-right" data-testid="backup-auto-prossimo">
+                  {configBackupAuto.enabled
+                    ? formattaDataOraBackup(configBackupAuto.prossimoBackup)
+                    : "—"}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="ds-text-secondary">Stato</dt>
+                <dd className="ds-text-primary text-right" data-testid="backup-auto-stato">
+                  {statoBackupLabel}
+                </dd>
+              </div>
+            </dl>
+
+            {configBackupAuto.stato === "errore" ? (
+              <p className="text-sm text-red-200/90 leading-relaxed">
+                Salvataggio locale non riuscito
+                {configBackupAuto.ultimoErrore
+                  ? ` (${configBackupAuto.ultimoErrore}).`
+                  : "."}{" "}
+                Usa Esporta backup per una copia fuori dall&apos;app.
+              </p>
+            ) : null}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={esportaUltimoBackupAutomatico}
+                className="w-full btn-secondary p-4 min-h-[48px] flex items-center justify-center gap-2"
+                data-testid="esporta-backup-automatico"
+              >
+                <Download size={18} />
+                Esporta ultimo backup automatico
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfermaRipristinoAuto(true)}
+                className="w-full btn-secondary p-4 min-h-[48px] flex items-center justify-center gap-2"
+                data-testid="ripristina-backup-automatico"
+              >
+                <Upload size={18} />
+                Ripristina ultimo backup automatico
+              </button>
+            </div>
+          </div>
+
+          <ConfirmDialog
+            open={confermaRipristinoAuto}
+            title="Ripristinare l'ultimo backup automatico?"
+            description="I dati attuali verranno sostituiti con l'ultima copia locale salvata automaticamente. L'app verrà ricaricata."
+            confirmLabel="Ripristina"
+            cancelLabel="Annulla"
+            onConfirm={() => {
+              void eseguiRipristinoUltimoBackupAutomatico();
+            }}
+            onCancel={() => setConfermaRipristinoAuto(false)}
+            testId="conferma-ripristino-backup-auto"
+          />
         </div>
 
       </div>

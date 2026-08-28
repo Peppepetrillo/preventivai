@@ -34,10 +34,10 @@ const CLIENTE = {
 
 function renderWizard() {
   return render(
-    <MemoryRouter initialEntries={[ROUTES.preventivi]}>
+    <MemoryRouter initialEntries={[ROUTES.preventiviNuovo]}>
       <WizardProvider>
         <Routes>
-          <Route path={ROUTES.preventivi} element={<WizardPreventivo />} />
+          <Route path={ROUTES.preventiviNuovo} element={<WizardPreventivo />} />
         </Routes>
       </WizardProvider>
     </MemoryRouter>

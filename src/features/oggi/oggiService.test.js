@@ -139,7 +139,7 @@ describe("oggiService", () => {
       ora: oggi,
     });
     expect(snap.vuoto).toBe(true);
-    expect(snap.frase).toBe("Giornata libera.");
+    expect(snap.frase).toBe("Oggi non hai lavori programmati");
   });
 
   it("gestisce input null / non-array senza crash", () => {
@@ -184,5 +184,27 @@ describe("oggiService", () => {
         ora: oggi,
       }).vuoto
     ).toBe(false);
+  });
+
+  it("espone daFare con priorità e saldi da incassare", () => {
+    const snap = calcolaOggi({
+      cantieri: [
+        {
+          id: "c1",
+          stato: "In corso",
+          cliente: "Rossi",
+          preventivoOriginaleTotale: 500,
+          pagamenti: [],
+        },
+      ],
+      preventivi: [{ id: "p1", stato: "Bozza", cliente: "Bianchi" }],
+      ora: oggi,
+    });
+
+    expect(snap.haSaldoDaIncassare).toBe(true);
+    expect(snap.daFare.length).toBeGreaterThan(0);
+    expect(snap.daFare.some((v) => v.sottotitolo === "Resta da incassare")).toBe(
+      true
+    );
   });
 });

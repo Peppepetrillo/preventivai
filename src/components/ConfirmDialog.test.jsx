@@ -27,7 +27,13 @@ describe("ConfirmDialog", () => {
     );
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText(/non si può annullare/i)).toBeInTheDocument();
+    expect(screen.getByText(/non si può annullare/i)).toBeVisible();
+    expect(screen.getByTestId("confirm-dialog-cancel")).toBeVisible();
+    expect(screen.getByTestId("confirm-dialog-confirm")).toBeVisible();
+
+    const overlay = screen.getByTestId("confirm-dialog");
+    expect(overlay.className).toMatch(/z-\[80\]/);
+    expect(overlay.className).toMatch(/items-center/);
 
     fireEvent.click(screen.getByTestId("confirm-dialog-cancel"));
     expect(onCancel).toHaveBeenCalled();

@@ -342,11 +342,15 @@ describe("distintaMaterialiDomain — suggerimenti accessori", () => {
       CATALOGO_MATERIALI_SEED
     );
 
-    expect(voci.length).toBeGreaterThan(0);
-    expect(voci[0].parentVoceId).toBe("voce-padre");
-    expect(voci[0].origineAccessorio).toBe("suggerito");
-    expect(voci[0].varianteId).toBe("cassetta-503");
-    expect(voci[0].quantita).toBe(12);
+    expect(voci.length).toBeGreaterThanOrEqual(3);
+    expect(voci.every((v) => v.parentVoceId === "voce-padre")).toBe(true);
+    expect(voci.every((v) => v.origineAccessorio === "suggerito")).toBe(true);
+    expect(voci.some((v) => v.varianteId === "cassetta-503")).toBe(true);
+    expect(voci.some((v) => v.famigliaId === "supporto-civile")).toBe(true);
+    expect(voci.some((v) => v.famigliaId === "placca-civile")).toBe(true);
+    expect(
+      voci.find((v) => v.varianteId === "cassetta-503")?.quantita
+    ).toBe(12);
   });
 
   it("persiste parentVoceId in normalizzaVoceDistinta", () => {

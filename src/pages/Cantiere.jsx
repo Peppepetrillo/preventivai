@@ -1,9 +1,15 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useState } from "react";
 
 import { ROUTES } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
 import CantiereOverview from "../features/cantieri/components/CantiereOverview";
 import { useCantieri } from "../features/cantieri/hooks/useCantieri";
+import {
+  isRecordCestinato,
+  ripristina,
+  TIPI_CESTINO,
+} from "../domain/cestino";
 
 /**
  * Dettaglio cantiere — route canonica `/cantiere/:id`.
@@ -12,6 +18,8 @@ import { useCantieri } from "../features/cantieri/hooks/useCantieri";
 export default function Cantiere() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [cestinoTick, setCestinoTick] = useState(0);
+  void cestinoTick;
 
   const {
     cantiereSelezionato,
@@ -41,6 +49,15 @@ export default function Cantiere() {
     aggiungiFoto,
     eliminaFoto,
     aggiungiNotaDiario,
+    aggiungiGiornata,
+    aggiornaGiornata,
+    eliminaGiornata,
+    aggiungiGiornataRegistro,
+    aggiornaGiornataRegistro,
+    eliminaGiornataRegistro,
+    aggiungiPagamento,
+    aggiornaPagamento,
+    eliminaPagamento,
   } = useCantieri({ cantiereId: id });
 
   function gestisciElimina() {
@@ -59,6 +76,51 @@ export default function Cantiere() {
             <Link to={ROUTES.cantieri} className="btn-secondary inline-flex px-5 py-3">
               Torna ai cantieri
             </Link>
+          </div>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  if (isRecordCestinato(cantiereSelezionato)) {
+    return (
+      <PageWrapper>
+        <div className="pro-page text-white" data-testid="cantiere-nel-cestino">
+          <Link to={ROUTES.cantieri} className="ds-back-link mb-5">
+            Cantieri
+          </Link>
+          <div className="pro-panel p-5 space-y-4">
+            <p className="section-label">Cestino</p>
+            <h1 className="ds-page-title">{cantiereSelezionato.nome}</h1>
+            <p className="ds-text-secondary">
+              Questo cantiere è nel Cestino. I dati restano intatti fino al
+              ripristino o all&apos;eliminazione definitiva.
+            </p>
+            <div className="grid gap-3">
+              <button
+                type="button"
+                className="btn-primary min-h-[48px]"
+                onClick={() => {
+                  ripristina(TIPI_CESTINO.cantiere, cantiereSelezionato.id);
+                  setCestinoTick((n) => n + 1);
+                }}
+              >
+                Ripristina
+              </button>
+              <button
+                type="button"
+                className="btn-secondary min-h-[48px]"
+                onClick={() => navigate(ROUTES.cantieri)}
+              >
+                Torna indietro
+              </button>
+              <Link
+                to={ROUTES.cestino}
+                className="btn-secondary min-h-[48px] flex items-center justify-center"
+              >
+                Apri Cestino
+              </Link>
+            </div>
           </div>
         </div>
       </PageWrapper>
@@ -101,6 +163,15 @@ export default function Cantiere() {
           onEseguiVariante={eseguiVariante}
           onAnnullaVariante={annullaVariante}
           variantiTick={variantiTick}
+          onAggiungiGiornata={aggiungiGiornata}
+          onAggiornaGiornata={aggiornaGiornata}
+          onEliminaGiornata={eliminaGiornata}
+          onAggiungiGiornataRegistro={aggiungiGiornataRegistro}
+          onAggiornaGiornataRegistro={aggiornaGiornataRegistro}
+          onEliminaGiornataRegistro={eliminaGiornataRegistro}
+          onAggiungiPagamento={aggiungiPagamento}
+          onAggiornaPagamento={aggiornaPagamento}
+          onEliminaPagamento={eliminaPagamento}
         />
       </div>
     </PageWrapper>

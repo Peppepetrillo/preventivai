@@ -4,6 +4,7 @@
  */
 
 import { creaCantiereDaPreventivo as creaCantiereDaPreventivoDefault } from "../../features/cantieri/cantieriDomain";
+import { isRecordCestinato } from "../cestino";
 import {
   AZIONI_PREVENTIVO,
   EVENTI_WORKFLOW,
@@ -51,13 +52,24 @@ export function creaPreventivoWorkflowService(deps) {
     );
   }
 
+  function rifiutaSeCestinato(preventivo) {
+    if (!preventivo) return null;
+    if (!isRecordCestinato(preventivo)) return null;
+    return {
+      success: false,
+      error: "preventivo_cestinato",
+      preventivo,
+    };
+  }
+
   function trovaCantiereCollegato(preventivo) {
     if (!preventivo) return null;
     return (
       deps.leggiCantieri().find(
         (cantiere) =>
-          String(cantiere.id) === String(preventivo.cantiereId) ||
-          String(cantiere.preventivoId) === String(preventivo.id)
+          !isRecordCestinato(cantiere) &&
+          (String(cantiere.id) === String(preventivo.cantiereId) ||
+            String(cantiere.preventivoId) === String(preventivo.id))
       ) || null
     );
   }
@@ -101,6 +113,8 @@ export function creaPreventivoWorkflowService(deps) {
     if (!preventivo) {
       return { success: false, error: "preventivo_non_trovato" };
     }
+    const bloccoCestino = rifiutaSeCestinato(preventivo);
+    if (bloccoCestino) return bloccoCestino;
 
     const stato = normalizzaStatoPreventivo(preventivo.stato);
     if (isStatoPreventivoTerminale(stato)) {
@@ -140,6 +154,8 @@ export function creaPreventivoWorkflowService(deps) {
     if (!preventivo) {
       return { success: false, error: "preventivo_non_trovato" };
     }
+    const bloccoCestino = rifiutaSeCestinato(preventivo);
+    if (bloccoCestino) return bloccoCestino;
 
     const stato = normalizzaStatoPreventivo(preventivo.stato);
     if (isStatoPreventivoTerminale(stato)) {
@@ -194,6 +210,8 @@ export function creaPreventivoWorkflowService(deps) {
     if (!preventivo) {
       return { success: false, error: "preventivo_non_trovato" };
     }
+    const bloccoCestino = rifiutaSeCestinato(preventivo);
+    if (bloccoCestino) return bloccoCestino;
 
     const stato = normalizzaStatoPreventivo(preventivo.stato);
     if (
@@ -236,6 +254,8 @@ export function creaPreventivoWorkflowService(deps) {
     if (!preventivo) {
       return { success: false, error: "preventivo_non_trovato" };
     }
+    const bloccoCestino = rifiutaSeCestinato(preventivo);
+    if (bloccoCestino) return bloccoCestino;
 
     const stato = normalizzaStatoPreventivo(preventivo.stato);
     if (stato === STATI_PREVENTIVO.LAVORO_COMPLETATO) {
@@ -272,6 +292,8 @@ export function creaPreventivoWorkflowService(deps) {
     if (!preventivo) {
       return { success: false, error: "preventivo_non_trovato" };
     }
+    const bloccoCestino = rifiutaSeCestinato(preventivo);
+    if (bloccoCestino) return bloccoCestino;
 
     const nome = String(
       variante.titolo || variante.descrizione || "Variante cantiere"
@@ -332,6 +354,8 @@ export function creaPreventivoWorkflowService(deps) {
       if (!preventivo) {
         return { success: false, error: "preventivo_non_trovato" };
       }
+      const bloccoCestino = rifiutaSeCestinato(preventivo);
+      if (bloccoCestino) return bloccoCestino;
 
       const stato = normalizzaStatoPreventivo(preventivo.stato);
       const esistente = trovaCantiereCollegato(preventivo);
@@ -429,6 +453,7 @@ export function creaPreventivoWorkflowService(deps) {
    * @returns {string[]}
    */
   function ottieniAzioniDisponibili(preventivo) {
+    if (isRecordCestinato(preventivo)) return [];
     return calcolaAzioniDisponibili(preventivo, {
       cantiereCollegato: trovaCantiereCollegato(preventivo),
     });

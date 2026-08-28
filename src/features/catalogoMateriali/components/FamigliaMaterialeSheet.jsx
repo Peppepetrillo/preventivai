@@ -4,7 +4,8 @@ import { Trash2 } from "lucide-react";
 import BottomSheet from "../../../components/BottomSheet";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import {
-  CATEGORIE_MATERIALE,
+  CATEGORIA_MATERIALE,
+  CATEGORIE_NAVIGAZIONE_MATERIALE,
   ETICHETTE_CATEGORIA_MATERIALE,
 } from "../../../domain/catalogoMateriali/materialiTypes";
 import { UNITA_OPZIONI_UI } from "../catalogoMaterialiUiMeta";
@@ -17,7 +18,7 @@ export default function FamigliaMaterialeSheet({
   open,
   onClose,
   famiglia = null,
-  categoriaDefault = "elettrico",
+  categoriaDefault = "generale",
   catalogo = [],
   onCrea,
   onSalva,
@@ -115,7 +116,7 @@ function FamigliaForm({
         </span>
         <input
           id={`${baseId}-nome`}
-          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-white"
+          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-base text-white"
           value={form.nome}
           onChange={(e) => aggiorna("nome", e.target.value)}
           placeholder="Es. Tubo corrugato"
@@ -128,15 +129,17 @@ function FamigliaForm({
           Categoria
         </span>
         <select
-          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-3 text-white"
+          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-3 text-base text-white"
           value={form.categoria}
           onChange={(e) => aggiorna("categoria", e.target.value)}
         >
-          {CATEGORIE_MATERIALE.map((id) => (
-            <option key={id} value={id}>
-              {ETICHETTE_CATEGORIA_MATERIALE[id]}
-            </option>
-          ))}
+          {[...CATEGORIE_NAVIGAZIONE_MATERIALE, CATEGORIA_MATERIALE.ELETTRICO].map(
+            (id) => (
+              <option key={id} value={id}>
+                {ETICHETTE_CATEGORIA_MATERIALE[id]}
+              </option>
+            )
+          )}
         </select>
       </label>
 
@@ -145,7 +148,7 @@ function FamigliaForm({
           Unità predefinita
         </span>
         <select
-          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-3 text-white"
+          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-3 text-base text-white"
           value={form.unitaDefault}
           onChange={(e) => aggiorna("unitaDefault", e.target.value)}
         >
@@ -162,7 +165,7 @@ function FamigliaForm({
           Attributo chiave
         </span>
         <input
-          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-white"
+          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-base text-white"
           value={form.attributoChiave}
           onChange={(e) => aggiorna("attributoChiave", e.target.value)}
           placeholder="Es. diametro, sezione, tipo"
@@ -224,7 +227,7 @@ function FamigliaForm({
 function formDaFamiglia(famiglia, categoriaDefault) {
   return {
     nome: famiglia?.nome || "",
-    categoria: famiglia?.categoria || categoriaDefault || "elettrico",
+    categoria: famiglia?.categoria || categoriaDefault || "generale",
     unitaDefault: famiglia?.unitaDefault || "pz",
     attributoChiave: famiglia?.attributoChiave || "tipo",
     descrizione: famiglia?.descrizione || "",

@@ -7,8 +7,10 @@ import {
   preparaCantieriOperativi,
   selezionaAttenzioni,
   selezionaContinuaDoveHaiLasciato,
+  selezionaDaFareHome,
   selezionaInterventiOggi,
   selezionaPreventiviInAttesa,
+  selezionaSaldiDaIncassare,
 } from "./dashboardSelectors";
 
 describe("dashboardSelectors", () => {
@@ -126,24 +128,89 @@ describe("dashboardSelectors", () => {
       "preventivi-inviare",
       "pagamenti",
     ]);
+    expect(attenzioni.find((a) => a.id === "pagamenti")?.link).toBe(
+      "/cantiere/c1?sezione=sezione-pagamenti"
+    );
+    expect(attenzioni.find((a) => a.id === "pagamenti")?.link).not.toBe(
+      "/incassi"
+    );
   });
 
-  it("crea la frase giornata con priorità interventi", () => {
+  it("crea la frase giornata con priorità lavori e urgenze", () => {
     expect(
       creaFraseGiornata({
-        interventiOggi: 3,
-        preventiviInAttesa: 2,
-        haSaldoDaIncassare: true,
+        lavoriOggi: 3,
+        urgenti: 2,
       })
-    ).toBe("Hai 3 interventi oggi.");
+    ).toBe("Hai 3 lavori oggi");
 
     expect(
       creaFraseGiornata({
-        interventiOggi: 0,
-        preventiviInAttesa: 0,
-        haSaldoDaIncassare: false,
+        lavoriOggi: 0,
+        urgenti: 2,
       })
-    ).toBe("Giornata libera.");
+    ).toBe("Hai 2 cose da sistemare");
+
+    expect(
+      creaFraseGiornata({
+        lavoriOggi: 0,
+        urgenti: 0,
+      })
+    ).toBe("Oggi non hai lavori programmati");
+  });
+
+  it("seleziona saldi da incassare con pagamenti UX-7.5", () => {
+    const saldi = selezionaSaldiDaIncassare([
+      {
+        id: "c1",
+        stato: "In corso",
+        preventivoOriginaleTotale: 1000,
+        pagamenti: [{ id: "p1", importo: 550, data: "01/08/2026" }],
+      },
+      { id: "c2", stato: "Completato", preventivoOriginaleTotale: 500 },
+    ]);
+    expect(saldi).toHaveLength(1);
+    expect(saldi[0].cantiere.id).toBe("c1");
+    expect(saldi[0].rimanenza).toBe(450);
+  });
+
+  it("selezionaDaFareHome limita a 3 voci con priorità", () => {
+    const voci = selezionaDaFareHome({
+      cantieri: [
+        {
+          id: "c1",
+          stato: "In corso",
+          cliente: "Rossi",
+          preventivoOriginaleTotale: 1000,
+          pagamenti: [],
+        },
+      ],
+      preventivi: [{ id: "p1", stato: "Bozza", cliente: "Bianchi" }],
+      listaSpesa: [{ id: "a1", nome: "Cavo", acquistato: false }],
+      lavoriInRitardo: [{ id: "c-old", cliente: "Vecchio" }],
+      massimo: 3,
+    });
+
+    expect(voci).toHaveLength(3);
+    expect(voci[0].testId).toBe("home-da-fare-ritardo");
+    expect(voci.some((v) => v.testId === "home-da-fare-incasso")).toBe(true);
+    expect(voci.some((v) => v.sottotitolo === "Resta da incassare")).toBe(true);
+  });
+
+  it("continua mostra ultima attività relativa", () => {
+    const continua = selezionaContinuaDoveHaiLasciato({
+      cantieri: [
+        {
+          id: "c1",
+          cliente: "Rossi",
+          aggiornatoIl: "26/08/2026",
+        },
+      ],
+      preventivi: [],
+      ora: new Date(2026, 7, 27, 10, 0, 0),
+    });
+
+    expect(continua?.dettaglio).toBe("Ultima attività: ieri");
   });
 
   it("seleziona l'ultimo lavoro per continuare", () => {

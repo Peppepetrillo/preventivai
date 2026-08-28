@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes, useSearchParams } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ROUTES } from "../../app/routes";
@@ -20,11 +20,6 @@ vi.mock("../../services/notificationService", () => ({
   },
 }));
 
-function ClientiProbe() {
-  const [params] = useSearchParams();
-  return <div>Clienti page nuovo={params.get("nuovo")}</div>;
-}
-
 function ultimoDialog() {
   const dialogs = screen.getAllByRole("dialog");
   return dialogs[dialogs.length - 1];
@@ -37,15 +32,20 @@ function renderShell(initialPath = ROUTES.dashboard) {
         <GlobalCreateProvider>
           <Routes>
             <Route path={ROUTES.dashboard} element={<div>Dashboard</div>} />
-            <Route path={ROUTES.clienti} element={<ClientiProbe />} />
-          <Route path={ROUTES.preventivi} element={<div>Wizard preventivo</div>} />
-          <Route
-            path={ROUTES.nuovoPreventivo}
-            element={<div>Scelta modalità</div>}
-          />
+            <Route path={ROUTES.cantieri} element={<div>Cantieri page</div>} />
+            <Route path={ROUTES.preventiviNuovo} element={<div>Wizard preventivo</div>} />
+            <Route path={ROUTES.preventivi} element={<div>Lista preventivi</div>} />
+            <Route
+              path={ROUTES.nuovoPreventivo}
+              element={<div>Scelta modalità</div>}
+            />
             <Route
               path={ROUTES.nuovaDistintaMateriali}
               element={<div>Nuova distinta</div>}
+            />
+            <Route
+              path={ROUTES.dettaglioCantiere}
+              element={<div>Cantiere pagamenti</div>}
             />
           </Routes>
           <BottomNav />
@@ -70,11 +70,11 @@ describe("GlobalCreate UX-3", () => {
 
     const dialog = ultimoDialog();
     expect(within(dialog).getByTestId("global-create-sheet")).toBeInTheDocument();
-    expect(within(dialog).getByText("Lavoro")).toBeInTheDocument();
-    expect(within(dialog).getByText("Nuovo preventivo")).toBeInTheDocument();
-    expect(within(dialog).getByText("Cliente")).toBeInTheDocument();
-    expect(within(dialog).getByText("Attività")).toBeInTheDocument();
-    expect(within(dialog).getByText("Distinta materiali")).toBeInTheDocument();
+    expect(within(dialog).getByText("Preventivo")).toBeInTheDocument();
+    expect(within(dialog).getByText("Cantiere")).toBeInTheDocument();
+    expect(within(dialog).getByText("Pagamento cantiere")).toBeInTheDocument();
+    expect(within(dialog).getByText("Promemoria")).toBeInTheDocument();
+    expect(within(dialog).getByText("Lista materiali")).toBeInTheDocument();
     expect(within(dialog).queryByText("Nota veloce")).not.toBeInTheDocument();
   });
 
@@ -88,14 +88,14 @@ describe("GlobalCreate UX-3", () => {
     expect(screen.getByText("Wizard preventivo")).toBeInTheDocument();
   });
 
-  it("naviga a nuovo cliente con query nuovo=1", async () => {
+  it("naviga ai cantieri quando non c'è un solo cantiere attivo", async () => {
     const user = userEvent.setup();
     renderShell();
 
     await user.click(screen.getByTestId("global-create-fab"));
-    await user.click(screen.getByTestId("global-create-cliente"));
+    await user.click(screen.getByTestId("global-create-pagamento"));
 
-    expect(screen.getByText("Clienti page nuovo=1")).toBeInTheDocument();
+    expect(screen.getByText("Cantieri page")).toBeInTheDocument();
   });
 
   it("naviga a nuova distinta materiali", async () => {
@@ -117,10 +117,10 @@ describe("GlobalCreate UX-3", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: /Nuovo lavoro/i })
+        screen.getByRole("heading", { name: /Nuovo cantiere/i })
       ).toBeInTheDocument();
     });
-    expect(screen.getAllByRole("heading", { name: /Nuovo lavoro/i })).toHaveLength(1);
+    expect(screen.getAllByRole("heading", { name: /Nuovo cantiere/i })).toHaveLength(1);
   });
 
   it("apre AttivitaFormSheet", async () => {
@@ -135,12 +135,12 @@ describe("GlobalCreate UX-3", () => {
     ).toBeInTheDocument();
   });
 
-  it("BottomNav mostra Oggi, Lavori, Clienti, Altro", () => {
+  it("BottomNav mostra Oggi, Preventivi, Cantieri, Altro", () => {
     renderShell();
 
     expect(screen.getByTestId("bottom-nav-oggi")).toBeInTheDocument();
-    expect(screen.getByTestId("bottom-nav-lavori")).toBeInTheDocument();
-    expect(screen.getByTestId("bottom-nav-clienti")).toBeInTheDocument();
+    expect(screen.getByTestId("bottom-nav-preventivi")).toBeInTheDocument();
+    expect(screen.getByTestId("bottom-nav-cantieri")).toBeInTheDocument();
     expect(screen.getByTestId("bottom-nav-altro")).toBeInTheDocument();
   });
 

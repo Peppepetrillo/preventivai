@@ -1,11 +1,12 @@
 /**
- * Filtri vista Agenda: Oggi · Domani · Settimana
+ * Filtri vista Agenda: Oggi · Domani · Settimana · Mese
  */
 export default function AgendaFilters({ vista, onCambiaVista }) {
   const voci = [
     { id: "oggi", label: "Oggi" },
     { id: "domani", label: "Domani" },
     { id: "settimana", label: "Settimana" },
+    { id: "mese", label: "Mese" },
   ];
 
   return (
@@ -15,16 +16,21 @@ export default function AgendaFilters({ vista, onCambiaVista }) {
       aria-label="Vista agenda"
     >
       {voci.map((voce) => {
-        const attiva = vista === voce.id;
+        const selected =
+          voce.id === "mese"
+            ? vista === "mese"
+            : voce.id === "settimana"
+              ? vista === "settimana"
+              : vista === voce.id;
         return (
           <button
             key={voce.id}
             type="button"
             role="tab"
-            aria-selected={attiva}
+            aria-selected={selected}
             onClick={() => onCambiaVista?.(voce.id)}
             className={`min-h-[44px] px-4 rounded-full text-sm font-black shrink-0 transition-colors ${
-              attiva
+              selected
                 ? "bg-yellow-400 text-black"
                 : "bg-white/10 text-slate-300"
             }`}

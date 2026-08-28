@@ -11,20 +11,37 @@ import {
   Wallet,
 } from "lucide-react";
 import { ROUTES, routeCantiere, routePreventivo } from "../app/routes";
-import { leggiClienti, salvaClienti } from "../repositories/clientiRepository";
-import { leggiPreventivi, salvaPreventivi } from "../repositories/preventiviRepository";
+import {
+  leggiClientiTutti,
+  salvaClienti,
+  trovaCliente,
+} from "../repositories/clientiRepository";
+import {
+  leggiPreventivi,
+  leggiPreventiviTutti,
+  salvaPreventivi,
+} from "../repositories/preventiviRepository";
+import {
+  isRecordCestinato,
+  ripristina,
+  spostaNelCestino,
+  TIPI_CESTINO,
+} from "../domain/cestino";
 import { formatEuro, normalizzaNumero } from "../utils/preventivi";
+import { etichettaStatoUi } from "../features/preventivi/utils/preventivoHeroCta";
 import { useCantieri } from "../features/cantieri/hooks/useCantieri";
 
 export default function DettaglioCliente() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [cestinoTick, setCestinoTick] = useState(0);
+  void cestinoTick;
 
-  const clienti = leggiClienti();
-  const cliente = clienti.find((c) => String(c.id) === id);
+  const cliente = trovaCliente(id, { includiCestinati: true });
+  const nelCestino = isRecordCestinato(cliente);
   const archivio = leggiPreventivi();
 
-  const { cantieri, aggiornaCampoNuovoCantiere } = useCantieri();
+  const { cantieriAttivi, aggiornaCampoNuovoCantiere } = useCantieri();
 
   const [nome, setNome] = useState(cliente?.nome || "");
   const [telefono, setTelefono] = useState(cliente?.telefono || "");
@@ -37,7 +54,7 @@ export default function DettaglioCliente() {
     (p) => p.cliente === cliente?.nome
   );
 
-  const cantieriCliente = cantieri.filter(
+  const cantieriCliente = cantieriAttivi.filter(
     (c) => c.cliente === cliente?.nome
   );
 
@@ -54,6 +71,49 @@ export default function DettaglioCliente() {
     );
   }
 
+  if (nelCestino) {
+    return (
+      <div className="pro-page text-white">
+        <Link to={ROUTES.clienti} className="ds-back-link mb-5">
+          <ArrowLeft size={18} />
+          Clienti
+        </Link>
+        <div className="pro-panel p-5 space-y-4" data-testid="cliente-nel-cestino">
+          <p className="section-label">Cestino</p>
+          <h1 className="ds-page-title">{cliente.nome}</h1>
+          <p className="ds-text-secondary">
+            Questo cliente è nel Cestino. Ripristinalo per usarlo di nuovo.
+          </p>
+          <div className="grid gap-3">
+            <button
+              type="button"
+              className="btn-primary min-h-[48px]"
+              onClick={() => {
+                ripristina(TIPI_CESTINO.cliente, cliente.id);
+                setCestinoTick((n) => n + 1);
+              }}
+            >
+              Ripristina
+            </button>
+            <button
+              type="button"
+              className="btn-secondary min-h-[48px]"
+              onClick={() => navigate(ROUTES.clienti)}
+            >
+              Torna indietro
+            </button>
+            <Link
+              to={ROUTES.cestino}
+              className="btn-secondary min-h-[48px] flex items-center justify-center"
+            >
+              Apri Cestino
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function salvaCliente() {
     const nomePulito = nome.trim();
     if (!nomePulito) {
@@ -61,13 +121,19 @@ export default function DettaglioCliente() {
       return;
     }
 
-    const clientiAggiornati = clienti.map((item) =>
+    const clientiAggiornati = leggiClientiTutti().map((item) =>
       String(item.id) === id
-        ? { ...item, nome: nomePulito, telefono: telefono.trim(), email: email.trim(), indirizzo: indirizzo.trim() }
+        ? {
+            ...item,
+            nome: nomePulito,
+            telefono: telefono.trim(),
+            email: email.trim(),
+            indirizzo: indirizzo.trim(),
+          }
         : item
     );
 
-    const archivioAggiornato = archivio.map((preventivo) =>
+    const archivioAggiornato = leggiPreventiviTutti().map((preventivo) =>
       preventivo.cliente === cliente.nome
         ? { ...preventivo, cliente: nomePulito }
         : preventivo
@@ -80,8 +146,7 @@ export default function DettaglioCliente() {
   }
 
   function eliminaCliente() {
-    const clientiAggiornati = clienti.filter((item) => String(item.id) !== id);
-    salvaClienti(clientiAggiornati);
+    spostaNelCestino(TIPI_CESTINO.cliente, id);
     navigate(ROUTES.clienti);
   }
 
@@ -125,7 +190,7 @@ export default function DettaglioCliente() {
         {/* CTA principali */}
         <div className="grid grid-cols-2 gap-3 mt-5">
           <Link
-            to={`${ROUTES.preventivi}?clienteId=${id}`}
+            to={`${ROUTES.preventiviNuovo}?clienteId=${id}`}
             className="btn-primary py-4 flex items-center justify-center gap-2 text-sm font-black"
             data-testid="entry-nuovo-preventivo-cliente"
           >
@@ -255,7 +320,7 @@ export default function DettaglioCliente() {
             <p className="font-black">Nessun preventivo</p>
             <p className="text-sm mt-1">Crea il primo preventivo per questo cliente.</p>
             <Link
-              to={`${ROUTES.preventivi}?clienteId=${id}`}
+              to={`${ROUTES.preventiviNuovo}?clienteId=${id}`}
               className="btn-primary mt-4 inline-flex items-center gap-2 px-5 py-3 text-sm font-black"
             >
               <Plus size={16} />
@@ -279,7 +344,9 @@ export default function DettaglioCliente() {
                 <p className="text-slate-400 text-sm mt-0.5">{preventivo.data}</p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-xs text-slate-400">{preventivo.stato}</p>
+                <p className="text-xs text-slate-400">
+                  {etichettaStatoUi(preventivo.stato)}
+                </p>
                 <p className="font-black text-emerald-300 mt-0.5">
                   {formatEuro(preventivo.totale)}
                 </p>
@@ -327,7 +394,9 @@ export default function DettaglioCliente() {
         ) : (
           <div className="space-y-3">
             <p className="text-sm text-slate-300">
-              Eliminare <strong>{cliente.nome}</strong>? I preventivi già creati resteranno nell'archivio.
+              Vuoi spostare <strong>{cliente.nome}</strong> nel Cestino? I
+              preventivi e i cantieri collegati restano disponibili. Potrai
+              ripristinare il cliente in seguito.
             </p>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -340,7 +409,7 @@ export default function DettaglioCliente() {
                 onClick={eliminaCliente}
                 className="btn-danger py-3.5 font-black"
               >
-                Elimina
+                Sposta nel Cestino
               </button>
             </div>
           </div>

@@ -62,6 +62,11 @@ export function formattaRigaVoce(voce, mostraPrezzi = false) {
     }
   }
 
+  const note = String(voce?.note || "").trim();
+  if (note) {
+    return `${riga}\n  📝 ${note}`;
+  }
+
   return riga;
 }
 

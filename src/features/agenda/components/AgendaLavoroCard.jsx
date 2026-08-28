@@ -8,9 +8,92 @@ import {
   iconaTipoLavoro,
 } from "../utils/tipoLavoroUi";
 
+function AzionePrincipale({
+  lavoro,
+  onSegnaCompletato,
+  onRegistraConsuntivo,
+  completamentoInCorso,
+}) {
+  if (lavoro.kind === "giornata-lavorativa") {
+    return (
+      <div
+        className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black opacity-60 min-h-[48px]"
+        data-testid="agenda-consuntivo-registrato"
+      >
+        <Check size={16} />
+        Consuntivo registrato
+      </div>
+    );
+  }
+
+  if (lavoro.kind === "lavoro-giornata") {
+    if (lavoro.stato !== "completato") {
+      return (
+        <button
+          type="button"
+          onClick={() => onSegnaCompletato?.(lavoro.id)}
+          disabled={completamentoInCorso}
+          className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black border-emerald-400/30 text-emerald-200 min-h-[48px]"
+          data-testid="agenda-segna-giornata-fatta"
+        >
+          <Check size={16} />
+          Segna giornata fatta
+        </button>
+      );
+    }
+
+    if (lavoro.consuntivoMancante) {
+      return (
+        <button
+          type="button"
+          onClick={() => onRegistraConsuntivo?.(lavoro)}
+          className="btn-primary py-3 flex items-center justify-center gap-2 text-sm font-black min-h-[48px]"
+          data-testid="agenda-registra-consuntivo"
+        >
+          <Check size={16} />
+          Registra consuntivo
+        </button>
+      );
+    }
+
+    return (
+      <div
+        className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black opacity-60 min-h-[48px]"
+        data-testid="agenda-giornata-fatta"
+      >
+        <Check size={16} />
+        Giornata fatta
+      </div>
+    );
+  }
+
+  if (lavoro.stato !== "completato") {
+    return (
+      <button
+        type="button"
+        onClick={() => onSegnaCompletato?.(lavoro.id)}
+        disabled={completamentoInCorso}
+        className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black border-emerald-400/30 text-emerald-200 min-h-[48px]"
+        data-testid="agenda-lavoro-finito"
+      >
+        <Check size={16} />
+        Lavoro finito
+      </button>
+    );
+  }
+
+  return (
+    <div className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black opacity-60 min-h-[48px]">
+      <Check size={16} />
+      Lavoro finito
+    </div>
+  );
+}
+
 export default function AgendaLavoroCard({
   lavoro,
   onSegnaCompletato,
+  onRegistraConsuntivo,
   completamentoInCorso = false,
   onInsight,
 }) {
@@ -53,6 +136,11 @@ export default function AgendaLavoroCard({
               {lavoro.cliente && lavoro.titolo !== lavoro.cliente ? (
                 <p className="ds-text-secondary mt-0.5 truncate">{lavoro.titolo}</p>
               ) : null}
+              {lavoro.sottotitoloProgrammazione ? (
+                <p className="ds-text-primary text-sm mt-1 truncate" data-testid="agenda-lavoro-programmazione">
+                  {lavoro.sottotitoloProgrammazione}
+                </p>
+              ) : null}
             </div>
             <span className={lavoro.statoBadgeClass}>{lavoro.statoLabel}</span>
           </div>
@@ -66,7 +154,9 @@ export default function AgendaLavoroCard({
 
           {lavoro.durataStimataLabel ? (
             <p className="ds-text-primary text-sm mt-2">
-              Durata prevista: {lavoro.durataStimataLabel}
+              {lavoro.kind === "giornata-lavorativa"
+                ? `Ore lavorate: ${lavoro.durataStimataLabel}`
+                : `Durata prevista: ${lavoro.durataStimataLabel}`}
             </p>
           ) : null}
 
@@ -98,7 +188,7 @@ export default function AgendaLavoroCard({
         {telLink ? (
           <a
             href={telLink}
-            className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black min-h-[44px]"
+            className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black min-h-[48px]"
           >
             <Phone size={16} />
             Chiama
@@ -107,7 +197,7 @@ export default function AgendaLavoroCard({
           <button
             type="button"
             disabled
-            className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black opacity-40 cursor-not-allowed min-h-[44px]"
+            className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black opacity-40 cursor-not-allowed min-h-[48px]"
           >
             <Phone size={16} />
             Chiama
@@ -119,7 +209,7 @@ export default function AgendaLavoroCard({
             href={navLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black min-h-[44px]"
+            className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black min-h-[48px]"
           >
             <Navigation size={16} />
             Naviga
@@ -128,35 +218,25 @@ export default function AgendaLavoroCard({
           <button
             type="button"
             disabled
-            className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black opacity-40 cursor-not-allowed min-h-[44px]"
+            className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black opacity-40 cursor-not-allowed min-h-[48px]"
           >
             <Navigation size={16} />
             Naviga
           </button>
         )}
 
-        {lavoro.stato !== "completato" ? (
-          <button
-            type="button"
-            onClick={() => onSegnaCompletato?.(lavoro.id)}
-            disabled={completamentoInCorso}
-            className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black border-emerald-400/30 text-emerald-200 min-h-[44px]"
-          >
-            <Check size={16} />
-            Segna completato
-          </button>
-        ) : (
-          <div className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black opacity-60 min-h-[44px]">
-            <Check size={16} />
-            Fatto
-          </div>
-        )}
+        <AzionePrincipale
+          lavoro={lavoro}
+          onSegnaCompletato={onSegnaCompletato}
+          onRegistraConsuntivo={onRegistraConsuntivo}
+          completamentoInCorso={completamentoInCorso}
+        />
 
         {onInsight ? (
           <button
             type="button"
             onClick={() => onInsight(lavoro)}
-            className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black min-h-[44px]"
+            className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm font-black min-h-[48px]"
           >
             <Lightbulb size={16} />
             Idea

@@ -1,8 +1,10 @@
 import { useRef, useState } from "react";
 
+import ConfirmDialog from "../components/ConfirmDialog";
 import { aggiungiInsight } from "../domain/insights";
 import { notificationService } from "../services/notificationService";
 import AgendaHeader from "../features/agenda/components/AgendaHeader";
+import AgendaMeseView from "../features/agenda/components/AgendaMeseView";
 import AgendaPreparazioneCard from "../features/agenda/components/AgendaPreparazioneCard";
 import AgendaToolbar from "../features/agenda/components/AgendaToolbar";
 import AttivitaFormSheet from "../features/agenda/components/AttivitaFormSheet";
@@ -12,13 +14,16 @@ import {
   AgendaGiornoContenuto,
   default as AgendaSettimanaView,
 } from "../features/agenda/components/AgendaSettimanaView";
+import GiornataLavorativaSheet from "../features/cantieri/components/GiornataLavorativaSheet";
 import { useAgenda } from "../features/agenda/hooks/useAgenda";
+import { prefillConsuntivoDaPrevisto } from "../features/agenda/prefillConsuntivoDaPrevisto";
 import { aggiungiGiorni } from "../features/agenda/agendaSelectors";
 
 const SOGLIA_SWIPE = 60;
 
 export default function Agenda() {
   const {
+    cantieriAttivi,
     giorno,
     oggi,
     vista,
@@ -33,6 +38,7 @@ export default function Agenda() {
     dataDefaultAttivita,
     segnaCompletato,
     creaLavoro,
+    registraGiornataLavorativa,
     creaAttivita,
     aggiornaAttivita,
     completaAttivita,
@@ -40,14 +46,18 @@ export default function Agenda() {
     vaiGiornoPrecedente,
     vaiGiornoSuccessivo,
     vaiOggi,
+    selezionaGiornoMese,
     setGiorno,
   } = useAgenda();
 
   const [formAttivitaAperto, setFormAttivitaAperto] = useState(false);
   const [lavoroSheetAperto, setLavoroSheetAperto] = useState(false);
+  const [registroSheetAperto, setRegistroSheetAperto] = useState(false);
   const [attivitaInModifica, setAttivitaInModifica] = useState(null);
   const [insightAperto, setInsightAperto] = useState(false);
   const [insightContesto, setInsightContesto] = useState(null);
+  const [consuntivoPrompt, setConsuntivoPrompt] = useState(null);
+  const [prefillConsuntivo, setPrefillConsuntivo] = useState(null);
   const touchStart = useRef(null);
 
   function onTouchStart(event) {
@@ -58,7 +68,7 @@ export default function Agenda() {
   }
 
   function onTouchEnd(event) {
-    if (!touchStart.current || vista === "settimana") return;
+    if (!touchStart.current || vista === "settimana" || vista === "mese") return;
     const dx = event.changedTouches[0].clientX - touchStart.current.x;
     const dy = event.changedTouches[0].clientY - touchStart.current.y;
     touchStart.current = null;
@@ -90,12 +100,37 @@ export default function Agenda() {
 
   function apriInsight(lavoro) {
     setInsightContesto({
-      cantiereId: lavoro.id,
+      cantiereId: lavoro.cantiereId || lavoro.id,
       lavoroId: lavoro.id,
       cliente: lavoro.cliente,
       titolo: lavoro.titolo,
     });
     setInsightAperto(true);
+  }
+
+  function gestisciSegnaCompletato(lavoroId) {
+    const lavoro = lavori.find((item) => String(item.id) === String(lavoroId));
+    segnaCompletato(lavoroId);
+
+    if (lavoro?.kind === "lavoro-giornata") {
+      const prefill = prefillConsuntivoDaPrevisto(lavoro);
+      if (prefill) {
+        setConsuntivoPrompt(prefill);
+      }
+    }
+  }
+
+  function apriConsuntivoDaPrevisto(prefill) {
+    setConsuntivoPrompt(null);
+    setPrefillConsuntivo(prefill);
+    setRegistroSheetAperto(true);
+  }
+
+  function gestisciRegistraConsuntivo(lavoro) {
+    const prefill = prefillConsuntivoDaPrevisto(lavoro);
+    if (prefill) {
+      apriConsuntivoDaPrevisto(prefill);
+    }
   }
 
   return (
@@ -112,15 +147,22 @@ export default function Agenda() {
         onGiornoPrecedente={vaiGiornoPrecedente}
         onOggi={vaiOggi}
         onGiornoSuccessivo={vaiGiornoSuccessivo}
-        nascondiNavGiorno={vista === "settimana"}
+        nascondiNavGiorno={vista === "settimana" || vista === "mese"}
         acquistiDaComprare={acquistiDaComprare}
       />
 
-      {vista !== "settimana" ? (
+      {vista !== "settimana" && vista !== "mese" ? (
         <AgendaPreparazioneCard riepilogo={riepilogoPreparazione} />
       ) : null}
 
-      {vista === "settimana" ? (
+      {vista === "mese" ? (
+        <AgendaMeseView
+          giorno={giorno}
+          oggi={oggi}
+          cantieri={cantieriAttivi}
+          onSelezionaGiorno={selezionaGiornoMese}
+        />
+      ) : vista === "settimana" ? (
         <AgendaSettimanaView
           giorni={settimana}
           attivitaPerGiorno={attivitaPerGiorno}
@@ -129,7 +171,8 @@ export default function Agenda() {
         <AgendaGiornoContenuto
           lavori={lavori}
           attivita={attivita}
-          onSegnaCompletato={segnaCompletato}
+          onSegnaCompletato={gestisciSegnaCompletato}
+          onRegistraConsuntivo={gestisciRegistraConsuntivo}
           completamentoId={completamentoId}
           onCompletaAttivita={completaAttivita}
           onModificaAttivita={(item) => {
@@ -138,12 +181,34 @@ export default function Agenda() {
           }}
           onEliminaAttivita={eliminaAttivita}
           onInsight={apriInsight}
+          onRegistraGiornata={() => {
+            setPrefillConsuntivo(null);
+            setRegistroSheetAperto(true);
+          }}
+          onNuovoLavoro={() => setLavoroSheetAperto(true)}
         />
       )}
 
       <AgendaToolbar
+        cantieriAttivi={cantieriAttivi}
         onNuovoLavoro={() => setLavoroSheetAperto(true)}
         onNuovaAttivita={apriNuovaAttivita}
+        onRegistraGiornata={() => {
+          setPrefillConsuntivo(null);
+          setRegistroSheetAperto(true);
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(consuntivoPrompt)}
+        title="Vuoi registrare ora il consuntivo?"
+        description="Hai segnato il previsto come fatto. Il consuntivo registra ore, operai e lavoro realmente svolto."
+        confirmLabel="Registra consuntivo"
+        cancelLabel="Più tardi"
+        danger={false}
+        onConfirm={() => apriConsuntivoDaPrevisto(consuntivoPrompt)}
+        onCancel={() => setConsuntivoPrompt(null)}
+        testId="consuntivo-dopo-previsto"
       />
 
       <NuovoLavoroSheet
@@ -151,6 +216,23 @@ export default function Agenda() {
         onChiudi={() => setLavoroSheetAperto(false)}
         onSalva={creaLavoro}
         dataDefault={dataDefaultAttivita}
+        title="Nuovo cantiere"
+        descrizione="Pianifica senza uscire dall'agenda."
+      />
+
+      <GiornataLavorativaSheet
+        open={registroSheetAperto}
+        onClose={() => {
+          setRegistroSheetAperto(false);
+          setPrefillConsuntivo(null);
+        }}
+        cantieriOpzioni={cantieriAttivi}
+        dataDefault={dataDefaultAttivita}
+        valoriIniziali={prefillConsuntivo}
+        onSalva={(payload) => {
+          registraGiornataLavorativa(payload);
+          setPrefillConsuntivo(null);
+        }}
       />
 
       <AttivitaFormSheet

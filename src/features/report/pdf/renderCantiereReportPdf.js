@@ -59,7 +59,11 @@ function disegnaCopertina(doc, document) {
 
   setText(doc, settings.coloreSecondario);
   applicaFont(doc, settings, "bold", settings.fontSizeTitolo + 4);
-  doc.text("Report Finale di Cantiere", area.x, y);
+  doc.text(
+    riga(document.copertina.titoloDocumento, "Report Finale di Cantiere"),
+    area.x,
+    y
+  );
   y += 12;
 
   applicaFont(doc, settings, "bold", settings.fontSizeTitolo);
@@ -70,10 +74,22 @@ function disegnaCopertina(doc, document) {
   applicaFont(doc, settings, "normal", settings.fontSizeBase + 1);
   y = testo(doc, settings, `Cliente: ${riga(document.copertina.cliente)}`, area.x, y, area.width);
   y = testo(doc, settings, `Indirizzo: ${riga(document.copertina.indirizzo)}`, area.x, y, area.width);
+  if (document.lavoroDiretto && document.copertina.tipoIntervento) {
+    y = testo(
+      doc,
+      settings,
+      `Tipo intervento: ${riga(document.copertina.tipoIntervento)}`,
+      area.x,
+      y,
+      area.width
+    );
+  }
   y = testo(
     doc,
     settings,
-    `Numero cantiere: ${riga(document.copertina.numeroCantiere)}`,
+    document.lavoroDiretto
+      ? `Intervento: ${riga(document.copertina.numeroCantiere)}`
+      : `Numero cantiere: ${riga(document.copertina.numeroCantiere)}`,
     area.x,
     y,
     area.width
@@ -102,6 +118,39 @@ function disegnaRiepilogo(doc, document, y) {
   const settings = document.settings;
   const area = areaUtile(settings);
   y = titoloSezione(doc, settings, "Riepilogo", y);
+
+  if (document.lavoroDiretto) {
+    if (document.riepilogo.tipoIntervento) {
+      y = testo(
+        doc,
+        settings,
+        `Tipo: ${document.riepilogo.tipoIntervento}`,
+        area.x,
+        y,
+        area.width
+      );
+    }
+    if (document.riepilogo.descrizioneIntervento) {
+      y = testo(doc, settings, "Descrizione intervento:", area.x, y, area.width);
+      y = testo(
+        doc,
+        settings,
+        document.riepilogo.descrizioneIntervento,
+        area.x + 2,
+        y,
+        area.width - 4
+      );
+    }
+    y = testo(
+      doc,
+      settings,
+      `Totale intervento: ${document.riepilogo.totaleFinaleLabel}`,
+      area.x,
+      y,
+      area.width
+    );
+    return y + 4;
+  }
 
   y = testo(
     doc,
@@ -138,7 +187,7 @@ function disegnaRiepilogo(doc, document, y) {
 
   if (document.riepilogo.variantiApprovate.length > 0) {
     y += 2;
-    y = testo(doc, settings, "Varianti approvate:", area.x, y, area.width);
+    y = testo(doc, settings, "Lavori extra approvati:", area.x, y, area.width);
     for (const variante of document.riepilogo.variantiApprovate) {
       y = assicuratiSpazio(doc, settings, y, 8, nuovaPagina);
       y = testo(
@@ -258,8 +307,8 @@ function disegnaPagamenti(doc, document, y) {
   const settings = document.settings;
   const area = areaUtile(settings);
   y = titoloSezione(doc, settings, "Pagamenti", y);
-  y = testo(doc, settings, `Acconti: ${document.pagamenti.accontoLabel}`, area.x, y, area.width);
-  y = testo(doc, settings, `Saldo: ${document.pagamenti.saldoLabel}`, area.x, y, area.width);
+  y = testo(doc, settings, `Già incassato: ${document.pagamenti.incassatoLabel || document.pagamenti.accontoLabel}`, area.x, y, area.width);
+  y = testo(doc, settings, `Resta da incassare: ${document.pagamenti.rimanenzaLabel || document.pagamenti.saldoLabel}`, area.x, y, area.width);
   y = testo(doc, settings, `Totale: ${document.pagamenti.totaleLabel}`, area.x, y, area.width);
   return y + 2;
 }

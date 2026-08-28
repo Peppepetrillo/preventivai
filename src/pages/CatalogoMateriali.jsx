@@ -290,7 +290,7 @@ export default function CatalogoMateriali() {
               ? null
               : catalogo.find((f) => f.id === sheetFamiglia?.id) || sheetFamiglia
           }
-          categoriaDefault={categoriaId || "elettrico"}
+          categoriaDefault={categoriaId || "generale"}
           catalogo={catalogo}
           onCrea={creaFamiglia}
           onSalva={salvaFamiglia}
