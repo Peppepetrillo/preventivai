@@ -21,6 +21,7 @@ export function creaLavorazioneDaVoce(voce) {
     unita: voce.unita || "cad",
     listinoId,
     catalogoId,
+    origineVoce: "listino",
   };
 }
 
@@ -41,9 +42,18 @@ export function aggiornaCampoLavorazione(lavorazione, campo, valore) {
   };
 }
 
+function applicaClienteId(obj, clienteId, fallbackId) {
+  const id = clienteId != null && clienteId !== "" ? clienteId : fallbackId;
+  if (id != null && id !== "") {
+    return { ...obj, clienteId: id };
+  }
+  return obj;
+}
+
 export function preparaDatiPreventivo({
   preventivo = {},
   cliente,
+  clienteId,
   stato = "Bozza",
   lavorazioni,
   sconto,
@@ -53,26 +63,35 @@ export function preparaDatiPreventivo({
   acconto = 0,
   note,
   tipoLavoro,
+  tipologiaImpianto,
 }) {
-  return normalizzaPreventivoIncasso({
-    ...preventivo,
-    cliente,
-    stato: stato || "Bozza",
-    lavorazioni,
-    sconto: normalizzaNumero(sconto),
-    iva: normalizzaNumero(iva),
-    validita: normalizzaNumero(validita, 30),
-    pagamento: pagamento.trim(),
-    acconto: normalizzaNumero(acconto),
-    note,
-    ...(tipoLavoro ? { tipoLavoro } : {}),
-    ...calcolaTotali(lavorazioni, sconto, iva),
-  });
+  return normalizzaPreventivoIncasso(
+    applicaClienteId(
+      {
+        ...preventivo,
+        cliente,
+        stato: stato || "Bozza",
+        lavorazioni,
+        sconto: normalizzaNumero(sconto),
+        iva: normalizzaNumero(iva),
+        validita: normalizzaNumero(validita, 30),
+        pagamento: pagamento.trim(),
+        acconto: normalizzaNumero(acconto),
+        note,
+        ...(tipoLavoro ? { tipoLavoro } : {}),
+        ...(tipologiaImpianto ? { tipologiaImpianto } : {}),
+        ...calcolaTotali(lavorazioni, sconto, iva),
+      },
+      clienteId,
+      preventivo.clienteId
+    )
+  );
 }
 
 export function creaPreventivo({
   archivio,
   cliente,
+  clienteId,
   lavorazioni,
   sconto,
   iva,
@@ -81,25 +100,32 @@ export function creaPreventivo({
   acconto = 0,
   note,
   tipoLavoro,
+  tipologiaImpianto,
 }) {
   const id = new Date().getTime();
 
-  return normalizzaPreventivoIncasso({
-    id,
-    numero: creaProssimoNumeroPreventivo(archivio),
-    cliente,
-    lavorazioni,
-    sconto: normalizzaNumero(sconto),
-    iva: normalizzaNumero(iva),
-    validita: normalizzaNumero(validita, 30),
-    pagamento: pagamento.trim(),
-    acconto: normalizzaNumero(acconto),
-    note,
-    ...(tipoLavoro ? { tipoLavoro } : {}),
-    stato: "Bozza",
-    data: new Date().toLocaleDateString("it-IT"),
-    ...calcolaTotali(lavorazioni, sconto, iva),
-  });
+  return normalizzaPreventivoIncasso(
+    applicaClienteId(
+      {
+        id,
+        numero: creaProssimoNumeroPreventivo(archivio),
+        cliente,
+        lavorazioni,
+        sconto: normalizzaNumero(sconto),
+        iva: normalizzaNumero(iva),
+        validita: normalizzaNumero(validita, 30),
+        pagamento: pagamento.trim(),
+        acconto: normalizzaNumero(acconto),
+        note,
+        ...(tipoLavoro ? { tipoLavoro } : {}),
+        ...(tipologiaImpianto ? { tipologiaImpianto } : {}),
+        stato: "Bozza",
+        data: new Date().toLocaleDateString("it-IT"),
+        ...calcolaTotali(lavorazioni, sconto, iva),
+      },
+      clienteId
+    )
+  );
 }
 
 export function duplicaPreventivo({

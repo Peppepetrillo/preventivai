@@ -54,6 +54,23 @@ describe("PreventivoManuale", () => {
   });
 
   it("salva e naviga al preventivo se dati validi", () => {
+    renderPage("?clienteId=77");
+
+    fireEvent.change(screen.getByPlaceholderText(/Descrizione lavorazione/i), {
+      target: { value: "Installazione presa" },
+    });
+
+    fireEvent.click(screen.getByText(/Crea preventivo/i));
+
+    expect(screen.getByTestId("dettaglio-preventivo")).toBeInTheDocument();
+
+    const preventivi = JSON.parse(localStorage.getItem(STORAGE_KEYS.preventivi) || "[]");
+    expect(preventivi.length).toBe(1);
+    expect(preventivi[0].cliente).toBe("Rossi Costruzioni");
+    expect(String(preventivi[0].clienteId)).toBe("77");
+  });
+
+  it("salva senza clienteId se il nome non corrisponde al cliente in rubrica", () => {
     renderPage();
 
     fireEvent.change(screen.getByPlaceholderText("Nome cliente"), {
@@ -66,10 +83,8 @@ describe("PreventivoManuale", () => {
 
     fireEvent.click(screen.getByText(/Crea preventivo/i));
 
-    expect(screen.getByTestId("dettaglio-preventivo")).toBeInTheDocument();
-
     const preventivi = JSON.parse(localStorage.getItem(STORAGE_KEYS.preventivi) || "[]");
-    expect(preventivi.length).toBe(1);
     expect(preventivi[0].cliente).toBe("Mario Verdi");
+    expect(preventivi[0].clienteId).toBeUndefined();
   });
 });

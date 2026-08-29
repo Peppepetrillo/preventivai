@@ -56,6 +56,7 @@ import { useSalvaEGeneraPdf } from "./useSalvaEGeneraPdf";
 
 const STATO = {
   cliente: "Mario Rossi",
+  clienteId: 99,
   tipoLavoro: "impianto",
   lavorazioni: [
     {
@@ -105,8 +106,27 @@ describe("useSalvaEGeneraPdf UX-5.3", () => {
     expect(generaPdfPreventivo).toHaveBeenCalledTimes(1);
     expect(generaPdfPreventivo.mock.calls[0][0].salva).toBe(true);
     expect(preventivo?.cliente).toBe("Mario Rossi");
+    expect(preventivo?.clienteId).toBe(99);
     expect(result.current.preventivoSalvato).toEqual(
-      expect.objectContaining({ cliente: "Mario Rossi" })
+      expect.objectContaining({ cliente: "Mario Rossi", clienteId: 99 })
+    );
+  });
+
+  it("propaga clienteId al creaPreventivo", async () => {
+    const { result } = renderHook(() => useSalvaEGeneraPdf());
+
+    await act(async () => {
+      await result.current.salvaPreventivo({
+        ...STATO,
+        clienteId: 77,
+      });
+    });
+
+    expect(creaPreventivo).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cliente: "Mario Rossi",
+        clienteId: 77,
+      })
     );
   });
 

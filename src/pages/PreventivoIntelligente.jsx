@@ -132,6 +132,18 @@ export default function PreventivoIntelligente() {
     }
     return FORM_INIZIALE;
   });
+
+  const clienteIdEffettivo = (() => {
+    if (!clienteIdParam) return null;
+    try {
+      const clienti = JSON.parse(localStorage.getItem("clienti") || "[]");
+      const c = clienti.find((x) => String(x.id) === clienteIdParam);
+      if (c && form.cliente === c.nome) return c.id;
+    } catch {
+      // silent
+    }
+    return null;
+  })();
   const [proposal, setProposal] = useState(null);
   const [errore, setErrore] = useState("");
   const [ragionamentoAperto, setRagionamentoAperto] = useState(false);
@@ -214,6 +226,8 @@ export default function PreventivoIntelligente() {
       const preventivo = convertiProposalInPreventivo(proposal, {
         archivio,
         cliente: form.cliente,
+        clienteId: clienteIdEffettivo,
+        form,
       });
       salvaNuovoPreventivo(preventivo);
       if (sessione?.id) {

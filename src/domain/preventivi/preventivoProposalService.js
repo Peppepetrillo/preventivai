@@ -5,6 +5,7 @@
  */
 
 import { calcolaTotali, normalizzaNumero } from "../../utils/preventivi";
+import { tipologiaImpiantoDaFormIntelligente } from "../../features/preventivi/tipologiaImpiantoUtils";
 import { generaPropostaPreventivo } from "../knowledge/preventivoIntelligenteService";
 import { ottieniPattern } from "../brain/brainPatternService";
 import { caricaCatalogoListino } from "../../features/listino/listinoCatalogService";
@@ -287,6 +288,7 @@ export function convertiProposalInPreventivo(proposal, opzioni = {}) {
   return creaPreventivo({
     archivio: opzioni.archivio || [],
     cliente: String(opzioni.cliente || "Da completare").trim() || "Da completare",
+    clienteId: opzioni.clienteId,
     lavorazioni,
     sconto: opzioni.sconto ?? proposal.scontoPercentuale ?? 0,
     iva: opzioni.iva ?? proposal.ivaPercentuale ?? 22,
@@ -295,6 +297,9 @@ export function convertiProposalInPreventivo(proposal, opzioni = {}) {
     acconto: opzioni.acconto ?? 0,
     note: noteParti.join(" "),
     tipoLavoro: opzioni.tipoLavoro || "impianto",
+    tipologiaImpianto:
+      opzioni.tipologiaImpianto ||
+      tipologiaImpiantoDaFormIntelligente(opzioni.form || {}),
   });
 }
 

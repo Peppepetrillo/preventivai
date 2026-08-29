@@ -31,6 +31,18 @@ describe("UX-6.5 lavoro diretto — dominio", () => {
     expect(c.incassato).toBe(0);
   });
 
+  it("persiste clienteId su cantiere diretto quando fornito", () => {
+    const c = creaCantiere({
+      nome: "Intervento",
+      cliente: "Mario Rossi",
+      clienteId: 123,
+      indirizzo: "Via Roma",
+    });
+
+    expect(c.clienteId).toBe(123);
+    expect(c.cliente).toBe("Mario Rossi");
+  });
+
   it("tipi intervento disponibili", () => {
     expect(TIPI_INTERVENTO).toContain("Riparazione");
     expect(TIPI_INTERVENTO).toContain("Manutenzione");

@@ -10,6 +10,7 @@ import {
   avviaControlloBackupAutomatico,
   registraListenerBackupAutomatico,
 } from './domain/backupAutomatico/index.js'
+import { inizializzaNotifiche } from './services/notificationBootstrap.js'
 
 richiediPersistenzaLocale()
 
@@ -17,6 +18,7 @@ await inizializzaStorageNativo()
 ricaricaCodeCloudDaDisco()
 await avviaControlloBackupAutomatico()
 registraListenerBackupAutomatico()
+void inizializzaNotifiche()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

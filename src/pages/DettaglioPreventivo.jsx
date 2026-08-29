@@ -668,6 +668,7 @@ export default function DettaglioPreventivo() {
       <PreventivoDettaglioHeader
         preventivo={preventivo}
         cliente={cliente}
+        clienteId={preventivo?.clienteId}
         lavorazioni={lavorazioni}
         stato={stato}
         totale={totali.totale}

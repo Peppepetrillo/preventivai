@@ -31,6 +31,8 @@ export default function SelettoreMaterialeSheet({
   descrizione = "Scegli dal catalogo o inserisci una voce libera.",
   labelConferma = "Aggiungi alla distinta",
   mantieniApertoDopoConferma = false,
+  categoriaSuggerita = null,
+  richiediPrezzo = false,
 }) {
   return (
     <BottomSheet
@@ -47,24 +49,39 @@ export default function SelettoreMaterialeSheet({
           onApriManuale={onApriManuale}
           labelConferma={labelConferma}
           mantieniApertoDopoConferma={mantieniApertoDopoConferma}
+          categoriaSuggerita={categoriaSuggerita}
+          richiediPrezzo={richiediPrezzo}
         />
       ) : null}
     </BottomSheet>
   );
 }
 
-function SelettoreForm({ onClose, onConferma, onApriManuale, labelConferma, mantieniApertoDopoConferma }) {
+function SelettoreForm({
+  onClose,
+  onConferma,
+  onApriManuale,
+  labelConferma,
+  mantieniApertoDopoConferma,
+  categoriaSuggerita,
+  richiediPrezzo,
+}) {
   const catalogo = useMemo(() => caricaCatalogoMateriali(), []);
-  const categorie = useMemo(
-    () => elencaMetaCategorieMateriale({ catalogo }),
-    [catalogo]
-  );
+  const categorie = useMemo(() => {
+    const base = elencaMetaCategorieMateriale({ catalogo });
+    if (!categoriaSuggerita) return base;
+    const suggerita = base.find((c) => c.id === categoriaSuggerita);
+    if (!suggerita) return base;
+    return [suggerita, ...base.filter((c) => c.id !== categoriaSuggerita)];
+  }, [catalogo, categoriaSuggerita]);
   const [ricerca, setRicerca] = useState("");
   const [categoriaId, setCategoriaId] = useState(null);
   const [famiglia, setFamiglia] = useState(null);
   const [variante, setVariante] = useState(null);
   const [quantita, setQuantita] = useState(1);
   const [unita, setUnita] = useState("");
+  const [prezzoUnitario, setPrezzoUnitario] = useState("");
+  const [errorePrezzo, setErrorePrezzo] = useState("");
 
   // Feedback aggiunta (solo in modalità mantieniApertoDopoConferma)
   const [feedbackVisbile, setFeedbackVisibile] = useState(false);
@@ -122,14 +139,37 @@ function SelettoreForm({ onClose, onConferma, onApriManuale, labelConferma, mant
 
   function conferma() {
     if (!variante || !famiglia) return;
+
     const q = Number(quantita);
+    const prezzoNum = Number(prezzoUnitario);
+    const haPrezzoCatalogo =
+      variante.prezzoIndicativo != null &&
+      Number.isFinite(Number(variante.prezzoIndicativo));
+    const prezzoFinale = richiediPrezzo
+      ? prezzoNum
+      : haPrezzoCatalogo
+        ? Number(variante.prezzoIndicativo)
+        : prezzoNum;
+
+    if (
+      richiediPrezzo &&
+      (!Number.isFinite(prezzoFinale) || prezzoFinale <= 0)
+    ) {
+      setErrorePrezzo("Inserisci un prezzo unitario valido.");
+      return;
+    }
+
+    setErrorePrezzo("");
     const payload = {
       famigliaId: famiglia.id,
       varianteId: variante.id,
       nome: `${famiglia.nome} — ${variante.etichetta}`,
       unita: unita || variante.unita || famiglia.unitaDefault || "pz",
       quantita: Number.isFinite(q) && q > 0 ? q : 1,
-      prezzoUnitario: variante.prezzoIndicativo,
+      prezzoUnitario: Number.isFinite(prezzoFinale) ? prezzoFinale : undefined,
+      prezzoCatalogoOriginale: haPrezzoCatalogo
+        ? Number(variante.prezzoIndicativo)
+        : undefined,
     };
 
     onConferma?.(payload);
@@ -140,6 +180,7 @@ function SelettoreForm({ onClose, onConferma, onApriManuale, labelConferma, mant
       setContatoreAggiunte((n) => n + 1);
       setVariante(null);
       setQuantita(1);
+      setPrezzoUnitario("");
     } else {
       onClose?.();
     }
@@ -290,6 +331,16 @@ function SelettoreForm({ onClose, onConferma, onApriManuale, labelConferma, mant
                       setVariante(sel);
                       setUnita(sel.unita || famiglia.unitaDefault || "pz");
                       setQuantita(1);
+                      const prezzoCat = sel.prezzoIndicativo;
+                      if (
+                        prezzoCat != null &&
+                        Number.isFinite(Number(prezzoCat))
+                      ) {
+                        setPrezzoUnitario(Number(prezzoCat));
+                      } else {
+                        setPrezzoUnitario("");
+                      }
+                      setErrorePrezzo("");
                     }}
                   />
                 </li>
@@ -305,7 +356,7 @@ function SelettoreForm({ onClose, onConferma, onApriManuale, labelConferma, mant
               {famiglia.nome} — {variante.etichetta}
             </p>
             <p className="ds-text-secondary text-sm mt-1">
-              Conferma quantità e unità
+              Conferma quantità{richiediPrezzo ? ", prezzo e unità" : " e unità"}
             </p>
           </div>
 
@@ -320,6 +371,40 @@ function SelettoreForm({ onClose, onConferma, onApriManuale, labelConferma, mant
               min={0}
             />
           </label>
+
+          {richiediPrezzo ? (
+            <label className="block">
+              <span className="ds-text-secondary text-xs font-bold uppercase tracking-wide">
+                Prezzo/{unita || "unità"}
+              </span>
+              <NumericInput
+                className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-white"
+                value={prezzoUnitario}
+                onChange={(v) => {
+                  setPrezzoUnitario(v);
+                  setErrorePrezzo("");
+                }}
+                min={0}
+                inputMode="decimal"
+              />
+              {variante.prezzoIndicativo != null &&
+              Number.isFinite(Number(variante.prezzoIndicativo)) ? (
+                <p className="ds-text-secondary text-xs mt-1">
+                  Prezzo catalogo: {Number(variante.prezzoIndicativo).toFixed(2)} €
+                  (modificabile solo per questa voce)
+                </p>
+              ) : (
+                <p className="ds-text-secondary text-xs mt-1">
+                  Prezzo non configurato nel catalogo: inseriscilo manualmente.
+                </p>
+              )}
+              {errorePrezzo ? (
+                <p className="text-red-300 text-xs mt-1" role="alert">
+                  {errorePrezzo}
+                </p>
+              ) : null}
+            </label>
+          ) : null}
 
           <label className="block">
             <span className="ds-text-secondary text-xs font-bold uppercase tracking-wide">

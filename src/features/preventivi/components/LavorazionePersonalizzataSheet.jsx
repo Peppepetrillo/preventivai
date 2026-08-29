@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import BottomSheet from "../../../components/BottomSheet";
 import NumericInput from "../../../components/NumericInput";
-import { normalizzaNumero } from "../../../utils/preventivi";
+import { creaLavorazioneManuale } from "../lavorazionePreventivoUtils";
 
 function statoIniziale() {
   return {
@@ -26,16 +26,14 @@ export default function LavorazionePersonalizzataSheet({ open, onClose, onSalva 
     const nome = form.nome.trim();
     if (!nome) return;
 
-    onSalva({
-      id: `custom-${Date.now()}`,
-      nome,
-      categoria: "Lavorazioni",
-      prezzo: normalizzaNumero(form.prezzo),
-      quantita: normalizzaNumero(form.quantita, 1),
-      unita: "cad",
-      listinoId: null,
-      catalogoId: null,
-    });
+    onSalva(
+      creaLavorazioneManuale({
+        id: `custom-${Date.now()}`,
+        nome,
+        prezzo: form.prezzo,
+        quantita: form.quantita,
+      })
+    );
     onClose();
   }
 

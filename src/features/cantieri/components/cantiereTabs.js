@@ -15,6 +15,7 @@ const MAPPA_SEZIONE_TAB = {
   "sezione-diario": CANTIERE_TAB.DOCUMENTI,
   "sezione-varianti": CANTIERE_TAB.ECONOMICO,
   "sezione-pagamenti": CANTIERE_TAB.ECONOMICO,
+  "sezione-spese": CANTIERE_TAB.ECONOMICO,
   "sezione-documenti": CANTIERE_TAB.DOCUMENTI,
 };
 

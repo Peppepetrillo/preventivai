@@ -47,10 +47,17 @@ import { creaEventoNotaAggiunta } from "../../diario/events/notaAggiunta";
 import { creaEventoPagamentoRegistrato } from "../../diario/events/pagamentoRegistrato";
 import { creaEventoStatoCambiato } from "../../diario/events/statoCambiato";
 import { creaEventoVariante } from "../../diario/events/varianteAggiunta";
+import { creaLavoroDaCantiere } from "../../lavori/lavoriDomain";
+import {
+  campiNotificaGiornataCambiati,
+  campiNotificaLavoroCambiati,
+  notificationService,
+} from "../../../services/notificationService";
 import {
   aggiungiGiornataProgrammata,
   aggiornaGiornataProgrammata,
   eliminaGiornataProgrammata,
+  leggiProgrammazione,
 } from "../services/programmazioneCantiereService";
 import {
   aggiungiGiornataLavorativa,
@@ -64,10 +71,17 @@ import {
   eliminaPagamento as eliminaPagamentoDomain,
   leggiTotaleIncassato,
 } from "../services/pagamentiCantiereService";
+import {
+  aggiungiSpesa as aggiungiSpesaDomain,
+  creaIdSpesaCantiere,
+  modificaSpesa as modificaSpesaDomain,
+  rimuoviSpesaCantiere as rimuoviSpesaDomain,
+} from "../services/speseCantiereService";
 
 const FORM_CANTIERE_INIZIALE = {
   nome: "",
   cliente: "",
+  clienteId: null,
   indirizzo: "",
   tipoIntervento: "Riparazione",
   descrizioneIntervento: "",
@@ -148,13 +162,30 @@ export function useCantieri({
 
   function aggiornaCantiereConEventi(idTarget, aggiornatore) {
     let aggiornato = null;
+    let precedente = null;
     salvaListaCantieri(
       cantieri.map((cantiere) => {
         if (String(cantiere.id) !== String(idTarget)) return cantiere;
+        precedente = cantiere;
         aggiornato = aggiornatore(cantiere);
         return aggiornato;
       })
     );
+
+    if (aggiornato && precedente) {
+      const completato =
+        aggiornato.stato === "Completato" ||
+        aggiornato.statoPianificazione === "completato";
+      if (completato) {
+        void notificationService.cancelNotificheCantiereCompleto(aggiornato);
+      } else if (campiNotificaLavoroCambiati(precedente, aggiornato)) {
+        void notificationService.resyncNotificheCantiere(aggiornato, {
+          lavoro: creaLavoroDaCantiere(aggiornato),
+          reminderMinutes: aggiornato.reminderMinutes,
+        });
+      }
+    }
+
     return aggiornato;
   }
 
@@ -660,12 +691,23 @@ export function useCantieri({
 
   function aggiungiGiornata(input) {
     if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    const precedente = cantiereSelezionato;
+    const idsPrecedenti = new Set(
+      leggiProgrammazione(precedente).map((g) => String(g.id))
+    );
     try {
       const aggiornato = aggiornaCantiereConEventi(
         cantiereSelezionato.id,
-        (precedente) =>
-          aggiornaCantiere(aggiungiGiornataProgrammata(precedente, input), {})
+        (prec) =>
+          aggiornaCantiere(aggiungiGiornataProgrammata(prec, input), {})
       );
+      if (aggiornato?.reminderEnabled) {
+        for (const giornata of leggiProgrammazione(aggiornato)) {
+          if (!idsPrecedenti.has(String(giornata.id))) {
+            void notificationService.resyncNotificheGiornata(aggiornato, giornata);
+          }
+        }
+      }
       return { success: true, cantiere: aggiornato };
     } catch (errore) {
       return { success: false, error: errore?.message || "giornata_non_valida" };
@@ -674,19 +716,38 @@ export function useCantieri({
 
   function aggiornaGiornata(giornataId, modifiche) {
     if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    const precedente = cantiereSelezionato;
+    const vecchia = leggiProgrammazione(precedente).find(
+      (g) => String(g.id) === String(giornataId)
+    );
     const aggiornato = aggiornaCantiereConEventi(
       cantiereSelezionato.id,
-      (precedente) =>
+      (prec) =>
         aggiornaCantiere(
-          aggiornaGiornataProgrammata(precedente, giornataId, modifiche),
+          aggiornaGiornataProgrammata(prec, giornataId, modifiche),
           {}
         )
     );
+    const nuova = leggiProgrammazione(aggiornato || {}).find(
+      (g) => String(g.id) === String(giornataId)
+    );
+    if (
+      aggiornato &&
+      vecchia &&
+      nuova &&
+      campiNotificaGiornataCambiati(vecchia, nuova)
+    ) {
+      void notificationService.resyncNotificheGiornata(aggiornato, nuova);
+    }
     return { success: true, cantiere: aggiornato };
   }
 
   function eliminaGiornata(giornataId) {
     if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    void notificationService.cancelNotificheGiornata(
+      cantiereSelezionato.id,
+      giornataId
+    );
     const aggiornato = aggiornaCantiereConEventi(
       cantiereSelezionato.id,
       (precedente) =>
@@ -807,6 +868,58 @@ export function useCantieri({
     return { success: true, cantiere: aggiornato };
   }
 
+  function aggiungiSpesa(input) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    try {
+      const spesaId = String(input?.id || creaIdSpesaCantiere());
+      let spesaSalvata = null;
+      const aggiornato = aggiornaCantiereConEventi(
+        cantiereSelezionato.id,
+        (precedente) => {
+          const next = aggiungiSpesaDomain(precedente, {
+            ...input,
+            id: spesaId,
+          });
+          spesaSalvata =
+            next.spese?.find((s) => String(s.id) === spesaId) || null;
+          return aggiornaCantiere(next, {});
+        }
+      );
+      return { success: true, cantiere: aggiornato, spesa: spesaSalvata };
+    } catch (errore) {
+      return { success: false, error: errore?.message || "spesa_non_valida" };
+    }
+  }
+
+  function aggiornaSpesa(spesaId, modifiche) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    try {
+      let spesaSalvata = null;
+      const aggiornato = aggiornaCantiereConEventi(
+        cantiereSelezionato.id,
+        (precedente) => {
+          const next = modificaSpesaDomain(precedente, spesaId, modifiche);
+          spesaSalvata =
+            next.spese?.find((s) => String(s.id) === String(spesaId)) || null;
+          return aggiornaCantiere(next, {});
+        }
+      );
+      return { success: true, cantiere: aggiornato, spesa: spesaSalvata };
+    } catch (errore) {
+      return { success: false, error: errore?.message || "spesa_non_valida" };
+    }
+  }
+
+  function eliminaSpesa(spesaId) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    const aggiornato = aggiornaCantiereConEventi(
+      cantiereSelezionato.id,
+      (precedente) =>
+        aggiornaCantiere(rimuoviSpesaDomain(precedente, spesaId), {})
+    );
+    return { success: true, cantiere: aggiornato };
+  }
+
   return {
     cantieri,
     cantieriAttivi,
@@ -853,5 +966,8 @@ export function useCantieri({
     aggiungiPagamento,
     aggiornaPagamento,
     eliminaPagamento,
+    aggiungiSpesa,
+    aggiornaSpesa,
+    eliminaSpesa,
   };
 }

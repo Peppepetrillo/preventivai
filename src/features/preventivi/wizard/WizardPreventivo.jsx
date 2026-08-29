@@ -38,6 +38,7 @@ export default function WizardPreventivo() {
     impostaExpressAutoOpen,
     impostaCliente,
     impostaTipoLavoro,
+    impostaTipologiaImpianto,
     totaleStep,
     reset,
   } = useWizardPreventivoState();
@@ -60,7 +61,7 @@ export default function WizardPreventivo() {
     if (!cliente?.nome) return;
 
     clienteIdElaborato.current = true;
-    impostaCliente(cliente.nome);
+    impostaCliente({ nome: cliente.nome, id: cliente.id });
     vaiAStep("componi");
   }, [searchParams, impostaCliente, vaiAStep]);
 
@@ -102,6 +103,7 @@ export default function WizardPreventivo() {
         return (
           <StepComponi
             tipoLavoro={stato.tipoLavoro}
+            tipologiaImpianto={stato.tipologiaImpianto}
             cliente={stato.cliente}
             expressAutoOpen={stato.expressAutoOpen}
             lavorazioni={stato.lavorazioni}
@@ -112,6 +114,7 @@ export default function WizardPreventivo() {
             onAggiornaContesto={aggiornaContesto}
             onImpostaCliente={impostaCliente}
             onImpostaTipoLavoro={impostaTipoLavoro}
+            onImpostaTipologiaImpianto={impostaTipologiaImpianto}
             onImpostaExpressAutoOpen={impostaExpressAutoOpen}
             onAvanti={avanti}
           />

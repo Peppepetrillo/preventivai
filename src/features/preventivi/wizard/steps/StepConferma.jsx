@@ -8,7 +8,7 @@ import {
   normalizzaNumero,
 } from "../../../../utils/preventivi";
 import PreventivoSuccesso from "../components/PreventivoSuccesso";
-import { opzioneTipoLavoro } from "../wizardConfig";
+import { etichettaTipologiaImpianto } from "../../tipologiaImpiantoUtils";
 
 export default function StepConferma({
   stato,
@@ -25,8 +25,8 @@ export default function StepConferma({
   onNuovoPreventivo,
   onModificaComposizione,
 }) {
-  const { cliente, tipoLavoro, lavorazioni, condizioni } = stato;
-  const opzione = opzioneTipoLavoro(tipoLavoro);
+  const { cliente, tipologiaImpianto, lavorazioni, condizioni } = stato;
+  const tipologiaLabel = etichettaTipologiaImpianto(tipologiaImpianto);
   const totali = calcolaTotali(
     lavorazioni,
     condizioni.sconto,
@@ -64,7 +64,7 @@ export default function StepConferma({
   return (
     <div className="px-4 pb-36 space-y-4" data-testid="step-conferma">
       <header className="pro-panel-strong p-5" data-testid="riepilogo-hero">
-        <p className="section-label">{opzione?.titolo || "Preventivo"}</p>
+        <p className="section-label">{tipologiaLabel}</p>
         <div className="flex flex-wrap items-start justify-between gap-3 mt-2">
           <h2 className="ds-page-title min-w-0 flex-1 truncate">
             {cliente || "Cliente"}

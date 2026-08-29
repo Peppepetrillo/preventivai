@@ -30,6 +30,10 @@
  * @property {string} unita
  * @property {string=} catalogoId — ID Catalogo Lavorazioni (fonte di verità)
  * @property {string=} listinoId — id voce listino (chiave prezzi)
+ * @property {"listino"|"catalogo-materiale"|"manuale"=} origineVoce
+ * @property {string=} famigliaId — riferimento storico catalogo materiali
+ * @property {string=} varianteId — riferimento storico catalogo materiali
+ * @property {number=} prezzoCatalogoOriginale — snapshot prezzo catalogo al momento inserimento
  */
 
 /**
@@ -56,7 +60,8 @@
  * @property {string=} convertitoBy
  * @property {string=} indirizzo
  * @property {number|string=} clienteId
- * @property {"impianto"|"intervento"|"express"|string=} tipoLavoro Metadato UX per statistiche, non usato nei calcoli
+ * @property {"impianto"|"intervento"|"express"|string=} tipoLavoro Modalità wizard legacy, non tipologia commerciale
+ * @property {"elettrico"|"allarme"|"videosorveglianza"|"rete-dati"|"tv-sat"|"domotica"|"fotovoltaico"|"illuminazione"|"altro"|string=} tipologiaImpianto Tipologia commerciale impianto/lavoro
  * @property {object=} extra
  * @property {string=} descrizione
  * @property {number} subtotale
@@ -95,6 +100,7 @@
  * @property {number=} incassato Cache totale incassato (sincronizzata da pagamenti[])
  * @property {number=} acconto Alias legacy di incassato (retrocompatibilità)
  * @property {PagamentoCantiere[]=} pagamenti Registro pagamenti (UX-7.5, source of truth)
+ * @property {SpesaCantiere[]=} spese Registro spese/uscite (UX-Spese v1)
  * @property {object=} extra
  * @property {VarianteCantiere[]=} varianti Extra in cantiere (non alterano il preventivo)
  * @property {"cantiere"|"intervento"|"sopralluogo"|"manutenzione"|string=} tipoLavoro Tipologia agenda
@@ -113,6 +119,21 @@
  * @property {"acconto"|"saldo"|"altro"|string} tipo
  * @property {"contanti"|"bonifico"|"pos"|"altro"|string} metodo
  * @property {string=} note
+ */
+
+/**
+ * @typedef {Object} SpesaCantiere
+ * @property {string} id
+ * @property {string} data DD/MM/YYYY
+ * @property {number} importo > 0
+ * @property {string} descrizione
+ * @property {"materiali"|"manodopera"|"subappalto"|"trasferta"|"carburante"|"attrezzatura"|"altro"|string} categoria
+ * @property {string=} fornitore
+ * @property {"contanti"|"carta"|"bonifico"|"altro"|string=} metodoPagamento
+ * @property {string=} note
+ * @property {string=} giornataId
+ * @property {string=} createdAt
+ * @property {string=} updatedAt
  */
 
 /**

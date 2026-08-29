@@ -4,6 +4,7 @@
  */
 
 import { scollegaAttivitaDalCantiere } from "../../../domain/attivita";
+import { notificationService } from "../../../services/notificationService";
 import {
   cercaDistinteMateriali,
   scollegaDistintaDaCantiere,
@@ -56,6 +57,7 @@ export function eliminaCantiereConPulizia(cantiere) {
   }
 
   const cantiereId = cantiere.id;
+  void notificationService.cancelNotificheCantiereCompleto(cantiere);
   eliminaStorageFotoCantieri(cantiere.foto || []);
 
   const cantieri = leggiCantieriTutti().filter(

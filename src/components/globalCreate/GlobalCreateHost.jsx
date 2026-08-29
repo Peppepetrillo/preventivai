@@ -51,7 +51,8 @@ export default function GlobalCreateHost() {
       setCantieri(aggiornati);
 
       if (cantiere.reminderEnabled) {
-        notificationService.planForLavoro(creaLavoroDaCantiere(cantiere), {
+        void notificationService.resyncNotificheLavoro(cantiere, {
+          lavoro: creaLavoroDaCantiere(cantiere),
           reminderMinutes: cantiere.reminderMinutes,
         });
       }
@@ -61,13 +62,10 @@ export default function GlobalCreateHost() {
 
   const salvaAttivita = useCallback(
     (form) => {
-      const creata = creaAttivita({
+      creaAttivita({
         ...form,
         data: form.data || dataDefault,
       });
-      if (creata.reminder) {
-        notificationService.planForActivity(creata);
-      }
     },
     [creaAttivita, dataDefault]
   );

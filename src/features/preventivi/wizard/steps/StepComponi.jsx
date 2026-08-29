@@ -1,8 +1,11 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import { Plus, Sparkles, Undo2 } from "lucide-react";
+import { Package, Plus, Sparkles, Undo2 } from "lucide-react";
 
 import SearchInput from "../../../../components/SearchInput";
 import { calcolaTotali } from "../../../../utils/preventivi";
+import SelettoreMaterialeSheet from "../../../distinteMateriali/components/SelettoreMaterialeSheet";
+import { categoriaCatalogoDaTipologia } from "../../tipologiaImpiantoConfig";
+import { creaLavorazioneDaCatalogoMateriale } from "../../lavorazionePreventivoUtils";
 import CarrelloPreventivo from "../../components/CarrelloPreventivo";
 import CategorieListino from "../../components/CategorieListino";
 import CondizioniAvanzate from "../../components/CondizioniAvanzate";
@@ -19,10 +22,12 @@ import {
   creaMappaQuantitaCarrello,
 } from "../../utils/listinoGrouping";
 import { opzioneTipoLavoro, TIPO_LAVORO } from "../wizardConfig";
+import TipologiaImpiantoSelector from "../../components/TipologiaImpiantoSelector";
 import TipoLavoroSelector from "../components/TipoLavoroSelector";
 
 function StepComponi({
   tipoLavoro,
+  tipologiaImpianto,
   cliente,
   expressAutoOpen,
   lavorazioni,
@@ -33,6 +38,7 @@ function StepComponi({
   onAggiornaContesto,
   onImpostaCliente,
   onImpostaTipoLavoro,
+  onImpostaTipologiaImpianto,
   onImpostaExpressAutoOpen,
   onAvanti,
 }) {
@@ -43,6 +49,7 @@ function StepComponi({
   const [expressOverride, setExpressOverride] = useState(null);
   const [avanzateAperte, setAvanzateAperte] = useState(false);
   const [personalizzataAperta, setPersonalizzataAperta] = useState(false);
+  const [materialeAperto, setMaterialeAperto] = useState(false);
   const [snapshotExpress, setSnapshotExpress] = useState(null);
   const [feedbackExpress, setFeedbackExpress] = useState("");
 
@@ -176,6 +183,19 @@ function StepComponi({
     [onAggiornaLavorazioni]
   );
 
+  const aggiungiMaterialeCatalogo = useCallback(
+    (payload) => {
+      const lavorazione = creaLavorazioneDaCatalogoMateriale(payload);
+      onAggiornaLavorazioni((correnti) => [...correnti, lavorazione]);
+    },
+    [onAggiornaLavorazioni]
+  );
+
+  const categoriaCatalogoSuggerita = useMemo(
+    () => categoriaCatalogoDaTipologia(tipologiaImpianto),
+    [tipologiaImpianto]
+  );
+
   return (
     <div className="flex flex-col min-h-[calc(100vh-11rem)]">
       <div
@@ -201,6 +221,11 @@ function StepComponi({
         <TipoLavoroSelector
           tipoLavoro={tipoLavoro}
           onSeleziona={onImpostaTipoLavoro}
+        />
+
+        <TipologiaImpiantoSelector
+          tipologiaImpianto={tipologiaImpianto}
+          onSeleziona={onImpostaTipologiaImpianto}
         />
 
         <ContestoPreventivo
@@ -278,7 +303,28 @@ function StepComponi({
             data-testid="aggiungi-lavorazione-personalizzata"
           >
             <Plus size={18} aria-hidden="true" />
-            Lavorazione personalizzata
+            Voce libera
+          </button>
+        </section>
+
+        <section aria-labelledby="materiali-preventivo-titolo" className="space-y-3">
+          <div className="px-1">
+            <h2 id="materiali-preventivo-titolo" className="ds-card-title">
+              Materiali
+            </h2>
+            <p className="ds-text-secondary text-sm mt-0.5">
+              Dal Catalogo Materiali — prezzo congelato nel preventivo.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setMaterialeAperto(true)}
+            className="w-full btn-secondary min-h-[44px] flex items-center justify-center gap-2"
+            data-testid="aggiungi-materiale-catalogo"
+          >
+            <Package size={18} aria-hidden="true" />
+            Catalogo Materiali
           </button>
         </section>
 
@@ -326,6 +372,21 @@ function StepComponi({
         open={personalizzataAperta}
         onClose={() => setPersonalizzataAperta(false)}
         onSalva={aggiungiPersonalizzata}
+      />
+
+      <SelettoreMaterialeSheet
+        open={materialeAperto}
+        onClose={() => setMaterialeAperto(false)}
+        onConferma={aggiungiMaterialeCatalogo}
+        onApriManuale={() => {
+          setMaterialeAperto(false);
+          setPersonalizzataAperta(true);
+        }}
+        title="Aggiungi materiale"
+        descrizione="Scegli dal catalogo o inserisci una voce libera."
+        labelConferma="Aggiungi al preventivo"
+        categoriaSuggerita={categoriaCatalogoSuggerita}
+        richiediPrezzo
       />
     </div>
   );

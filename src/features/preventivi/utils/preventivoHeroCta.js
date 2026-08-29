@@ -5,6 +5,7 @@ import {
   STATI_PREVENTIVO,
   normalizzaStatoPreventivo,
 } from "../../../domain/workflow";
+import { etichettaTipologiaPreventivo } from "../tipologiaImpiantoUtils";
 
 export const HERO_CTA = Object.freeze({
   MODIFICA: "modifica",
@@ -79,8 +80,8 @@ export function etichettaEventoWorkflowUi(tipo, labelSalvata) {
  * @param {object[]} lavorazioni
  */
 export function titoloPreventivoHeader(preventivo, lavorazioni = []) {
-  if (preventivo?.tipoLavoro) {
-    return String(preventivo.tipoLavoro).trim();
+  if (preventivo?.tipologiaImpianto) {
+    return etichettaTipologiaPreventivo(preventivo);
   }
   const prima = lavorazioni?.[0]?.nome;
   if (prima) return String(prima).trim();

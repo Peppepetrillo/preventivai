@@ -58,6 +58,9 @@ export default function Cantiere() {
     aggiungiPagamento,
     aggiornaPagamento,
     eliminaPagamento,
+    aggiungiSpesa,
+    aggiornaSpesa,
+    eliminaSpesa,
   } = useCantieri({ cantiereId: id });
 
   function gestisciElimina() {
@@ -172,6 +175,9 @@ export default function Cantiere() {
           onAggiungiPagamento={aggiungiPagamento}
           onAggiornaPagamento={aggiornaPagamento}
           onEliminaPagamento={eliminaPagamento}
+          onAggiungiSpesa={aggiungiSpesa}
+          onAggiornaSpesa={aggiornaSpesa}
+          onEliminaSpesa={eliminaSpesa}
         />
       </div>
     </PageWrapper>

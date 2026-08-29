@@ -22,6 +22,10 @@ import {
   salvaPreventivi,
 } from "../repositories/preventiviRepository";
 import {
+  leggiCantieriTutti,
+  salvaCantieri,
+} from "../repositories/cantieriRepository";
+import {
   isRecordCestinato,
   ripristina,
   spostaNelCestino,
@@ -29,6 +33,12 @@ import {
 } from "../domain/cestino";
 import { formatEuro, normalizzaNumero } from "../utils/preventivi";
 import { etichettaStatoUi } from "../features/preventivi/utils/preventivoHeroCta";
+import { etichettaTipologiaPreventivo } from "../features/preventivi/tipologiaImpiantoUtils";
+import {
+  cantieriPerCliente,
+  preventiviPerCliente,
+  stessoId,
+} from "../features/clienti/clientePreventiviUtils";
 import { useCantieri } from "../features/cantieri/hooks/useCantieri";
 
 export default function DettaglioCliente() {
@@ -50,12 +60,14 @@ export default function DettaglioCliente() {
   const [messaggio, setMessaggio] = useState("");
   const [confermaElimina, setConfermaElimina] = useState(false);
 
-  const preventiviCliente = archivio.filter(
-    (p) => p.cliente === cliente?.nome
+  const preventiviCliente = preventiviPerCliente(
+    { clienteId: cliente?.id, nome: cliente?.nome },
+    archivio
   );
 
-  const cantieriCliente = cantieriAttivi.filter(
-    (c) => c.cliente === cliente?.nome
+  const cantieriDiretti = cantieriPerCliente(
+    { clienteId: cliente?.id, nome: cliente?.nome },
+    cantieriAttivi.filter((c) => !c.preventivoId)
   );
 
   const totaleLavori = preventiviCliente.reduce(
@@ -133,14 +145,42 @@ export default function DettaglioCliente() {
         : item
     );
 
-    const archivioAggiornato = leggiPreventiviTutti().map((preventivo) =>
-      preventivo.cliente === cliente.nome
-        ? { ...preventivo, cliente: nomePulito }
-        : preventivo
+    const archivioAggiornato = leggiPreventiviTutti().map((preventivo) => {
+      const matchById = stessoId(preventivo.clienteId, id);
+      const matchLegacy =
+        (preventivo.clienteId == null || preventivo.clienteId === "") &&
+        preventivo.cliente === cliente.nome;
+
+      if (matchById || matchLegacy) {
+        return { ...preventivo, cliente: nomePulito };
+      }
+      return preventivo;
+    });
+
+    const preventiviIdsCliente = new Set(
+      archivioAggiornato
+        .filter((p) => stessoId(p.clienteId, id))
+        .map((p) => String(p.id))
     );
+
+    const cantieriAggiornati = leggiCantieriTutti().map((cantiere) => {
+      const matchPreventivo =
+        cantiere.preventivoId &&
+        preventiviIdsCliente.has(String(cantiere.preventivoId));
+      const matchById = stessoId(cantiere.clienteId, id);
+      const matchLegacy =
+        (cantiere.clienteId == null || cantiere.clienteId === "") &&
+        cantiere.cliente === cliente.nome;
+
+      if (matchPreventivo || matchById || matchLegacy) {
+        return { ...cantiere, cliente: nomePulito };
+      }
+      return cantiere;
+    });
 
     salvaClienti(clientiAggiornati);
     salvaPreventivi(archivioAggiornato);
+    salvaCantieri(cantieriAggiornati);
     setMessaggio("Salvato.");
     setTimeout(() => setMessaggio(""), 2000);
   }
@@ -152,9 +192,14 @@ export default function DettaglioCliente() {
 
   function nuovoCantiereDaCliente() {
     aggiornaCampoNuovoCantiere("cliente", cliente.nome);
+    aggiornaCampoNuovoCantiere("clienteId", cliente.id);
     aggiornaCampoNuovoCantiere("indirizzo", cliente.indirizzo || indirizzo || "");
     aggiornaCampoNuovoCantiere("nome", "");
     navigate(ROUTES.cantieri + "?nuovoCantiere=1");
+  }
+
+  function etichettaTipoPreventivo(preventivo) {
+    return etichettaTipologiaPreventivo(preventivo);
   }
 
   const telLink = cliente.telefono
@@ -250,8 +295,8 @@ export default function DettaglioCliente() {
           <p className="text-2xl font-black mt-0.5">{preventiviCliente.length}</p>
         </div>
         <div className="ml-4 text-right">
-          <p className="text-slate-400 text-sm">Cantieri</p>
-          <p className="text-2xl font-black mt-0.5">{cantieriCliente.length}</p>
+          <p className="text-slate-400 text-sm">Cantieri diretti</p>
+          <p className="text-2xl font-black mt-0.5">{cantieriDiretti.length}</p>
         </div>
       </div>
 
@@ -330,38 +375,60 @@ export default function DettaglioCliente() {
         )}
 
         <div className="space-y-3">
-          {preventiviCliente.map((preventivo) => (
-            <Link
-              key={preventivo.id}
-              to={routePreventivo(preventivo.id)}
-              className="pro-panel p-4 flex items-center gap-3 hover:border-yellow-300/40 transition"
-            >
-              <div className="w-10 h-10 rounded-[12px] bg-yellow-400 text-slate-950 flex items-center justify-center shrink-0">
-                <FileText size={18} />
+          {preventiviCliente.map((preventivo) => {
+            const tipoLabel = etichettaTipoPreventivo(preventivo);
+            const cantiereCollegatoId = preventivo.cantiereId;
+
+            return (
+              <div
+                key={preventivo.id}
+                className="pro-panel p-4 hover:border-yellow-300/40 transition"
+                data-testid={`cliente-preventivo-${preventivo.id}`}
+              >
+                <Link
+                  to={routePreventivo(preventivo.id)}
+                  className="flex items-center gap-3"
+                >
+                  <div className="w-10 h-10 rounded-[12px] bg-yellow-400 text-slate-950 flex items-center justify-center shrink-0">
+                    <FileText size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black">{preventivo.numero || "PREV-000"}</p>
+                    <p className="text-slate-400 text-sm mt-0.5">
+                      {[preventivo.data, tipoLabel].filter(Boolean).join(" · ")}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs text-slate-400">
+                      {etichettaStatoUi(preventivo.stato)}
+                    </p>
+                    <p className="font-black text-emerald-300 mt-0.5">
+                      {formatEuro(preventivo.totale)}
+                    </p>
+                  </div>
+                </Link>
+                {cantiereCollegatoId ? (
+                  <Link
+                    to={routeCantiere(cantiereCollegatoId)}
+                    className="btn-secondary mt-3 w-full min-h-[44px] flex items-center justify-center gap-2 text-sm font-bold"
+                    data-testid={`cliente-apri-cantiere-${preventivo.id}`}
+                  >
+                    <HardHat size={16} />
+                    Apri cantiere
+                  </Link>
+                ) : null}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-black">{preventivo.numero || "PREV-000"}</p>
-                <p className="text-slate-400 text-sm mt-0.5">{preventivo.data}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-xs text-slate-400">
-                  {etichettaStatoUi(preventivo.stato)}
-                </p>
-                <p className="font-black text-emerald-300 mt-0.5">
-                  {formatEuro(preventivo.totale)}
-                </p>
-              </div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* Cantieri collegati */}
-      {cantieriCliente.length > 0 && (
+      {/* Cantieri diretti (senza preventivo) */}
+      {cantieriDiretti.length > 0 && (
         <div className="mb-5">
-          <h2 className="text-lg font-black mb-4">Cantieri</h2>
+          <h2 className="text-lg font-black mb-4">Cantieri diretti</h2>
           <div className="space-y-3">
-            {cantieriCliente.map((cantiere) => (
+            {cantieriDiretti.map((cantiere) => (
               <Link
                 key={cantiere.id}
                 to={routeCantiere(cantiere.id)}

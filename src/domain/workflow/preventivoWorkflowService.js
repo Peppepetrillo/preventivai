@@ -96,6 +96,13 @@ export function creaPreventivoWorkflowService(deps) {
     };
   }
 
+  function applicaBackfillClienteId(item, clienteId) {
+    if (clienteId == null || clienteId === "" || item.clienteId != null) {
+      return item;
+    }
+    return { ...item, clienteId };
+  }
+
   function patchPreventivo(id, patchFn) {
     const aggiornati = deps.aggiornaPreventivo(id, patchFn);
     return (
@@ -361,17 +368,23 @@ export function creaPreventivoWorkflowService(deps) {
       const esistente = trovaCantiereCollegato(preventivo);
 
       if (esistente) {
+        const { clienteId } = risolviCliente(preventivo);
         const aggiornato =
           String(preventivo.cantiereId) === String(esistente.id) &&
           stato === STATI_PREVENTIVO.CONVERTITO
             ? preventivo
-            : patchPreventivo(preventivoId, (item) => ({
-                ...item,
-                stato: STATI_PREVENTIVO.CONVERTITO,
-                cantiereId: esistente.id,
-                convertitoAt: item.convertitoAt || now(),
-                convertitoBy: item.convertitoBy || opzioni.by || null,
-              }));
+            : patchPreventivo(preventivoId, (item) =>
+                applicaBackfillClienteId(
+                  {
+                    ...item,
+                    stato: STATI_PREVENTIVO.CONVERTITO,
+                    cantiereId: esistente.id,
+                    convertitoAt: item.convertitoAt || now(),
+                    convertitoBy: item.convertitoBy || opzioni.by || null,
+                  },
+                  clienteId
+                )
+              );
 
         return {
           success: true,
@@ -401,16 +414,21 @@ export function creaPreventivoWorkflowService(deps) {
       deps.salvaCantieri([cantiere, ...deps.leggiCantieri()]);
 
       const convertitoAt = now();
-      const aggiornato = patchPreventivo(preventivoId, (item) => ({
-        ...item,
-        stato: STATI_PREVENTIVO.CONVERTITO,
-        cantiereId: cantiere.id,
-        convertitoAt,
-        convertitoBy: opzioni.by || null,
-        dataAccettazione:
-          item.dataAccettazione ||
-          new Date(convertitoAt).toLocaleDateString("it-IT"),
-      }));
+      const aggiornato = patchPreventivo(preventivoId, (item) =>
+        applicaBackfillClienteId(
+          {
+            ...item,
+            stato: STATI_PREVENTIVO.CONVERTITO,
+            cantiereId: cantiere.id,
+            convertitoAt,
+            convertitoBy: opzioni.by || null,
+            dataAccettazione:
+              item.dataAccettazione ||
+              new Date(convertitoAt).toLocaleDateString("it-IT"),
+          },
+          clienteId
+        )
+      );
 
       registraEvento(EVENTI_WORKFLOW.CANTIERE_CREATO, {
         preventivoId,

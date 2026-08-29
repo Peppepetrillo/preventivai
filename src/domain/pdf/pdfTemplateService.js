@@ -6,6 +6,7 @@
 import jsPDF from "jspdf";
 
 import { calcolaSaldo, formatEuro, normalizzaNumero } from "../../utils/preventivi";
+import { oggettoPdfTipologia } from "../../features/preventivi/tipologiaImpiantoUtils";
 import { isPiattaformaNativa } from "../../utils/nativeExport";
 import {
   applicaFont,
@@ -103,8 +104,7 @@ export function buildPreventivoPdfDocument(input = {}) {
       validita: input.validita ?? preventivo.validita ?? "",
       oggetto:
         input.oggetto ||
-        preventivo.oggetto ||
-        "Preventivo lavori elettrici",
+        oggettoPdfTipologia(preventivo),
       stato: input.stato || preventivo.stato || "",
       pagamento: input.pagamento || preventivo.pagamento || "",
     },

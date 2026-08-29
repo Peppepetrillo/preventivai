@@ -113,6 +113,7 @@ export function etichettaTipoIntervento(tipo) {
 export function creaCantiere({
   nome,
   cliente,
+  clienteId,
   indirizzo,
   tipoIntervento = "",
   descrizioneIntervento = "",
@@ -138,6 +139,7 @@ export function creaCantiere({
     incassato: 0,
     acconto: 0,
     pagamenti: [],
+    spese: [],
     checklist: [],
     materiali: [],
     foto: [],
@@ -146,6 +148,7 @@ export function creaCantiere({
     varianti: [],
     creatoIl: new Date().toLocaleDateString("it-IT"),
     aggiornatoIl: new Date().toLocaleDateString("it-IT"),
+    ...(clienteId != null && clienteId !== "" ? { clienteId } : {}),
   };
   return {
     ...cantiere,
@@ -212,6 +215,9 @@ export function creaCantiereDaPreventivo(
     origine: "preventivo",
     lavorazioniOrigine: lavorazioni.map((lavorazione) => ({ ...lavorazione })),
     extra,
+    ...(preventivo.tipologiaImpianto
+      ? { tipologiaImpianto: preventivo.tipologiaImpianto }
+      : {}),
     checklist: lavorazioni.map((lavorazione, index) => ({
       id: `${preventivo.id}-check-${index}`,
       testo: `Eseguire ${lavorazione.nome}`,
@@ -226,6 +232,7 @@ export function creaCantiereDaPreventivo(
     incassato: 0,
     acconto: 0,
     pagamenti: [],
+    spese: [],
     creatoIl: dataCreazione,
     aggiornatoIl: dataCreazione,
   };

@@ -1,5 +1,6 @@
 import { STORAGE_KEYS } from "../../app/storageKeys";
 import { creaRepositoryLocale } from "../../repositories/localStorageRepository";
+import { notificationService } from "../../services/notificationService";
 import {
   aggiornaAttivita,
   completaAttivita,
@@ -23,6 +24,7 @@ export function salvaAttivita(elenco = []) {
 export function aggiungiAttivita(input) {
   const attivita = creaAttivita(input);
   salvaAttivita([...leggiAttivita(), attivita]);
+  void notificationService.resyncNotificheAttivita(attivita);
   return attivita;
 }
 
@@ -36,6 +38,7 @@ export function aggiornaAttivitaPerId(id, modifiche = {}) {
   if (idx < 0) return null;
   const aggiornata = aggiornaAttivita(elenco[idx], modifiche);
   salvaAttivita(elenco.map((item, i) => (i === idx ? aggiornata : item)));
+  void notificationService.resyncNotificheAttivita(aggiornata);
   return aggiornata;
 }
 
@@ -48,6 +51,7 @@ export function completaAttivitaPerId(id) {
   if (idx < 0) return null;
   const aggiornata = completaAttivita(elenco[idx]);
   salvaAttivita(elenco.map((item, i) => (i === idx ? aggiornata : item)));
+  void notificationService.cancelNotificheAttivita(id);
   return aggiornata;
 }
 
@@ -59,6 +63,7 @@ export function eliminaAttivitaPerId(id) {
   const prossimo = elenco.filter((item) => String(item.id) !== String(id));
   if (prossimo.length === elenco.length) return false;
   salvaAttivita(prossimo);
+  void notificationService.cancelNotificheAttivita(id);
   return true;
 }
 

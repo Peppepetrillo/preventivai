@@ -3,7 +3,7 @@ import { Lightbulb, MapPin, Navigation, Phone } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import ConfirmDialog from "../../../components/ConfirmDialog";
-import { ROUTES, routePreventivo, sezioneDaLocation } from "../../../app/routes";
+import { ROUTES, routeCliente, routePreventivo, sezioneDaLocation } from "../../../app/routes";
 import { getCantiereAssistant } from "../../../services/assistantService";
 import { ottieniFirma } from "../../../domain/firma";
 import { aggiungiInsight } from "../../../domain/insights";
@@ -34,6 +34,8 @@ import CantiereSegmentBar from "./CantiereSegmentBar";
 import CantiereVarianti from "./CantiereVarianti";
 import DescrizioneInterventoSection from "./DescrizioneInterventoSection";
 import PagamentiSection from "./PagamentiSection";
+import SpeseSection from "./SpeseSection";
+import RiepilogoEconomicoSection from "./RiepilogoEconomicoSection";
 import GiornateSection from "./GiornateSection";
 import { CANTIERE_TAB, tabDaSezioneId } from "./cantiereTabs";
 import { riepilogoEconomicoCantiere } from "../services/pagamentiCantiereService";
@@ -104,6 +106,9 @@ export default function CantiereOverview({
   onAggiungiPagamento,
   onAggiornaPagamento,
   onEliminaPagamento,
+  onAggiungiSpesa,
+  onAggiornaSpesa,
+  onEliminaSpesa,
   variantiTick = 0,
   onAggiungiVariante,
   onEliminaVariante,
@@ -437,7 +442,17 @@ export default function CantiereOverview({
               {nomeCantiere}
             </h1>
             <p className="mt-1.5 text-base font-semibold text-slate-200 truncate">
-              {cantiere.cliente || "Cliente non indicato"}
+              {cantiere.clienteId ? (
+                <Link
+                  to={routeCliente(cantiere.clienteId)}
+                  className="hover:text-yellow-200"
+                  data-testid="cantiere-link-cliente"
+                >
+                  {cantiere.cliente || "Cliente non indicato"}
+                </Link>
+              ) : (
+                cantiere.cliente || "Cliente non indicato"
+              )}
             </p>
           </div>
           <span className="shrink-0 rounded-full bg-yellow-400/10 px-3 py-1.5 text-xs font-bold text-yellow-100">
@@ -704,6 +719,30 @@ export default function CantiereOverview({
         hidden={tabAttivo !== CANTIERE_TAB.ECONOMICO}
         data-testid="cantiere-panel-economico"
       >
+        <RiepilogoEconomicoSection cantiere={cantiere} />
+
+        <section className="pro-panel p-5 mb-5">
+          <PagamentiSection
+            cantiere={cantiere}
+            diretto={diretto}
+            onAggiornaTotaleLavoro={(totaleLavoro) =>
+              onAggiornaCampo?.({ totaleLavoro })
+            }
+            onAggiungi={onAggiungiPagamento}
+            onAggiorna={onAggiornaPagamento}
+            onElimina={onEliminaPagamento}
+          />
+        </section>
+
+        <section className="pro-panel p-5 mb-5">
+          <SpeseSection
+            cantiere={cantiere}
+            onAggiungi={onAggiungiSpesa}
+            onAggiorna={onAggiornaSpesa}
+            onElimina={onEliminaSpesa}
+          />
+        </section>
+
         {diretto ? null : (
           <div className="mb-5">
             <CantiereVarianti
@@ -718,19 +757,6 @@ export default function CantiereOverview({
             />
           </div>
         )}
-
-        <section className="pro-panel p-5 mb-5">
-          <PagamentiSection
-            cantiere={cantiere}
-            diretto={diretto}
-            onAggiornaTotaleLavoro={(totaleLavoro) =>
-              onAggiornaCampo?.({ totaleLavoro })
-            }
-            onAggiungi={onAggiungiPagamento}
-            onAggiorna={onAggiornaPagamento}
-            onElimina={onEliminaPagamento}
-          />
-        </section>
       </div>
 
       <div

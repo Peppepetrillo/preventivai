@@ -15,8 +15,8 @@ vi.mock("../../services/cloudSyncService", () => ({
 
 vi.mock("../../services/notificationService", () => ({
   notificationService: {
-    planForLavoro: vi.fn(),
-    planForActivity: vi.fn(),
+    resyncNotificheLavoro: vi.fn(),
+    resyncNotificheAttivita: vi.fn(),
   },
 }));
 

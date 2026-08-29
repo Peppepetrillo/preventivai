@@ -19,6 +19,8 @@ import {
   trovaPreventivo,
 } from "../../repositories/preventiviRepository";
 import { eliminaCantiereConPulizia } from "../../features/cantieri/services/eliminaCantiereService";
+import { creaLavoroDaCantiere } from "../../features/lavori/lavoriDomain";
+import { notificationService } from "../../services/notificationService";
 import { APP_EVENTS, notificaEventoApp } from "../../app/events";
 import {
   TIPI_CESTINO,
@@ -81,6 +83,7 @@ export function spostaNelCestino(tipo, id) {
       stessoId(item.id, id) ? { ...item, deletedAt } : item
     );
     salvaCantieri(prossimo);
+    void notificationService.cancelNotificheCantiereCompleto(esistente);
     notificaAggiornamentoCestino();
     return { success: true, record: trovaInElenco(prossimo, id) };
   }
@@ -139,8 +142,15 @@ export function ripristina(tipo, id) {
       stessoId(item.id, id) ? senzaDeletedAt(item) : item
     );
     salvaCantieri(prossimo);
+    const record = trovaInElenco(prossimo, id);
+    if (record?.reminderEnabled) {
+      void notificationService.resyncNotificheCantiere(record, {
+        lavoro: creaLavoroDaCantiere(record),
+        reminderMinutes: record.reminderMinutes,
+      });
+    }
     notificaAggiornamentoCestino();
-    return { success: true, record: trovaInElenco(prossimo, id) };
+    return { success: true, record };
   }
 
   if (tipo === TIPI_CESTINO.preventivo) {

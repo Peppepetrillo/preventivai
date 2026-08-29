@@ -5,7 +5,10 @@ import { ROUTES, routePreventivo } from "../app/routes";
 import { leggiClienti } from "../repositories/clientiRepository";
 import { leggiPreventivi, salvaNuovoPreventivo } from "../repositories/preventiviRepository";
 import { creaPreventivo } from "../features/preventivi/preventiviDomain";
-import { formatEuro, normalizzaNumero } from "../utils/preventivi";
+import { creaLavorazioneManuale } from "../features/preventivi/lavorazionePreventivoUtils";
+import TipologiaImpiantoSelector from "../features/preventivi/components/TipologiaImpiantoSelector";
+import { TIPOLOGIA_IMPIANTO_DEFAULT } from "../features/preventivi/tipologiaImpiantoConfig";
+import { calcolaTotali, formatEuro, normalizzaNumero } from "../utils/preventivi";
 
 function creaRiga() {
   return {
@@ -13,7 +16,6 @@ function creaRiga() {
     nome: "",
     quantita: 1,
     prezzo: 0,
-    sconto: 0,
     categoria: "Lavorazioni",
   };
 }
@@ -22,13 +24,16 @@ export default function PreventivoManuale() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const clienteId = searchParams.get("clienteId");
-  const clienti = leggiClienti();
-  const clienteTrovato = clienteId
-    ? clienti.find((c) => String(c.id) === clienteId)
+  const clienteIdParam = searchParams.get("clienteId");
+  const clientiIniziali = leggiClienti();
+  const clienteDaParam = clienteIdParam
+    ? clientiIniziali.find((c) => String(c.id) === clienteIdParam)
     : null;
 
-  const [nomeCliente, setNomeCliente] = useState(clienteTrovato?.nome || "");
+  const [nomeCliente, setNomeCliente] = useState(clienteDaParam?.nome || "");
+  const [tipologiaImpianto, setTipologiaImpianto] = useState(
+    TIPOLOGIA_IMPIANTO_DEFAULT
+  );
   const [righe, setRighe] = useState([creaRiga()]);
   const [sconto, setSconto] = useState(0);
   const [iva, setIva] = useState(22);
@@ -36,20 +41,19 @@ export default function PreventivoManuale() {
   const [pagamento, setPagamento] = useState("Bonifico bancario");
   const [errore, setErrore] = useState("");
 
-  const subtotale = useMemo(
+  const lavorazioniCalcolo = useMemo(
     () =>
-      righe.reduce((acc, r) => {
-        const base = normalizzaNumero(r.quantita) * normalizzaNumero(r.prezzo);
-        const sc = Math.min(100, Math.max(0, normalizzaNumero(r.sconto)));
-        return acc + base * (1 - sc / 100);
-      }, 0),
+      righe.map((r) => ({
+        prezzo: normalizzaNumero(r.prezzo),
+        quantita: normalizzaNumero(r.quantita, 1),
+      })),
     [righe]
   );
 
-  const scontoGenerale = Math.min(100, Math.max(0, normalizzaNumero(sconto)));
-  const dopoSconto = subtotale * (1 - scontoGenerale / 100);
-  const ivaValore = normalizzaNumero(iva);
-  const totale = dopoSconto * (1 + ivaValore / 100);
+  const totali = useMemo(
+    () => calcolaTotali(lavorazioniCalcolo, sconto, iva),
+    [lavorazioniCalcolo, sconto, iva]
+  );
 
   function aggiornaRiga(id, campo, valore) {
     setRighe((prev) =>
@@ -76,33 +80,38 @@ export default function PreventivoManuale() {
     }
 
     const archivio = leggiPreventivi();
-    const lavorazioni = righe.map((r) => ({
-      id: r.id,
-      nome: r.nome || "Lavorazione",
-      quantita: normalizzaNumero(r.quantita, 1),
-      prezzo: normalizzaNumero(r.prezzo),
-      sconto: normalizzaNumero(r.sconto),
-      categoria: r.categoria || "Lavorazioni",
-      unita: "cad",
-    }));
+    const lavorazioni = righe.map((r) =>
+      creaLavorazioneManuale({
+        id: r.id,
+        nome: r.nome || "Lavorazione",
+        quantita: normalizzaNumero(r.quantita, 1),
+        prezzo: normalizzaNumero(r.prezzo),
+        categoria: r.categoria || "Lavorazioni",
+      })
+    );
 
     const preventivo = creaPreventivo({
       archivio,
       cliente: nomeCliente.trim(),
+      clienteId:
+        clienteDaParam && nomeCliente.trim() === clienteDaParam.nome
+          ? clienteDaParam.id
+          : undefined,
       lavorazioni,
       sconto,
       iva,
       validita: 30,
       pagamento,
       note,
+      tipologiaImpianto,
     });
 
     salvaNuovoPreventivo(preventivo);
     navigate(routePreventivo(preventivo.id));
   }
 
-  const backTo = clienteId
-    ? `${ROUTES.nuovoPreventivo}?clienteId=${clienteId}`
+  const backTo = clienteIdParam
+    ? `${ROUTES.nuovoPreventivo}?clienteId=${clienteIdParam}`
     : ROUTES.nuovoPreventivo;
 
   return (
@@ -126,12 +135,12 @@ export default function PreventivoManuale() {
       {/* Cliente */}
       <div className="pro-panel p-5 mb-4">
         <h2 className="text-base font-black mb-3">Cliente</h2>
-        {clienteTrovato ? (
+        {clienteDaParam ? (
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-black">{clienteTrovato.nome}</p>
-              {clienteTrovato.indirizzo && (
-                <p className="text-slate-400 text-sm mt-0.5">{clienteTrovato.indirizzo}</p>
+              <p className="font-black">{clienteDaParam.nome}</p>
+              {clienteDaParam.indirizzo && (
+                <p className="text-slate-400 text-sm mt-0.5">{clienteDaParam.indirizzo}</p>
               )}
             </div>
             <Link
@@ -153,6 +162,13 @@ export default function PreventivoManuale() {
             autoComplete="organization"
           />
         )}
+      </div>
+
+      <div className="pro-panel p-5 mb-4">
+        <TipologiaImpiantoSelector
+          tipologiaImpianto={tipologiaImpianto}
+          onSeleziona={setTipologiaImpianto}
+        />
       </div>
 
       {/* Righe lavorazioni */}
@@ -193,7 +209,7 @@ export default function PreventivoManuale() {
                   <Trash2 size={16} />
                 </button>
               </div>
-              <div className="grid grid-cols-3 gap-2 pl-7">
+              <div className="grid grid-cols-2 gap-2 pl-7">
                 <div>
                   <label className="text-xs text-slate-500 block mb-1">Qtà</label>
                   <input
@@ -215,24 +231,11 @@ export default function PreventivoManuale() {
                     className="input-pro py-2 text-sm text-center"
                   />
                 </div>
-                <div>
-                  <label className="text-xs text-slate-500 block mb-1">Sconto %</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={riga.sconto}
-                    onChange={(e) => aggiornaRiga(riga.id, "sconto", e.target.value)}
-                    className="input-pro py-2 text-sm text-center"
-                  />
-                </div>
               </div>
               <div className="pl-7 flex justify-end">
                 <span className="text-sm font-black text-emerald-300">
                   {formatEuro(
-                    normalizzaNumero(riga.quantita) *
-                      normalizzaNumero(riga.prezzo) *
-                      (1 - Math.min(100, Math.max(0, normalizzaNumero(riga.sconto))) / 100)
+                    normalizzaNumero(riga.quantita) * normalizzaNumero(riga.prezzo)
                   )}
                 </span>
               </div>
@@ -280,23 +283,23 @@ export default function PreventivoManuale() {
         <div className="space-y-2 border-t border-white/10 pt-3">
           <div className="flex justify-between text-sm text-slate-400">
             <span>Subtotale</span>
-            <span>{formatEuro(subtotale)}</span>
+            <span>{formatEuro(totali.subtotale)}</span>
           </div>
-          {scontoGenerale > 0 && (
+          {normalizzaNumero(sconto) > 0 && (
             <div className="flex justify-between text-sm text-slate-400">
-              <span>Sconto {scontoGenerale}%</span>
-              <span>- {formatEuro(subtotale - dopoSconto)}</span>
+              <span>Sconto {normalizzaNumero(sconto)}%</span>
+              <span>- {formatEuro(totali.importoSconto)}</span>
             </div>
           )}
-          {ivaValore > 0 && (
+          {normalizzaNumero(iva) > 0 && (
             <div className="flex justify-between text-sm text-slate-400">
-              <span>IVA {ivaValore}%</span>
-              <span>+ {formatEuro(totale - dopoSconto)}</span>
+              <span>IVA {normalizzaNumero(iva)}%</span>
+              <span>+ {formatEuro(totali.importoIva)}</span>
             </div>
           )}
           <div className="flex justify-between font-black text-lg border-t border-white/10 pt-2">
             <span>Totale</span>
-            <span className="text-emerald-300">{formatEuro(totale)}</span>
+            <span className="text-emerald-300">{formatEuro(totali.totale)}</span>
           </div>
         </div>
       </div>

@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 
 import ConfirmDialog from "../components/ConfirmDialog";
 import { aggiungiInsight } from "../domain/insights";
-import { notificationService } from "../services/notificationService";
 import AgendaHeader from "../features/agenda/components/AgendaHeader";
 import AgendaMeseView from "../features/agenda/components/AgendaMeseView";
 import AgendaPreparazioneCard from "../features/agenda/components/AgendaPreparazioneCard";
@@ -87,13 +86,10 @@ export default function Agenda() {
     if (attivitaInModifica?.id) {
       aggiornaAttivita(attivitaInModifica.id, form);
     } else {
-      const creata = creaAttivita({
+      creaAttivita({
         ...form,
         data: form.data || dataDefaultAttivita,
       });
-      if (creata.reminder) {
-        notificationService.planForActivity(creata);
-      }
     }
     setAttivitaInModifica(null);
   }

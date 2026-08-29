@@ -10,6 +10,7 @@ import {
 import { generaPdfPreventivo } from "../../../services/preventiviPdfService";
 import { calcolaTotali } from "../../../utils/preventivi";
 import { creaPreventivo, preparaDatiPreventivo } from "../preventiviDomain";
+import { oggettoPdfTipologia } from "../tipologiaImpiantoUtils";
 import { salvaUltimoPreventivo } from "../utils/wizardExtensions";
 
 const AVVISO_PDF =
@@ -33,6 +34,7 @@ function snapshotUltimo(preventivo, statoWizard) {
   salvaUltimoPreventivo({
     cliente: preventivo.cliente,
     tipoLavoro: statoWizard.tipoLavoro,
+    tipologiaImpianto: statoWizard.tipologiaImpianto,
     lavorazioni: statoWizard.lavorazioni,
     condizioni: statoWizard.condizioni,
   });
@@ -78,7 +80,8 @@ export function useSalvaEGeneraPdf() {
       return null;
     }
 
-    const { cliente, tipoLavoro, lavorazioni, condizioni } = statoWizard;
+    const { cliente, clienteId, tipoLavoro, tipologiaImpianto, lavorazioni, condizioni } =
+      statoWizard;
     setErrore("");
 
     const archivio = leggiPreventivi();
@@ -95,6 +98,7 @@ export function useSalvaEGeneraPdf() {
         preventivo = preparaDatiPreventivo({
           preventivo: esistente,
           cliente: cliente.trim(),
+          clienteId: clienteId ?? esistente.clienteId,
           stato: esistente.stato || "Bozza",
           lavorazioni,
           sconto: condizioni.sconto,
@@ -104,6 +108,7 @@ export function useSalvaEGeneraPdf() {
           acconto: condizioni.acconto,
           note: condizioni.note,
           tipoLavoro,
+          tipologiaImpianto,
         });
         aggiornaPreventivo(idEsistente, () => preventivo);
       }
@@ -113,6 +118,7 @@ export function useSalvaEGeneraPdf() {
       preventivo = creaPreventivo({
         archivio,
         cliente: cliente.trim(),
+        clienteId,
         lavorazioni,
         sconto: condizioni.sconto,
         iva: condizioni.iva,
@@ -121,6 +127,7 @@ export function useSalvaEGeneraPdf() {
         acconto: condizioni.acconto,
         note: condizioni.note,
         tipoLavoro,
+        tipologiaImpianto,
       });
       salvaNuovoPreventivo(preventivo);
       idSalvatoRef.current = preventivo.id;
@@ -157,6 +164,7 @@ export function useSalvaEGeneraPdf() {
       iva: condizioni.iva,
       acconto: condizioni.acconto,
       totali,
+      oggetto: oggettoPdfTipologia(preventivo),
       // Su Capacitor doc.save() può restare pending: non bloccare il wizard.
       salva: deveScaricarePdfAutomatico(),
     });

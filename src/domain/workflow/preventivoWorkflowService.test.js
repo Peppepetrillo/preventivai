@@ -138,6 +138,7 @@ describe("preventivoWorkflowService", () => {
     expect(risultato.preventivo.cantiereId).toBe(risultato.cantiere.id);
     expect(risultato.preventivo.convertitoAt).toBe(now);
     expect(risultato.preventivo.convertitoBy).toBe("utente");
+    expect(risultato.cantiere.clienteId).toBe(55);
 
     expect(risultato.cantiere).toMatchObject({
       cliente: "Mario Rossi",
@@ -157,6 +158,32 @@ describe("preventivoWorkflowService", () => {
     expect(tipi).toContain(EVENTI_WORKFLOW.CANTIERE_CREATO);
     expect(tipi).toContain(EVENTI_WORKFLOW.PREVENTIVO_CONVERTITO);
     expect(wf.contaPreventiviConvertiti()).toBe(1);
+  });
+
+  it("backfill clienteId sul preventivo convertito se assente", () => {
+    wf.accettaPreventivo(101);
+    const risultato = wf.convertiInCantiere(101);
+
+    expect(risultato.preventivo.clienteId).toBe(55);
+    expect(risultato.cantiere.clienteId).toBe(55);
+  });
+
+  it("non sovrascrive clienteId già presente sul preventivo", () => {
+    store = creaStoreInMemory({
+      preventivi: [{ ...preventivoBase, clienteId: 999 }],
+      clienti: [{ id: 55, nome: "Mario Rossi" }],
+    });
+    wf = creaPreventivoWorkflowService({
+      ...store,
+      creaCantiereDaPreventivo,
+      now: () => now,
+    });
+
+    wf.accettaPreventivo(101);
+    const risultato = wf.convertiInCantiere(101);
+
+    expect(risultato.preventivo.clienteId).toBe(999);
+    expect(risultato.cantiere.clienteId).toBe(999);
   });
 
   it("non crea duplicati e restituisce cantiere esistente", () => {

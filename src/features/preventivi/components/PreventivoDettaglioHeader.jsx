@@ -1,9 +1,13 @@
+import { Link } from "react-router-dom";
+
+import { routeCliente } from "../../../app/routes";
 import { classeColoreStatoPreventivo } from "../archivioPreventiviUtils";
 import {
   etichettaStatoUi,
   sottotitoloPreventivoHeader,
   titoloPreventivoHeader,
 } from "../utils/preventivoHeroCta";
+import { etichettaTipologiaPreventivo } from "../tipologiaImpiantoUtils";
 import { formatEuro } from "../../../utils/preventivi";
 
 /**
@@ -12,12 +16,16 @@ import { formatEuro } from "../../../utils/preventivi";
 export default function PreventivoDettaglioHeader({
   preventivo,
   cliente,
+  clienteId,
   lavorazioni = [],
   stato,
   totale,
 }) {
   const titolo = titoloPreventivoHeader(preventivo, lavorazioni);
   const sottotitolo = sottotitoloPreventivoHeader(preventivo, lavorazioni);
+  const tipologiaLabel = etichettaTipologiaPreventivo(preventivo);
+  const linkCliente =
+    clienteId != null && clienteId !== "" ? routeCliente(clienteId) : null;
 
   return (
     <header
@@ -28,7 +36,23 @@ export default function PreventivoDettaglioHeader({
       <div className="flex flex-wrap items-start justify-between gap-3 mt-2">
         <div className="min-w-0 flex-1">
           <h1 className="ds-page-title">{titolo}</h1>
-          <p className="ds-text-primary mt-2">{cliente || "Cliente"}</p>
+          {linkCliente ? (
+            <Link
+              to={linkCliente}
+              className="ds-text-primary mt-2 inline-block hover:text-yellow-200"
+              data-testid="preventivo-link-cliente"
+            >
+              {cliente || "Cliente"}
+            </Link>
+          ) : (
+            <p className="ds-text-primary mt-2">{cliente || "Cliente"}</p>
+          )}
+          <p
+            className="ds-text-secondary text-sm mt-2"
+            data-testid="preventivo-tipologia"
+          >
+            Tipologia: {tipologiaLabel}
+          </p>
         </div>
         <span
           className={`ds-badge shrink-0 text-white ${classeColoreStatoPreventivo(stato)}`}

@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarPlus, ChevronRight } from "lucide-react";
+
+import { giornataIdDaLocation } from "../../../app/routes";
 
 import { prefillConsuntivoDaGiornataProgrammata } from "../../agenda/prefillConsuntivoDaPrevisto";
 import {
@@ -29,11 +31,30 @@ export default function ProgrammazioneSection({
   const [giornataInModifica, setGiornataInModifica] = useState(null);
   const [consuntivoSheetAperto, setConsuntivoSheetAperto] = useState(false);
   const [prefillConsuntivo, setPrefillConsuntivo] = useState(null);
+  const [giornataEvidenziata, setGiornataEvidenziata] = useState("");
 
   const giornate = useMemo(
     () => leggiProgrammazione(cantiere),
     [cantiere]
   );
+
+  useEffect(() => {
+    const aggiornaEvidenza = () => {
+      const id = giornataIdDaLocation(null);
+      setGiornataEvidenziata(id);
+      if (!id) return;
+      window.setTimeout(() => {
+        const elemento = document.querySelector(
+          `[data-testid="programmazione-giornata-${id}"]`
+        );
+        elemento?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+    };
+
+    aggiornaEvidenza();
+    window.addEventListener("hashchange", aggiornaEvidenza);
+    return () => window.removeEventListener("hashchange", aggiornaEvidenza);
+  }, [giornate.length]);
 
   function apriNuova() {
     setGiornataInModifica(null);
@@ -121,7 +142,13 @@ export default function ProgrammazioneSection({
 
             return (
               <li key={giornata.id}>
-                <div className="pro-panel overflow-hidden">
+                <div
+                  className={`pro-panel overflow-hidden${
+                    giornataEvidenziata === String(giornata.id)
+                      ? " ring-2 ring-[var(--primary)]"
+                      : ""
+                  }`}
+                >
                   <button
                     type="button"
                     onClick={() => apriModifica(giornata)}

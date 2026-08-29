@@ -12,10 +12,24 @@ import {
   TIPO_LAVORO_DEFAULT,
   WIZARD_STEPS,
 } from "./wizardConfig";
+import { TIPOLOGIA_IMPIANTO_DEFAULT } from "../tipologiaImpiantoConfig";
 import { leggiPrefillWizard } from "../utils/wizardExtensions";
+
+function normalizzaSelezioneCliente(payload) {
+  if (payload == null) {
+    return { nome: "", clienteId: null };
+  }
+  if (typeof payload === "string") {
+    return { nome: payload.trim(), clienteId: null };
+  }
+  const nome = String(payload.nome || payload.cliente || "").trim();
+  const clienteId = payload.id ?? payload.clienteId ?? null;
+  return { nome, clienteId };
+}
 
 export const WIZARD_AZIONI = {
   impostaTipoLavoro: "impostaTipoLavoro",
+  impostaTipologiaImpianto: "impostaTipologiaImpianto",
   selezionaCliente: "selezionaCliente",
   avanti: "avanti",
   indietro: "indietro",
@@ -35,7 +49,10 @@ function statoIniziale() {
   return {
     stepId: WIZARD_STEPS[0].id,
     tipoLavoro: prefill?.tipoLavoro || TIPO_LAVORO_DEFAULT,
+    tipologiaImpianto:
+      prefill?.tipologiaImpianto || TIPOLOGIA_IMPIANTO_DEFAULT,
     cliente: prefill?.cliente || "",
+    clienteId: prefill?.clienteId ?? null,
     lavorazioni: prefill?.lavorazioni || [],
     condizioni: {
       ...CONDIZIONI_DEFAULT,
@@ -70,12 +87,21 @@ function wizardReducer(stato, azione) {
       };
     }
 
-    case WIZARD_AZIONI.selezionaCliente:
+    case WIZARD_AZIONI.impostaTipologiaImpianto:
       return {
         ...stato,
-        cliente: azione.payload,
+        tipologiaImpianto: azione.payload || TIPOLOGIA_IMPIANTO_DEFAULT,
+      };
+
+    case WIZARD_AZIONI.selezionaCliente: {
+      const { nome, clienteId } = normalizzaSelezioneCliente(azione.payload);
+      return {
+        ...stato,
+        cliente: nome,
+        clienteId,
         stepId: prossimoStepId(stato.stepId),
       };
+    }
 
     case WIZARD_AZIONI.avanti:
       return {
@@ -125,17 +151,25 @@ function wizardReducer(stato, azione) {
         expressAutoOpen: Boolean(azione.payload),
       };
 
-    case WIZARD_AZIONI.impostaCliente:
+    case WIZARD_AZIONI.impostaCliente: {
+      const { nome, clienteId } = normalizzaSelezioneCliente(azione.payload);
+      const soloTesto = typeof azione.payload === "string";
       return {
         ...stato,
-        cliente: azione.payload,
+        cliente: nome,
+        clienteId: soloTesto ? null : clienteId,
       };
+    }
 
     case WIZARD_AZIONI.applicaPrefill:
       return {
         ...stato,
         ...azione.payload,
         tipoLavoro: azione.payload?.tipoLavoro || stato.tipoLavoro || TIPO_LAVORO_DEFAULT,
+        tipologiaImpianto:
+          azione.payload?.tipologiaImpianto ||
+          stato.tipologiaImpianto ||
+          TIPOLOGIA_IMPIANTO_DEFAULT,
         condizioni: {
           ...CONDIZIONI_DEFAULT,
           ...(azione.payload?.condizioni || {}),
@@ -156,6 +190,13 @@ export function useWizardPreventivoState() {
 
   const impostaTipoLavoro = useCallback((tipoLavoro) => {
     dispatch({ type: WIZARD_AZIONI.impostaTipoLavoro, payload: tipoLavoro });
+  }, []);
+
+  const impostaTipologiaImpianto = useCallback((tipologiaImpianto) => {
+    dispatch({
+      type: WIZARD_AZIONI.impostaTipologiaImpianto,
+      payload: tipologiaImpianto,
+    });
   }, []);
 
   const selezionaCliente = useCallback((cliente) => {
@@ -210,6 +251,7 @@ export function useWizardPreventivoState() {
     stato,
     dispatch,
     impostaTipoLavoro,
+    impostaTipologiaImpianto,
     selezionaCliente,
     avanti,
     indietro,

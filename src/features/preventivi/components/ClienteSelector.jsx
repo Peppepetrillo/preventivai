@@ -41,20 +41,31 @@ export default function ClienteSelector({ clienti, onSeleziona }) {
   }, [clientiLocali, ricerca]);
 
   const seleziona = useCallback(
-    (nomeCliente) => {
+    (cliente) => {
+      const nomeCliente =
+        typeof cliente === "string" ? cliente : cliente?.nome || "";
       registraClienteRecente(nomeCliente);
       salvaUltimoCliente(nomeCliente);
-      onSeleziona(nomeCliente);
+      if (typeof cliente === "object" && cliente != null) {
+        onSeleziona({ nome: cliente.nome, id: cliente.id });
+        return;
+      }
+      const trovato = clientiLocali.find((item) => item.nome === nomeCliente);
+      onSeleziona(
+        trovato
+          ? { nome: trovato.nome, id: trovato.id }
+          : { nome: nomeCliente, id: null }
+      );
     },
-    [onSeleziona]
+    [clientiLocali, onSeleziona]
   );
 
   const gestisciNuovoCliente = useCallback(
     (nuovoCliente) => {
       setClientiLocali((precedenti) => [...precedenti, nuovoCliente]);
-      seleziona(nuovoCliente.nome);
+      onSeleziona({ nome: nuovoCliente.nome, id: nuovoCliente.id });
     },
-    [seleziona]
+    [onSeleziona]
   );
 
   const chiudiSheet = useCallback(() => setSheetAperto(false), []);
@@ -79,7 +90,10 @@ export default function ClienteSelector({ clienti, onSeleziona }) {
               <button
                 key={nome}
                 type="button"
-                onClick={() => seleziona(nome)}
+                onClick={() => {
+                  const trovato = clientiLocali.find((item) => item.nome === nome);
+                  seleziona(trovato || nome);
+                }}
                 className="px-4 py-2 rounded-full bg-yellow-400/15 border border-yellow-300/30 text-yellow-100 text-sm font-bold"
               >
                 {nome}
@@ -104,7 +118,7 @@ export default function ClienteSelector({ clienti, onSeleziona }) {
               <button
                 key={cliente.id || cliente.nome}
                 type="button"
-                onClick={() => seleziona(cliente.nome)}
+                onClick={() => seleziona(cliente)}
                 className="w-full pro-panel px-4 py-3 flex items-center gap-3 text-left active:scale-[0.99] transition"
                 aria-label={`Seleziona cliente ${cliente.nome}`}
               >

@@ -64,6 +64,42 @@ export function routeCantiereGiornateFatto(id) {
 }
 
 /**
+ * Deep-link cantiere + tab programmazione con giornata da evidenziare (tap notifica).
+ * @param {string|number} cantiereId
+ * @param {string|number} giornataId
+ */
+export function routeCantiereGiornataEvidenziata(cantiereId, giornataId) {
+  const gId = String(giornataId || "").trim();
+  if (!gId) return routeCantiereGiornate(cantiereId);
+  const params = new URLSearchParams({
+    sezione: CANTIERE_SEZIONI.PROGRAMMAZIONE,
+    giornataId: gId,
+  });
+  return `${routeCantiere(cantiereId)}?${params.toString()}`;
+}
+
+/**
+ * Legge giornataId da query router o hash (tap notifica giornata).
+ * @param {import('react-router-dom').Location|null} [location]
+ */
+export function giornataIdDaLocation(location) {
+  const params = new URLSearchParams(location?.search || "");
+  const fromQuery = String(params.get("giornataId") || "").trim();
+  if (fromQuery) return fromQuery;
+
+  if (typeof window !== "undefined") {
+    const hash = window.location.hash || "";
+    const qIndex = hash.indexOf("?");
+    if (qIndex >= 0) {
+      const hashParams = new URLSearchParams(hash.slice(qIndex + 1));
+      return String(hashParams.get("giornataId") || "").trim();
+    }
+  }
+
+  return "";
+}
+
+/**
  * Stato router per navigazione tab cantiere (affidabile con HashRouter).
  * @param {string} sezione
  */

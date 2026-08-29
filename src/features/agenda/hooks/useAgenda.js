@@ -155,6 +155,14 @@ export function useAgenda() {
       });
       salvaCantieri(aggiornati);
       setCantieri(aggiornati);
+      const cantiere = cantieri.find((c) => String(c.id) === String(cantiereId));
+      if (giornataId) {
+        void notificationService.cancelNotificheGiornata(cantiereId, giornataId);
+      } else if (cantiere) {
+        void notificationService.cancelNotificheCantiereCompleto(cantiere);
+      } else {
+        void notificationService.cancelNotificheLavoro(cantiereId);
+      }
       setCompletamentoId(null);
     },
     [cantieri, setCantieri]
@@ -168,7 +176,8 @@ export function useAgenda() {
       setCantieri(aggiornati);
 
       if (cantiere.reminderEnabled) {
-        notificationService.planForLavoro(creaLavoroDaCantiere(cantiere), {
+        void notificationService.resyncNotificheLavoro(cantiere, {
+          lavoro: creaLavoroDaCantiere(cantiere),
           reminderMinutes: cantiere.reminderMinutes,
         });
       }

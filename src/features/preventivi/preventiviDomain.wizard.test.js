@@ -12,6 +12,33 @@ import {
 } from "./utils/lavorazioniUsage";
 
 describe("creaPreventivo tipoLavoro", () => {
+  it("salva clienteId quando fornito", () => {
+    const preventivo = creaPreventivo({
+      archivio: [],
+      cliente: "Mario Rossi",
+      clienteId: 42,
+      lavorazioni: [
+        {
+          id: "1",
+          nome: "Punto luce",
+          categoria: "Impianto",
+          prezzo: 45,
+          quantita: 2,
+          unita: "cad",
+        },
+      ],
+      sconto: 0,
+      iva: 22,
+      validita: 30,
+      pagamento: "Bonifico bancario",
+      acconto: 0,
+      note: "",
+    });
+
+    expect(preventivo.clienteId).toBe(42);
+    expect(preventivo.cliente).toBe("Mario Rossi");
+  });
+
   it("salva tipoLavoro come metadato senza alterare i totali", () => {
     const preventivo = creaPreventivo({
       archivio: [],
