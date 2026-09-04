@@ -1,6 +1,6 @@
 import {
   lazy,
-  Suspense,
+  Suspense
 } from "react";
 
 import {
@@ -8,7 +8,7 @@ import {
   Navigate,
   Routes,
   Route,
-  useLocation,
+  useLocation
 } from "react-router-dom";
 
 import BottomNav from "./components/BottomNav";
@@ -20,6 +20,8 @@ import { GlobalCreateProvider } from "./components/globalCreate/GlobalCreateCont
 import GlobalCreateHost from "./components/globalCreate/GlobalCreateHost";
 import { WizardProvider } from "./features/preventivi/wizard/wizardContext";
 import { ROUTES } from "./app/routes";
+import EdgeSwipeBackHost from "./navigation/EdgeSwipeBackHost";
+import CapacitorHardwareBackHost from "./navigation/CapacitorHardwareBackHost";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Preventivi = lazy(() => import("./pages/Preventivi"));
@@ -222,6 +224,9 @@ function AppShell() {
               />
             </Routes>
           </Suspense>
+
+          <EdgeSwipeBackHost />
+          <CapacitorHardwareBackHost />
 
           <BottomNav />
 

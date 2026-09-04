@@ -4,19 +4,20 @@ import {
   ChevronDown,
   FilePlus2,
   Sparkles,
-  Zap,
+  Zap
 } from "lucide-react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { ROUTES, routePreventivo } from "../app/routes";
+import { routePreventivo } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import NumericInput from "../components/NumericInput";
 import KnowledgeExplanationCard from "../components/knowledge/KnowledgeExplanationCard";
 import { risolviSpiegazioneLavorazione } from "../components/knowledge/knowledgeExplanationUtils";
 import AssistenteSopralluogoPanel from "../components/sopralluogo/AssistenteSopralluogoPanel";
 import {
   generaPreventivoEconomico,
-  convertiProposalInPreventivo,
+  convertiProposalInPreventivo
 } from "../domain/preventivi";
 import { salvaOsservazione } from "../domain/brain/brainObservationService";
 import { analizzaOsservazioni } from "../domain/brain/brainPatternService";
@@ -24,7 +25,7 @@ import {
   assicuratiSessioneAttiva,
   chiudiSessione,
   collegaPreventivoASessione,
-  nuovaSessioneSopralluogo,
+  nuovaSessioneSopralluogo
 } from "../domain/sopralluogoSession";
 import { leggiPreventivi, salvaNuovoPreventivo } from "../repositories/preventiviRepository";
 import { formatEuro } from "../utils/preventivi";
@@ -262,9 +263,7 @@ export default function PreventivoIntelligente() {
   return (
     <PageWrapper>
       <div className="pro-page text-white">
-        <Link to={ROUTES.dashboard} className="ds-back-link mb-4">
-          ← Home
-        </Link>
+        <PageBackLink className="ds-back-link mb-4" testId="preventivo-intelligente-back" />
 
         <header className="pro-panel-strong px-4 py-4 mb-4">
           <div className="flex items-start gap-3">

@@ -9,7 +9,7 @@ import {
   CATEGORIE_SPESA,
   ETICHETTE_CATEGORIA_SPESA,
   ETICHETTE_METODO_PAGAMENTO_SPESA,
-  METODI_PAGAMENTO_SPESA,
+  METODI_PAGAMENTO_SPESA
 } from "../services/speseCantiereService";
 import { leggiProgrammazione } from "../services/programmazioneCantiereService";
 

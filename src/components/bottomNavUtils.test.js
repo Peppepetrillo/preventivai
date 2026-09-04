@@ -6,7 +6,7 @@ import {
   isDistintaEditorRoute,
   isVoceAttiva,
   shouldShowBottomNav,
-  shouldShowGlobalCreateFab,
+  shouldShowGlobalCreateFab
 } from "./bottomNavUtils";
 
 describe("bottomNavUtils — editor distinta UX-4.3", () => {

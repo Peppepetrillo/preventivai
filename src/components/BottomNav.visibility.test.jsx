@@ -88,7 +88,7 @@ describe("BottomNav UX-4.3 — editor distinta full screen", () => {
     renderShell(ROUTES.nuovaDistintaMateriali);
     expect(nav()).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("link", { name: /Indietro/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Indietro/i }));
 
     expect(nav()).toBeInTheDocument();
     expect(

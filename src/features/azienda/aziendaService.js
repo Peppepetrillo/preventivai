@@ -5,7 +5,7 @@
 
 import {
   leggiDatiAzienda,
-  salvaDatiAzienda,
+  salvaDatiAzienda
 } from "../../repositories/impostazioniRepository";
 
 function testo(valore) {

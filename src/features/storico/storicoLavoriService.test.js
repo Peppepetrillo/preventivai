@@ -12,7 +12,7 @@ import {
   isLavoroConcluso,
   ORDINAMENTO_STORICO,
   ordinaLavoriStorico,
-  ricavaDateLavoroDaRegistro,
+  ricavaDateLavoroDaRegistro
 } from "./storicoLavoriService";
 import { CATEGORIE_SPESA } from "../cantieri/services/speseCantiereService";
 

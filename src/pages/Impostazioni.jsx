@@ -1,5 +1,5 @@
 import {
-  useState,
+  useState
 } from "react";
 
 import {
@@ -10,17 +10,18 @@ import {
   LockKeyhole,
   LogOut,
   Trash2,
-  Upload,
+  Upload
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { ROUTES } from "../app/routes";
 import {
   creaBackupCompleto,
   nomeFileBackup,
-  ripristinaBackupCompleto,
+  ripristinaBackupCompleto
 } from "../utils/backup";
 import { esportaBlob } from "../utils/nativeExport";
 import {
@@ -31,7 +32,7 @@ import {
   impostaFrequenzaBackupAutomatico,
   leggiConfigBackupAutomatico,
   ottieniSnapshotPerEsportazione,
-  rifrescaStatoConfig,
+  rifrescaStatoConfig
 } from "../domain/backupAutomatico";
 import { useCloudAuth } from "../contexts/cloudAuthContext";
 import {
@@ -41,7 +42,7 @@ import {
   pinEAttivo,
   salvaConfigAppLock,
   TIMEOUT_INATTIVITA_OPZIONI,
-  validaFormatoPin,
+  validaFormatoPin
 } from "../services/pinSecurity";
 
 export default function Impostazioni() {
@@ -223,6 +224,7 @@ export default function Impostazioni() {
   return (
     <PageWrapper>
       <div className="pro-page text-white">
+        <PageBackLink testId="impostazioni-back" />
 
         <div className="pro-panel-strong p-5 mb-6">
           <p className="section-label">Configurazione</p>

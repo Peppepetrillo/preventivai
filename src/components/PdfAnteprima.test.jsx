@@ -4,7 +4,7 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import PdfAnteprima, {
   condividiDaBlobUrl,
   scaricaDaBlobUrl,
-  urlPdfFitWidth,
+  urlPdfFitWidth
 } from "./PdfAnteprima";
 
 const condividiBlob = vi.fn();

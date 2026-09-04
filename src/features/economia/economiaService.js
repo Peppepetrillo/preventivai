@@ -8,12 +8,12 @@ import { formatEuro } from "../../utils/preventivi";
 import {
   ETICHETTE_CATEGORIA_SPESA,
   leggiSpese,
-  parseDataItalianaCantiere,
+  parseDataItalianaCantiere
 } from "../cantieri/services/speseCantiereService";
 import {
   ETICHETTE_TIPO_PAGAMENTO,
   leggiPagamenti,
-  riepilogoEconomicoCantiere,
+  riepilogoEconomicoCantiere
 } from "../cantieri/services/pagamentiCantiereService";
 
 /** Periodi filtro Economia v0 (estendibile in seguito). */

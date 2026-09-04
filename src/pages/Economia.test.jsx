@@ -47,13 +47,13 @@ describe("Economia v0 pagina", () => {
 
   it("mostra back verso Altro e metriche", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[ROUTES.economia]}>
         <Economia />
       </MemoryRouter>
     );
 
     expect(screen.getByTestId("economia-back")).toHaveAttribute(
-      "href",
+      "data-parent",
       ROUTES.altro
     );
     expect(screen.getByRole("heading", { name: /Economia/i })).toBeInTheDocument();
@@ -67,7 +67,7 @@ describe("Economia v0 pagina", () => {
 
   it("tap movimento punta al cantiere corretto (sezione economico)", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[ROUTES.economia]}>
         <Economia />
       </MemoryRouter>
     );

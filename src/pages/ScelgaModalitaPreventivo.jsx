@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ArrowLeft, ClipboardList, PenLine, Sparkles } from "lucide-react";
+import { ClipboardList, PenLine, Sparkles } from "lucide-react";
+import PageBackLink from "../components/PageBackLink";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../app/routes";
 import { leggiClienti } from "../repositories/clientiRepository";
@@ -41,10 +42,7 @@ export default function ScelgaModalitaPreventivo() {
 
   return (
     <div className="pro-page text-white">
-      <Link to={backTo} className="ds-back-link mb-6">
-        <ArrowLeft size={18} />
-        {cliente ? cliente.nome : "Nuovo preventivo"}
-      </Link>
+      <PageBackLink to={backTo} testId="scelta-modalita-back" />
 
       {cliente ? (
         <div className="pro-panel-strong p-5 mb-6">

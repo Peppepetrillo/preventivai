@@ -3,10 +3,11 @@ import {
   ArrowLeft,
   Package,
   Pencil,
-  Plus,
+  Plus
 } from "lucide-react";
 
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import SearchInput from "../components/SearchInput";
 import CatalogoMaterialiCategorie from "../features/catalogoMateriali/components/CatalogoMaterialiCategorie";
 import CatalogoMaterialiFamigliaCard from "../features/catalogoMateriali/components/CatalogoMaterialiFamigliaCard";
@@ -104,7 +105,13 @@ export default function CatalogoMateriali() {
                   <span className="text-sm font-semibold">Indietro</span>
                 </button>
               ) : (
-                <p className="section-label">Materiali di cantiere</p>
+                <>
+                  <PageBackLink
+                    className="inline-flex items-center gap-1.5 min-h-[44px] -ml-1 px-1 text-slate-300"
+                    testId="catalogo-back"
+                  />
+                  <p className="section-label mt-1">Materiali di cantiere</p>
+                </>
               )}
               <h1 className="ds-page-title mt-1">{titoloVista}</h1>
               <p className="ds-text-secondary mt-2">

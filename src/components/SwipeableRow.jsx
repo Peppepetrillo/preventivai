@@ -83,7 +83,10 @@ export default function SwipeableRow({
   }
 
   return (
-    <div className={`relative overflow-hidden rounded-[14px] ${className}`}>
+    <div
+      className={`relative overflow-hidden rounded-[14px] ${className}`}
+      data-no-edge-swipe
+    >
       <div
         className="absolute inset-0 flex items-center pl-4 bg-emerald-500/90 text-slate-950 font-black text-sm pointer-events-none"
         aria-hidden="true"

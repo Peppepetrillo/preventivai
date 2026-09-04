@@ -1,23 +1,21 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import {
-  ArrowLeft,
   FileText,
   HardHat,
   RotateCcw,
   Trash2,
-  Users,
+  Users
 } from "lucide-react";
 
-import { ROUTES } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import ConfirmDialog from "../components/ConfirmDialog";
 import {
   FILTRI_CESTINO,
   TIPI_CESTINO,
   eliminaDefinitivamente,
   ottieniElementiCestinati,
-  ripristina,
+  ripristina
 } from "../domain/cestino";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import { APP_EVENTS } from "../app/events";
@@ -50,8 +48,7 @@ function formattaDataEliminazione(iso) {
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
-    minute: "2-digit",
-  });
+    minute: "2-digit" });
 }
 
 function descrizioneHardDelete(tipo) {
@@ -117,10 +114,7 @@ export default function Cestino() {
   return (
     <PageWrapper>
       <div className="pro-page text-white" data-testid="pagina-cestino">
-        <Link to={ROUTES.impostazioni} className="ds-back-link mb-5">
-          <ArrowLeft size={18} />
-          Impostazioni
-        </Link>
+        <PageBackLink testId="cestino-back" />
 
         <header className="pro-panel-strong p-5 mb-4">
           <p className="section-label">Recupero dati</p>

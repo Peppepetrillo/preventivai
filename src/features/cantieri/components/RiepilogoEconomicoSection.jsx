@@ -17,7 +17,7 @@ import {
   snapshotEconomicoRealeCantiere,
   STATO_CONTROLLO_ECONOMICO,
   TIPO_SCENARIO_ECONOMICO,
-  TIPO_SEGNALE_GESTIONALE,
+  TIPO_SEGNALE_GESTIONALE
 } from "../services/speseCantiereService";
 
 function classeSituazione(stato) {

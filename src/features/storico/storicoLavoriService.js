@@ -23,12 +23,12 @@ import { etichettaCantiereEconomia } from "../economia/economiaService";
 import {
   leggiRegistroGiornate,
   parseDataProgrammazione,
-  riepilogoRegistroCantiere,
+  riepilogoRegistroCantiere
 } from "../cantieri/services/registroGiornateService";
 import {
   CATEGORIE_SPESA,
   calcolaTotaleSpesePerCategoria,
-  riepilogoEconomicoCompleto,
+  riepilogoEconomicoCompleto
 } from "../cantieri/services/speseCantiereService";
 
 /** Ambito filtro storico. */

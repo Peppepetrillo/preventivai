@@ -10,7 +10,7 @@ import {
   intervalloPeriodoEconomia,
   PERIODO_ECONOMIA,
   raccogliMovimentiCantiereEconomia,
-  TIPO_MOVIMENTO_ECONOMIA,
+  TIPO_MOVIMENTO_ECONOMIA
 } from "./economiaService";
 import { CATEGORIE_SPESA } from "../cantieri/services/speseCantiereService";
 

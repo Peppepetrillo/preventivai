@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle, FileText, HardHat, Plus, Wallet } from "lucide-react";
+import { CheckCircle, FileText, HardHat, Plus, Wallet } from "lucide-react";
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import NumericInput from "../components/NumericInput";
 import { APP_EVENTS } from "../app/events";
-import { ROUTES, routeCantierePagamenti, routePreventivo } from "../app/routes";
+import { routeCantierePagamenti, routePreventivo } from "../app/routes";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import { leggiPreventivi, leggiPreventiviTutti, salvaPreventivi } from "../repositories/preventiviRepository";
 import { isRecordCestinato } from "../domain/cestino";
@@ -15,7 +16,7 @@ import {
   normalizzaPreventivoIncasso,
   registraIncasso,
   riepilogaIncassi,
-  segnaPreventivoSaldato,
+  segnaPreventivoSaldato
 } from "../features/preventivi/incassiDomain";
 import { isPagamentiSuCantiere } from "../features/preventivi/utils/preventivoHeroCta";
 
@@ -69,8 +70,7 @@ export default function Incassi() {
   function aggiornaImporto(preventivoId, valore) {
     setImporti({
       ...importi,
-      [preventivoId]: valore,
-    });
+      [preventivoId]: valore });
   }
 
   function registraPagamento(preventivo) {
@@ -102,10 +102,7 @@ export default function Incassi() {
   return (
     <PageWrapper>
       <div className="pro-page text-white">
-        <Link to={ROUTES.preventivi} className="ds-back-link mb-5">
-          <ArrowLeft size={18} />
-          Preventivi
-        </Link>
+        <PageBackLink testId="incassi-back" />
 
         <section className="pro-panel-strong p-5 mb-6">
           <p className="section-label">Prima del cantiere</p>

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { ROUTES } from "../app/routes";
 import {
   leggiProfiloAzienda,
-  salvaProfiloAzienda,
+  salvaProfiloAzienda
 } from "../features/azienda/aziendaService";
 import DatiAzienda from "./DatiAzienda";
 
@@ -16,13 +16,13 @@ describe("DatiAzienda pagina", () => {
 
   it("mostra back verso Impostazioni e salva profilo", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[ROUTES.datiAzienda]}>
         <DatiAzienda />
       </MemoryRouter>
     );
 
     expect(screen.getByTestId("dati-azienda-back")).toHaveAttribute(
-      "href",
+      "data-parent",
       ROUTES.impostazioni
     );
 
@@ -46,7 +46,7 @@ describe("DatiAzienda pagina", () => {
     salvaProfiloAzienda({ nomeDitta: "Già salvata", telefono: "333" });
 
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[ROUTES.datiAzienda]}>
         <DatiAzienda />
       </MemoryRouter>
     );

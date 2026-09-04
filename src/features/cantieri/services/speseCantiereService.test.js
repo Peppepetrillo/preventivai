@@ -7,23 +7,23 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { STORAGE_KEYS } from "../../../app/storageKeys";
 import {
   aggiungiVoceListaSpesa,
-  leggiListaSpesa,
+  leggiListaSpesa
 } from "../../../domain/listaSpesa";
 import {
   eliminaDefinitivamente,
   ripristina,
   spostaNelCestino,
-  TIPI_CESTINO,
+  TIPI_CESTINO
 } from "../../../domain/cestino";
 import {
   leggiCantieri,
   leggiCantieriTutti,
-  salvaCantieri,
+  salvaCantieri
 } from "../../../repositories/cantieriRepository";
 import { creaBackupCompleto, ripristinaBackupCompleto } from "../../../utils/backup";
 import {
   aggiungiPagamento,
-  riepilogoEconomicoCantiere,
+  riepilogoEconomicoCantiere
 } from "./pagamentiCantiereService";
 import { aggiungiGiornataProgrammata } from "./programmazioneCantiereService";
 import {
@@ -107,7 +107,7 @@ import {
   TIPO_SEGNALE_GESTIONALE,
   trovaSpesaPrincipalePerMateriale,
   trovaSpesePerMateriale,
-  validaSpesaCantiere,
+  validaSpesaCantiere
 } from "./speseCantiereService";
 
 describe("speseCantiereService UX-Spese v1", () => {

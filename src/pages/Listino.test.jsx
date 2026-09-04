@@ -11,22 +11,22 @@ vi.mock("../services/cloudSyncService", () => ({
   salvaDatoCloud: vi.fn(),
 }));
 
-describe("Listino — navigazione Impostazioni", () => {
+describe("Listino — navigazione Back", () => {
   beforeEach(() => {
     localStorage.clear();
     localStorage.setItem(STORAGE_KEYS.listino, JSON.stringify(listinoBase));
   });
 
-  it("mostra link Indietro verso Impostazioni e pagina listino", () => {
+  it("mostra Indietro verso Altro e pagina listino", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[ROUTES.listino]}>
         <Listino />
       </MemoryRouter>
     );
 
-    const link = screen.getByTestId("listino-link-impostazioni");
-    expect(link).toHaveAttribute("href", ROUTES.impostazioni);
-    expect(link).toHaveClass("min-h-[44px]");
+    const back = screen.getByTestId("listino-link-impostazioni");
+    expect(back).toHaveAttribute("data-parent", ROUTES.altro);
+    expect(back).toHaveClass("min-h-[44px]");
     expect(screen.getByRole("heading", { name: "Listino" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Nuova lavorazione/i })).toBeInTheDocument();
   });

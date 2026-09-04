@@ -3,12 +3,13 @@ import { useState } from "react";
 
 import { ROUTES } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import CantiereOverview from "../features/cantieri/components/CantiereOverview";
 import { useCantieri } from "../features/cantieri/hooks/useCantieri";
 import {
   isRecordCestinato,
   ripristina,
-  TIPI_CESTINO,
+  TIPI_CESTINO
 } from "../domain/cestino";
 
 /**
@@ -89,9 +90,7 @@ export default function Cantiere() {
     return (
       <PageWrapper>
         <div className="pro-page text-white" data-testid="cantiere-nel-cestino">
-          <Link to={ROUTES.cantieri} className="ds-back-link mb-5">
-            Cantieri
-          </Link>
+          <PageBackLink testId="cantiere-back" />
           <div className="pro-panel p-5 space-y-4">
             <p className="section-label">Cestino</p>
             <h1 className="ds-page-title">{cantiereSelezionato.nome}</h1>

@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, ClipboardList, Plus } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { ClipboardList, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import { ROUTES } from "../app/routes";
 import DistintaCard from "../features/distinteMateriali/components/DistintaCard";
 import {
   caricaDistinteMateriali,
   duplicaDistintaMateriali,
-  eliminaDistintaMateriali,
+  eliminaDistintaMateriali
 } from "../domain/distinteMateriali/distintaMaterialiService";
 
 /**
@@ -67,14 +68,10 @@ export default function DistinteMateriali() {
         <header className="pro-panel-strong px-4 py-4 mb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <Link
-                to={ROUTES.impostazioni}
+              <PageBackLink
                 className="inline-flex items-center gap-1.5 min-h-[44px] -ml-1 px-1 text-slate-300"
-                aria-label="Indietro"
-              >
-                <ArrowLeft size={18} aria-hidden="true" />
-                <span className="text-sm font-semibold">Indietro</span>
-              </Link>
+                testId="distinte-back"
+              />
               <h1 className="ds-page-title mt-1">Distinte materiali</h1>
               <p className="ds-text-secondary mt-2">
                 Liste materiali indipendenti, collegabili dopo a cliente e cantiere.

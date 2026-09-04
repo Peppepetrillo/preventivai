@@ -9,7 +9,7 @@ import {
   leggiPagamenti,
   leggiTotaleIncassato,
   leggiTotaleCantiereEconomico,
-  riepilogoEconomicoCantiere,
+  riepilogoEconomicoCantiere
 } from "./pagamentiCantiereService";
 import { leggiProgrammazione } from "./programmazioneCantiereService";
 

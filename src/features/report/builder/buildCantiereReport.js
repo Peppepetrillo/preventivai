@@ -2,7 +2,7 @@ import {
   STATI_VARIANTE,
   STATI_VARIANTE_LABEL,
   calcolaTotaleCantiere,
-  ottieniVarianti,
+  ottieniVarianti
 } from "../../../domain/varianti";
 import { risolviPdfSettings } from "../../../domain/pdf/pdfTypes";
 import { DIARIO_EVENT_TYPES } from "../../diario/events/constants";
@@ -10,18 +10,18 @@ import {
   formatDiarioTime,
   leggiDiarioCantiere,
   serializeDiarioEvent,
-  sortDiarioEventsChronologico,
+  sortDiarioEventsChronologico
 } from "../../diario/timeline/diarioTimeline";
 import { formatEuro, normalizzaNumero } from "../../../utils/preventivi";
 import {
   etichettaTipoIntervento,
-  isCantiereDiretto,
+  isCantiereDiretto
 } from "../../cantieri/cantieriDomain";
 import {
   calcolaRimanenzaCantiere,
   leggiPagamenti,
   leggiTotaleIncassato,
-  leggiTotaleCantiereEconomico,
+  leggiTotaleCantiereEconomico
 } from "../../cantieri/services/pagamentiCantiereService";
 import {
   calcolaMargineLordo,
@@ -36,7 +36,7 @@ import {
   formattaAlertGestionaleMateriali,
   formattaMessaggioScostamentoMateriali,
   formattaPercentualeMargine,
-  leggiSpese,
+  leggiSpese
 } from "../../cantieri/services/speseCantiereService";
 
 function parseDataSpesaPdf(data) {

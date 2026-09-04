@@ -1,9 +1,15 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDownLeft, ArrowLeft, ArrowUpRight, ChevronRight, Wallet } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  ChevronRight,
+  Wallet
+} from "lucide-react";
 
 import { ROUTES, routeCantiere } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import { leggiCantieri } from "../repositories/cantieriRepository";
 import {
@@ -11,7 +17,7 @@ import {
   ETICHETTE_PERIODO_ECONOMIA,
   formatEuro,
   PERIODO_ECONOMIA,
-  TIPO_MOVIMENTO_ECONOMIA,
+  TIPO_MOVIMENTO_ECONOMIA
 } from "../features/economia/economiaService";
 
 const FILTRI_PERIODO = [
@@ -71,14 +77,7 @@ export default function Economia() {
   return (
     <PageWrapper>
       <div className="pro-page text-white" data-testid="pagina-economia">
-        <Link
-          to={ROUTES.altro}
-          className="ds-back-link mb-5"
-          data-testid="economia-back"
-        >
-          <ArrowLeft size={18} aria-hidden="true" />
-          Altro
-        </Link>
+        <PageBackLink testId="economia-back" />
 
         <header className="pro-panel-strong p-5 mb-4">
           <p className="section-label">Attività</p>

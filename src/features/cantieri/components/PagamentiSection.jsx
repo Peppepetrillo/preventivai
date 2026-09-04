@@ -6,7 +6,7 @@ import { formatEuro, normalizzaNumero } from "../../../utils/preventivi";
 import {
   ETICHETTE_METODO_PAGAMENTO,
   ETICHETTE_TIPO_PAGAMENTO,
-  riepilogoEconomicoCantiere,
+  riepilogoEconomicoCantiere
 } from "../services/pagamentiCantiereService";
 import PagamentoSheet from "./PagamentoSheet";
 

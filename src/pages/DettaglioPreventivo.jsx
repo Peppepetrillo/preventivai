@@ -1,47 +1,47 @@
 import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   Copy,
   Download,
   Eye,
   Save,
-  Trash2,
+  Trash2
 } from "lucide-react";
+import PageBackLink from "../components/PageBackLink";
 import {
   ROUTES,
   routeCantiere,
   routeCantierePagamenti,
   routePreventivo,
   statoNavigazioneCantiere,
-  CANTIERE_SEZIONI,
+  CANTIERE_SEZIONI
 } from "../app/routes";
 import {
-  marcaPostConversioneCantiere,
+  marcaPostConversioneCantiere
 } from "../features/cantieri/postConversioneUi";
 import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
 import {
   leggiPreventiviTutti,
   salvaNuovoPreventivo,
   salvaPreventivi,
-  trovaPreventivo,
+  trovaPreventivo
 } from "../repositories/preventiviRepository";
 import {
   isRecordCestinato,
   ripristina,
   spostaNelCestino,
-  TIPI_CESTINO,
+  TIPI_CESTINO
 } from "../domain/cestino";
 import {
   aggiornaCampoLavorazione,
   duplicaPreventivo as duplicaDatiPreventivo,
-  preparaDatiPreventivo,
+  preparaDatiPreventivo
 } from "../features/preventivi/preventiviDomain";
 import {
   calcolaDaIncassare,
   normalizzaPreventivoIncasso,
   registraIncasso,
-  segnaPreventivoSaldato,
+  segnaPreventivoSaldato
 } from "../features/preventivi/incassiDomain";
 import {
   EVENTI_WORKFLOW,
@@ -53,14 +53,14 @@ import {
   normalizzaStatoPreventivo,
   ottieniAzioniDisponibili,
   ottieniTimeline,
-  trovaCantiereCollegato,
+  trovaCantiereCollegato
 } from "../domain/workflow";
 import {
   collegaDistintaAPreventivoSenzaDuplicati,
   elencaDistintePerCollegamentoPreventivo,
   scollegaDistintaDalPreventivo,
   trovaDistintaCollegataAlPreventivo,
-  usaDistintaDopoConversioneCantiere,
+  usaDistintaDopoConversioneCantiere
 } from "../domain/distinteMateriali/distintaPreventivoService";
 import CollegaDistintaSheet from "../features/distinteMateriali/components/CollegaDistintaSheet";
 import PreventivoDistintaSection from "../features/distinteMateriali/components/PreventivoDistintaSection";
@@ -70,7 +70,7 @@ import {
   calcolaTotali,
   calcolaSaldo,
   formatEuro,
-  normalizzaNumero,
+  normalizzaNumero
 } from "../utils/preventivi";
 import NumericInput from "../components/NumericInput";
 import PdfAnteprima from "../components/PdfAnteprima";
@@ -87,7 +87,7 @@ import {
   etichettaEventoWorkflowUi,
   filtraAzioniSecondarie,
   isPagamentiSuCantiere,
-  risolviHeroCta,
+  risolviHeroCta
 } from "../features/preventivi/utils/preventivoHeroCta";
 import { messaggioErroreWorkflow } from "../features/preventivi/utils/messaggioErroreWorkflow";
 import { salvaFirma, ottieniFirma } from "../domain/firma";
@@ -95,7 +95,7 @@ import { risolviDocumentoDaCondividere } from "../domain/condivisione";
 import { arricchisciPreventivoLegacy } from "../domain/catalogo";
 import {
   contaRegoleAttive,
-  generateQualityChecks,
+  generateQualityChecks
 } from "../domain/qualityCheck";
 
 export default function DettaglioPreventivo() {
@@ -154,21 +154,18 @@ export default function DettaglioPreventivo() {
   const qualityReport = generateQualityChecks({
     ...(preventivo || {}),
     cliente,
-    lavorazioni,
-  });
+    lavorazioni });
   const qualityControlliTotali = contaRegoleAttive();
   const preventivoIncasso = normalizzaPreventivoIncasso({
     ...preventivo,
     totale: totali.totale,
     incassato,
-    noteIncasso,
-  });
+    noteIncasso });
   const daIncassare = calcolaDaIncassare(preventivoIncasso);
   const preventivoCorrente = {
     ...preventivo,
     stato,
-    cantiereId: cantiereId || preventivo?.cantiereId,
-  };
+    cantiereId: cantiereId || preventivo?.cantiereId };
   const cantiereCollegato = trovaCantiereCollegato(preventivoCorrente);
   const cantiereCollegatoId =
     cantiereId || preventivo?.cantiereId || cantiereCollegato?.id;
@@ -176,8 +173,7 @@ export default function DettaglioPreventivo() {
   const heroCta = risolviHeroCta({
     stato,
     azioniDisponibili,
-    cantiereCollegatoId,
-  });
+    cantiereCollegatoId });
   const azioniSecondarie = filtraAzioniSecondarie(
     azioniDisponibili,
     heroCta?.id
@@ -196,8 +192,7 @@ export default function DettaglioPreventivo() {
     void distintaTick;
     if (!preventivo?.id) return [];
     return elencaDistintePerCollegamentoPreventivo(ricercaDistinta, {
-      preventivoId: preventivo.id,
-    });
+      preventivoId: preventivo.id });
   }, [preventivo?.id, ricercaDistinta, distintaTick]);
 
   function aggiornaLavorazione(index, campo, valore) {
@@ -220,8 +215,7 @@ export default function DettaglioPreventivo() {
         ...preventivo,
         cantiereId: cantiereId || preventivo?.cantiereId,
         incassato,
-        noteIncasso,
-      },
+        noteIncasso },
       cliente,
       stato: stato || "Bozza",
       lavorazioni,
@@ -230,8 +224,7 @@ export default function DettaglioPreventivo() {
       validita: normalizzaNumero(validita, 30),
       pagamento: pagamento.trim(),
       acconto: normalizzaNumero(acconto),
-      note,
-    });
+      note });
   }
 
   function persistiPreventivoCorrente(prossimo) {
@@ -256,8 +249,7 @@ export default function DettaglioPreventivo() {
         validita: normalizzaNumero(validita, 30),
         pagamento: pagamento.trim(),
         acconto: normalizzaNumero(acconto),
-        note,
-      })
+        note })
     );
   }
 
@@ -274,8 +266,7 @@ export default function DettaglioPreventivo() {
         {
           ...datiAggiornati(),
           incassato,
-          noteIncasso,
-        },
+          noteIncasso },
         importo
       )
     );
@@ -288,8 +279,7 @@ export default function DettaglioPreventivo() {
       segnaPreventivoSaldato({
         ...datiAggiornati(),
         incassato,
-        noteIncasso,
-      })
+        noteIncasso })
     );
     setMessaggio("Preventivo segnato come saldato.");
   }
@@ -303,8 +293,7 @@ export default function DettaglioPreventivo() {
     const nuovoPreventivo = duplicaDatiPreventivo({
       archivio: leggiPreventiviTutti(),
       datiPreventivo: datiAggiornati(),
-      cliente,
-    });
+      cliente });
 
     salvaNuovoPreventivo(nuovoPreventivo);
     navigate(routePreventivo(nuovoPreventivo.id));
@@ -342,8 +331,7 @@ export default function DettaglioPreventivo() {
   async function generaDocumentoPdf({
     salva = true,
     apriAnteprima = false,
-    firmato = undefined,
-  } = {}) {
+    firmato = undefined } = {}) {
     setPdfInElaborazione(true);
     try {
       const dati = datiAggiornati();
@@ -361,15 +349,13 @@ export default function DettaglioPreventivo() {
         acconto,
         totali,
         salva,
-        firmato,
-      });
+        firmato });
 
       const firmaEsistente = ottieniFirma(dati.id);
       if (firmaEsistente && risultato?.nomeFile?.includes("_firmato")) {
         salvaFirma(firmaEsistente, {
           preventivo: dati,
-          registraFirmato: true,
-        });
+          registraFirmato: true });
       }
 
       if (pdfAnteprimaUrl) {
@@ -507,11 +493,9 @@ export default function DettaglioPreventivo() {
       setShowUsaDistinta(false);
       const incassatoPre = Number(incassato) || 0;
       marcaPostConversioneCantiere(risultato.cantiere.id, {
-        incassatoPreventivo: incassatoPre,
-      });
+        incassatoPreventivo: incassatoPre });
       navigate(routeCantierePagamenti(risultato.cantiere.id), {
-        state: statoNavigazioneCantiere(CANTIERE_SEZIONI.PAGAMENTI),
-      });
+        state: statoNavigazioneCantiere(CANTIERE_SEZIONI.PAGAMENTI) });
     } catch (errore) {
       setShowUsaDistinta(false);
       setMessaggio(
@@ -613,10 +597,7 @@ export default function DettaglioPreventivo() {
   if (nelCestino) {
     return (
       <div className="pro-page text-white">
-        <Link to={ROUTES.preventivi} className="ds-back-link mb-5">
-          <ArrowLeft size={18} />
-          Preventivi
-        </Link>
+        <PageBackLink testId="dettaglio-preventivo-back" />
         <div className="pro-panel p-5 space-y-4" data-testid="preventivo-nel-cestino">
           <p className="section-label">Cestino</p>
           <h1 className="ds-page-title">
@@ -660,10 +641,7 @@ export default function DettaglioPreventivo() {
 
   return (
     <div className="pro-page text-white">
-      <Link to={ROUTES.preventivi} className="ds-back-link mb-5">
-        <ArrowLeft size={18} />
-        Preventivi
-      </Link>
+      <PageBackLink testId="dettaglio-preventivo-back" />
 
       <PreventivoDettaglioHeader
         preventivo={preventivo}
@@ -1061,8 +1039,7 @@ export default function DettaglioPreventivo() {
               firmato: risolviDocumentoDaCondividere(
                 preventivo.id,
                 datiAggiornati()
-              ).firmato,
-            })
+              ).firmato })
           }
           preparaDocumento={async ({ firmato } = {}) => {
             if (pdfAnteprimaUrl) {
@@ -1076,8 +1053,7 @@ export default function DettaglioPreventivo() {
                 return {
                   blob,
                   nomeFile: docInfo.nomeFile,
-                  firmato: docInfo.firmato,
-                };
+                  firmato: docInfo.firmato };
               } catch {
                 // ricade su generazione esplicita
               }
@@ -1085,14 +1061,12 @@ export default function DettaglioPreventivo() {
             const risultato = await generaDocumentoPdf({
               salva: false,
               apriAnteprima: false,
-              firmato,
-            });
+              firmato });
             if (!risultato?.blob) return null;
             return {
               blob: risultato.blob,
               nomeFile: risultato.nomeFile,
-              firmato: Boolean(firmato),
-            };
+              firmato: Boolean(firmato) };
           }}
         />
 

@@ -1,35 +1,35 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   FileText,
   HardHat,
   MapPin,
   Phone,
   Plus,
   Trash2,
-  Wallet,
+  Wallet
 } from "lucide-react";
+import PageBackLink from "../components/PageBackLink";
 import { ROUTES, routeCantiere, routePreventivo } from "../app/routes";
 import {
   leggiClientiTutti,
   salvaClienti,
-  trovaCliente,
+  trovaCliente
 } from "../repositories/clientiRepository";
 import {
   leggiPreventivi,
   leggiPreventiviTutti,
-  salvaPreventivi,
+  salvaPreventivi
 } from "../repositories/preventiviRepository";
 import {
   leggiCantieriTutti,
-  salvaCantieri,
+  salvaCantieri
 } from "../repositories/cantieriRepository";
 import {
   isRecordCestinato,
   ripristina,
   spostaNelCestino,
-  TIPI_CESTINO,
+  TIPI_CESTINO
 } from "../domain/cestino";
 import { formatEuro, normalizzaNumero } from "../utils/preventivi";
 import { etichettaStatoUi } from "../features/preventivi/utils/preventivoHeroCta";
@@ -37,7 +37,7 @@ import { etichettaTipologiaPreventivo } from "../features/preventivi/tipologiaIm
 import {
   cantieriPerCliente,
   preventiviPerCliente,
-  stessoId,
+  stessoId
 } from "../features/clienti/clientePreventiviUtils";
 import { useCantieri } from "../features/cantieri/hooks/useCantieri";
 
@@ -86,10 +86,7 @@ export default function DettaglioCliente() {
   if (nelCestino) {
     return (
       <div className="pro-page text-white">
-        <Link to={ROUTES.clienti} className="ds-back-link mb-5">
-          <ArrowLeft size={18} />
-          Clienti
-        </Link>
+        <PageBackLink testId="dettaglio-cliente-back" />
         <div className="pro-panel p-5 space-y-4" data-testid="cliente-nel-cestino">
           <p className="section-label">Cestino</p>
           <h1 className="ds-page-title">{cliente.nome}</h1>
@@ -140,8 +137,7 @@ export default function DettaglioCliente() {
             nome: nomePulito,
             telefono: telefono.trim(),
             email: email.trim(),
-            indirizzo: indirizzo.trim(),
-          }
+            indirizzo: indirizzo.trim() }
         : item
     );
 
@@ -213,10 +209,7 @@ export default function DettaglioCliente() {
 
   return (
     <div className="pro-page text-white">
-      <Link to={ROUTES.clienti} className="ds-back-link mb-5">
-        <ArrowLeft size={18} />
-        Clienti
-      </Link>
+      <PageBackLink testId="dettaglio-cliente-back" />
 
       {/* Header scheda cliente */}
       <div className="pro-panel-strong p-5 mb-5">

@@ -96,13 +96,13 @@ describe("Storico lavori pagina 17C", () => {
 
   it("mostra back, riepilogo e conteggio completati", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[ROUTES.storico]}>
         <Storico />
       </MemoryRouter>
     );
 
     expect(screen.getByTestId("storico-back")).toHaveAttribute(
-      "href",
+      "data-parent",
       ROUTES.altro
     );
     expect(screen.getByRole("heading", { name: /^Storico$/i })).toBeInTheDocument();
@@ -116,7 +116,7 @@ describe("Storico lavori pagina 17C", () => {
 
   it("mostra insight fattuali quando i dati bastano", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[ROUTES.storico]}>
         <Storico />
       </MemoryRouter>
     );
@@ -126,7 +126,7 @@ describe("Storico lavori pagina 17C", () => {
 
   it("tap lavoro apre tab economico del cantiere", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[ROUTES.storico]}>
         <Storico />
       </MemoryRouter>
     );
@@ -140,7 +140,7 @@ describe("Storico lavori pagina 17C", () => {
   it("filtro tutti include lavori non conclusi", async () => {
     const user = userEvent.setup();
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[ROUTES.storico]}>
         <Storico />
       </MemoryRouter>
     );
@@ -153,7 +153,7 @@ describe("Storico lavori pagina 17C", () => {
   it("ordinamento saldo alto mette prima il saldo maggiore", async () => {
     const user = userEvent.setup();
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[ROUTES.storico]}>
         <Storico />
       </MemoryRouter>
     );
@@ -167,7 +167,7 @@ describe("Storico lavori pagina 17C", () => {
   it("storico vuoto senza insight", () => {
     vi.mocked(leggiCantieri).mockReturnValue([]);
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[ROUTES.storico]}>
         <Storico />
       </MemoryRouter>
     );

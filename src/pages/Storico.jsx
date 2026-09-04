@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, HardHat, History, Lightbulb } from "lucide-react";
+import { HardHat, History, Lightbulb } from "lucide-react";
 
 import {
-  ROUTES,
-  routeCantierePagamenti,
+  routeCantierePagamenti
 } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import { leggiCantieri } from "../repositories/cantieriRepository";
 import { classeBadgeStatoCantiere } from "../ui/designSystem";
@@ -16,7 +16,7 @@ import {
   ETICHETTE_AMBITO_STORICO,
   ETICHETTE_ORDINAMENTO_STORICO,
   formatEuro,
-  ORDINAMENTO_STORICO,
+  ORDINAMENTO_STORICO
 } from "../features/storico/storicoLavoriService";
 
 const FILTRI_AMBITO = [AMBITO_STORICO.conclusi, AMBITO_STORICO.tutti];
@@ -69,14 +69,7 @@ export default function Storico() {
   return (
     <PageWrapper>
       <div className="pro-page text-white" data-testid="pagina-storico">
-        <Link
-          to={ROUTES.altro}
-          className="ds-back-link mb-5"
-          data-testid="storico-back"
-        >
-          <ArrowLeft size={18} aria-hidden="true" />
-          Altro
-        </Link>
+        <PageBackLink testId="storico-back" />
 
         <header className="pro-panel-strong p-5 mb-4">
           <p className="section-label">Lavori</p>

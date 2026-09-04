@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+import PageBackLink from "../components/PageBackLink";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES, routePreventivo } from "../app/routes";
 import { leggiClienti } from "../repositories/clientiRepository";
@@ -16,8 +17,7 @@ function creaRiga() {
     nome: "",
     quantita: 1,
     prezzo: 0,
-    categoria: "Lavorazioni",
-  };
+    categoria: "Lavorazioni" };
 }
 
 export default function PreventivoManuale() {
@@ -45,8 +45,7 @@ export default function PreventivoManuale() {
     () =>
       righe.map((r) => ({
         prezzo: normalizzaNumero(r.prezzo),
-        quantita: normalizzaNumero(r.quantita, 1),
-      })),
+        quantita: normalizzaNumero(r.quantita, 1) })),
     [righe]
   );
 
@@ -86,8 +85,7 @@ export default function PreventivoManuale() {
         nome: r.nome || "Lavorazione",
         quantita: normalizzaNumero(r.quantita, 1),
         prezzo: normalizzaNumero(r.prezzo),
-        categoria: r.categoria || "Lavorazioni",
-      })
+        categoria: r.categoria || "Lavorazioni" })
     );
 
     const preventivo = creaPreventivo({
@@ -103,8 +101,7 @@ export default function PreventivoManuale() {
       validita: 30,
       pagamento,
       note,
-      tipologiaImpianto,
-    });
+      tipologiaImpianto });
 
     salvaNuovoPreventivo(preventivo);
     navigate(routePreventivo(preventivo.id));
@@ -116,10 +113,7 @@ export default function PreventivoManuale() {
 
   return (
     <div className="pro-page text-white">
-      <Link to={backTo} className="ds-back-link mb-5">
-        <ArrowLeft size={18} />
-        Scegli modalità
-      </Link>
+      <PageBackLink to={backTo} testId="preventivo-manuale-back" />
 
       <div className="mb-6">
         <p className="section-label">Preventivo Manuale</p>

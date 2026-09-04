@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Lightbulb, MapPin, Navigation, Phone } from "lucide-react";
+import PageBackLink from "../../../components/PageBackLink";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import ConfirmDialog from "../../../components/ConfirmDialog";
-import { ROUTES, routeCliente, routePreventivo, sezioneDaLocation } from "../../../app/routes";
+import { routeCliente, routePreventivo, sezioneDaLocation } from "../../../app/routes";
 import { getCantiereAssistant } from "../../../services/assistantService";
 import { ottieniFirma } from "../../../domain/firma";
 import { aggiungiInsight } from "../../../domain/insights";
@@ -20,11 +21,11 @@ import {
   etichettaTipoIntervento,
   isCantiereDiretto,
   testoConfermaEliminaCantiere,
-  valutaPrerequisitiChiusuraCantiere,
+  valutaPrerequisitiChiusuraCantiere
 } from "../cantieriDomain";
 import {
   apriWhatsAppConTesto,
-  generaTestoRiepilogoLavoroDiretto,
+  generaTestoRiepilogoLavoroDiretto
 } from "../services/lavoroDirettoTestoService";
 import { risolviSrcFotoCantiere } from "../services/cantieriFotoService";
 import CantiereAssistantPanel from "./CantiereAssistantPanel";
@@ -44,15 +45,15 @@ import {
   ORIGINE_AZIONE_GESTIONALE,
   prefillSpesaDaMateriale,
   TIPO_AZIONE_GESTIONALE,
-  trovaSpesaPrincipalePerMateriale,
+  trovaSpesaPrincipalePerMateriale
 } from "../services/speseCantiereService";
 import {
   leggiListaSpesa,
-  trovaVoceListaCollegata,
+  trovaVoceListaCollegata
 } from "../../../domain/listaSpesa";
 import {
   chiudiPostConversioneCantiere,
-  leggiPostConversioneCantiere,
+  leggiPostConversioneCantiere
 } from "../postConversioneUi";
 import { formatEuro } from "../../../utils/preventivi";
 
@@ -622,9 +623,7 @@ export default function CantiereOverview({
 
   return (
     <div className="pb-36" ref={overviewRef}>
-      <Link to={ROUTES.cantieri} className="ds-back-link mb-4">
-        ← Cantieri
-      </Link>
+      <PageBackLink className="ds-back-link mb-4" testId="cantiere-overview-back" />
 
       <header className="pro-panel-strong px-4 py-4 mb-5 space-y-3">
         <div className="flex items-start justify-between gap-3">

@@ -5,22 +5,23 @@ import {
   Phone,
   Plus,
   UserPlus,
-  Users,
+  Users
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import SearchInput from "../components/SearchInput";
 import { routeCliente } from "../app/routes";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import {
   leggiClienti,
   leggiClientiTutti,
-  salvaClienti as salvaClientiRepository,
+  salvaClienti as salvaClientiRepository
 } from "../repositories/clientiRepository";
 import {
   limitaElencoVisibile,
-  PAGINA_LISTA_DEFAULT,
+  PAGINA_LISTA_DEFAULT
 } from "../utils/listPerformance";
 
 /**
@@ -117,6 +118,7 @@ export default function Clienti() {
   return (
     <PageWrapper>
       <div className="pro-page text-white">
+        <PageBackLink testId="clienti-back" />
         <header className="pro-panel-strong px-4 py-4 mb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">

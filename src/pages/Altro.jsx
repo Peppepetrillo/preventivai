@@ -9,7 +9,7 @@ import {
   ShoppingCart,
   Trash2,
   Users,
-  Wallet,
+  Wallet
 } from "lucide-react";
 import { Link } from "react-router-dom";
 

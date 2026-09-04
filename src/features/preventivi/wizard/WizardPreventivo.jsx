@@ -76,7 +76,7 @@ export default function WizardPreventivo() {
     if (esitoSuccesso) {
       salvataggio.resetEsito();
       reset();
-      navigate(ROUTES.dashboard);
+      navigate(ROUTES.preventivi);
       return;
     }
 
@@ -86,7 +86,7 @@ export default function WizardPreventivo() {
     }
 
     reset();
-    navigate(ROUTES.dashboard);
+    navigate(ROUTES.preventivi);
   }
 
   function gestisciNuovoPreventivo() {

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Link2, Plus, Share2 } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link2, Plus, Share2 } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 
 import BottomSheet from "../components/BottomSheet";
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import { ROUTES } from "../app/routes";
 import CollegaCantiereSheet from "../features/distinteMateriali/components/CollegaCantiereSheet";
 import DistintaCondividiSheet from "../features/distinteMateriali/components/DistintaCondividiSheet";
@@ -14,18 +15,18 @@ import VoceDistintaSheet from "../features/distinteMateriali/components/VoceDist
 import { caricaCatalogoMateriali } from "../domain/catalogoMateriali/materialiCatalogService";
 import {
   costruisciVociAccessoriSuggeriti,
-  elencaSuggerimentiAccessoriPerVoce,
+  elencaSuggerimentiAccessoriPerVoce
 } from "../domain/distinteMateriali/distintaMaterialiDomain";
 import {
   aggiornaDistintaMateriali,
   creaDistintaMateriali,
-  trovaDistintaPerId,
+  trovaDistintaPerId
 } from "../domain/distinteMateriali/distintaMaterialiService";
 import {
   collegaESincronizzaDistintaACantiere,
   elencaCantieriPerCollegamento,
   risincronizzaDistintaSeCollegata,
-  scollegaDistintaDaCantiereSoft,
+  scollegaDistintaDaCantiereSoft
 } from "../domain/distinteMateriali/distintaCantiereService";
 import { normalizzaUnitaMateriale } from "../domain/catalogoMateriali/materialiTypes";
 
@@ -34,8 +35,7 @@ function emptyDraft() {
     titolo: "",
     clienteNome: "",
     note: "",
-    voci: [],
-  };
+    voci: [] };
 }
 
 /**
@@ -85,8 +85,7 @@ export default function DistintaMaterialiEditor() {
       titolo: d.titolo || "",
       clienteNome: d.clienteNome || "",
       note: d.note || "",
-      voci: Array.isArray(d.voci) ? d.voci : [],
-    });
+      voci: Array.isArray(d.voci) ? d.voci : [] });
   }, [id, isNuova]);
 
   useEffect(() => {
@@ -114,9 +113,7 @@ export default function DistintaMaterialiEditor() {
         prezzoUnitario: v.prezzoUnitario,
         note: v.note,
         parentVoceId: v.parentVoceId,
-        origineAccessorio: v.origineAccessorio,
-      })),
-    };
+        origineAccessorio: v.origineAccessorio })) };
   }, [draft]);
 
   const distintaPerCondivisione = useMemo(() => {
@@ -124,15 +121,13 @@ export default function DistintaMaterialiEditor() {
       return {
         ...savedDistinta,
         ...buildPayload(),
-        id: savedDistinta.id,
-      };
+        id: savedDistinta.id };
     }
     return {
       ...buildPayload(),
       id: distintaId || "draft",
       updatedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    };
+      createdAt: new Date().toISOString() };
   }, [savedDistinta, buildPayload, distintaId]);
 
   function handleSave() {
@@ -149,8 +144,7 @@ export default function DistintaMaterialiEditor() {
         setDistintaId(created.id);
         flash("Distinta creata.");
         navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
-          replace: true,
-        });
+          replace: true });
         return;
       }
       const updated = aggiornaDistintaMateriali(distintaId, payload);
@@ -165,8 +159,7 @@ export default function DistintaMaterialiEditor() {
         titolo: finale.titolo || "",
         clienteNome: finale.clienteNome || "",
         note: finale.note || "",
-        voci: Array.isArray(finale.voci) ? finale.voci : [],
-      });
+        voci: Array.isArray(finale.voci) ? finale.voci : [] });
       flash(sync.ok ? "Salvata e sincronizzata sul cantiere." : "Salvata.");
     } catch (e) {
       setErrore(e?.message || "Errore salvataggio");
@@ -181,8 +174,7 @@ export default function DistintaMaterialiEditor() {
       setSavedDistinta(created);
       setDistintaId(created.id);
       navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
-        replace: true,
-      });
+        replace: true });
       return created;
     }
     const updated = aggiornaDistintaMateriali(distintaId, payload);
@@ -233,16 +225,14 @@ export default function DistintaMaterialiEditor() {
     const nuova = { ...voce, id: voce.id || idVoce };
     setDraft((prev) => ({
       ...prev,
-      voci: [...(prev.voci || []), nuova],
-    }));
+      voci: [...(prev.voci || []), nuova] }));
     return nuova;
   }
 
   function addVoceDaCatalogo(voce) {
     const nuova = addVoce(voce);
     const suggerimenti = elencaSuggerimentiAccessoriPerVoce(nuova, catalogo, {
-      vociEsistenti: [...(draft.voci || []), nuova],
-    });
+      vociEsistenti: [...(draft.voci || []), nuova] });
     if (suggerimenti.length > 0) {
       setSuggerimentiSession({ parent: nuova, items: suggerimenti });
     }
@@ -266,8 +256,7 @@ export default function DistintaMaterialiEditor() {
     }
     setDraft((prev) => ({
       ...prev,
-      voci: [...(prev.voci || []), ...vociAccessori],
-    }));
+      voci: [...(prev.voci || []), ...vociAccessori] }));
     setSuggerimentiSession(null);
     flash(
       vociAccessori.length === 1
@@ -281,15 +270,13 @@ export default function DistintaMaterialiEditor() {
       ...prev,
       voci: (prev.voci || []).map((v) =>
         v.id === voceId ? { ...v, ...patch, id: voceId } : v
-      ),
-    }));
+      ) }));
   }
 
   function removeVoce(voceId) {
     setDraft((prev) => ({
       ...prev,
-      voci: (prev.voci || []).filter((v) => v.id !== voceId),
-    }));
+      voci: (prev.voci || []).filter((v) => v.id !== voceId) }));
   }
 
   function openCondividi() {
@@ -305,8 +292,7 @@ export default function DistintaMaterialiEditor() {
         setSavedDistinta(created);
         setDistintaId(created.id);
         navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
-          replace: true,
-        });
+          replace: true });
       } else {
         const updated = aggiornaDistintaMateriali(distintaId, payload);
         if (!updated) {
@@ -326,13 +312,10 @@ export default function DistintaMaterialiEditor() {
       <PageWrapper>
         <div className="pro-page text-white">
           <header className="pro-panel-strong px-4 py-4 mb-4">
-            <Link
-              to={ROUTES.distinteMateriali}
+            <PageBackLink
               className="inline-flex items-center gap-1.5 min-h-[44px] -ml-1 px-1 text-slate-300"
-            >
-              <ArrowLeft size={18} aria-hidden="true" />
-              <span className="text-sm font-semibold">Indietro</span>
-            </Link>
+              testId="distinta-editor-back-missing"
+            />
             <h1 className="ds-page-title mt-1">Distinta non trovata</h1>
           </header>
         </div>
@@ -346,14 +329,10 @@ export default function DistintaMaterialiEditor() {
         <header className="pro-panel-strong px-4 py-4 mb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <Link
-                to={ROUTES.distinteMateriali}
+              <PageBackLink
                 className="inline-flex items-center gap-1.5 min-h-[44px] -ml-1 px-1 text-slate-300"
-                aria-label="Indietro"
-              >
-                <ArrowLeft size={18} aria-hidden="true" />
-                <span className="text-sm font-semibold">Indietro</span>
-              </Link>
+                testId="distinta-editor-back"
+              />
               <h1 className="ds-page-title mt-1">
                 {isNuova ? "Nuova distinta" : "Modifica distinta"}
               </h1>

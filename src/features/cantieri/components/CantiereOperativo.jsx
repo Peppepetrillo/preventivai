@@ -8,7 +8,7 @@ import {
   Pencil,
   Plus,
   StickyNote,
-  Trash2,
+  Trash2
 } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
@@ -19,7 +19,7 @@ import { formatEuro } from "../../../utils/preventivi";
 import {
   analizzaCostiMateriale,
   calcolaRiepilogoCostiMateriali,
-  STATO_SCOSTAMENTO_MATERIALE,
+  STATO_SCOSTAMENTO_MATERIALE
 } from "../services/speseCantiereService";
 
 function formattaScostamentoEuro(valore) {

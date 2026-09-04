@@ -9,7 +9,7 @@ import {
   ETICHETTE_METODO_PAGAMENTO_SPESA,
   etichettaGiornataSpesa,
   filtraSpeseCantiere,
-  riepilogoEconomicoCompleto,
+  riepilogoEconomicoCompleto
 } from "../services/speseCantiereService";
 import SpesaSheet from "./SpesaSheet";
 

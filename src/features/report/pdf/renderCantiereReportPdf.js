@@ -7,7 +7,7 @@ import {
   setFill,
   setStroke,
   setText,
-  testoMultilinea,
+  testoMultilinea
 } from "../../../domain/pdf/pdfLayoutService";
 import { isPiattaformaNativa } from "../../../utils/nativeExport";
 

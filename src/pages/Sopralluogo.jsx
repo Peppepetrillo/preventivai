@@ -1,19 +1,18 @@
 import { MapPinned } from "lucide-react";
 import { Link } from "react-router-dom";
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import { ROUTES } from "../app/routes";
 
 /**
  * Modulo non ancora disponibile in RC 1.0.
- * Nessuna CTA operativa: solo informativa + ritorno alla Home.
+ * Nessuna CTA operativa: solo informativa + ritorno.
  */
 export default function Sopralluogo() {
   return (
     <PageWrapper>
       <div className="pro-page text-white">
-        <Link to={ROUTES.dashboard} className="ds-back-link mb-5">
-          ← Home
-        </Link>
+        <PageBackLink testId="sopralluogo-back" />
 
         <section className="pro-panel-strong p-6" aria-labelledby="sopralluogo-title">
           <div className="w-14 h-14 rounded-[14px] bg-yellow-400/20 text-yellow-200 flex items-center justify-center mb-5">

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 
 import ConfirmDialog from "../components/ConfirmDialog";
+import PageBackLink from "../components/PageBackLink";
 import { aggiungiInsight } from "../domain/insights";
 import AgendaHeader from "../features/agenda/components/AgendaHeader";
 import AgendaMeseView from "../features/agenda/components/AgendaMeseView";
@@ -11,7 +12,7 @@ import InsightRapidoSheet from "../features/agenda/components/InsightRapidoSheet
 import NuovoLavoroSheet from "../features/agenda/components/NuovoLavoroSheet";
 import {
   AgendaGiornoContenuto,
-  default as AgendaSettimanaView,
+  default as AgendaSettimanaView
 } from "../features/agenda/components/AgendaSettimanaView";
 import GiornataLavorativaSheet from "../features/cantieri/components/GiornataLavorativaSheet";
 import { useAgenda } from "../features/agenda/hooks/useAgenda";
@@ -132,9 +133,11 @@ export default function Agenda() {
   return (
     <div
       className="pro-page text-white pb-24"
+      data-no-edge-swipe
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
+      <PageBackLink testId="agenda-back" />
       <AgendaHeader
         vista={vista}
         onCambiaVista={cambiaVista}

@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { ArrowLeft, Building2, ImagePlus, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Building2, ImagePlus, X } from "lucide-react";
 
-import { ROUTES } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import {
   leggiProfiloAzienda,
-  salvaProfiloAzienda,
+  salvaProfiloAzienda
 } from "../features/azienda/aziendaService";
 
 function Campo({
@@ -102,14 +101,7 @@ export default function DatiAzienda() {
   return (
     <PageWrapper>
       <div className="pro-page text-white" data-testid="pagina-dati-azienda">
-        <Link
-          to={ROUTES.impostazioni}
-          className="ds-back-link mb-5"
-          data-testid="dati-azienda-back"
-        >
-          <ArrowLeft size={18} aria-hidden="true" />
-          Impostazioni
-        </Link>
+        <PageBackLink testId="dati-azienda-back" />
 
         <header className="pro-panel-strong p-5 mb-4">
           <p className="section-label">Profilo</p>

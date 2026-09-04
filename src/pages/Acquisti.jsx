@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ArrowLeft, PartyPopper, Share2, ShoppingCart } from "lucide-react";
+import { PartyPopper, Share2, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { ROUTES } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import SearchInput from "../components/SearchInput";
 import AcquistiAggregatoRow from "../features/acquisti/components/AcquistiAggregatoRow";
 import AcquistiCondividiSheet from "../features/acquisti/components/AcquistiCondividiSheet";
@@ -11,7 +12,7 @@ import AcquistiGruppoLavoro from "../features/acquisti/components/AcquistiGruppo
 import {
   FILTRO_ACQUISTI,
   useAcquistiUi,
-  VISTA_ACQUISTI,
+  VISTA_ACQUISTI
 } from "../features/acquisti/hooks/useAcquistiUi";
 import { MODALITA_CONDIVIDI_ACQUISTI } from "../features/acquisti/acquistiTestoService";
 
@@ -84,14 +85,10 @@ export default function Acquisti() {
         <header className="pro-panel-strong px-4 py-4 mb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <Link
-                to={ROUTES.impostazioni}
+              <PageBackLink
                 className="inline-flex items-center gap-1.5 min-h-[44px] -ml-1 px-1 text-slate-300"
-                aria-label="Indietro"
-              >
-                <ArrowLeft size={18} aria-hidden="true" />
-                <span className="text-sm font-semibold">Indietro</span>
-              </Link>
+                testId="acquisti-back"
+              />
               <h1 className="ds-page-title mt-1 flex items-center gap-2">
                 <ShoppingCart
                   size={22}

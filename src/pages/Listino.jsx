@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, BookOpen, Plus, Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { BookOpen, Plus, Star } from "lucide-react";
 
 import PageWrapper from "../components/PageWrapper";
+import PageBackLink from "../components/PageBackLink";
 import SearchInput from "../components/SearchInput";
-import { ROUTES } from "../app/routes";
 import RigaVoceCatalogo from "../features/listino/components/RigaVoceCatalogo";
 import VoceCatalogoSheet from "../features/listino/components/VoceCatalogoSheet";
 import { useListinoCatalogo } from "../features/listino/hooks/useListinoCatalogo";
@@ -86,15 +85,10 @@ export default function Listino() {
         <header className="pro-panel-strong px-4 py-4 mb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <Link
-                to={ROUTES.impostazioni}
+              <PageBackLink
                 className="inline-flex items-center gap-1.5 min-h-[44px] -ml-1 px-1 text-slate-300"
-                aria-label="Torna a Impostazioni"
-                data-testid="listino-link-impostazioni"
-              >
-                <ArrowLeft size={18} aria-hidden="true" />
-                <span className="text-sm font-semibold">Impostazioni</span>
-              </Link>
+                testId="listino-link-impostazioni"
+              />
               <p className="section-label mt-1">Catalogo cantiere</p>
               <h1 className="ds-page-title mt-1">Listino</h1>
               <p className="ds-text-secondary mt-2">
