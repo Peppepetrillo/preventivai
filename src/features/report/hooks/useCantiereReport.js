@@ -4,6 +4,7 @@ import { generaPdfReportCantiere } from "../../../services/cantiereReportPdfServ
 
 export function useCantiereReport(cantiere, datiAzienda) {
   const [blobUrl, setBlobUrl] = useState("");
+  const [pdfBlob, setPdfBlob] = useState(null);
   const [nomeFile, setNomeFile] = useState("");
   const [inElaborazione, setInElaborazione] = useState(false);
   const [anteprimaAperta, setAnteprimaAperta] = useState(false);
@@ -26,6 +27,7 @@ export function useCantiereReport(cantiere, datiAzienda) {
         });
         if (blobUrl) URL.revokeObjectURL(blobUrl);
         setBlobUrl(risultato.blobUrl);
+        setPdfBlob(risultato.blob || null);
         setNomeFile(risultato.nomeFile);
         if (apriAnteprima) setAnteprimaAperta(true);
         return risultato;
@@ -39,6 +41,7 @@ export function useCantiereReport(cantiere, datiAzienda) {
   return {
     pronto: Boolean(blobUrl),
     blobUrl,
+    pdfBlob,
     nomeFile,
     inElaborazione,
     anteprimaAperta,

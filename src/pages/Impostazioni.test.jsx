@@ -50,11 +50,15 @@ describe("Impostazioni UX-1", () => {
     nomeFileBackup.mockClear();
   });
 
-  it("link Cestino", () => {
+  it("link Dati azienda e Cestino", () => {
     render(
       <MemoryRouter>
         <Impostazioni />
       </MemoryRouter>
+    );
+    expect(screen.getByTestId("impostazioni-link-dati-azienda")).toHaveAttribute(
+      "href",
+      ROUTES.datiAzienda
     );
     const link = screen.getByTestId("impostazioni-link-cestino");
     expect(link).toHaveAttribute("href", ROUTES.cestino);

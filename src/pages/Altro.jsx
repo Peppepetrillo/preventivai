@@ -3,11 +3,13 @@ import {
   Calendar,
   ChevronRight,
   ClipboardList,
+  History,
   Package,
   Settings,
   ShoppingCart,
   Trash2,
   Users,
+  Wallet,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -28,6 +30,20 @@ const VOCI_HUB = [
     path: ROUTES.clienti,
     icon: Users,
     testId: "altro-link-clienti",
+  },
+  {
+    titolo: "Economia",
+    sottotitolo: "Entrate, uscite e saldo",
+    path: ROUTES.economia,
+    icon: Wallet,
+    testId: "altro-link-economia",
+  },
+  {
+    titolo: "Storico lavori",
+    sottotitolo: "Giornate, ore e conti reali",
+    path: ROUTES.storico,
+    icon: History,
+    testId: "altro-link-storico",
   },
   {
     titolo: "Da comprare",
@@ -81,7 +97,8 @@ export default function Altro() {
           <p className="section-label">Menu</p>
           <h1 className="ds-page-title mt-1">Altro</h1>
           <p className="ds-text-secondary mt-2">
-            Agenda, clienti, materiali e impostazioni dell&apos;app.
+            Agenda, economia, storico, clienti, materiali e impostazioni
+            dell&apos;app.
           </p>
         </div>
 

@@ -149,6 +149,39 @@ describe("pdfTemplateService", () => {
     expect(doc.note).toBe("Nota test");
   });
 
+  it("profilo con IBAN e fiscali mappati senza IBAN in header", () => {
+    const doc = buildPreventivoPdfDocument({
+      datiAzienda: {
+        nomeDitta: "Elettro Demo",
+        pec: "pec@demo.it",
+        codiceFiscale: "ABCDEF12G34H567I",
+        codiceSdi: "XXXXXXX",
+        iban: "IT60X0542811101000000123456",
+        intestatarioConto: "Elettro Demo",
+        banca: "Banca Demo",
+        condizioniPagamento: "Bonifico 30 gg",
+        notePdf: "Nota PDF",
+        testoFinale: "Grazie",
+      },
+    });
+    expect(doc.azienda.iban).toBe("IT60X0542811101000000123456");
+    expect(doc.azienda.condizioniPagamento).toBe("Bonifico 30 gg");
+    expect(doc.notePdf).toBe("Nota PDF");
+    expect(doc.testoFinale).toBe("Grazie");
+    expect(doc.azienda.lineeHeader.join(" ")).toContain("PEC pec@demo.it");
+    expect(doc.azienda.lineeHeader.join(" ")).not.toContain("IBAN");
+  });
+
+  it("profilo parziale: header senza etichette vuote", () => {
+    const doc = buildPreventivoPdfDocument({
+      datiAzienda: { nomeDitta: "Solo Nome", telefono: "333" },
+    });
+    const header = doc.azienda.lineeHeader.join(" | ");
+    expect(header).toContain("Tel. 333");
+    expect(header).not.toContain("PEC");
+    expect(header).not.toContain("P. IVA");
+  });
+
   it("voci senza prezzo listino → Prezzo non configurato (mai 0 inventato in label)", () => {
     const doc = buildPreventivoPdfDocument({
       datiAzienda: { nomeDitta: "Test" },
@@ -259,5 +292,48 @@ describe("pdfTemplateService", () => {
       { salva: true }
     );
     expect(save).toHaveBeenCalled();
+  });
+
+  it("PDF generabile senza profilo e con IBAN", async () => {
+    const senza = await generaPreventivoPdfDaInput(
+      {
+        cliente: "Rossi",
+        preventivo: { numero: "PREV-EMPTY" },
+        lavorazioni: [{ nome: "A", quantita: 1, prezzo: 10, unita: "cad" }],
+        totali: {
+          subtotale: 10,
+          importoSconto: 0,
+          imponibile: 10,
+          importoIva: 2.2,
+          totale: 12.2,
+        },
+      },
+      { salva: false }
+    );
+    expect(senza.pagine).toBeGreaterThanOrEqual(1);
+    expect(senza.document.azienda.nome).toBe("PreventivAI");
+
+    const conIban = await generaPreventivoPdfDaInput(
+      {
+        datiAzienda: {
+          nomeDitta: "Con IBAN",
+          iban: "IT60X0542811101000000123456",
+          condizioniPagamento: "30 gg",
+        },
+        cliente: "Rossi",
+        preventivo: { numero: "PREV-IBAN" },
+        lavorazioni: [{ nome: "A", quantita: 1, prezzo: 10, unita: "cad" }],
+        totali: {
+          subtotale: 10,
+          importoSconto: 0,
+          imponibile: 10,
+          importoIva: 2.2,
+          totale: 12.2,
+        },
+      },
+      { salva: false }
+    );
+    expect(conIban.document.azienda.iban).toContain("IT60");
+    expect(conIban.pagine).toBeGreaterThanOrEqual(1);
   });
 });

@@ -12,6 +12,7 @@ export default function CantiereReportPanel({ cantiere }) {
   const {
     pronto,
     blobUrl,
+    pdfBlob,
     nomeFile,
     inElaborazione,
     anteprimaAperta,
@@ -70,7 +71,7 @@ export default function CantiereReportPanel({ cantiere }) {
           <button
             type="button"
             onClick={() =>
-              condividiDaBlobUrl(blobUrl, nomeFile, "Report cantiere")
+              condividiDaBlobUrl(blobUrl, nomeFile, "Report cantiere", pdfBlob)
             }
             disabled={inElaborazione}
             className="btn-secondary min-h-[48px] flex items-center justify-center gap-2 font-black"
@@ -90,7 +91,9 @@ export default function CantiereReportPanel({ cantiere }) {
         onChiudi={() => setAnteprimaAperta(false)}
         onRigenera={() => genera({ apriAnteprima: true })}
         onScarica={() => scaricaDaBlobUrl(blobUrl, nomeFile)}
-        onCondividi={() => condividiDaBlobUrl(blobUrl, nomeFile, "Report cantiere")}
+        onCondividi={() =>
+          condividiDaBlobUrl(blobUrl, nomeFile, "Report cantiere", pdfBlob)
+        }
       />
     </div>
   );

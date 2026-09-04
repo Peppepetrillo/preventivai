@@ -23,6 +23,36 @@ import {
   leggiTotaleIncassato,
   leggiTotaleCantiereEconomico,
 } from "../../cantieri/services/pagamentiCantiereService";
+import {
+  calcolaMargineLordo,
+  calcolaTotaleSpeseCantiere,
+  calcolaTotaleSpesePerCategoria,
+  ETICHETTE_CATEGORIA_SPESA,
+  ETICHETTE_METODO_PAGAMENTO_SPESA,
+  ETICHETTE_STATO_REDDITIVITA,
+  ETICHETTE_STATO_CONTROLLO_ECONOMICO,
+  analizzaControlloGestionaleCantiere,
+  etichettaGiornataSpesa,
+  formattaAlertGestionaleMateriali,
+  formattaMessaggioScostamentoMateriali,
+  formattaPercentualeMargine,
+  leggiSpese,
+} from "../../cantieri/services/speseCantiereService";
+
+function parseDataSpesaPdf(data) {
+  const m = String(data || "").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return 0;
+  return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])).getTime();
+}
+
+function ordinaSpesePerDataCrescente(spese = []) {
+  return [...spese].sort((a, b) => {
+    const ta = parseDataSpesaPdf(a?.data);
+    const tb = parseDataSpesaPdf(b?.data);
+    if (ta !== tb) return ta - tb;
+    return String(a?.id || "").localeCompare(String(b?.id || ""));
+  });
+}
 
 function valoreIncassato(cantiere = {}) {
   return leggiTotaleIncassato(cantiere);
@@ -95,6 +125,11 @@ export function buildCantiereReport({
   const incassato = valoreIncassato(cantiere);
   const rimanenza = calcolaRimanenzaCantiere(cantiere, totaleEconomico);
   const elencoPagamenti = leggiPagamenti(cantiere);
+  const speseRegistrate = ordinaSpesePerDataCrescente(leggiSpese(cantiere));
+  const totaleSpese = calcolaTotaleSpeseCantiere(cantiere);
+  const margineLordo = calcolaMargineLordo(cantiere);
+  const spesePerCategoria = calcolaTotaleSpesePerCategoria(cantiere);
+  const controllo = analizzaControlloGestionaleCantiere(cantiere);
   const varianti = cantiere?.id ? ottieniVarianti(cantiere.id, cantiere) : [];
   const variantiApprovate = varianti.filter(
     (variante) =>
@@ -202,6 +237,167 @@ export function buildCantiereReport({
         metodo: p.metodo,
         note: p.note || "",
       })),
+    },
+    riepilogoEconomico: {
+      totaleCantiere: totaleEconomico,
+      totaleCantiereLabel: formatEuro(totaleEconomico),
+      incassato,
+      incassatoLabel: formatEuro(incassato),
+      rimanenza,
+      rimanenzaLabel: formatEuro(rimanenza),
+      totaleSpese,
+      totaleSpeseLabel: formatEuro(totaleSpese),
+      margineLordo,
+      margineLordoLabel: formatEuro(margineLordo),
+      percentualeMargine: controllo.percentualeMargine,
+      percentualeMargineLabel:
+        formattaPercentualeMargine(controllo.percentualeMargine) ||
+        "Non disponibile",
+      percentualeSpeseSuIncassato: controllo.percentualeSpeseSuIncassato,
+      percentualeSpeseSuIncassatoLabel:
+        formattaPercentualeMargine(controllo.percentualeSpeseSuIncassato) ||
+        "Non disponibile",
+    },
+    controlloEconomico: {
+      statoRedditivita: controllo.statoRedditivita,
+      statoRedditivitaLabel:
+        ETICHETTE_STATO_REDDITIVITA[controllo.statoRedditivita] ||
+        "Dati insufficienti",
+      statoControlloEconomico: controllo.statoControlloEconomico,
+      statoControlloLabel:
+        ETICHETTE_STATO_CONTROLLO_ECONOMICO[controllo.statoControlloEconomico] ||
+        "Dati insufficienti",
+      percentualeMargine: controllo.percentualeMargine,
+      percentualeMargineLabel:
+        formattaPercentualeMargine(controllo.percentualeMargine) ||
+        "Non disponibile",
+      percentualeSpeseSuIncassato: controllo.percentualeSpeseSuIncassato,
+      percentualeSpeseSuIncassatoLabel:
+        formattaPercentualeMargine(controllo.percentualeSpeseSuIncassato) ||
+        "Non disponibile",
+      margineLordo: controllo.margineLordo,
+      margineLordoLabel: formatEuro(controllo.margineLordo),
+      incassato: controllo.incassato,
+      incassatoLabel: formatEuro(controllo.incassato),
+      totaleSpese: controllo.totaleSpese,
+      totaleSpeseLabel: formatEuro(controllo.totaleSpese),
+      materialiPrevisto: controllo.materiali.totalePrevisto,
+      materialiPrevistoLabel: controllo.materiali.haPrevisto
+        ? formatEuro(controllo.materiali.totalePrevisto)
+        : "Non disponibile",
+      materialiReale: controllo.materiali.totaleReale,
+      materialiRealeLabel: controllo.materiali.haReale
+        ? formatEuro(controllo.materiali.totaleReale)
+        : "Non registrato",
+      scostamentoMateriali: controllo.scostamentoMateriali,
+      scostamentoMaterialiLabel:
+        controllo.scostamentoMateriali == null
+          ? "Non calcolabile"
+          : formatEuro(controllo.scostamentoMateriali),
+      messaggioScostamentoMateriali: formattaMessaggioScostamentoMateriali(
+        controllo.materiali
+      ),
+    },
+    controlloGestionale: {
+      stato: controllo.stato,
+      statoLabel: controllo.statoLabel,
+      percentualeIncasso: controllo.percentualeIncasso,
+      percentualeIncassoLabel:
+        formattaPercentualeMargine(controllo.percentualeIncasso) ||
+        "Percentuale incasso non disponibile",
+      incidenzaSpese: controllo.incidenzaSpese,
+      incidenzaSpeseLabel:
+        formattaPercentualeMargine(controllo.incidenzaSpese) ||
+        "Non disponibile",
+      margineLordo: controllo.margineLordo,
+      margineLordoLabel: formatEuro(controllo.margineLordo),
+      percentualeMargine: controllo.percentualeMargine,
+      percentualeMargineLabel:
+        formattaPercentualeMargine(controllo.percentualeMargine) ||
+        "Non disponibile",
+      segnali: controllo.segnali.map((s) => ({
+        tipo: s.tipo,
+        livello: s.livello,
+        messaggio: s.messaggio,
+      })),
+      daTenereDocchio: controllo.daTenereDocchio.map((s) => s.messaggio),
+      haCriticità: controllo.haCriticità,
+      messaggioCriticità: controllo.haCriticità
+        ? controllo.daTenereDocchio.map((s) => s.messaggio).join(" · ")
+        : "Non risultano criticità economiche.",
+      costiPrincipali: controllo.costiPrincipali.map((voce) => ({
+        categoria: voce.categoria,
+        etichetta: voce.etichetta,
+        importo: voce.importo,
+        importoLabel: formatEuro(voce.importo),
+        percentualeLabel:
+          formattaPercentualeMargine(voce.percentualeSuTotaleSpese) ||
+          "Non disponibile",
+      })),
+      materiali: {
+        previstoLabel: controllo.materiali.haPrevisto
+          ? formatEuro(controllo.materiali.totalePrevisto)
+          : "Non disponibile",
+        realeLabel: controllo.materiali.haReale
+          ? formatEuro(controllo.materiali.totaleReale)
+          : "Non registrato",
+        scostamentoLabel:
+          controllo.scostamentoMateriali == null
+            ? "Non calcolabile"
+            : formatEuro(controllo.scostamentoMateriali),
+        alert: formattaAlertGestionaleMateriali(controllo.materiali),
+      },
+    },
+    redditivita: {
+      statoRedditivita: controllo.statoRedditivita,
+      statoLabel:
+        ETICHETTE_STATO_REDDITIVITA[controllo.statoRedditivita] ||
+        "Dati insufficienti",
+      percentualeMargine: controllo.percentualeMargine,
+      percentualeMargineLabel:
+        formattaPercentualeMargine(controllo.percentualeMargine) ||
+        "Non disponibile",
+      margineLordo: controllo.margineLordo,
+      margineLordoLabel: formatEuro(controllo.margineLordo),
+      incassato: controllo.incassato,
+      incassatoLabel: formatEuro(controllo.incassato),
+      totaleSpese: controllo.totaleSpese,
+      totaleSpeseLabel: formatEuro(controllo.totaleSpese),
+    },
+    spese: {
+      elenco: speseRegistrate.map((spesa) => ({
+        id: spesa.id,
+        data: spesa.data,
+        descrizione: spesa.descrizione,
+        categoria: spesa.categoria,
+        categoriaLabel:
+          ETICHETTE_CATEGORIA_SPESA[spesa.categoria] || spesa.categoria,
+        fornitore: spesa.fornitore || "",
+        metodoPagamento: spesa.metodoPagamento || "",
+        metodoLabel:
+          ETICHETTE_METODO_PAGAMENTO_SPESA[spesa.metodoPagamento] ||
+          spesa.metodoPagamento ||
+          "",
+        importo: spesa.importo,
+        importoLabel: formatEuro(spesa.importo),
+        giornataId: spesa.giornataId || "",
+        giornataLabel: spesa.giornataId
+          ? etichettaGiornataSpesa(cantiere, spesa.giornataId)
+          : "",
+        note: spesa.note || "",
+      })),
+      totale: totaleSpese,
+      totaleLabel: formatEuro(totaleSpese),
+      perCategoria: Object.entries(spesePerCategoria)
+        .filter(([, importo]) => importo > 0)
+        .sort((a, b) => b[1] - a[1])
+        .map(([categoria, importo]) => ({
+          categoria,
+          etichetta: ETICHETTE_CATEGORIA_SPESA[categoria] || categoria,
+          importo,
+          importoLabel: formatEuro(importo),
+        })),
+      vuoto: speseRegistrate.length === 0,
     },
     note: diretto && descrizioneIntervento
       ? [descrizioneIntervento, ...note]

@@ -497,3 +497,139 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
     );
   });
 });
+
+describe("CantiereOverview UX-Azioni intelligenti v8", () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    window.location.hash = "";
+    sessionStorage.clear();
+  });
+
+  const cantiereGestionale = {
+    id: 1,
+    nome: "Cantiere gestionale",
+    cliente: "Mario Rossi",
+    indirizzo: "Via Roma 1",
+    telefono: "3331112222",
+    stato: "In corso",
+    dataCreazione: "21/07/2026",
+    foto: [],
+    origine: "diretto",
+    totaleLavoro: 10000,
+    materiali: [
+      {
+        id: "m1",
+        nome: "Piastrelle",
+        quantita: 10,
+        unita: "mq",
+        prezzoUnitario: 200,
+        acquistato: true,
+      },
+    ],
+    checklist: [],
+    note: "",
+    lavorazioniOrigine: [],
+    pagamenti: [{ id: "p1", data: "01/09/2026", importo: 1000, tipo: "acconto" }],
+    spese: [
+      {
+        id: "s1",
+        data: "02/09/2026",
+        importo: 2500,
+        descrizione: "Materiali",
+        categoria: "materiali",
+        materialeId: "m1",
+      },
+    ],
+  };
+
+  function renderGestionale(extra = {}) {
+    return render(
+      <MemoryRouter>
+        <CantiereOverview
+          cantiere={{ ...cantiereGestionale, ...extra }}
+          onIniziaLavoro={vi.fn()}
+          onCompletaLavoro={vi.fn()}
+          onAggiornaCampo={vi.fn()}
+          nuovaChecklist=""
+          nuovoMateriale={{ nome: "", quantita: "", unita: "cad" }}
+        />
+      </MemoryRouter>
+    );
+  }
+
+  it("17. CTA vedi spese — tab Economico e scroll sezione spese", async () => {
+    renderGestionale();
+
+    fireEvent.click(tab("Pagamenti"));
+    fireEvent.click(screen.getByTestId("gestionale-azione-vedi_spese"));
+
+    await waitFor(() => {
+      expect(tab("Pagamenti")).toHaveAttribute("aria-selected", "true");
+      expect(document.getElementById("sezione-spese")).toBeInTheDocument();
+      expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+    });
+  });
+
+  it("18. CTA vedi materiali — tab Operativo e scroll materiale", async () => {
+    renderGestionale({
+      pagamenti: [{ id: "p1", data: "01/09/2026", importo: 7000, tipo: "acconto" }],
+      spese: [
+        {
+          id: "s1",
+          data: "02/09/2026",
+          importo: 2300,
+          descrizione: "Piastrelle",
+          categoria: "materiali",
+          materialeId: "m1",
+        },
+      ],
+    });
+
+    fireEvent.click(tab("Pagamenti"));
+    fireEvent.click(screen.getByTestId("gestionale-azione-vedi_materiali"));
+
+    await waitFor(() => {
+      expect(tab("Lavoro")).toHaveAttribute("aria-selected", "true");
+      expect(
+        screen.getByTestId("cantiere-materiale-costi-m1")
+      ).toBeInTheDocument();
+      expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+    });
+  });
+
+  it("19. CTA registra spesa — apre SpesaSheet", async () => {
+    renderGestionale({
+      pagamenti: [{ id: "p1", data: "01/09/2026", importo: 7000, tipo: "acconto" }],
+      spese: [],
+    });
+
+    fireEvent.click(tab("Pagamenti"));
+    fireEvent.click(screen.getByTestId("gestionale-azione-registra_spesa"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("spesa-sheet")).toBeInTheDocument();
+    });
+  });
+
+  it("20. CTA registra incasso — apre PagamentoSheet", async () => {
+    renderGestionale({
+      pagamenti: [],
+      spese: [
+        {
+          id: "s1",
+          data: "02/09/2026",
+          importo: 500,
+          descrizione: "Materiali",
+          categoria: "materiali",
+        },
+      ],
+    });
+
+    fireEvent.click(tab("Pagamenti"));
+    fireEvent.click(screen.getByTestId("gestionale-azione-registra_incasso"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("pagamento-sheet")).toBeInTheDocument();
+    });
+  });
+});

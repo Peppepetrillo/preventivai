@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -108,6 +108,41 @@ describe("SpeseSection UX-Spese v1", () => {
     expect(screen.getByTestId("spesa-sheet")).toBeInTheDocument();
   });
 
+  it("registraSpesaTrigger apre SpesaSheet una sola volta", () => {
+    const { rerender } = render(
+      <SpeseSection
+        cantiere={cantiere}
+        onAggiungi={vi.fn()}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraSpesaTrigger={0}
+      />
+    );
+    expect(screen.queryByTestId("spesa-sheet")).not.toBeInTheDocument();
+
+    rerender(
+      <SpeseSection
+        cantiere={cantiere}
+        onAggiungi={vi.fn()}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraSpesaTrigger={1}
+      />
+    );
+    expect(screen.getByTestId("spesa-sheet")).toBeInTheDocument();
+
+    rerender(
+      <SpeseSection
+        cantiere={cantiere}
+        onAggiungi={vi.fn()}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraSpesaTrigger={1}
+      />
+    );
+    expect(screen.getAllByTestId("spesa-sheet")).toHaveLength(1);
+  });
+
   it("mostra etichetta giornata se associata", () => {
     let c = aggiungiGiornataProgrammata(cantiere, {
       data: "05/09/2026",
@@ -138,5 +173,81 @@ describe("SpeseSection UX-Spese v1", () => {
     expect(screen.getByTestId("spesa-giornata-label-s1")).toHaveTextContent(
       "05/09/2026"
     );
+  });
+
+  it("V16-A: trigger con prefill apre SpesaSheet con importo", () => {
+    const { rerender } = render(
+      <SpeseSection
+        cantiere={cantiere}
+        onAggiungi={vi.fn()}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraSpesaTrigger={0}
+      />
+    );
+
+    rerender(
+      <SpeseSection
+        cantiere={cantiere}
+        onAggiungi={vi.fn()}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraSpesaTrigger={1}
+        registraSpesaPrefill={{ importo: 500 }}
+        registraSpesaOrigine="assistente-economico"
+      />
+    );
+
+    expect(screen.getByTestId("spesa-sheet")).toBeInTheDocument();
+    expect(screen.getByTestId("spesa-importo")).toHaveValue("500");
+  });
+
+  it("V16-A: apertura normale non precompila importo", async () => {
+    const user = userEvent.setup();
+    render(
+      <SpeseSection
+        cantiere={cantiere}
+        onAggiungi={vi.fn()}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+      />
+    );
+    await user.click(screen.getByTestId("spesa-aggiungi"));
+    expect(screen.getByTestId("spesa-importo")).toHaveValue("");
+  });
+
+  it("V16-B: salvataggio da assistente non scrolla alla lista spese", () => {
+    const scrollSpy = vi.fn();
+    Element.prototype.scrollIntoView = scrollSpy;
+    const onAggiungi = vi.fn();
+
+    const { rerender } = render(
+      <SpeseSection
+        cantiere={cantiere}
+        onAggiungi={onAggiungi}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraSpesaTrigger={0}
+      />
+    );
+    rerender(
+      <SpeseSection
+        cantiere={cantiere}
+        onAggiungi={onAggiungi}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraSpesaTrigger={1}
+        registraSpesaPrefill={{ importo: 500 }}
+        registraSpesaOrigine="assistente-economico"
+      />
+    );
+
+    fireEvent.change(screen.getByTestId("spesa-descrizione"), {
+      target: { value: "Test spesa" },
+    });
+    fireEvent.click(screen.getByTestId("spesa-salva"));
+
+    expect(onAggiungi).toHaveBeenCalled();
+    expect(scrollSpy).not.toHaveBeenCalled();
   });
 });

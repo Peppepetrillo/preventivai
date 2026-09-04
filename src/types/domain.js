@@ -132,6 +132,8 @@
  * @property {"contanti"|"carta"|"bonifico"|"altro"|string=} metodoPagamento
  * @property {string=} note
  * @property {string=} giornataId
+ * @property {string=} materialeId Riferimento opzionale al materiale cantiere (UX-Spese v2)
+ * @property {string=} listaSpesaId Riferimento opzionale alla voce lista acquisti (UX-Spese v2)
  * @property {string=} createdAt
  * @property {string=} updatedAt
  */

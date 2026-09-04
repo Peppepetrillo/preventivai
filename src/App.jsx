@@ -37,6 +37,7 @@ const DistintaMaterialiEditor = lazy(() => import("./pages/DistintaMaterialiEdit
 const Acquisti = lazy(() => import("./pages/Acquisti"));
 const Sopralluogo = lazy(() => import("./pages/Sopralluogo"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
+const DatiAzienda = lazy(() => import("./pages/DatiAzienda"));
 const Cestino = lazy(() => import("./pages/Cestino"));
 const DettaglioPreventivo = lazy(() => import("./pages/DettaglioPreventivo"));
 const DettaglioCliente = lazy(() => import("./pages/DettaglioCliente"));
@@ -44,6 +45,8 @@ const ScelgaModalitaPreventivo = lazy(() => import("./pages/ScelgaModalitaPreven
 const PreventivoManuale = lazy(() => import("./pages/PreventivoManuale"));
 const Agenda = lazy(() => import("./pages/Agenda"));
 const Altro = lazy(() => import("./pages/Altro"));
+const Economia = lazy(() => import("./pages/Economia"));
+const Storico = lazy(() => import("./pages/Storico"));
 
 function LoadingPage() {
   return (
@@ -158,10 +161,25 @@ function AppShell() {
               />
 
               <Route
+                path={ROUTES.economia}
+                element={<Economia />}
+              />
+
+              <Route
+                path={ROUTES.storico}
+                element={<Storico />}
+              />
+
+              <Route
                 path={ROUTES.impostazioni}
                 element={
                   <Impostazioni />
                 }
+              />
+
+              <Route
+                path={ROUTES.datiAzienda}
+                element={<DatiAzienda />}
               />
 
               <Route

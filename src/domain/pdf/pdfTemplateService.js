@@ -7,6 +7,11 @@ import jsPDF from "jspdf";
 
 import { calcolaSaldo, formatEuro, normalizzaNumero } from "../../utils/preventivi";
 import { oggettoPdfTipologia } from "../../features/preventivi/tipologiaImpiantoUtils";
+import {
+  haDatiPagamentoAzienda,
+  lineeHeaderAziendaPdf,
+  risolviAziendaPerPdf,
+} from "../../features/azienda/aziendaService";
 import { isPiattaformaNativa } from "../../utils/nativeExport";
 import {
   applicaFont,
@@ -47,6 +52,7 @@ export function buildPreventivoPdfDocument(input = {}) {
   });
 
   const aziendaSrc = input.azienda || input.datiAzienda || {};
+  const aziendaPdf = risolviAziendaPerPdf(aziendaSrc);
   const clienteSrc =
     typeof input.cliente === "object" && input.cliente
       ? input.cliente
@@ -78,15 +84,20 @@ export function buildPreventivoPdfDocument(input = {}) {
     }
   );
 
+  const lineeHeader = lineeHeaderAziendaPdf(aziendaPdf);
+  const headerAltezza = Math.min(
+    58,
+    Math.max(settings.headerAltezza, 28 + lineeHeader.length * 4.2)
+  );
+
   return creaPreventivoPdfDocument({
-    settings,
+    settings: {
+      ...settings,
+      headerAltezza,
+    },
     azienda: {
-      nome: aziendaSrc.nome || aziendaSrc.nomeDitta || "PreventivAI",
-      indirizzo: aziendaSrc.indirizzo || "",
-      telefono: aziendaSrc.telefono || "",
-      email: aziendaSrc.email || "",
-      partitaIva: aziendaSrc.partitaIva || aziendaSrc.pIva || "",
-      logo: settings.logo || aziendaSrc.logo || null,
+      ...aziendaPdf,
+      lineeHeader,
     },
     cliente: {
       nome: clienteSrc.nome || clienteSrc.ragioneSociale || "",
@@ -124,10 +135,11 @@ export function buildPreventivoPdfDocument(input = {}) {
     },
     condizioni:
       input.condizioni ||
-      aziendaSrc.condizioniGenerali ||
-      aziendaSrc.condizioni ||
+      aziendaPdf.condizioniGenerali ||
       "",
     note: input.note || preventivo.note || "",
+    notePdf: input.notePdf || aziendaPdf.notePdf || "",
+    testoFinale: input.testoFinale || aziendaPdf.testoFinale || "",
     firme: input.firme,
     meta: {
       appName: "PreventivAI",
@@ -160,9 +172,14 @@ function disegnaHeaderPrincipale(doc, document) {
   const { settings, azienda, intestazione } = document;
   const area = areaUtile(settings);
   const y0 = 10;
+  const linee =
+    Array.isArray(azienda.lineeHeader) && azienda.lineeHeader.length
+      ? azienda.lineeHeader
+      : lineeHeaderAziendaPdf(azienda);
+  const headerH = Math.min(58, Math.max(settings.headerAltezza || 42, 28 + linee.length * 4.2));
 
   setFill(doc, settings.coloreSecondario);
-  doc.rect(0, 0, 210, settings.headerAltezza, "F");
+  doc.rect(0, 0, 210, headerH, "F");
 
   disegnaLogo(doc, settings, azienda, area.x, y0 + 4, 22);
 
@@ -174,15 +191,8 @@ function disegnaHeaderPrincipale(doc, document) {
   applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
   setText(doc, [220, 224, 230]);
   let yInfo = y0 + 17;
-  const info = [
-    azienda.indirizzo,
-    [azienda.telefono && `Tel. ${azienda.telefono}`, azienda.email]
-      .filter(Boolean)
-      .join(" · "),
-    azienda.partitaIva && `P. IVA ${azienda.partitaIva}`,
-  ].filter(Boolean);
 
-  info.forEach((linea) => {
+  linee.forEach((linea) => {
     doc.text(String(linea), textX, yInfo, { maxWidth: 110 });
     yInfo += 4;
   });
@@ -198,7 +208,39 @@ function disegnaHeaderPrincipale(doc, document) {
     });
   }
 
-  return settings.headerAltezza + 6;
+  return headerH + 6;
+}
+
+/**
+ * Blocco dati bancari — solo campi compilati, nessun label vuoto.
+ * @returns {number} y successivo
+ */
+function disegnaDatiPagamentoAzienda(doc, document, yStart) {
+  const { settings, azienda } = document;
+  if (!haDatiPagamentoAzienda(azienda)) return yStart;
+
+  const area = areaUtile(settings);
+  const righe = [];
+  if (azienda.intestatarioConto) {
+    righe.push(`Intestatario: ${azienda.intestatarioConto}`);
+  }
+  if (azienda.banca) righe.push(`Banca: ${azienda.banca}`);
+  if (azienda.iban) righe.push(`IBAN: ${azienda.iban}`);
+  if (azienda.bicSwift) righe.push(`BIC/SWIFT: ${azienda.bicSwift}`);
+  if (azienda.condizioniPagamento) {
+    righe.push(`Condizioni di pagamento: ${azienda.condizioniPagamento}`);
+  }
+  if (!righe.length) return yStart;
+
+  const testo = righe.join("\n");
+  const hStima = stimaAltezzaTesto(doc, testo, area.width - 8, 4.2) + 16;
+  let y = assicuratiSpazio(doc, settings, yStart, Math.min(hStima, 48), (d) =>
+    disegnaHeaderContinuo(d, document)
+  );
+  y = sezioneTitolo(doc, settings, "Dati per il pagamento", y);
+  setText(doc, settings.coloreTesto);
+  applicaFont(doc, settings, "normal", settings.fontSizeBase);
+  return testoMultilinea(doc, testo, area.x, y, area.width, 4.2) + 6;
 }
 
 function disegnaHeaderContinuo(doc, document) {
@@ -600,8 +642,11 @@ export async function renderPreventivoPdf(document, opzioni = {}) {
   y = bloccoClienteIntestazione(doc, document, y);
   y = disegnaLavorazioni(doc, document, y);
   y = disegnaRiepilogoEAcconto(doc, document, y);
+  y = disegnaDatiPagamentoAzienda(doc, document, y);
   y = disegnaTestoSezione(doc, document, "Condizioni", document.condizioni, y);
   y = disegnaTestoSezione(doc, document, "Note", document.note, y);
+  y = disegnaTestoSezione(doc, document, "Note documento", document.notePdf, y);
+  y = disegnaTestoSezione(doc, document, "Note finali", document.testoFinale, y);
   disegnaFirme(doc, document, y);
 
   disegnaFooterSuPagine(doc, document);

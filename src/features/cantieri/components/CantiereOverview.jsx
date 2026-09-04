@@ -34,11 +34,22 @@ import CantiereSegmentBar from "./CantiereSegmentBar";
 import CantiereVarianti from "./CantiereVarianti";
 import DescrizioneInterventoSection from "./DescrizioneInterventoSection";
 import PagamentiSection from "./PagamentiSection";
+import SpesaSheet from "./SpesaSheet";
 import SpeseSection from "./SpeseSection";
 import RiepilogoEconomicoSection from "./RiepilogoEconomicoSection";
 import GiornateSection from "./GiornateSection";
 import { CANTIERE_TAB, tabDaSezioneId } from "./cantiereTabs";
 import { riepilogoEconomicoCantiere } from "../services/pagamentiCantiereService";
+import {
+  ORIGINE_AZIONE_GESTIONALE,
+  prefillSpesaDaMateriale,
+  TIPO_AZIONE_GESTIONALE,
+  trovaSpesaPrincipalePerMateriale,
+} from "../services/speseCantiereService";
+import {
+  leggiListaSpesa,
+  trovaVoceListaCollegata,
+} from "../../../domain/listaSpesa";
 import {
   chiudiPostConversioneCantiere,
   leggiPostConversioneCantiere,
@@ -125,6 +136,21 @@ export default function CantiereOverview({
   const [bannerPostConversione, setBannerPostConversione] = useState(() =>
     leggiPostConversioneCantiere(cantiere?.id)
   );
+  const [spesaMaterialeSheet, setSpesaMaterialeSheet] = useState({
+    open: false,
+    materiale: null,
+    spesa: null,
+    prefill: null,
+    forzaNuova: false,
+  });
+  const [triggerRegistraSpesa, setTriggerRegistraSpesa] = useState(0);
+  const [triggerRegistraIncasso, setTriggerRegistraIncasso] = useState(0);
+  const [prefillRegistraSpesa, setPrefillRegistraSpesa] = useState(null);
+  const [origineRegistraSpesa, setOrigineRegistraSpesa] = useState(null);
+  const [importoRegistraIncasso, setImportoRegistraIncasso] = useState(null);
+  const [origineRegistraIncasso, setOrigineRegistraIncasso] = useState(null);
+  const [operazioneRegistrata, setOperazioneRegistrata] = useState(null);
+  const [operazioneRegistrataTick, setOperazioneRegistrataTick] = useState(0);
   const [preventivi] = useDatiLocaliSincronizzati(leggiPreventivi);
   const sezioneModifica = useRef(null);
   const sezioneChecklist = useRef(null);
@@ -138,6 +164,99 @@ export default function CantiereOverview({
   const chiudiFotoViewer = useCallback(() => {
     setFotoViewer(null);
   }, []);
+
+  const chiudiSpesaMaterialeSheet = useCallback(() => {
+    setSpesaMaterialeSheet({
+      open: false,
+      materiale: null,
+      spesa: null,
+      prefill: null,
+      forzaNuova: false,
+    });
+  }, []);
+
+  const apriRegistraSpesaDaMateriale = useCallback(
+    (materiale, { forzaNuova = false } = {}) => {
+      const elenco = leggiListaSpesa();
+      const voceLista = trovaVoceListaCollegata(elenco, materiale, cantiere.id, {
+        includiAcquistate: true,
+      });
+      const spesaEsistente = forzaNuova
+        ? null
+        : trovaSpesaPrincipalePerMateriale(cantiere, materiale.id);
+      setSpesaMaterialeSheet({
+        open: true,
+        materiale,
+        spesa: spesaEsistente,
+        forzaNuova,
+        prefill: spesaEsistente
+          ? null
+          : prefillSpesaDaMateriale(materiale, voceLista),
+      });
+    },
+    [cantiere]
+  );
+
+  const modificaSpesaMateriale = useCallback((materiale, spesa) => {
+    setSpesaMaterialeSheet({
+      open: true,
+      materiale,
+      spesa,
+      prefill: null,
+      forzaNuova: false,
+    });
+  }, []);
+
+  const notificaOperazioneEconomica = useCallback((tipo, payload = {}) => {
+    setOperazioneRegistrata({
+      tipo,
+      importo: payload?.importo,
+      at: Date.now(),
+    });
+    setOperazioneRegistrataTick((n) => n + 1);
+  }, []);
+
+  const gestisciAggiungiSpesa = useCallback(
+    (payload) => {
+      onAggiungiSpesa?.(payload);
+      notificaOperazioneEconomica("spesa", payload);
+    },
+    [onAggiungiSpesa, notificaOperazioneEconomica]
+  );
+
+  const gestisciAggiungiPagamento = useCallback(
+    (payload) => {
+      onAggiungiPagamento?.(payload);
+      notificaOperazioneEconomica("incasso", payload);
+    },
+    [onAggiungiPagamento, notificaOperazioneEconomica]
+  );
+
+  const gestisciSalvaSpesaMateriale = useCallback(
+    (payload) => {
+      const materialeId = String(
+        payload.materialeId || spesaMaterialeSheet.materiale?.id || ""
+      ).trim();
+      const listaSpesaId = String(payload.listaSpesaId || "").trim();
+      const dati = {
+        ...payload,
+        ...(materialeId ? { materialeId } : {}),
+        ...(listaSpesaId ? { listaSpesaId } : {}),
+      };
+      if (spesaMaterialeSheet.spesa?.id) {
+        onAggiornaSpesa?.(spesaMaterialeSheet.spesa.id, dati);
+      } else {
+        gestisciAggiungiSpesa(dati);
+      }
+      chiudiSpesaMaterialeSheet();
+    },
+    [
+      spesaMaterialeSheet,
+      gestisciAggiungiSpesa,
+      onAggiornaSpesa,
+      chiudiSpesaMaterialeSheet,
+    ]
+  );
 
   const gestisciApriFoto = useCallback(async (foto) => {
     const titolo = foto?.nome || "Foto cantiere";
@@ -315,7 +434,80 @@ export default function CantiereOverview({
     attivaTabEScorri(CANTIERE_TAB.OPERATIVO, () => {
       scorriA(sezioneMateriali.current);
     });
+  }, [attivaTabEScorri, sezioneMateriali]);
+
+  const apriSezioneSpese = useCallback(() => {
+    attivaTabEScorri(CANTIERE_TAB.ECONOMICO, () => {
+      scorriA(document.getElementById("sezione-spese"));
+    });
   }, [attivaTabEScorri]);
+
+  const gestisciAzioneGestionale = useCallback(
+    (azione) => {
+      if (!azione?.disponibile) return;
+
+      switch (azione.tipo) {
+        case TIPO_AZIONE_GESTIONALE.vedi_spese:
+          apriSezioneSpese();
+          break;
+        case TIPO_AZIONE_GESTIONALE.vedi_materiali: {
+          const materialeId = String(azione.contesto?.materialeId || "").trim();
+          attivaTabEScorri(CANTIERE_TAB.OPERATIVO, () => {
+            scorriA(sezioneMateriali.current);
+            if (materialeId) {
+              scorriDopoRender(() => {
+                scorriA(
+                  document.querySelector(
+                    `[data-testid="cantiere-materiale-costi-${materialeId}"]`
+                  )
+                );
+              });
+            }
+          });
+          break;
+        }
+        case TIPO_AZIONE_GESTIONALE.registra_spesa: {
+          const daAssistente =
+            azione.contesto?.origine ===
+            ORIGINE_AZIONE_GESTIONALE.assistente_economico;
+          const importoPrefill = Number(azione.contesto?.importo);
+          attivaTabEScorri(CANTIERE_TAB.ECONOMICO, () => {
+            setPrefillRegistraSpesa(
+              daAssistente && Number.isFinite(importoPrefill) && importoPrefill > 0
+                ? { importo: importoPrefill }
+                : null
+            );
+            setOrigineRegistraSpesa(
+              daAssistente ? ORIGINE_AZIONE_GESTIONALE.assistente_economico : null
+            );
+            setTriggerRegistraSpesa((n) => n + 1);
+          });
+          break;
+        }
+        case TIPO_AZIONE_GESTIONALE.registra_incasso: {
+          const daAssistente =
+            azione.contesto?.origine ===
+            ORIGINE_AZIONE_GESTIONALE.assistente_economico;
+          const importoPrefill = Number(azione.contesto?.importo);
+          attivaTabEScorri(CANTIERE_TAB.ECONOMICO, () => {
+            setImportoRegistraIncasso(
+              daAssistente && Number.isFinite(importoPrefill) && importoPrefill > 0
+                ? importoPrefill
+                : null
+            );
+            setOrigineRegistraIncasso(
+              daAssistente ? ORIGINE_AZIONE_GESTIONALE.assistente_economico : null
+            );
+            setTriggerRegistraIncasso((n) => n + 1);
+          });
+          break;
+        }
+        default:
+          break;
+      }
+    },
+    [apriSezioneSpese, attivaTabEScorri, sezioneMateriali]
+  );
 
   const apriSezioneChecklist = useCallback(() => {
     attivaTabEScorri(CANTIERE_TAB.OPERATIVO, () => {
@@ -690,6 +882,8 @@ export default function CantiereOverview({
           onAggiungiMaterialeDaPayload={onAggiungiMaterialeDaPayload}
           onEliminaMateriale={onEliminaMateriale}
           onToggleMaterialeAcquistato={toggleMaterialeAcquistato}
+          onRegistraSpesaDaMateriale={apriRegistraSpesaDaMateriale}
+          onModificaSpesaMateriale={modificaSpesaMateriale}
           onAggiungiFoto={onAggiungiFoto}
           onEliminaFoto={onEliminaFoto}
           onApriFoto={gestisciApriFoto}
@@ -719,16 +913,24 @@ export default function CantiereOverview({
         hidden={tabAttivo !== CANTIERE_TAB.ECONOMICO}
         data-testid="cantiere-panel-economico"
       >
-        <RiepilogoEconomicoSection cantiere={cantiere} />
+        <RiepilogoEconomicoSection
+          cantiere={cantiere}
+          onAzioneGestionale={gestisciAzioneGestionale}
+          operazioneRegistrata={operazioneRegistrata}
+          operazioneRegistrataTick={operazioneRegistrataTick}
+        />
 
         <section className="pro-panel p-5 mb-5">
           <PagamentiSection
             cantiere={cantiere}
             diretto={diretto}
+            registraIncassoTrigger={triggerRegistraIncasso}
+            registraIncassoImportoIniziale={importoRegistraIncasso}
+            registraIncassoOrigine={origineRegistraIncasso}
             onAggiornaTotaleLavoro={(totaleLavoro) =>
               onAggiornaCampo?.({ totaleLavoro })
             }
-            onAggiungi={onAggiungiPagamento}
+            onAggiungi={gestisciAggiungiPagamento}
             onAggiorna={onAggiornaPagamento}
             onElimina={onEliminaPagamento}
           />
@@ -737,7 +939,10 @@ export default function CantiereOverview({
         <section className="pro-panel p-5 mb-5">
           <SpeseSection
             cantiere={cantiere}
-            onAggiungi={onAggiungiSpesa}
+            registraSpesaTrigger={triggerRegistraSpesa}
+            registraSpesaPrefill={prefillRegistraSpesa}
+            registraSpesaOrigine={origineRegistraSpesa}
+            onAggiungi={gestisciAggiungiSpesa}
             onAggiorna={onAggiornaSpesa}
             onElimina={onEliminaSpesa}
           />
@@ -971,6 +1176,16 @@ export default function CantiereOverview({
         loading={Boolean(fotoViewer?.loading)}
         errore={fotoViewer?.errore || ""}
         onClose={chiudiFotoViewer}
+      />
+
+      <SpesaSheet
+        open={spesaMaterialeSheet.open}
+        onClose={chiudiSpesaMaterialeSheet}
+        spesa={spesaMaterialeSheet.spesa}
+        prefill={spesaMaterialeSheet.prefill}
+        daMateriale={Boolean(spesaMaterialeSheet.materiale)}
+        cantiere={cantiere}
+        onSalva={gestisciSalvaSpesaMateriale}
       />
     </div>
   );

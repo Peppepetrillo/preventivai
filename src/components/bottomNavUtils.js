@@ -36,11 +36,14 @@ const ALTRO_HUB_ROUTES = [
   ROUTES.altro,
   ROUTES.agenda,
   ROUTES.clienti,
+  ROUTES.economia,
+  ROUTES.storico,
   ROUTES.acquisti,
   ROUTES.listino,
   ROUTES.catalogoMateriali,
   ROUTES.distinteMateriali,
   ROUTES.impostazioni,
+  ROUTES.datiAzienda,
   ROUTES.cestino,
 ];
 

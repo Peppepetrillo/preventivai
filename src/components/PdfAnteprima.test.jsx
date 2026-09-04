@@ -1,11 +1,33 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 
-import PdfAnteprima, { urlPdfFitWidth } from "./PdfAnteprima";
+import PdfAnteprima, {
+  condividiDaBlobUrl,
+  scaricaDaBlobUrl,
+  urlPdfFitWidth,
+} from "./PdfAnteprima";
+
+const condividiBlob = vi.fn();
+const esportaBlob = vi.fn();
+
+vi.mock("../utils/nativeExport", () => ({
+  condividiBlob: (...args) => condividiBlob(...args),
+  esportaBlob: (...args) => esportaBlob(...args),
+}));
 
 describe("PdfAnteprima UX-001", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    condividiBlob.mockReset();
+    esportaBlob.mockReset();
+    condividiBlob.mockResolvedValue({ success: true, metodo: "share" });
+    esportaBlob.mockResolvedValue({ success: true, metodo: "download" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        blob: async () => new Blob(["pdf"], { type: "application/pdf" }),
+      }))
+    );
   });
 
   afterEach(() => {
@@ -135,5 +157,79 @@ describe("PdfAnteprima UX-001", () => {
       await Promise.resolve();
     });
     expect(document.body.style.overflow).toBe("hidden");
+  });
+});
+
+describe("PdfAnteprima condivisione", () => {
+  beforeEach(() => {
+    condividiBlob.mockReset();
+    esportaBlob.mockReset();
+    condividiBlob.mockResolvedValue({ success: true, metodo: "share" });
+    esportaBlob.mockResolvedValue({ success: true, metodo: "download" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        blob: async () => new Blob(["pdf"], { type: "application/pdf" }),
+      }))
+    );
+  });
+
+  it("condividiDaBlobUrl usa condividiBlob e non esportaBlob", async () => {
+    const blob = new Blob(["pdf"], { type: "application/pdf" });
+
+    await condividiDaBlobUrl("blob:test", "Report.pdf", "Report cantiere", blob);
+
+    expect(condividiBlob).toHaveBeenCalledWith(blob, "Report.pdf", {
+      titolo: "Report cantiere",
+    });
+    expect(esportaBlob).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("condividiDaBlobUrl recupera il Blob da blobUrl se assente", async () => {
+    await condividiDaBlobUrl("blob:test", "Report.pdf", "Report cantiere");
+
+    expect(fetch).toHaveBeenCalledWith("blob:test");
+    expect(condividiBlob).toHaveBeenCalledWith(
+      expect.any(Blob),
+      "Report.pdf",
+      { titolo: "Report cantiere" }
+    );
+  });
+
+  it("condividiDaBlobUrl mantiene il nome file", async () => {
+    const blob = new Blob(["pdf"], { type: "application/pdf" });
+
+    await condividiDaBlobUrl("blob:test", "Report_Villa_Rossi.pdf", "Titolo", blob);
+
+    expect(condividiBlob.mock.calls[0][1]).toBe("Report_Villa_Rossi.pdf");
+  });
+
+  it("condividiDaBlobUrl tratta annullamento share senza errore applicativo", async () => {
+    condividiBlob.mockResolvedValue({
+      success: false,
+      error: "annullato",
+      annullato: true,
+    });
+
+    const esito = await condividiDaBlobUrl(
+      "blob:test",
+      "Report.pdf",
+      "Report cantiere",
+      new Blob(["pdf"], { type: "application/pdf" })
+    );
+
+    expect(esito).toEqual({
+      success: false,
+      error: "annullato",
+      annullato: true,
+    });
+  });
+
+  it("scaricaDaBlobUrl continua a usare esportaBlob", async () => {
+    await scaricaDaBlobUrl("blob:test", "Report.pdf");
+
+    expect(esportaBlob).toHaveBeenCalled();
+    expect(condividiBlob).not.toHaveBeenCalled();
   });
 });

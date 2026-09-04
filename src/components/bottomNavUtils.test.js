@@ -89,6 +89,9 @@ describe("BottomNav isVoceAttiva UX-8.1", () => {
     expect(isAltroHubRoute(ROUTES.listino)).toBe(true);
     expect(isAltroHubRoute(ROUTES.catalogoMateriali)).toBe(true);
     expect(isAltroHubRoute(ROUTES.distinteMateriali)).toBe(true);
+    expect(isAltroHubRoute(ROUTES.economia)).toBe(true);
+    expect(isAltroHubRoute(ROUTES.storico)).toBe(true);
+    expect(isAltroHubRoute(ROUTES.datiAzienda)).toBe(true);
     expect(isAltroHubRoute("/preventivi")).toBe(false);
   });
 

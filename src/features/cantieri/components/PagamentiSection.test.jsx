@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -71,5 +71,112 @@ describe("PagamentiSection UX-9.0", () => {
 
     expect(screen.getByTestId("pagamento-registra-saldo")).toBeInTheDocument();
     expect(screen.queryByTestId("pagamento-empty-primo")).not.toBeInTheDocument();
+  });
+
+  it("registraIncassoTrigger apre PagamentoSheet una sola volta", () => {
+    const { rerender } = render(
+      <PagamentiSection
+        cantiere={cantiereBase}
+        onAggiungi={vi.fn()}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraIncassoTrigger={0}
+      />
+    );
+    expect(screen.queryByTestId("pagamento-sheet")).not.toBeInTheDocument();
+
+    rerender(
+      <PagamentiSection
+        cantiere={cantiereBase}
+        onAggiungi={vi.fn()}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraIncassoTrigger={1}
+      />
+    );
+    expect(screen.getByTestId("pagamento-sheet")).toBeInTheDocument();
+
+    rerender(
+      <PagamentiSection
+        cantiere={cantiereBase}
+        onAggiungi={vi.fn()}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraIncassoTrigger={1}
+      />
+    );
+    expect(screen.getAllByTestId("pagamento-sheet")).toHaveLength(1);
+  });
+
+  it("V16-A: trigger con importo iniziale apre PagamentoSheet precompilato", () => {
+    const { rerender } = render(
+      <PagamentiSection
+        cantiere={cantiereBase}
+        onAggiungi={vi.fn()}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraIncassoTrigger={0}
+      />
+    );
+
+    rerender(
+      <PagamentiSection
+        cantiere={cantiereBase}
+        onAggiungi={vi.fn()}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraIncassoTrigger={1}
+        registraIncassoImportoIniziale={500}
+        registraIncassoOrigine="assistente-economico"
+      />
+    );
+
+    expect(screen.getByTestId("pagamento-sheet")).toBeInTheDocument();
+    expect(screen.getByTestId("pagamento-importo")).toHaveValue("500");
+  });
+
+  it("V16-A: apertura normale non usa prefill assistente", async () => {
+    const user = userEvent.setup();
+    render(
+      <PagamentiSection
+        cantiere={cantiereBase}
+        onAggiungi={vi.fn()}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+      />
+    );
+    await user.click(screen.getByTestId("pagamento-aggiungi"));
+    expect(screen.getByTestId("pagamento-importo")).toHaveValue("");
+  });
+
+  it("V16-B: salvataggio da assistente non scrolla alla lista pagamenti", () => {
+    const scrollSpy = vi.fn();
+    Element.prototype.scrollIntoView = scrollSpy;
+    const onAggiungi = vi.fn();
+
+    const { rerender } = render(
+      <PagamentiSection
+        cantiere={cantiereBase}
+        onAggiungi={onAggiungi}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraIncassoTrigger={0}
+      />
+    );
+    rerender(
+      <PagamentiSection
+        cantiere={cantiereBase}
+        onAggiungi={onAggiungi}
+        onAggiorna={vi.fn()}
+        onElimina={vi.fn()}
+        registraIncassoTrigger={1}
+        registraIncassoImportoIniziale={500}
+        registraIncassoOrigine="assistente-economico"
+      />
+    );
+
+    fireEvent.click(screen.getByTestId("pagamento-salva"));
+    expect(onAggiungi).toHaveBeenCalled();
+    expect(scrollSpy).not.toHaveBeenCalled();
   });
 });

@@ -22,15 +22,19 @@ const FORM_VUOTO = {
   metodoPagamento: "",
   giornataId: "",
   note: "",
+  materialeId: "",
+  listaSpesaId: "",
 };
 
 /**
- * Bottom sheet crea/modifica spesa cantiere (UX-Spese v1).
+ * Bottom sheet crea/modifica spesa cantiere (UX-Spese v1/v2).
  */
 export default function SpesaSheet({
   open,
   onClose,
   spesa = null,
+  prefill = null,
+  daMateriale = false,
   cantiere = {},
   onSalva,
   onElimina,
@@ -61,6 +65,18 @@ export default function SpesaSheet({
         metodoPagamento: spesa.metodoPagamento || "",
         giornataId: spesa.giornataId || "",
         note: spesa.note || "",
+        materialeId: spesa.materialeId || "",
+        listaSpesaId: spesa.listaSpesaId || "",
+      });
+    } else if (prefill) {
+      setForm({
+        ...FORM_VUOTO,
+        ...prefill,
+        importo:
+          prefill.importo != null && prefill.importo !== ""
+            ? String(prefill.importo)
+            : "",
+        data: prefill.data || new Date().toLocaleDateString("it-IT"),
       });
     } else {
       setForm({
@@ -68,7 +84,7 @@ export default function SpesaSheet({
         data: new Date().toLocaleDateString("it-IT"),
       });
     }
-  }, [open, spesa]);
+  }, [open, spesa, prefill]);
 
   function aggiorna(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
@@ -103,16 +119,24 @@ export default function SpesaSheet({
       metodoPagamento: form.metodoPagamento || "",
       giornataId: form.giornataId || "",
       note: String(form.note || "").trim(),
+      materialeId: String(form.materialeId || "").trim(),
+      listaSpesaId: String(form.listaSpesaId || "").trim(),
     });
     onClose?.();
   }
+
+  const titoloSheet = inModifica
+    ? "Modifica spesa"
+    : daMateriale
+      ? "Spesa da materiale"
+      : "Aggiungi spesa";
 
   return (
     <>
       <BottomSheet
         open={open && !confermaElimina}
         onClose={onClose}
-        title={inModifica ? "Modifica spesa" : "Aggiungi spesa"}
+        title={titoloSheet}
       >
         <div className="space-y-4 pb-4" data-testid="spesa-sheet">
           <label className="block">

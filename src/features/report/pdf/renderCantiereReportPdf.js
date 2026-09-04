@@ -313,6 +313,301 @@ function disegnaPagamenti(doc, document, y) {
   return y + 2;
 }
 
+function disegnaRiepilogoEconomico(doc, document, y) {
+  const settings = document.settings;
+  const area = areaUtile(settings);
+  const riepilogo = document.riepilogoEconomico;
+  if (!riepilogo) return y;
+
+  y = titoloSezione(doc, settings, "Riepilogo economico", y);
+  y = testo(
+    doc,
+    settings,
+    `Totale cantiere: ${riepilogo.totaleCantiereLabel}`,
+    area.x,
+    y,
+    area.width
+  );
+  y = testo(
+    doc,
+    settings,
+    `Incassato: ${riepilogo.incassatoLabel}`,
+    area.x,
+    y,
+    area.width
+  );
+  y = testo(
+    doc,
+    settings,
+    `Rimanenza: ${riepilogo.rimanenzaLabel}`,
+    area.x,
+    y,
+    area.width
+  );
+  y = testo(
+    doc,
+    settings,
+    `Totale spese: ${riepilogo.totaleSpeseLabel}`,
+    area.x,
+    y,
+    area.width
+  );
+  y = testo(
+    doc,
+    settings,
+    `Incidenza spese: ${riepilogo.percentualeSpeseSuIncassatoLabel || "Non disponibile"}`,
+    area.x,
+    y,
+    area.width
+  );
+  y = testo(
+    doc,
+    settings,
+    `Margine lordo: ${riepilogo.margineLordoLabel}`,
+    area.x,
+    y,
+    area.width
+  );
+  y = testo(
+    doc,
+    settings,
+    `Percentuale margine: ${riepilogo.percentualeMargineLabel || "Non disponibile"}`,
+    area.x,
+    y,
+    area.width
+  );
+  return y + 2;
+}
+
+function disegnaControlloGestionale(doc, document, y) {
+  const settings = document.settings;
+  const area = areaUtile(settings);
+  const gestionale = document.controlloGestionale;
+  if (!gestionale) return y;
+
+  y = assicuratiSpazio(doc, settings, y, 48);
+  y = titoloSezione(doc, settings, "Controllo gestionale", y);
+  y = testo(
+    doc,
+    settings,
+    `Situazione economica: ${gestionale.statoLabel || "Dati insufficienti"}`,
+    area.x,
+    y,
+    area.width
+  );
+  y = testo(
+    doc,
+    settings,
+    `Incassato sul valore cantiere: ${gestionale.percentualeIncassoLabel || "Percentuale incasso non disponibile"}`,
+    area.x,
+    y,
+    area.width
+  );
+  y = testo(
+    doc,
+    settings,
+    `Incidenza spese: ${gestionale.incidenzaSpeseLabel || "Non disponibile"}`,
+    area.x,
+    y,
+    area.width
+  );
+  y = testo(
+    doc,
+    settings,
+    `Margine lordo: ${gestionale.margineLordoLabel}`,
+    area.x,
+    y,
+    area.width
+  );
+  y = testo(
+    doc,
+    settings,
+    `Margine: ${gestionale.percentualeMargineLabel || "Non disponibile"}`,
+    area.x,
+    y,
+    area.width
+  );
+
+  if (gestionale.costiPrincipali?.length > 0) {
+    y = assicuratiSpazio(doc, settings, y, 12);
+    y = testo(doc, settings, "Principali costi:", area.x, y, area.width);
+    for (const voce of gestionale.costiPrincipali) {
+      y = assicuratiSpazio(doc, settings, y, 8);
+      y = testo(
+        doc,
+        settings,
+        `${voce.etichetta}: ${voce.importoLabel} (${voce.percentualeLabel})`,
+        area.x,
+        y,
+        area.width
+      );
+    }
+  }
+
+  if (gestionale.materiali) {
+    y = assicuratiSpazio(doc, settings, y, 12);
+    y = testo(doc, settings, "Controllo materiali:", area.x, y, area.width);
+    y = testo(
+      doc,
+      settings,
+      `Previsto: ${gestionale.materiali.previstoLabel}`,
+      area.x,
+      y,
+      area.width
+    );
+    y = testo(
+      doc,
+      settings,
+      `Reale: ${gestionale.materiali.realeLabel}`,
+      area.x,
+      y,
+      area.width
+    );
+    y = testo(
+      doc,
+      settings,
+      `Scostamento: ${gestionale.materiali.scostamentoLabel}`,
+      area.x,
+      y,
+      area.width
+    );
+    if (gestionale.materiali.alert) {
+      y = testo(doc, settings, gestionale.materiali.alert, area.x, y, area.width);
+    }
+  }
+
+  y = assicuratiSpazio(doc, settings, y, 12);
+  y = testo(doc, settings, "Segnali gestionali:", area.x, y, area.width);
+  if (gestionale.segnali?.length > 0) {
+    for (const segnale of gestionale.segnali) {
+      y = assicuratiSpazio(doc, settings, y, 8);
+      y = testo(doc, settings, `• ${segnale.messaggio}`, area.x, y, area.width);
+    }
+  } else {
+    y = testo(
+      doc,
+      settings,
+      gestionale.messaggioCriticità || "Non risultano criticità economiche.",
+      area.x,
+      y,
+      area.width
+    );
+  }
+
+  return y + 2;
+}
+
+function disegnaIntestazioneTabellaSpese(doc, settings, y, mostraGiornata) {
+  const area = areaUtile(settings);
+  setText(doc, settings.coloreTenue);
+  applicaFont(doc, settings, "bold", settings.fontSizePiccolo);
+  const intestazione = mostraGiornata
+    ? "Data · Descrizione · Categoria · Fornitore · Metodo · Giornata · Importo"
+    : "Data · Descrizione · Categoria · Fornitore · Metodo · Importo";
+  doc.text(intestazione, area.x, y, { maxWidth: area.width });
+  return y + 5;
+}
+
+function formattaRigaSpesa(spesa, mostraGiornata) {
+  const fornitore = riga(spesa.fornitore, "—");
+  const metodo = riga(spesa.metodoLabel, "—");
+  const parti = [
+    riga(spesa.data),
+    riga(spesa.descrizione),
+    riga(spesa.categoriaLabel),
+    fornitore,
+    metodo,
+  ];
+  if (mostraGiornata) {
+    parti.push(riga(spesa.giornataLabel, "Generale"));
+  }
+  parti.push(riga(spesa.importoLabel));
+  return parti.join(" · ");
+}
+
+function disegnaSpese(doc, document, y) {
+  const settings = document.settings;
+  const area = areaUtile(settings);
+  const spese = document.spese;
+  if (!spese) return y;
+
+  y = titoloSezione(doc, settings, "Spese del cantiere", y);
+
+  if (spese.vuoto) {
+    y = testo(doc, settings, "Nessuna spesa registrata.", area.x, y, area.width);
+    y = testo(
+      doc,
+      settings,
+      `Totale spese: ${spese.totaleLabel}`,
+      area.x,
+      y,
+      area.width
+    );
+    return y + 2;
+  }
+
+  const mostraGiornata = spese.elenco.some((voce) => voce.giornataId);
+  y = disegnaIntestazioneTabellaSpese(doc, settings, y, mostraGiornata);
+
+  for (const spesa of spese.elenco) {
+    y = assicuratiSpazio(doc, settings, y, 8, () => {
+      let nuovoY = nuovaPagina(doc, settings);
+      nuovoY = disegnaIntestazioneTabellaSpese(
+        doc,
+        settings,
+        nuovoY,
+        mostraGiornata
+      );
+      return nuovoY;
+    });
+    setText(doc, settings.coloreTesto);
+    applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
+    y = testo(
+      doc,
+      settings,
+      formattaRigaSpesa(spesa, mostraGiornata),
+      area.x,
+      y,
+      area.width
+    );
+  }
+
+  if (spese.perCategoria.length > 0) {
+    y += 2;
+    y = assicuratiSpazio(doc, settings, y, 14, nuovaPagina);
+    setText(doc, settings.coloreTesto);
+    applicaFont(doc, settings, "bold", settings.fontSizeBase);
+    doc.text("Riepilogo spese per categoria", area.x, y);
+    y += 6;
+
+    for (const voce of spese.perCategoria) {
+      y = assicuratiSpazio(doc, settings, y, 8, nuovaPagina);
+      y = testo(
+        doc,
+        settings,
+        `${voce.etichetta}: ${voce.importoLabel}`,
+        area.x + 2,
+        y,
+        area.width - 4
+      );
+    }
+
+    y = assicuratiSpazio(doc, settings, y, 8, nuovaPagina);
+    setText(doc, settings.coloreTesto);
+    applicaFont(doc, settings, "bold", settings.fontSizeBase);
+    y = testo(
+      doc,
+      settings,
+      `Totale: ${spese.totaleLabel}`,
+      area.x,
+      y,
+      area.width
+    );
+  }
+
+  return y + 2;
+}
+
 function disegnaNote(doc, document, y) {
   const settings = document.settings;
   const area = areaUtile(settings);
@@ -373,6 +668,9 @@ export async function renderCantiereReportPdf(document, opzioni = {}) {
   y = disegnaFotografie(doc, document, y);
   y = disegnaMateriali(doc, document, y);
   y = disegnaPagamenti(doc, document, y);
+  y = disegnaRiepilogoEconomico(doc, document, y);
+  y = disegnaControlloGestionale(doc, document, y);
+  y = disegnaSpese(doc, document, y);
   y = disegnaNote(doc, document, y);
   disegnaFirme(doc, document, y);
 

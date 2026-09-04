@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Download, Share2, X } from "lucide-react";
 
-import { esportaBlob } from "../utils/nativeExport";
+import { condividiBlob, esportaBlob } from "../utils/nativeExport";
 
 const DURATA_MS = 250;
 
@@ -29,25 +29,37 @@ export async function scaricaDaBlobUrl(blobUrl, nomeFile = "Preventivo.pdf") {
 }
 
 /**
- * Condivide un PDF da blob URL via Web Share API se disponibile.
+ * Condivide un PDF via Share Sheet nativo (non download/export).
  * @param {string} blobUrl
  * @param {string} nomeFile
  * @param {string} titolo
- * @returns {Promise<{ success: boolean, error?: string, fallback?: string }>}
+ * @param {Blob=} blobNoto Blob già disponibile (evita fetch su blob: URL in WKWebView)
+ * @returns {Promise<{ success: boolean, error?: string, fallback?: string, annullato?: boolean }>}
  */
 export async function condividiDaBlobUrl(
   blobUrl,
   nomeFile = "Preventivo.pdf",
-  titolo = "Anteprima PDF"
+  titolo = "Anteprima PDF",
+  blobNoto = null
 ) {
-  const risposta = await fetch(blobUrl);
-  const blob = await risposta.blob();
-  const esito = await esportaBlob(blob, nomeFile, { titolo });
+  let blob = blobNoto;
+  if (!blob && blobUrl) {
+    const risposta = await fetch(blobUrl);
+    blob = await risposta.blob();
+  }
+  if (!blob) {
+    return { success: false, error: "blob_mancante" };
+  }
+
+  const esito = await condividiBlob(blob, nomeFile, { titolo });
   if (esito.success) {
     return {
       success: true,
       fallback: esito.metodo === "download" ? "download" : undefined,
     };
+  }
+  if (esito.annullato || esito.error === "annullato") {
+    return { success: false, error: "annullato", annullato: true };
   }
   return { success: false, error: esito.error || "share_fallito" };
 }

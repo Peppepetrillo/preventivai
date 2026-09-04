@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, ChevronRight } from "lucide-react";
 
 import NumericInput from "../../../components/NumericInput";
@@ -20,29 +20,58 @@ export default function PagamentiSection({
   onAggiungi,
   onAggiorna,
   onElimina,
+  registraIncassoTrigger = 0,
+  registraIncassoImportoIniziale = null,
+  registraIncassoOrigine = null,
 }) {
   const [sheetAperto, setSheetAperto] = useState(false);
   const [inModifica, setInModifica] = useState(null);
   const [apriComeSaldo, setApriComeSaldo] = useState(false);
+  const [importoPrefill, setImportoPrefill] = useState(null);
+  const [sheetOrigine, setSheetOrigine] = useState(null);
+  const ultimoTriggerIncasso = useRef(0);
 
   const riepilogo = useMemo(
     () => riepilogoEconomicoCantiere(cantiere),
     [cantiere]
   );
 
-  function apriNuovo() {
+  function apriNuovo({ importoIniziale = null, origine = null } = {}) {
     setInModifica(null);
     setApriComeSaldo(false);
+    setImportoPrefill(importoIniziale);
+    setSheetOrigine(origine);
     setSheetAperto(true);
   }
 
   function apriRegistraSaldo() {
     setInModifica(null);
     setApriComeSaldo(true);
+    setImportoPrefill(null);
+    setSheetOrigine(null);
     setSheetAperto(true);
   }
 
+  useEffect(() => {
+    if (
+      !registraIncassoTrigger ||
+      registraIncassoTrigger === ultimoTriggerIncasso.current
+    ) {
+      return;
+    }
+    ultimoTriggerIncasso.current = registraIncassoTrigger;
+    apriNuovo({
+      importoIniziale: registraIncassoImportoIniziale,
+      origine: registraIncassoOrigine,
+    });
+  }, [
+    registraIncassoTrigger,
+    registraIncassoImportoIniziale,
+    registraIncassoOrigine,
+  ]);
+
   function gestisciSalva(payload) {
+    const daAssistente = sheetOrigine === "assistente-economico";
     if (inModifica?.id) {
       onAggiorna?.(inModifica.id, payload);
     } else {
@@ -50,6 +79,9 @@ export default function PagamentiSection({
     }
     setSheetAperto(false);
     setApriComeSaldo(false);
+    setImportoPrefill(null);
+    setSheetOrigine(null);
+    if (daAssistente) return;
     requestAnimationFrame(() => {
       document
         .getElementById("sezione-pagamenti")
@@ -139,7 +171,7 @@ export default function PagamentiSection({
         <h3 className="ds-text-primary font-semibold">Pagamenti registrati</h3>
         <button
           type="button"
-          onClick={apriNuovo}
+          onClick={() => apriNuovo()}
           className="btn-primary min-h-[44px] px-3 flex items-center gap-2 text-sm font-bold"
           data-testid="pagamento-aggiungi"
         >
@@ -159,7 +191,7 @@ export default function PagamentiSection({
           {riepilogo.rimanenza <= 0 ? (
             <button
               type="button"
-              onClick={apriNuovo}
+              onClick={() => apriNuovo()}
               className="btn-primary mt-4 min-h-[48px] w-full"
               data-testid="pagamento-empty-primo"
             >
@@ -217,10 +249,18 @@ export default function PagamentiSection({
         onClose={() => {
           setSheetAperto(false);
           setApriComeSaldo(false);
+          setImportoPrefill(null);
+          setSheetOrigine(null);
         }}
         pagamento={inModifica}
         rimanenza={riepilogo.rimanenza}
-        importoIniziale={apriComeSaldo && !inModifica ? riepilogo.rimanenza : null}
+        importoIniziale={
+          !inModifica
+            ? apriComeSaldo
+              ? riepilogo.rimanenza
+              : importoPrefill
+            : null
+        }
         tipoIniziale={apriComeSaldo && !inModifica ? "saldo" : null}
         onSalva={gestisciSalva}
         onElimina={(id) => onElimina?.(id)}

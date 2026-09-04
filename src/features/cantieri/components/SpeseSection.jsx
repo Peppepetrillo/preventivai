@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight, Plus } from "lucide-react";
 
 import SearchInput from "../../../components/SearchInput";
@@ -29,12 +29,18 @@ export default function SpeseSection({
   onAggiungi,
   onAggiorna,
   onElimina,
+  registraSpesaTrigger = 0,
+  registraSpesaPrefill = null,
+  registraSpesaOrigine = null,
 }) {
   const [sheetAperto, setSheetAperto] = useState(false);
   const [inModifica, setInModifica] = useState(null);
+  const [sheetPrefill, setSheetPrefill] = useState(null);
+  const [sheetOrigine, setSheetOrigine] = useState(null);
   const [ricerca, setRicerca] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState("tutte");
   const [giornataFiltro, setGiornataFiltro] = useState("");
+  const ultimoTriggerSpesa = useRef(0);
 
   const riepilogo = useMemo(
     () => riepilogoEconomicoCompleto(cantiere),
@@ -72,18 +78,36 @@ export default function SpeseSection({
     }));
   }, [riepilogo.spese, cantiere]);
 
-  function apriNuova() {
+  function apriNuova({ prefill = null, origine = null } = {}) {
     setInModifica(null);
+    setSheetPrefill(prefill);
+    setSheetOrigine(origine);
     setSheetAperto(true);
   }
 
+  useEffect(() => {
+    if (!registraSpesaTrigger || registraSpesaTrigger === ultimoTriggerSpesa.current) {
+      return;
+    }
+    ultimoTriggerSpesa.current = registraSpesaTrigger;
+    apriNuova({
+      prefill: registraSpesaPrefill || null,
+      origine: registraSpesaOrigine || null,
+    });
+  }, [registraSpesaTrigger, registraSpesaPrefill, registraSpesaOrigine]);
+
   function gestisciSalva(payload) {
+    const daAssistente =
+      sheetOrigine === "assistente-economico";
     if (inModifica?.id) {
       onAggiorna?.(inModifica.id, payload);
     } else {
       onAggiungi?.(payload);
     }
     setSheetAperto(false);
+    setSheetPrefill(null);
+    setSheetOrigine(null);
+    if (daAssistente) return;
     requestAnimationFrame(() => {
       document
         .getElementById("sezione-spese")
@@ -176,7 +200,7 @@ export default function SpeseSection({
         <h3 className="ds-text-primary font-semibold">Spese registrate</h3>
         <button
           type="button"
-          onClick={apriNuova}
+          onClick={() => apriNuova()}
           className="btn-primary min-h-[44px] px-3 flex items-center gap-2 text-sm font-bold"
           data-testid="spesa-aggiungi"
         >
@@ -200,7 +224,7 @@ export default function SpeseSection({
           {riepilogo.spese.length === 0 ? (
             <button
               type="button"
-              onClick={apriNuova}
+              onClick={() => apriNuova()}
               className="btn-primary mt-4 min-h-[48px] w-full"
               data-testid="spesa-empty-prima"
             >
@@ -221,6 +245,8 @@ export default function SpeseSection({
                   type="button"
                   onClick={() => {
                     setInModifica(spesa);
+                    setSheetPrefill(null);
+                    setSheetOrigine(null);
                     setSheetAperto(true);
                   }}
                   className="pro-panel w-full p-4 text-left min-h-[72px] active:scale-[0.99] transition-transform"
@@ -275,8 +301,13 @@ export default function SpeseSection({
 
       <SpesaSheet
         open={sheetAperto}
-        onClose={() => setSheetAperto(false)}
+        onClose={() => {
+          setSheetAperto(false);
+          setSheetPrefill(null);
+          setSheetOrigine(null);
+        }}
         spesa={inModifica}
+        prefill={!inModifica ? sheetPrefill : null}
         cantiere={cantiere}
         onSalva={gestisciSalva}
         onElimina={(id) => onElimina?.(id)}

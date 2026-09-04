@@ -15,6 +15,31 @@ import BottomSheet from "../../../components/BottomSheet";
 import SwipeableRow from "../../../components/SwipeableRow";
 import SelettoreMaterialeSheet from "../../distinteMateriali/components/SelettoreMaterialeSheet";
 import VoceDistintaSheet from "../../distinteMateriali/components/VoceDistintaSheet";
+import { formatEuro } from "../../../utils/preventivi";
+import {
+  analizzaCostiMateriale,
+  calcolaRiepilogoCostiMateriali,
+  STATO_SCOSTAMENTO_MATERIALE,
+} from "../services/speseCantiereService";
+
+function formattaScostamentoEuro(valore) {
+  if (valore == null || !Number.isFinite(Number(valore))) return null;
+  if (valore > 0) return `+${formatEuro(valore)}`;
+  return formatEuro(valore);
+}
+
+function classeScostamento(stato) {
+  switch (stato) {
+    case STATO_SCOSTAMENTO_MATERIALE.sotto:
+      return "text-emerald-300";
+    case STATO_SCOSTAMENTO_MATERIALE.sopra:
+      return "text-amber-200";
+    case STATO_SCOSTAMENTO_MATERIALE.in_linea:
+      return "text-slate-400";
+    default:
+      return "text-slate-500";
+  }
+}
 
 /**
  * Sezioni operative Cantiere — UX Premium / zero attrito (Sprint 4).
@@ -34,6 +59,8 @@ export default function CantiereOperativo({
   onAggiungiMaterialeDaPayload,
   onEliminaMateriale,
   onToggleMaterialeAcquistato,
+  onRegistraSpesaDaMateriale,
+  onModificaSpesaMateriale,
   onAggiornaCampo,
   onAggiungiFoto,
   onEliminaFoto,
@@ -52,6 +79,10 @@ export default function CantiereOperativo({
     [cantiere.checklist]
   );
   const materiali = cantiere.materiali || [];
+  const riepilogoCostiMateriali = useMemo(
+    () => calcolaRiepilogoCostiMateriali(cantiere),
+    [cantiere]
+  );
   const foto = cantiere.foto || [];
   const anteprimeFoto = foto.slice(0, 6);
 
@@ -343,6 +374,54 @@ export default function CantiereOperativo({
           Aggiungi materiale
         </button>
 
+        {materiali.length > 0 ? (
+          <div
+            className="mb-4 rounded-[14px] border border-white/10 bg-black/[0.12] p-3 grid gap-2 sm:grid-cols-3"
+            data-testid="cantiere-riepilogo-costi-materiali"
+          >
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                Previsto materiali
+              </p>
+              <p className="text-sm font-semibold text-slate-200 tabular-nums mt-0.5">
+                {riepilogoCostiMateriali.haPrevisto
+                  ? formatEuro(riepilogoCostiMateriali.totalePrevisto)
+                  : "Non disponibile"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                Reale materiali
+              </p>
+              <p className="text-sm font-semibold text-slate-200 tabular-nums mt-0.5">
+                {riepilogoCostiMateriali.haReale
+                  ? formatEuro(riepilogoCostiMateriali.totaleReale)
+                  : "Non registrato"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                Scostamento
+              </p>
+              <p
+                className={`text-sm font-semibold tabular-nums mt-0.5 ${classeScostamento(
+                  riepilogoCostiMateriali.scostamento == null
+                    ? STATO_SCOSTAMENTO_MATERIALE.non_disponibile
+                    : riepilogoCostiMateriali.scostamento < 0
+                      ? STATO_SCOSTAMENTO_MATERIALE.sotto
+                      : riepilogoCostiMateriali.scostamento > 0
+                        ? STATO_SCOSTAMENTO_MATERIALE.sopra
+                        : STATO_SCOSTAMENTO_MATERIALE.in_linea
+                )}`}
+              >
+                {riepilogoCostiMateriali.scostamento == null
+                  ? "Non calcolabile"
+                  : formattaScostamentoEuro(riepilogoCostiMateriali.scostamento)}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         <div className="space-y-2.5">
           {materiali.length === 0 ? (
             <p className="text-slate-400 text-center py-6 text-sm">
@@ -351,6 +430,8 @@ export default function CantiereOperativo({
           ) : (
             materiali.map((materiale) => {
               const preso = Boolean(materiale.acquistato);
+              const analisi = analizzaCostiMateriale(cantiere, materiale);
+              const spesaCollegata = analisi.spesaPrincipale;
               const riga = (
                 <div
                   className={`flex items-center gap-3 rounded-[14px] border p-3 min-h-[56px] ${
@@ -387,7 +468,98 @@ export default function CantiereOperativo({
                     </p>
                     <p className="text-slate-400 text-sm">
                       {materiale.quantita} {materiale.unita}
+                      {!preso ? (
+                        <span className="text-slate-500"> · Da comprare</span>
+                      ) : null}
                     </p>
+
+                    <div
+                      className="mt-1.5 grid gap-0.5 text-xs"
+                      data-testid={`cantiere-materiale-costi-${materiale.id}`}
+                    >
+                      <p className="text-slate-400">
+                        Previsto{" "}
+                        <span className="text-slate-300 tabular-nums">
+                          {analisi.costoPrevistoDisponibile
+                            ? formatEuro(analisi.costoPrevisto)
+                            : "Non disponibile"}
+                        </span>
+                      </p>
+                      {preso ? (
+                        <p className="text-slate-400">
+                          Reale{" "}
+                          <span className="text-slate-300 tabular-nums">
+                            {analisi.haSpese
+                              ? formatEuro(analisi.costoReale)
+                              : "Non registrato"}
+                          </span>
+                        </p>
+                      ) : null}
+                      {preso &&
+                      analisi.scostamento.stato !==
+                        STATO_SCOSTAMENTO_MATERIALE.non_disponibile ? (
+                        <p className="text-slate-400">
+                          Scostamento{" "}
+                          <span
+                            className={`tabular-nums ${classeScostamento(analisi.scostamento.stato)}`}
+                          >
+                            {formattaScostamentoEuro(analisi.scostamento.valore)}
+                          </span>
+                        </p>
+                      ) : null}
+                      {preso &&
+                      analisi.haSpese &&
+                      !analisi.costoPrevistoDisponibile ? (
+                        <p className="text-slate-500">
+                          Scostamento Non calcolabile
+                        </p>
+                      ) : null}
+                    </div>
+
+                    {preso && onRegistraSpesaDaMateriale ? (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        {analisi.haSpese ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onModificaSpesaMateriale?.(
+                                  materiale,
+                                  spesaCollegata
+                                )
+                              }
+                              className="text-xs font-semibold text-emerald-300 min-h-[32px]"
+                              data-testid={`cantiere-materiale-spesa-registrata-${materiale.id}`}
+                            >
+                              {analisi.numeroSpese > 1
+                                ? `${analisi.numeroSpese} spese registrate · ${formatEuro(analisi.costoReale)}`
+                                : `Spesa registrata: ${formatEuro(analisi.costoReale)}`}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onRegistraSpesaDaMateriale(materiale, {
+                                  forzaNuova: true,
+                                })
+                              }
+                              className="text-xs font-medium text-slate-400 min-h-[32px]"
+                              data-testid={`cantiere-materiale-altra-spesa-${materiale.id}`}
+                            >
+                              Registra altra spesa
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => onRegistraSpesaDaMateriale(materiale)}
+                            className="text-xs font-semibold text-yellow-200 min-h-[32px]"
+                            data-testid={`cantiere-materiale-registra-spesa-${materiale.id}`}
+                          >
+                            Registra spesa
+                          </button>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                   <button
                     type="button"

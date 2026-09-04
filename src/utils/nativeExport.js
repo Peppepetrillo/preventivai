@@ -16,71 +16,35 @@ export function isPiattaformaNativa() {
   }
 }
 
-/**
- * Su web: download via <a download>.
- * Su native / Safari-PWA con file sharing: Web Share API con File.
- * @param {Blob} blob
- * @param {string} nomeFile
- * @param {{ titolo?: string }=} opzioni
- * @returns {Promise<{ success: boolean, metodo?: string, error?: string }>}
- */
-export async function esportaBlob(blob, nomeFile, opzioni = {}) {
-  if (!blob) {
-    return { success: false, error: "blob_mancante" };
-  }
-
-  const titolo = opzioni.titolo || nomeFile || "Documento";
+function creaFileDaBlob(blob, nomeFile) {
   const fileName = nomeFile || "documento.pdf";
-  const file = new File([blob], fileName, {
+  return new File([blob], fileName, {
     type: blob.type || "application/pdf",
   });
+}
 
-  const nativo = isPiattaformaNativa();
-  const puoShare =
-    typeof navigator !== "undefined" && typeof navigator.share === "function";
+function navigatorSupportaShare() {
+  return (
+    typeof navigator !== "undefined" && typeof navigator.share === "function"
+  );
+}
 
-  if (nativo && puoShare) {
-    try {
-      const payload = { files: [file], title: titolo };
-      if (typeof navigator.canShare === "function" && !navigator.canShare(payload)) {
-        await navigator.share({ title: titolo, text: titolo });
-        return { success: true, metodo: "share_testo" };
-      }
-      await navigator.share(payload);
-      return { success: true, metodo: "share" };
-    } catch (errore) {
-      if (errore?.name === "AbortError") {
-        return { success: false, error: "annullato" };
-      }
-      // Nessun fallback download su native: non funziona in WKWebView.
-      return { success: false, error: errore?.message || "share_fallito" };
-    }
-  }
+function isErroreAnnullamentoShare(errore) {
+  return errore?.name === "AbortError";
+}
 
-  // UX-6.6: Safari / PWA iPhone — Share Sheet se supporta File
-  if (
-    !nativo &&
-    puoShare &&
-    typeof navigator.canShare === "function"
-  ) {
-    const payload = { files: [file], title: titolo };
-    if (navigator.canShare(payload)) {
-      try {
-        await navigator.share(payload);
-        return { success: true, metodo: "share" };
-      } catch (errore) {
-        if (errore?.name === "AbortError") {
-          return { success: false, error: "annullato" };
-        }
-        // Fall-through al download tradizionale.
-      }
-    }
-  }
-
+/**
+ * Scarica un blob su web via <a download>.
+ * @param {Blob} blob
+ * @param {string} nomeFile
+ * @returns {{ success: boolean, metodo?: string, error?: string }}
+ */
+function scaricaBlobWeb(blob, nomeFile) {
   if (typeof document === "undefined") {
     return { success: false, error: "document_assente" };
   }
 
+  const fileName = nomeFile || "documento.pdf";
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -91,6 +55,92 @@ export async function esportaBlob(blob, nomeFile, opzioni = {}) {
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1500);
   return { success: true, metodo: "download" };
+}
+
+/**
+ * Apre il foglio di condivisione nativo con un file allegato.
+ * Su iOS/Capacitor non usa canShare come gate: spesso restituisce false
+ * pur supportando navigator.share({ files }).
+ *
+ * @param {Blob} blob
+ * @param {string} nomeFile
+ * @param {{ titolo?: string }=} opzioni
+ * @returns {Promise<{ success: boolean, metodo?: string, error?: string, annullato?: boolean }>}
+ */
+export async function condividiBlob(blob, nomeFile, opzioni = {}) {
+  if (!blob) {
+    return { success: false, error: "blob_mancante" };
+  }
+
+  if (!navigatorSupportaShare()) {
+    if (isPiattaformaNativa()) {
+      return { success: false, error: "share_non_supportato" };
+    }
+    return scaricaBlobWeb(blob, nomeFile);
+  }
+
+  const titolo = opzioni.titolo || nomeFile || "Documento";
+  const fileName = nomeFile || "documento.pdf";
+  const file = creaFileDaBlob(blob, fileName);
+  const payload = { files: [file], title: titolo };
+
+  try {
+    await navigator.share(payload);
+    return { success: true, metodo: "share" };
+  } catch (errore) {
+    if (isErroreAnnullamentoShare(errore)) {
+      return { success: false, error: "annullato", annullato: true };
+    }
+
+    if (isPiattaformaNativa()) {
+      return { success: false, error: errore?.message || "share_fallito" };
+    }
+
+    // Web: fallback download solo se la share non è disponibile o fallisce.
+    return scaricaBlobWeb(blob, fileName);
+  }
+}
+
+/**
+ * Su web: download via <a download>.
+ * Su native: Share Sheet con File (stesso meccanismo di condividiBlob).
+ * @param {Blob} blob
+ * @param {string} nomeFile
+ * @param {{ titolo?: string }=} opzioni
+ * @returns {Promise<{ success: boolean, metodo?: string, error?: string, annullato?: boolean }>}
+ */
+export async function esportaBlob(blob, nomeFile, opzioni = {}) {
+  if (!blob) {
+    return { success: false, error: "blob_mancante" };
+  }
+
+  const nativo = isPiattaformaNativa();
+
+  if (nativo) {
+    return condividiBlob(blob, nomeFile, opzioni);
+  }
+
+  // UX-6.6: Safari / PWA iPhone — Share Sheet se supporta File
+  if (navigatorSupportaShare() && typeof navigator.canShare === "function") {
+    const titolo = opzioni.titolo || nomeFile || "Documento";
+    const fileName = nomeFile || "documento.pdf";
+    const file = creaFileDaBlob(blob, fileName);
+    const payload = { files: [file], title: titolo };
+
+    if (navigator.canShare(payload)) {
+      try {
+        await navigator.share(payload);
+        return { success: true, metodo: "share" };
+      } catch (errore) {
+        if (isErroreAnnullamentoShare(errore)) {
+          return { success: false, error: "annullato", annullato: true };
+        }
+        // Fall-through al download tradizionale.
+      }
+    }
+  }
+
+  return scaricaBlobWeb(blob, nomeFile);
 }
 
 /**

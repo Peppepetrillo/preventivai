@@ -22,6 +22,14 @@ describe("Altro UX-8.1", () => {
       "href",
       ROUTES.clienti
     );
+    expect(screen.getByTestId("altro-link-economia")).toHaveAttribute(
+      "href",
+      ROUTES.economia
+    );
+    expect(screen.getByTestId("altro-link-storico")).toHaveAttribute(
+      "href",
+      ROUTES.storico
+    );
     expect(screen.getByTestId("altro-link-acquisti")).toHaveAttribute(
       "href",
       ROUTES.acquisti
