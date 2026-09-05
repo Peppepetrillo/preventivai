@@ -1,0 +1,17 @@
+# PreventivAI — Supabase CLI
+# Dopo `supabase link --project-ref <REF>`, la CLI aggiorna i metadati locali.
+# Non inserire secret in questo file.
+
+[api]
+enabled = true
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+
+# Sprint 21B: nessuna auth obbligatoria sulla Edge Function AI.
+# L'OPENAI_API_KEY resta solo nei Secrets della function.
+[functions.analisi-preventivo-intelligence]
+verify_jwt = false

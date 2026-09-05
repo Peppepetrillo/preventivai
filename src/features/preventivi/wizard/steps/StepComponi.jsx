@@ -15,6 +15,7 @@ import LavorazionePersonalizzataSheet from "../../components/LavorazionePersonal
 import PiuUsatiListino from "../../components/PiuUsatiListino";
 import PreventivoAssistantPanel from "../../components/PreventivoAssistantPanel";
 import PreventivoExpress from "../../components/PreventivoExpress";
+import PreventivAIAnalisiCard from "../../../ai/components/PreventivAIAnalisiCard";
 import { useCarrelloPreventivo } from "../../hooks/useCarrelloPreventivo";
 import { useComponiPreventivo } from "../../hooks/useComponiPreventivo";
 import {
@@ -327,6 +328,12 @@ function StepComponi({
             Catalogo Materiali
           </button>
         </section>
+
+        <PreventivAIAnalisiCard
+          tipoLavoro={tipoLavoro}
+          tipologiaImpianto={tipologiaImpianto}
+          lavorazioni={lavorazioni}
+        />
 
         <PreventivoAssistantPanel
           tipoLavoro={tipoLavoro}

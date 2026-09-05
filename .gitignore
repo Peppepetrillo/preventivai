@@ -16,6 +16,10 @@ icons
 .env.*
 !.env.example
 
+# Supabase CLI locali
+supabase/.temp
+supabase/.branches
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
