@@ -6,9 +6,10 @@ import {
   Plus,
 } from "lucide-react";
 
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { ROUTES } from "../app/routes";
+import { provaNavigazioneGuidata } from "../navigation/navigateBack";
 import { useGlobalCreate } from "./globalCreate/useGlobalCreate";
 import {
   isVoceAttiva,
@@ -44,6 +45,7 @@ const MENU_COMPLETO = [
 
 export default function BottomNav() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { menuOpen, openMenu } = useGlobalCreate();
 
   if (!shouldShowBottomNav(location)) {
@@ -103,6 +105,12 @@ export default function BottomNav() {
               <Link
                 key={item.nome}
                 to={item.path}
+                onClick={(event) => {
+                  if (item.path === location.pathname) return;
+                  // Wizard / altre pagine con guardia: conferma prima di lasciare
+                  event.preventDefault();
+                  provaNavigazioneGuidata(navigate, item.path);
+                }}
                 className="flex flex-col items-center justify-center relative min-w-0 flex-1 max-w-[72px] py-0.5 min-h-[44px]"
                 aria-current={attivo ? "page" : undefined}
                 aria-label={item.nome}
