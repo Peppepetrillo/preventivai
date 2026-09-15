@@ -9,7 +9,7 @@ import {
 import { Link, useLocation } from "react-router-dom";
 
 import { ROUTES } from "../app/routes";
-import { useGlobalCreate } from "./globalCreate/GlobalCreateContext";
+import { useGlobalCreate } from "./globalCreate/useGlobalCreate";
 import {
   isVoceAttiva,
   shouldShowBottomNav,
