@@ -2,6 +2,21 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-15 — Night session Sprint 22/23 (Cloud Agent)
+
+### Completed
+- AI P0: Edge Function requires Bearer JWT; client sends session + anon key; `verify_jwt=true` in `supabase/config.toml`; deterministic fallback on `non_autenticato`
+- Navigation: leave-guard for wizard dirty draft (Back / edge swipe / Android / BottomNav) via `ConfirmDialog` (no `window.confirm`)
+- `DettaglioPreventivo`: replace `window.alert` / `window.confirm` with `ConfirmDialog`
+- Distinte: delete uses shared `ConfirmDialog` (z-[80], above BottomNav)
+- Economia copy: clarify SoT (cantieri only) and how to register movements; document missing general movimenti
+- Docs: ARCHITECTURE/ROADMAP/CHANGELOG aligned with code (no invented `preventivai.economia.movimenti` SoT)
+
+### Intentionally not done
+- No `APP_DATA_KEYS` expansion (🛑 human decision)
+- No general economia movimenti storage invented
+- No destructive migrations / STORAGE_KEYS renames
+
 ## 2026-09-15 — Night session (Cloud Agent)
 
 ### Completed

@@ -8,6 +8,7 @@ import {
   Trash2
 } from "lucide-react";
 import PageBackLink from "../components/PageBackLink";
+import ConfirmDialog from "../components/ConfirmDialog";
 import {
   ROUTES,
   routeCantiere,
@@ -145,6 +146,8 @@ export default function DettaglioPreventivo() {
   const [showCollegaDistinta, setShowCollegaDistinta] = useState(false);
   const [ricercaDistinta, setRicercaDistinta] = useState("");
   const [showUsaDistinta, setShowUsaDistinta] = useState(false);
+  const [statoBloccoAlert, setStatoBloccoAlert] = useState(false);
+  const [statoConfermaManuale, setStatoConfermaManuale] = useState(null);
 
   const sezioneLavorazioniRef = useRef(null);
   const sezioneDocumentiRef = useRef(null);
@@ -798,16 +801,11 @@ export default function DettaglioPreventivo() {
                 prossimo === STATI_PREVENTIVO.LAVORO_COMPLETATO
               ) {
                 if (!cantiereCollegatoId) {
-                  window.alert(
-                    "Non puoi impostare questo stato senza un cantiere collegato.\nUsa «Inizia cantiere» dal percorso normale."
-                  );
+                  setStatoBloccoAlert(true);
                   return;
                 }
-                const messaggioConferma =
-                  "Correzione manuale dello stato.\nQuesta azione non crea né chiude automaticamente il cantiere.";
-                if (!window.confirm(messaggioConferma)) {
-                  return;
-                }
+                setStatoConfermaManuale(prossimo);
+                return;
               }
               setStato(prossimo);
             }}
@@ -1230,6 +1228,33 @@ export default function DettaglioPreventivo() {
         onContinuaSenza={() =>
           eseguiConversioneCantiere({ usaDistinta: false })
         }
+      />
+
+      <ConfirmDialog
+        open={statoBloccoAlert}
+        title="Cantiere richiesto"
+        description="Non puoi impostare questo stato senza un cantiere collegato. Usa «Inizia cantiere» dal percorso normale."
+        confirmLabel="Ho capito"
+        cancelLabel="Chiudi"
+        danger={false}
+        testId="preventivo-stato-blocco"
+        onCancel={() => setStatoBloccoAlert(false)}
+        onConfirm={() => setStatoBloccoAlert(false)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(statoConfermaManuale)}
+        title="Correzione manuale dello stato"
+        description="Questa azione non crea né chiude automaticamente il cantiere."
+        confirmLabel="Conferma"
+        cancelLabel="Annulla"
+        danger={false}
+        testId="preventivo-stato-conferma"
+        onCancel={() => setStatoConfermaManuale(null)}
+        onConfirm={() => {
+          if (statoConfermaManuale) setStato(statoConfermaManuale);
+          setStatoConfermaManuale(null);
+        }}
       />
     </div>
   );

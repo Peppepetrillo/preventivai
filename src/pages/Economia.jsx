@@ -90,7 +90,13 @@ export default function Economia() {
             Economia
           </h1>
           <p className="ds-text-secondary mt-2">
-            Entrate e uscite reali dei cantieri. Non è contabilità.
+            Entrate = incassi dai cantieri. Uscite = materiali, manodopera,
+            carburante e altre spese di cantiere. Non è contabilità.
+          </p>
+          <p className="ds-text-secondary mt-2 text-sm">
+            Per registrare un movimento apri un cantiere → Pagamenti o Spese.
+            I movimenti generali senza cantiere arriveranno in un prossimo
+            aggiornamento.
           </p>
         </header>
 
@@ -158,8 +164,9 @@ export default function Economia() {
               </div>
               <p className="ds-card-title">Nessun movimento</p>
               <p className="ds-text-secondary mt-2 max-w-sm mx-auto">
-                Nel periodo selezionato non ci sono pagamenti o spese
-                registrati nei cantieri.
+                Nel periodo non ci sono incassi o spese nei cantieri. Apri un
+                cantiere per registrare un pagamento, un materiale o un&apos;altra
+                uscita.
               </p>
             </div>
           ) : (

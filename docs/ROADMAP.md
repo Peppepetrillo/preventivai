@@ -47,7 +47,7 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 | Agenda | ✅ | `features/agenda` |
 | Firma cliente | ✅ / 🟡 | `domain/firma` |
 | PDF professionale | ✅ / 🟡 | company fields; keep empty-field omission |
-| AI assistant | 🟡 | advisory only; JWT Edge Function deploy may be pending |
+| AI assistant | 🟡 | JWT required client+gateway; deterministic fallback; deploy `verify_jwt=true` on remote |
 | Catalogo scalabile Categoria→Famiglia→Prodotto | 🟡 | analyze before expanding; no mass seed |
 
 ## PRIORITÀ 4 — RELEASE
@@ -63,9 +63,11 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 
 ## Next agent actions (ordered)
 
-1. **S6** — One page of safe `set-state-in-effect` cleanup with tests.
-2. **P5** — Cantieri↔preventivi connection clarity (copy + tests only).
-3. Human: PWA + A/B offline sync smoke.
+1. **Human deploy** — apply `supabase/config.toml` `verify_jwt=true` for AI function on the linked project.
+2. **S6** — One page of safe `set-state-in-effect` cleanup with tests.
+3. **P5** — Cantieri↔preventivi connection clarity (copy + tests only).
+4. Human: decide `APP_DATA_KEYS` expansion (distinte / listaSpesa / firme / varianti) before coding sync.
+5. Human: PWA + A/B offline sync smoke.
 
 ## Stop / ask human
 

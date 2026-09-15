@@ -38,7 +38,7 @@ supabase/        Edge Functions + config
 - Primary persistence: `localStorage` via `src/utils/storage.js`.
 - Capacitor Preferences: native restore of `NATIVE_STORAGE_KEYS` after WKWebView wipe.
 - Sync dataset: `APP_DATA_KEYS` in `src/app/storageKeys.js` (preventivi, cantieri, clienti, datiAzienda, listino, esperienze).
-- Device-local (not in cloud backup keys today): catalogo materiali, attività, brain*, PIN, backup-auto config, etc.
+- Device-local today (Preferences wipe-safe, **not** cloud sync — expansion is 🛑 human approval): distinte, listaSpesa, firme, varianti*, catalogoMateriali, attivita, brain*, PIN, backup-auto config, etc.
 - Soft-delete: `src/domain/cestino` for clienti / cantieri / preventivi.
 
 **Do not change `STORAGE_KEYS` / `APP_DATA_KEYS` / sync conflict semantics without human approval.**
@@ -52,6 +52,20 @@ Implemented in `src/services/cloudSyncService.js`:
 - Integrity helpers: offline queue wins over older cloud (`cloudSyncIntegrity.js`).
 - Wipe-safe: missing cloud key does not erase local data.
 - Conflict model: last-write-wins at **collection** level (documented limit).
+
+## Economy SoT
+
+- **Economia v0 (as implemented):** aggregates only `cantiere.pagamenti[]` (entrate) + `cantiere.spese[]` (uscite). Categories already cover materiali / manodopera / carburante / trasferta / attrezzatura / subappalto / altro.
+- **Not implemented yet:** general movements without cantiere (`preventivai.economia.movimenti`). UI copy points users to register via cantiere. Do not invent a second SoT without a dedicated sprint.
+- Incassi page: payments on preventivi **before** cantiere.
+- No double counting: does not read `listaSpesa`, material qty, contract totals, `preventivo.incassato` when already on cantiere, or giornate as cost.
+
+## AI (PreventivAI Intelligence)
+
+- Client: `src/features/ai` — deterministic analysis + optional Edge Function enrichment.
+- Edge: `supabase/functions/analisi-preventivo-intelligence` with **server-only** `OPENAI_API_KEY`.
+- Auth: `verify_jwt = true` + client `Authorization: Bearer <session>` + anon `apikey`. No session → deterministic fallback (`non_autenticato`), never call OpenAI anonymously.
+- No OpenAI key in `VITE_*` / bundle.
 
 ## Auth & security
 
@@ -71,13 +85,6 @@ Implemented in `src/services/cloudSyncService.js`:
 | Direct work (no quote) | `creaCantiere` with `origine: diretto` |
 
 Tests cover conversion, no-duplicate, and UI hero CTA.
-
-## Economy SoT
-
-- With cantiere: `cantiere.pagamenti[]` + `cantiere.spese[]`.
-- Without cantiere: `preventivai.economia.movimenti` (general movements).
-- Incassi page: payments on preventivi **before** cantiere.
-- No double counting by design.
 
 ## PDF / photos
 
