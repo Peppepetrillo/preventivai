@@ -1,3 +1,4 @@
+import { APP_EVENTS, notificaEventoApp } from "../app/events";
 import { STORAGE_FALLBACKS, STORAGE_KEYS } from "../app/storageKeys";
 import { filtraRecordAttivi } from "../domain/cestino/cestinoTypes";
 import { creaRepositoryLocale } from "./localStorageRepository";
@@ -28,5 +29,7 @@ export function leggiCantieri(opzioni = {}) {
 }
 
 export function salvaCantieri(cantieri) {
-  return cantieriRepository.salva(cantieri);
+  const risultato = cantieriRepository.salva(cantieri);
+  notificaEventoApp(APP_EVENTS.cantieriAggiornati);
+  return risultato;
 }

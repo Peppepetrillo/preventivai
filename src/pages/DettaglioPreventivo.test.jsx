@@ -131,7 +131,7 @@ describe("DettaglioPreventivo UX-2.1", () => {
     expect(screen.getByTestId("workflow-invia-di-nuovo")).toBeInTheDocument();
   });
 
-  it("Accettato: hero Inizia cantiere senza duplicati primari", () => {
+  it("Accettato: hero Crea cantiere senza duplicati primari", () => {
     localStorage.setItem(
       STORAGE_KEYS.preventivi,
       JSON.stringify([
@@ -142,9 +142,9 @@ describe("DettaglioPreventivo UX-2.1", () => {
     renderDettaglio("p3");
 
     const hero = screen.getByTestId("preventivo-hero-cta");
-    expect(hero).toHaveTextContent("Inizia cantiere");
+    expect(hero).toHaveTextContent("Crea cantiere");
     const iniziaPrimary = screen
-      .getAllByRole("button", { name: /Inizia cantiere/i })
+      .getAllByRole("button", { name: /Crea cantiere/i })
       .filter((btn) => btn.className.includes("btn-primary"));
     expect(iniziaPrimary).toHaveLength(1);
     expect(iniziaPrimary[0]).toBe(hero);
@@ -184,7 +184,7 @@ describe("DettaglioPreventivo UX-2.1", () => {
     );
   });
 
-  it("workflow Accetta mostra banner Inizia cantiere", async () => {
+  it("workflow Accetta mostra banner Crea cantiere", async () => {
     const user = userEvent.setup();
     localStorage.setItem(
       STORAGE_KEYS.preventivi,
@@ -202,7 +202,7 @@ describe("DettaglioPreventivo UX-2.1", () => {
     );
     expect(screen.getByTestId("banner-post-accettazione")).toBeInTheDocument();
     expect(screen.getByTestId("banner-inizia-cantiere")).toHaveTextContent(
-      /Inizia cantiere/i
+      /Crea cantiere/i
     );
     expect(screen.queryByTestId("preventivo-hero-cta")).not.toBeInTheDocument();
   });
@@ -281,7 +281,7 @@ describe("DettaglioPreventivo UX-2.2", () => {
     expect(screen.getByTestId("preventivo-elimina")).toHaveClass("btn-danger");
   });
 
-  it("Accettato: nessun Inizia cantiere duplicato nelle secondarie", () => {
+  it("Accettato: nessun Crea cantiere duplicato nelle secondarie", () => {
     localStorage.setItem(
       STORAGE_KEYS.preventivi,
       JSON.stringify([
@@ -292,11 +292,11 @@ describe("DettaglioPreventivo UX-2.2", () => {
     renderDettaglio("p3");
 
     expect(screen.getByTestId("preventivo-hero-cta")).toHaveTextContent(
-      "Inizia cantiere"
+      "Crea cantiere"
     );
     expect(
       screen.queryByTestId("preventivo-workflow-secondarie")
-    ).not.toHaveTextContent("Inizia cantiere");
+    ).not.toHaveTextContent("Crea cantiere");
   });
 
   it("Convertito: nessun Apri cantiere duplicato nelle secondarie", () => {

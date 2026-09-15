@@ -480,7 +480,10 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
 
     expect(
       screen.getByTestId("banner-post-conversione-pagamenti")
-    ).toHaveTextContent(/registra i pagamenti nel cantiere/i);
+    ).toHaveTextContent(/Cantiere creato/i);
+    expect(
+      screen.getByTestId("banner-post-conversione-pagamenti")
+    ).toHaveTextContent(/preventivo è collegato/i);
     expect(
       screen.getByTestId("banner-post-conversione-incassato-pre")
     ).toHaveTextContent(/80/);

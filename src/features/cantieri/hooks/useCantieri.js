@@ -6,6 +6,7 @@ import {
   creaVoceChecklist,
   aggiornaCantiere,
 } from "../cantieriDomain";
+import { APP_EVENTS } from "../../../app/events";
 import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
 import {
   leggiCantieriTutti,
@@ -123,7 +124,9 @@ export function useCantieri({
 } = {}) {
   const idEsterno = cantiereId || cantiereInizialeId || "";
 
-  const [cantieri, setCantieri] = useDatiLocaliSincronizzati(leggiCantieriTutti);
+  const [cantieri, setCantieri] = useDatiLocaliSincronizzati(leggiCantieriTutti, [
+    APP_EVENTS.cantieriAggiornati,
+  ]);
   const cantieriAttivi = useMemo(
     () => filtraRecordAttivi(cantieri),
     [cantieri]

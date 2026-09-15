@@ -776,9 +776,10 @@ export default function CantiereOverview({
           data-testid="banner-post-conversione-pagamenti"
           role="status"
         >
-          <p className="ds-card-title">Pagamenti nel cantiere</p>
+          <p className="ds-card-title">Cantiere creato</p>
           <p className="ds-text-secondary text-sm">
-            Da qui in poi registra i pagamenti nel cantiere.
+            Il preventivo è collegato a questo cantiere. Da qui in poi
+            registra i pagamenti nel tab Pagamenti.
           </p>
           {Number(bannerPostConversione.incassatoPreventivo) > 0 ? (
             <p

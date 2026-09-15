@@ -62,3 +62,13 @@ export function convertiPreventivoInCantiere(preventivo) {
 export function creaCantierePerPreventivo(preventivo) {
   return convertiPreventivoInCantiere(preventivo);
 }
+
+/**
+ * Service per ID: richiede preventivo già Accettato (nessuna auto-accettazione).
+ * Preferito dalla UI «Crea cantiere».
+ * @param {string|number} preventivoId
+ * @param {{ by?: string }=} opzioni
+ */
+export function creaCantierePerPreventivoId(preventivoId, opzioni = {}) {
+  return convertiInCantiere(preventivoId, opzioni);
+}

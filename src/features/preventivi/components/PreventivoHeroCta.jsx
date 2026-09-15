@@ -21,7 +21,7 @@ const ICONE = {
 /**
  * CTA primaria hero — una sola azione principale per stato.
  */
-export default function PreventivoHeroCta({ hero, onAzione }) {
+export default function PreventivoHeroCta({ hero, onAzione, disabled = false }) {
   if (!hero) return null;
 
   const Icona = ICONE[hero.id] || PenLine;
@@ -30,8 +30,10 @@ export default function PreventivoHeroCta({ hero, onAzione }) {
     <button
       type="button"
       onClick={() => onAzione?.(hero.id)}
-      className="w-full btn-primary min-h-[52px] text-base font-bold flex items-center justify-center gap-2 mb-3"
+      disabled={disabled}
+      className="w-full btn-primary min-h-[52px] text-base font-bold flex items-center justify-center gap-2 mb-3 disabled:opacity-60"
       data-testid="preventivo-hero-cta"
+      aria-busy={disabled || undefined}
     >
       <Icona size={20} aria-hidden="true" />
       {hero.label}

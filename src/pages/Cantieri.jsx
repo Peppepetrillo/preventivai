@@ -258,7 +258,7 @@ export default function Cantieri() {
               <p className="ds-card-title">Nessun cantiere ancora</p>
               <p className="ds-text-secondary mt-2 max-w-sm mx-auto">
                 Crea il primo cantiere, oppure apri un preventivo accettato e
-                tocca Inizia cantiere. Lo ritrovi qui ogni giorno.
+                tocca Crea cantiere. Lo ritrovi qui ogni giorno.
               </p>
               <div className="mt-6 text-left max-w-lg mx-auto">
                 <NuovoCantiereForm
