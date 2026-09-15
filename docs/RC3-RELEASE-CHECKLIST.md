@@ -74,3 +74,21 @@ Scenario A→offline→modifiche→online→B:
 | PIN sicuro | OK (hash); non è full-disk encryption |
 
 **Raccomandazione CTO:** **GO condizionato** a (1) smoke PWA su 1 iPhone + 1 Android, (2) un passaggio cloud A/B offline, (3) release notes che dichiarano limiti multi-device e assenza biometria.
+
+---
+
+## Log verifiche Cloud Agent (non sostituisce QA device)
+
+Usare questa sezione per registrare run automatici da Cursor Cloud / CI.  
+**Non spuntare** le caselle PWA/device sopra senza evidenza su dispositivo reale.
+
+| Data (UTC) | Ambiente | `npm test` | `npm run lint` | `npm run build` | Note |
+|------------|----------|------------|----------------|-----------------|------|
+| _da compilare in PR_ | Cursor Cloud | | | | |
+
+### Come compilare
+
+1. Eseguire i tre comandi su branch pulito.
+2. Annotare errori vs warning lint (warning ammessi se documentati in `docs/TODO-LINT-SPRINT.md`).
+3. Allegare output rilevante nella PR.
+4. Lasciare PWA/device come **pending** finché non c’è prova su hardware.
