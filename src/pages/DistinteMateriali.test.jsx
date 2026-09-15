@@ -95,8 +95,24 @@ describe("DistinteMateriali UI — elenco", () => {
     renderLista();
     fireEvent.click(screen.getByRole("button", { name: "Elimina" }));
     expect(screen.getByText(/Elimina distinta\?/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId("distinte-confirm-delete"));
+    expect(screen.getByTestId("distinte-confirm-delete")).toHaveClass(
+      "ds-modal-overlay"
+    );
+    expect(screen.getByTestId("distinte-confirm-delete").parentElement).toBe(
+      document.body
+    );
+    fireEvent.click(screen.getByTestId("distinte-confirm-delete-confirm"));
     expect(screen.getByTestId("distinte-empty")).toBeInTheDocument();
     expect(localStorage.getItem(STORAGE_KEYS.distinteMateriali)).toMatch(/\[\]/);
+  });
+
+  it("Annulla chiude il dialog senza eliminare", () => {
+    creaDistintaMateriali({ titolo: "Materiale" });
+    renderLista();
+    fireEvent.click(screen.getByRole("button", { name: "Elimina" }));
+    expect(screen.getByText(/«Materiale» verrà eliminata/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("distinte-confirm-delete-cancel"));
+    expect(screen.queryByTestId("distinte-confirm-delete")).not.toBeInTheDocument();
+    expect(screen.getByText("Materiale")).toBeInTheDocument();
   });
 });

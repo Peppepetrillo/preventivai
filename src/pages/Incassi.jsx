@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { CheckCircle, FileText, HardHat, Plus, Wallet } from "lucide-react";
+import { CheckCircle, ChevronRight, FileText, HardHat, Plus, Wallet } from "lucide-react";
 import PageWrapper from "../components/PageWrapper";
 import PageBackLink from "../components/PageBackLink";
 import NumericInput from "../components/NumericInput";
 import { APP_EVENTS } from "../app/events";
-import { routeCantierePagamenti, routePreventivo } from "../app/routes";
+import { ROUTES, routeCantierePagamenti, routePreventivo } from "../app/routes";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import { leggiPreventivi, leggiPreventiviTutti, salvaPreventivi } from "../repositories/preventiviRepository";
 import { isRecordCestinato } from "../domain/cestino";
@@ -106,10 +106,12 @@ export default function Incassi() {
 
         <section className="pro-panel-strong p-5 mb-6">
           <p className="section-label">Prima del cantiere</p>
-          <h1 className="ds-page-title mt-1">Pagamenti sui preventivi</h1>
+          <h1 className="ds-page-title mt-1">Incassi</h1>
           <p className="ds-text-secondary mt-2">
-            Solo preventivi non ancora in cantiere. Dopo «Inizia cantiere», i
-            pagamenti si registrano nel tab Pagamenti del cantiere.
+            Quanto hai già incassato sui preventivi e quanto resta da
+            incassare. Dopo «Inizia cantiere», i pagamenti vanno nel tab
+            Pagamenti del cantiere. I movimenti reali (entrate/uscite) sono in
+            Economia.
           </p>
         </section>
 
@@ -213,6 +215,26 @@ export default function Incassi() {
             );
           })}
         </section>
+
+        <div className="mt-6">
+          <Link
+            to={ROUTES.economia}
+            className="pro-panel p-4 flex items-center justify-between gap-3 min-h-[64px]"
+            data-testid="incassi-link-economia"
+          >
+            <div className="min-w-0">
+              <p className="ds-card-title">Economia</p>
+              <p className="ds-text-secondary mt-1">
+                Entrate, uscite e saldo dei movimenti reali
+              </p>
+            </div>
+            <ChevronRight
+              size={20}
+              className="text-slate-500 shrink-0"
+              aria-hidden="true"
+            />
+          </Link>
+        </div>
       </div>
     </PageWrapper>
   );

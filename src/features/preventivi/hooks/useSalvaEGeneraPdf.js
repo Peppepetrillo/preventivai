@@ -12,6 +12,7 @@ import { calcolaTotali } from "../../../utils/preventivi";
 import { creaPreventivo, preparaDatiPreventivo } from "../preventiviDomain";
 import { oggettoPdfTipologia } from "../tipologiaImpiantoUtils";
 import { salvaUltimoPreventivo } from "../utils/wizardExtensions";
+import { collegaPreventivoACantiereEsistente } from "../../cantieri/services/collegaPreventivoCantiereService";
 
 const AVVISO_PDF =
   "Preventivo salvato come bozza. PDF non generato. Puoi riprovare.";
@@ -131,6 +132,17 @@ export function useSalvaEGeneraPdf() {
       });
       salvaNuovoPreventivo(preventivo);
       idSalvatoRef.current = preventivo.id;
+    }
+
+    const cantiereId = String(statoWizard?.cantiereId || "").trim();
+    if (cantiereId && preventivo?.id) {
+      const collegamento = collegaPreventivoACantiereEsistente(
+        cantiereId,
+        preventivo.id
+      );
+      if (collegamento.success && collegamento.preventivo) {
+        preventivo = collegamento.preventivo;
+      }
     }
 
     snapshotUltimo(preventivo, statoWizard);

@@ -1,9 +1,11 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 
+import OverlayPortal from "../../../components/OverlayPortal";
+
 /**
  * Viewer foto cantiere full-screen (Web + Capacitor).
- * Nessun window.open: l'immagine resta nell'app.
+ * Portal + overlayLock: sopra BottomNav su iPhone.
  */
 export default function CantiereFotoViewer({
   open,
@@ -26,15 +28,12 @@ export default function CantiereFotoViewer({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[70] flex flex-col bg-black safe-top safe-bottom"
-      role="dialog"
-      aria-modal="true"
+    <OverlayPortal
+      open={open}
+      className="ds-fullscreen-overlay"
       aria-label={titolo}
-      data-testid="cantiere-foto-viewer"
+      testId="cantiere-foto-viewer"
     >
       <div className="flex items-center justify-end shrink-0 px-3 pt-2 pb-1">
         <button
@@ -70,6 +69,6 @@ export default function CantiereFotoViewer({
           />
         ) : null}
       </div>
-    </div>
+    </OverlayPortal>
   );
 }

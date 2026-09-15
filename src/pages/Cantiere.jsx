@@ -67,7 +67,10 @@ export default function Cantiere() {
   function gestisciElimina() {
     const eliminato = eliminaCantiere();
     if (eliminato) {
-      navigate(ROUTES.cantieri, { replace: true });
+      navigate(ROUTES.cantieri, {
+        replace: true,
+        state: { feedback: "Lavoro spostato nel Cestino" },
+      });
     }
   }
 

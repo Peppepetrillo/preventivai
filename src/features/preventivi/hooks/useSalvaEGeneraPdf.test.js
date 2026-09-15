@@ -11,6 +11,7 @@ vi.mock("@capacitor/core", () => ({
 
 vi.mock("../../../repositories/preventiviRepository", () => ({
   leggiPreventivi: vi.fn(() => []),
+  leggiPreventiviTutti: vi.fn(() => []),
   salvaNuovoPreventivo: vi.fn((p) => p),
   aggiornaPreventivo: vi.fn((_id, aggiorna) => {
     const corrente = {
@@ -22,6 +23,11 @@ vi.mock("../../../repositories/preventiviRepository", () => ({
     };
     return [aggiorna(corrente)];
   }),
+}));
+
+vi.mock("../../../repositories/cantieriRepository", () => ({
+  leggiCantieriTutti: vi.fn(() => []),
+  salvaCantieri: vi.fn(),
 }));
 
 vi.mock("../../../repositories/impostazioniRepository", () => ({

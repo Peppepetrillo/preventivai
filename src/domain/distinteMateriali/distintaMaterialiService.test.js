@@ -34,9 +34,9 @@ describe("distinteMaterialiRepository", () => {
     localStorage.clear();
   });
 
-  it("usa storage key dedicata e non entra in APP_DATA_KEYS", () => {
+  it("usa storage key dedicata e entra in APP_DATA_KEYS (Sprint 22)", () => {
     expect(STORAGE_KEYS.distinteMateriali).toBe("preventivai.distinteMateriali");
-    expect(STORAGE_KEYS.distinteMateriali in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.distinteMateriali in APP_DATA_KEYS).toBe(true);
     expect(distinteMaterialiRepository.chiave).toBe(
       STORAGE_KEYS.distinteMateriali
     );

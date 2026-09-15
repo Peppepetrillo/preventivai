@@ -11,7 +11,6 @@ port = 54322
 [studio]
 enabled = true
 
-# Sprint 21B: nessuna auth obbligatoria sulla Edge Function AI.
-# L'OPENAI_API_KEY resta solo nei Secrets della function.
+# Sprint 22: JWT obbligatorio. OPENAI_API_KEY solo nei Secrets della function.
 [functions.analisi-preventivo-intelligence]
-verify_jwt = false
+verify_jwt = true

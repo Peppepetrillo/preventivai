@@ -19,10 +19,10 @@ export const STORAGE_KEYS = {
   brainPatterns: "preventivai.brain.patterns",
   /** Timeline workflow preventivo → cantiere (locale) */
   workflowTimeline: "preventivai.workflow.timeline",
-  /** Varianti cantiere — locale, separate dal preventivo */
+  /** Varianti cantiere — sync + backup da Sprint 22 */
   varianti: "preventivai.varianti",
   variantiTimeline: "preventivai.varianti.timeline",
-  /** Firme cliente — locale, separate dal preventivo */
+  /** Firme cliente — sync + backup da Sprint 22 */
   firme: "preventivai.firme",
   /** Storico condivisioni PDF — locale */
   condivisioni: "preventivai.condivisioni",
@@ -35,12 +35,14 @@ export const STORAGE_KEYS = {
   insights: "preventivai.insights",
   /** Attività personali/amministrative — locale only */
   attivita: "preventivai.attivita",
-  /** Lista spesa / materiale da acquistare — locale only */
+  /** Lista spesa / materiale da acquistare — sync + backup da Sprint 22 */
   listaSpesa: "preventivai.listaSpesa",
-  /** Catalogo Materiali (famiglie + varianti) — locale only (Sprint 13) */
+  /** Catalogo Materiali (famiglie + varianti) — locale only Sprint 13; sync P2 (seed grande) */
   catalogoMateriali: "preventivai.catalogoMateriali",
-  /** Distinte Materiali — locale only (Sprint 13) */
+  /** Distinte Materiali — sync + backup da Sprint 22 */
   distinteMateriali: "preventivai.distinteMateriali",
+  /** Movimenti Economia generali (senza cantiere) — sync + backup da Sprint 22 */
+  economiaMovimenti: "preventivai.economia.movimenti",
   /** Backup automatico UX-7.2 — config locale, fuori APP_DATA_KEYS / cloud */
   backupAutomaticoConfig: "preventivai.backupAutomatico.config",
   /** Ultimo snapshot backup automatico (JSON v1, stesso formato creaBackupCompleto) */
@@ -75,6 +77,7 @@ export const STORAGE_FALLBACKS = {
   [STORAGE_KEYS.listaSpesa]: [],
   [STORAGE_KEYS.catalogoMateriali]: [],
   [STORAGE_KEYS.distinteMateriali]: [],
+  [STORAGE_KEYS.economiaMovimenti]: [],
   [STORAGE_KEYS.backupAutomaticoConfig]: {
     frequenza: "disattivato",
     enabled: false,
@@ -95,6 +98,17 @@ export const APP_DATA_KEYS = {
   [STORAGE_KEYS.listino]: STORAGE_FALLBACKS[STORAGE_KEYS.listino],
   // RC-2A: knowledge Experience Engine — sync + backup/restore con il resto del dataset
   [STORAGE_KEYS.esperienze]: STORAGE_FALLBACKS[STORAGE_KEYS.esperienze],
+  // Sprint 22 — dati operativi prima solo-device (nessuna migrazione distruttiva:
+  // wipe-safe push al primo sync se cloud vuoto)
+  [STORAGE_KEYS.distinteMateriali]:
+    STORAGE_FALLBACKS[STORAGE_KEYS.distinteMateriali],
+  [STORAGE_KEYS.listaSpesa]: STORAGE_FALLBACKS[STORAGE_KEYS.listaSpesa],
+  [STORAGE_KEYS.economiaMovimenti]:
+    STORAGE_FALLBACKS[STORAGE_KEYS.economiaMovimenti],
+  [STORAGE_KEYS.firme]: STORAGE_FALLBACKS[STORAGE_KEYS.firme],
+  [STORAGE_KEYS.varianti]: STORAGE_FALLBACKS[STORAGE_KEYS.varianti],
+  [STORAGE_KEYS.variantiTimeline]:
+    STORAGE_FALLBACKS[STORAGE_KEYS.variantiTimeline],
 };
 
 /** Meta sync cloud — devono sopravvivere al wipe WKWebView via Preferences. */

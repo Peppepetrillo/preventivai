@@ -13,7 +13,7 @@ export default function NuovoCantiereForm({
       {!compatto ? (
         <div className="flex items-center gap-3 mb-4">
           <HardHat size={24} className="text-yellow-300" aria-hidden="true" />
-          <h2 className="text-xl font-black">Nuovo cantiere</h2>
+          <h2 className="ds-card-title">Nuovo lavoro</h2>
         </div>
       ) : null}
 

@@ -220,7 +220,7 @@ describe("useCantieri", () => {
     expect(ok).toBe(true);
     expect(result.current.cantieriAttivi).toHaveLength(1);
     expect(result.current.cantieriAttivi[0].id).toBe("c-altro");
-    expect(result.current.messaggio).toBe("Elemento spostato nel Cestino.");
+    expect(result.current.messaggio).toBe("Lavoro spostato nel Cestino.");
     const salvati = JSON.parse(localStorage.getItem(STORAGE_KEYS.cantieri));
     expect(salvati).toHaveLength(2);
     expect(salvati.find((c) => c.id === "c-attivo").deletedAt).toBeTruthy();

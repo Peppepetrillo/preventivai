@@ -1,10 +1,12 @@
 import { useEffect, useId, useRef } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
 import {
   gestisciFocusTrap,
   trovaElementiFocusabili,
 } from "./bottomSheetUtils";
+import { acquisisciOverlayLock } from "./overlayLock";
 
 export default function BottomSheet({
   open,
@@ -13,12 +15,17 @@ export default function BottomSheet({
   children,
   altezza = "auto",
   descrizione,
-  zIndex = 70,
+  zIndex,
 }) {
   const titoloId = useId();
   const descrizioneId = useId();
   const pannelloRef = useRef(null);
   const elementoPrecedenteRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    return acquisisciOverlayLock();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -56,12 +63,17 @@ export default function BottomSheet({
     };
   }, [open, onClose]);
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {open ? (
         <div
-          className="fixed inset-0 flex items-end justify-center"
-          style={{ zIndex }}
+          className="ds-sheet-overlay fixed inset-0 flex items-end justify-center"
+          style={{
+            zIndex: zIndex ?? "var(--z-sheet, 70)",
+          }}
+          data-testid="bottom-sheet-portal"
         >
           <motion.button
             type="button"
@@ -114,6 +126,7 @@ export default function BottomSheet({
           </motion.div>
         </div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

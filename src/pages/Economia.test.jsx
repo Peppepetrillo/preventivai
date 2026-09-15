@@ -63,6 +63,13 @@ describe("Economia v0 pagina", () => {
       "href",
       ROUTES.storico
     );
+    expect(screen.getByTestId("economia-link-incassi")).toHaveAttribute(
+      "href",
+      ROUTES.incassi
+    );
+    expect(
+      screen.getByText(/Movimenti reali di denaro/i)
+    ).toBeInTheDocument();
   });
 
   it("tap movimento punta al cantiere corretto (sezione economico)", () => {

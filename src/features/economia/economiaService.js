@@ -1,30 +1,47 @@
 /**
- * Aggregazione economica generale attività (Economia v0).
- * SoT movimenti: cantiere.pagamenti[] (entrate) + cantiere.spese[] (uscite).
- * Nessuna persistenza, nessuna mutazione, nessuna doppia contabilizzazione.
+ * Aggregazione economica generale attività.
+ * SoT:
+ * - cantiere.pagamenti[] (entrate cantiere)
+ * - cantiere.spese[] (uscite cantiere)
+ * - preventivai.economia.movimenti (movimenti generali senza cantiere)
+ * Nessuna doppia contabilizzazione: i generali non ripetono i movimenti cantiere.
  */
 
 import { formatEuro } from "../../utils/preventivi";
 import {
   ETICHETTE_CATEGORIA_SPESA,
   leggiSpese,
-  parseDataItalianaCantiere
+  parseDataItalianaCantiere,
+  CATEGORIE_SPESA,
 } from "../cantieri/services/speseCantiereService";
 import {
   ETICHETTE_TIPO_PAGAMENTO,
   leggiPagamenti,
-  riepilogoEconomicoCantiere
+  riepilogoEconomicoCantiere,
 } from "../cantieri/services/pagamentiCantiereService";
+import { leggiMovimentiEconomiaGenerali } from "./economiaMovimentiRepository";
+import {
+  ETICHETTE_CATEGORIA_ENTRATA_ECONOMIA,
+  ETICHETTE_CATEGORIA_USCITA_ECONOMIA,
+  ORIGINE_MOVIMENTO_ECONOMIA,
+  RIEPILOGO_USCITE_ECONOMIA,
+} from "./economiaMovimentiTypes";
 
-/** Periodi filtro Economia v0 (estendibile in seguito). */
+/** Periodi filtro Economia (estendibile: settimana / anno / personalizzato). */
 export const PERIODO_ECONOMIA = Object.freeze({
   questo_mese: "questo_mese",
   mese_scorso: "mese_scorso",
+  settimana: "settimana",
+  anno: "anno",
+  personalizzato: "personalizzato",
 });
 
 export const ETICHETTE_PERIODO_ECONOMIA = Object.freeze({
   [PERIODO_ECONOMIA.questo_mese]: "Questo mese",
-  [PERIODO_ECONOMIA.mese_scorso]: "Mese scorso",
+  [PERIODO_ECONOMIA.mese_scorso]: "Mese precedente",
+  [PERIODO_ECONOMIA.settimana]: "Settimana",
+  [PERIODO_ECONOMIA.anno]: "Anno",
+  [PERIODO_ECONOMIA.personalizzato]: "Personalizzato",
 });
 
 export const TIPO_MOVIMENTO_ECONOMIA = Object.freeze({
@@ -33,14 +50,85 @@ export const TIPO_MOVIMENTO_ECONOMIA = Object.freeze({
 });
 
 /**
- * Intervallo [inizio, fine] inclusivo in timestamp locali per un mese.
+ * Intervallo [inizio, fine] inclusivo in timestamp locali.
  * @param {string} periodo
  * @param {Date=} riferimento
- * @returns {{ inizio: number, fine: number, etichetta: string }|null}
+ * @param {{ inizio?: Date|number, fine?: Date|number }=} personalizzato
+ * @returns {{ inizio: number, fine: number, etichetta: string, anno?: number, mese?: number }|null}
  */
-export function intervalloPeriodoEconomia(periodo, riferimento = new Date()) {
+export function intervalloPeriodoEconomia(
+  periodo,
+  riferimento = new Date(),
+  personalizzato = {}
+) {
   const base = riferimento instanceof Date ? riferimento : new Date();
   if (!Number.isFinite(base.getTime())) return null;
+
+  if (periodo === PERIODO_ECONOMIA.personalizzato) {
+    const inizioRaw = personalizzato.inizio;
+    const fineRaw = personalizzato.fine;
+    const inizio =
+      inizioRaw instanceof Date
+        ? inizioRaw.getTime()
+        : Number(inizioRaw);
+    const fine =
+      fineRaw instanceof Date ? fineRaw.getTime() : Number(fineRaw);
+    if (!Number.isFinite(inizio) || !Number.isFinite(fine) || fine < inizio) {
+      return null;
+    }
+    return {
+      inizio,
+      fine,
+      etichetta: ETICHETTE_PERIODO_ECONOMIA.personalizzato,
+    };
+  }
+
+  if (periodo === PERIODO_ECONOMIA.settimana) {
+    const giorno = base.getDay();
+    const diffLunedi = giorno === 0 ? -6 : 1 - giorno;
+    const lunedi = new Date(
+      base.getFullYear(),
+      base.getMonth(),
+      base.getDate() + diffLunedi,
+      0,
+      0,
+      0,
+      0
+    );
+    const domenica = new Date(
+      lunedi.getFullYear(),
+      lunedi.getMonth(),
+      lunedi.getDate() + 6,
+      23,
+      59,
+      59,
+      999
+    );
+    return {
+      inizio: lunedi.getTime(),
+      fine: domenica.getTime(),
+      etichetta: ETICHETTE_PERIODO_ECONOMIA.settimana,
+    };
+  }
+
+  if (periodo === PERIODO_ECONOMIA.anno) {
+    const inizio = new Date(base.getFullYear(), 0, 1, 0, 0, 0, 0).getTime();
+    const fine = new Date(
+      base.getFullYear(),
+      11,
+      31,
+      23,
+      59,
+      59,
+      999
+    ).getTime();
+    return {
+      inizio,
+      fine,
+      etichetta: String(base.getFullYear()),
+      anno: base.getFullYear(),
+    };
+  }
 
   let anno = base.getFullYear();
   let mese = base.getMonth();
@@ -81,8 +169,6 @@ export function etichettaCantiereEconomia(cantiere = {}) {
 /**
  * Raccoglie movimenti di cassa reali da un cantiere.
  * Esclude movimenti senza data italiana valida (nessuna data inventata).
- * Record che falliscono normalizzaPagamento/normalizzaSpesa (es. data vuota)
- * non sono movimenti e non vengono conteggiati in esclusiSenzaData.
  * Non legge preventivo.incassato, listaSpesa, materiali qty, giornate.
  *
  * @param {object} cantiere
@@ -109,9 +195,11 @@ export function raccogliMovimentiCantiereEconomia(cantiere = {}) {
       importo: Number(pagamento.importo) || 0,
       categoria: tipoPagamento,
       descrizione:
+        String(pagamento.note || "").trim() ||
         ETICHETTE_TIPO_PAGAMENTO[tipoPagamento] ||
         String(tipoPagamento),
       etichettaCantiere,
+      origine: ORIGINE_MOVIMENTO_ECONOMIA.cantiere,
     });
   }
 
@@ -129,13 +217,45 @@ export function raccogliMovimentiCantiereEconomia(cantiere = {}) {
       categoria,
       descrizione:
         String(spesa.descrizione || "").trim() ||
+        ETICHETTE_CATEGORIA_USCITA_ECONOMIA[categoria] ||
         ETICHETTE_CATEGORIA_SPESA[categoria] ||
         "Spesa",
       etichettaCantiere,
+      origine: ORIGINE_MOVIMENTO_ECONOMIA.cantiere,
     });
   }
 
   return movimenti;
+}
+
+/**
+ * Movimenti generali (senza cantiere).
+ * @returns {Array<object>}
+ */
+export function raccogliMovimentiGeneraliEconomia() {
+  return leggiMovimentiEconomiaGenerali()
+    .map((m) => {
+      const ts = parseDataItalianaCantiere(m.data);
+      if (ts == null) return null;
+      return {
+        id: `generale-${m.id}`,
+        cantiereId: null,
+        tipo: m.tipo,
+        data: m.data,
+        ts,
+        importo: Number(m.importo) || 0,
+        categoria: m.categoria,
+        descrizione:
+          String(m.descrizione || "").trim() ||
+          (m.tipo === TIPO_MOVIMENTO_ECONOMIA.entrata
+            ? ETICHETTE_CATEGORIA_ENTRATA_ECONOMIA[m.categoria]
+            : ETICHETTE_CATEGORIA_USCITA_ECONOMIA[m.categoria]) ||
+          (m.tipo === TIPO_MOVIMENTO_ECONOMIA.entrata ? "Entrata" : "Uscita"),
+        etichettaCantiere: "",
+        origine: ORIGINE_MOVIMENTO_ECONOMIA.generale,
+      };
+    })
+    .filter(Boolean);
 }
 
 /**
@@ -150,14 +270,33 @@ export function calcolaDaIncassareEconomia(cantieri = []) {
   }, 0);
 }
 
+function azzeraRiepilogoUscite() {
+  /** @type {Record<string, number>} */
+  const out = {};
+  for (const voce of RIEPILOGO_USCITE_ECONOMIA) {
+    out[voce.key] = 0;
+  }
+  return out;
+}
+
 /**
  * Aggregazione Economia attività.
  * @param {object[]} cantieri
- * @param {{ periodo?: string, riferimento?: Date, limiteMovimenti?: number }=} opzioni
+ * @param {{
+ *   periodo?: string,
+ *   riferimento?: Date,
+ *   limiteMovimenti?: number,
+ *   movimentiGenerali?: object[],
+ *   personalizzato?: { inizio?: Date|number, fine?: Date|number },
+ * }=} opzioni
  */
 export function aggregaEconomiaAttivita(cantieri = [], opzioni = {}) {
   const periodo = opzioni.periodo || PERIODO_ECONOMIA.questo_mese;
-  const intervallo = intervalloPeriodoEconomia(periodo, opzioni.riferimento);
+  const intervallo = intervalloPeriodoEconomia(
+    periodo,
+    opzioni.riferimento,
+    opzioni.personalizzato
+  );
   const limite =
     Number.isFinite(Number(opzioni.limiteMovimenti)) &&
     Number(opzioni.limiteMovimenti) > 0
@@ -170,7 +309,6 @@ export function aggregaEconomiaAttivita(cantieri = [], opzioni = {}) {
   let esclusiSenzaData = 0;
 
   for (const cantiere of lista) {
-    // Conteggio esclusi: pagamenti/spese senza data valida
     const pagamenti = leggiPagamenti(cantiere);
     for (const p of pagamenti) {
       if (parseDataItalianaCantiere(p.data) == null) esclusiSenzaData += 1;
@@ -182,6 +320,23 @@ export function aggregaEconomiaAttivita(cantieri = [], opzioni = {}) {
     movimenti = movimenti.concat(raccogliMovimentiCantiereEconomia(cantiere));
   }
 
+  const generali =
+    opzioni.movimentiGenerali != null
+      ? opzioni.movimentiGenerali
+      : raccogliMovimentiGeneraliEconomia();
+  for (const g of generali) {
+    if (g && g.ts == null) {
+      const ts = parseDataItalianaCantiere(g.data);
+      if (ts == null) {
+        esclusiSenzaData += 1;
+        continue;
+      }
+      movimenti.push({ ...g, ts });
+    } else if (g) {
+      movimenti.push(g);
+    }
+  }
+
   const nelPeriodo =
     intervallo == null
       ? movimenti
@@ -191,9 +346,18 @@ export function aggregaEconomiaAttivita(cantieri = [], opzioni = {}) {
 
   let entrate = 0;
   let uscite = 0;
+  const uscitePerCategoria = azzeraRiepilogoUscite();
+
   for (const m of nelPeriodo) {
-    if (m.tipo === TIPO_MOVIMENTO_ECONOMIA.entrata) entrate += m.importo;
-    else if (m.tipo === TIPO_MOVIMENTO_ECONOMIA.uscita) uscite += m.importo;
+    if (m.tipo === TIPO_MOVIMENTO_ECONOMIA.entrata) {
+      entrate += m.importo;
+    } else if (m.tipo === TIPO_MOVIMENTO_ECONOMIA.uscita) {
+      uscite += m.importo;
+      const key = Object.values(CATEGORIE_SPESA).includes(m.categoria)
+        ? m.categoria
+        : CATEGORIE_SPESA.altro;
+      uscitePerCategoria[key] = (uscitePerCategoria[key] || 0) + m.importo;
+    }
   }
 
   const ordinati = [...nelPeriodo].sort((a, b) => {
@@ -210,6 +374,11 @@ export function aggregaEconomiaAttivita(cantieri = [], opzioni = {}) {
     uscite,
     saldo: entrate - uscite,
     daIncassare: calcolaDaIncassareEconomia(lista),
+    uscitePerCategoria,
+    riepilogoUscite: RIEPILOGO_USCITE_ECONOMIA.map((voce) => ({
+      ...voce,
+      importo: uscitePerCategoria[voce.key] || 0,
+    })),
     movimenti: ordinati.slice(0, limite),
     movimentiTotaliNelPeriodo: ordinati.length,
     esclusiSenzaData,
@@ -218,3 +387,9 @@ export function aggregaEconomiaAttivita(cantieri = [], opzioni = {}) {
 }
 
 export { formatEuro };
+export {
+  ETICHETTE_CATEGORIA_USCITA_ECONOMIA,
+  ETICHETTE_CATEGORIA_ENTRATA_ECONOMIA,
+  RIEPILOGO_USCITE_ECONOMIA,
+  CATEGORIE_ENTRATA_ECONOMIA,
+} from "./economiaMovimentiTypes";

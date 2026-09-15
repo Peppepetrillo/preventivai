@@ -283,7 +283,7 @@ export function useCantieri({
     setCantieri(cantieriAggiornati);
     const ancoraAttivi = filtraRecordAttivi(cantieriAggiornati);
     setCantiereSelezionatoId(ancoraAttivi[0]?.id || "");
-    setMessaggio("Elemento spostato nel Cestino.");
+    setMessaggio("Lavoro spostato nel Cestino.");
     return true;
   }
 

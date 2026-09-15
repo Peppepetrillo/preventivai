@@ -377,11 +377,11 @@ export function valutaPrerequisitiChiusuraCantiere(
 }
 
 /**
- * Copy ConfirmDialog per spostamento cantiere nel Cestino (UX-7.1).
+ * Copy ConfirmDialog per spostamento cantiere nel Cestino.
  * Lo stato non cambia il messaggio: soft delete uniforme.
  * @param {string=} stato
  */
 export function testoConfermaEliminaCantiere(stato) {
   void stato;
-  return "L'elemento verrà spostato nel Cestino e potrai ripristinarlo in seguito.";
+  return "Il lavoro verrà spostato nel Cestino e potrai recuperarlo in seguito.";
 }

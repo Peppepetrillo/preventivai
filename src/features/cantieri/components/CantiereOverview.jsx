@@ -4,7 +4,8 @@ import PageBackLink from "../../../components/PageBackLink";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import ConfirmDialog from "../../../components/ConfirmDialog";
-import { routeCliente, routePreventivo, sezioneDaLocation } from "../../../app/routes";
+import OverlayPortal from "../../../components/OverlayPortal";
+import { routeCliente, routePreventivo, sezioneDaLocation, ROUTES } from "../../../app/routes";
 import { getCantiereAssistant } from "../../../services/assistantService";
 import { ottieniFirma } from "../../../domain/firma";
 import { aggiungiInsight } from "../../../domain/insights";
@@ -715,7 +716,7 @@ export default function CantiereOverview({
             className="min-h-[44px] px-2 text-sm font-medium text-slate-500 hover:text-red-300"
             data-testid="cantiere-elimina"
           >
-            Elimina cantiere
+            Elimina lavoro
           </button>
         </div>
 
@@ -1003,17 +1004,42 @@ export default function CantiereOverview({
                 className="flex items-center justify-between gap-3 min-h-[52px] rounded-[14px] border border-white/10 bg-black/[0.14] px-4 py-3 font-bold text-white"
                 data-testid="cantiere-link-preventivo"
               >
-                <span>Preventivo {cantiere.preventivoNumero || ""}</span>
+                <span>
+                  Preventivo collegato
+                  {cantiere.preventivoNumero
+                    ? ` · ${cantiere.preventivoNumero}`
+                    : ""}
+                </span>
                 <span className="text-slate-400 text-sm">Apri</span>
               </Link>
             ) : (
-              <p className="text-sm text-slate-400 py-2">
-                {diretto
-                  ? "Lavoro diretto — nessun preventivo collegato."
-                  : "Nessun preventivo collegato."}
-              </p>
+              <div
+                className="rounded-[14px] border border-white/10 bg-black/[0.14] px-4 py-3 space-y-3"
+                data-testid="cantiere-senza-preventivo"
+              >
+                <p className="ds-text-secondary">
+                  Questo lavoro non ha ancora un preventivo.
+                </p>
+                <Link
+                  to={
+                    cantiere.clienteId
+                      ? `${ROUTES.preventiviNuovo}?clienteId=${encodeURIComponent(
+                          String(cantiere.clienteId)
+                        )}&cantiereId=${encodeURIComponent(String(cantiere.id))}`
+                      : `${ROUTES.preventiviNuovo}?cantiereId=${encodeURIComponent(
+                          String(cantiere.id)
+                        )}&cliente=${encodeURIComponent(
+                          String(cantiere.cliente || "")
+                        )}`
+                  }
+                  className="btn-secondary w-full min-h-[48px] flex items-center justify-center font-bold"
+                  data-testid="cantiere-crea-preventivo"
+                >
+                  Crea preventivo
+                </Link>
+              </div>
             )}
-            {!diretto ? (
+            {cantiere.preventivoId ? (
               <p className="text-xs text-slate-500 px-1">
                 PDF e firma cliente si gestiscono dal dettaglio preventivo.
               </p>
@@ -1065,9 +1091,9 @@ export default function CantiereOverview({
 
       <ConfirmDialog
         open={confermaElimina}
-        title="Vuoi spostare questo elemento nel Cestino?"
+        title="Eliminare questo lavoro?"
         description={testoConfermaEliminaCantiere(cantiere.stato)}
-        confirmLabel="Sposta nel Cestino"
+        confirmLabel="Elimina"
         cancelLabel="Annulla"
         onConfirm={() => {
           setConfermaElimina(false);
@@ -1107,18 +1133,14 @@ export default function CantiereOverview({
       )}
 
       {dialogoChiusura ? (
-        <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4 safe-bottom safe-top"
-          role="dialog"
-          aria-modal="true"
+        <OverlayPortal
+          open
+          onBackdropClick={() => setDialogoChiusura(null)}
           aria-labelledby="chiusura-cantiere-title"
-          data-testid="dialogo-chiusura-cantiere"
+          testId="dialogo-chiusura-cantiere"
         >
-          <div className="w-full max-w-md pro-panel-strong p-5 space-y-4 ux-sheet">
-            <h2
-              id="chiusura-cantiere-title"
-              className="text-xl font-black"
-            >
+          <div className="ds-modal-panel pro-panel-strong space-y-4">
+            <h2 id="chiusura-cantiere-title" className="ds-card-title">
               Prima di chiudere il cantiere
             </h2>
             <ul className="space-y-2">
@@ -1127,12 +1149,12 @@ export default function CantiereOverview({
                   key={voce.id}
                   className="rounded-[12px] border border-amber-400/25 bg-amber-400/10 px-3 py-2.5 text-sm text-amber-50"
                 >
-                  {voce.soloAvviso ? "⚠️ " : "• "}
+                  {voce.soloAvviso ? "Avviso: " : ""}
                   {voce.testo}
                 </li>
               ))}
             </ul>
-            <p className="text-sm text-slate-400">
+            <p className="ds-text-secondary">
               Puoi comunque segnare il lavoro come finito.
             </p>
             <div className="grid gap-2">
@@ -1154,7 +1176,7 @@ export default function CantiereOverview({
               </button>
             </div>
           </div>
-        </div>
+        </OverlayPortal>
       ) : null}
 
       <InsightRapidoSheet

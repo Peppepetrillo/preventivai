@@ -5,7 +5,7 @@ import {
   MapPin,
   Plus,
 } from "lucide-react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import { routeCantiere } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
@@ -74,6 +74,7 @@ function ordinaCantieriOperativi(cantieri) {
  */
 export default function Cantieri() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const {
     cantieriAttivi,
@@ -87,6 +88,25 @@ export default function Cantieri() {
   const [ricerca, setRicerca] = useState("");
   const [filtro, setFiltro] = useState("attivi");
   const [formAperto, setFormAperto] = useState(false);
+  const feedbackNavigazione = location.state?.feedback
+    ? String(location.state.feedback)
+    : "";
+
+  useEffect(() => {
+    if (!feedbackNavigazione) return undefined;
+    const timer = window.setTimeout(() => {
+      navigate(location.pathname + location.search, {
+        replace: true,
+        state: {},
+      });
+    }, 2800);
+    return () => window.clearTimeout(timer);
+  }, [
+    feedbackNavigazione,
+    location.pathname,
+    location.search,
+    navigate,
+  ]);
 
   useEffect(() => {
     const apriNuovo =
@@ -165,9 +185,12 @@ export default function Cantieri() {
           </div>
         </header>
 
-        {messaggio ? (
-          <div className="pro-panel px-3.5 py-3 mb-3 text-sm text-yellow-100 border-yellow-300/30">
-            {messaggio}
+        {messaggio || feedbackNavigazione ? (
+          <div
+            className="pro-panel px-3.5 py-3 mb-3 text-sm text-yellow-100 border-yellow-300/30"
+            data-testid="cantieri-feedback"
+          >
+            {feedbackNavigazione || messaggio}
           </div>
         ) : null}
 

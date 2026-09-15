@@ -26,11 +26,21 @@ describe("storageKeys — sync cloud APP_DATA", () => {
       STORAGE_KEYS.datiAzienda,
       STORAGE_KEYS.listino,
       STORAGE_KEYS.esperienze,
+      STORAGE_KEYS.distinteMateriali,
+      STORAGE_KEYS.listaSpesa,
+      STORAGE_KEYS.economiaMovimenti,
+      STORAGE_KEYS.firme,
+      STORAGE_KEYS.varianti,
+      STORAGE_KEYS.variantiTimeline,
     ];
 
     for (const chiave of chiaviAttese) {
       expect(chiave in APP_DATA_KEYS).toBe(true);
     }
+  });
+
+  it("catalogo materiali resta locale-only (seed grande, sync P2)", () => {
+    expect(STORAGE_KEYS.catalogoMateriali in APP_DATA_KEYS).toBe(false);
   });
 });
 

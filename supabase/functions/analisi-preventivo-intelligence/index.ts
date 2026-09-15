@@ -5,9 +5,10 @@
  *   OPENAI_API_KEY   (obbligatoria)
  *   OPENAI_MODEL     (opzionale, default gpt-4o-mini)
  *
- * Nessuna key nel client. Endpoint pubblico:
+ * Nessuna key nel client. Endpoint autenticato (JWT Supabase):
  *   ${VITE_SUPABASE_URL}/functions/v1/analisi-preventivo-intelligence
  * oppure VITE_AI_ASSISTANT_ENDPOINT puntato a questa URL.
+ * Il client invia Authorization: Bearer <access_token> + apikey anon.
  */
 
 import {
@@ -157,6 +158,16 @@ Deno.serve(async (req) => {
 
   if (req.method !== "POST") {
     return json(req, 405, { ok: false, errore: "Metodo non consentito." });
+  }
+
+  // Difesa in profondità: gateway verify_jwt=true; qui rifiutiamo comunque senza Bearer.
+  const auth = String(req.headers.get("Authorization") || "").trim();
+  if (!auth.toLowerCase().startsWith("bearer ")) {
+    return json(req, 401, {
+      ok: false,
+      codice: "non_autenticato",
+      errore: "Autenticazione richiesta.",
+    });
   }
 
   const apiKey = String(Deno.env.get("OPENAI_API_KEY") || "").trim();

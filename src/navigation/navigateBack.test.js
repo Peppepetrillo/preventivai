@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   eseguiNavigazioneIndietro,
   isOverlayNavigazioneAperto,
+  setNavigazioneIndietroHandler,
   setNavigazioneIndietroOverride,
   targetEscludeEdgeSwipe,
 } from "./navigateBack";
@@ -11,6 +12,18 @@ describe("navigateBack — eseguiNavigazioneIndietro", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     setNavigazioneIndietroOverride(null);
+    setNavigazioneIndietroHandler(null);
+  });
+
+  it("handler custom ha priorità su override path", () => {
+    const handler = vi.fn();
+    setNavigazioneIndietroOverride("/cliente/1");
+    setNavigazioneIndietroHandler(handler);
+    const navigate = vi.fn();
+    const esito = eseguiNavigazioneIndietro(navigate, "/nuovo-preventivo");
+    expect(handler).toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(esito.metodo).toBe("handler");
   });
 
   it("override PageBackLink to ha priorità su history e parent", () => {

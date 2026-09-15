@@ -249,9 +249,7 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
     fireEvent.click(screen.getByTestId("cantiere-elimina"));
 
     expect(screen.getByTestId("conferma-elimina-cantiere")).toBeInTheDocument();
-    expect(
-      screen.getByText("Vuoi spostare questo elemento nel Cestino?")
-    ).toBeVisible();
+    expect(screen.getByText("Eliminare questo lavoro?")).toBeVisible();
     expect(screen.getByText(/spostato nel Cestino/i)).toBeVisible();
 
     fireEvent.click(screen.getByTestId("conferma-elimina-cantiere-cancel"));

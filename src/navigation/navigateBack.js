@@ -12,11 +12,25 @@ import {
 /** Override esplicito da PageBackLink `to` (stesso target di Back e swipe). */
 let backOverridePath = null;
 
+/** Handler custom (es. wizard step / conferma bozza). Ha priorità sul path. */
+let backOverrideHandler = null;
+
 /**
  * @param {string|null} path
  */
 export function setNavigazioneIndietroOverride(path) {
   backOverridePath = path ? String(path) : null;
+}
+
+/**
+ * @param {null|((ctx: {
+ *   navigate: import('react-router-dom').NavigateFunction,
+ *   pathname: string,
+ *   opzioni?: object,
+ * }) => void)} handler
+ */
+export function setNavigazioneIndietroHandler(handler) {
+  backOverrideHandler = typeof handler === "function" ? handler : null;
 }
 
 /**
@@ -28,14 +42,19 @@ export function getNavigazioneIndietroOverride() {
 
 /**
  * Esegue il ritorno.
- * Preferisce override pagina → history in-app → parent della gerarchia.
+ * Preferisce handler pagina → override path → history in-app → parent.
  *
  * @param {import('react-router-dom').NavigateFunction} navigate
  * @param {string} pathname
  * @param {{ forceParent?: boolean }=} opzioni
- * @returns {{ metodo: 'override'|'history'|'parent'|'home', destinazione: string|null }}
+ * @returns {{ metodo: 'handler'|'override'|'history'|'parent'|'home', destinazione: string|null }}
  */
 export function eseguiNavigazioneIndietro(navigate, pathname, opzioni = {}) {
+  if (backOverrideHandler) {
+    backOverrideHandler({ navigate, pathname, opzioni });
+    return { metodo: "handler", destinazione: null };
+  }
+
   const override = getNavigazioneIndietroOverride();
   if (override) {
     navigate(override);

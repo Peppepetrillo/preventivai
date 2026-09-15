@@ -62,3 +62,5 @@ export function convertiPreventivoInCantiere(preventivo) {
 export function creaCantierePerPreventivo(preventivo) {
   return convertiPreventivoInCantiere(preventivo);
 }
+
+export { collegaPreventivoACantiereEsistente } from "./collegaPreventivoCantiereService";

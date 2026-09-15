@@ -62,5 +62,9 @@ describe("Incassi UX-8.6", () => {
     expect(
       screen.getByRole("button", { name: /Registra pagamento/i })
     ).toBeInTheDocument();
+    expect(screen.getByTestId("incassi-link-economia")).toHaveAttribute(
+      "href",
+      "/economia"
+    );
   });
 });

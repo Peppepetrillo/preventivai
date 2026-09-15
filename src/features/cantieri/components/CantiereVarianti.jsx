@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, ClipboardList, Play, Plus, X } from "lucide-react";
 
 import NumericInput from "../../../components/NumericInput";
+import OverlayPortal from "../../../components/OverlayPortal";
 import { formatEuro } from "../../../utils/preventivi";
 import {
   STATI_VARIANTE,
@@ -383,17 +384,17 @@ export default function CantiereVarianti({
       ) : null}
 
       {dialogoPreventivo ? (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 px-4 safe-bottom"
-          role="dialog"
-          aria-modal="true"
+        <OverlayPortal
+          open
+          onBackdropClick={() => setDialogoPreventivo(null)}
           aria-labelledby="variante-preventivo-title"
+          testId="dialogo-variante-preventivo"
         >
-          <div className="w-full max-w-md pro-panel-strong p-5 space-y-4 mb-4 sm:mb-0 ux-sheet">
-            <h2 id="variante-preventivo-title" className="text-xl font-black">
+          <div className="ds-modal-panel pro-panel-strong space-y-4">
+            <h2 id="variante-preventivo-title" className="ds-card-title">
               Aggiornare anche il preventivo?
             </h2>
-            <p className="text-sm text-slate-400 leading-relaxed">
+            <p className="ds-text-secondary leading-relaxed">
               Il lavoro extra è già sul cantiere. Puoi copiarlo anche sul
               preventivo collegato.
             </p>
@@ -414,7 +415,7 @@ export default function CantiereVarianti({
               </button>
             </div>
           </div>
-        </div>
+        </OverlayPortal>
       ) : null}
     </section>
   );

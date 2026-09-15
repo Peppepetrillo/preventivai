@@ -308,6 +308,11 @@ describe("fallback e nessun dato inventato", () => {
 });
 
 describe("provider mock", () => {
+  const sessioneTest = {
+    getSession: async () => ({ access_token: "test-jwt-token" }),
+    anonKey: "test-anon-key",
+  };
+
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
@@ -321,6 +326,51 @@ describe("provider mock", () => {
     expect(esito.motivo).toBe("provider_non_configurato");
   });
 
+  it("senza sessione → non_autenticato (fallback client)", async () => {
+    vi.stubEnv("VITE_AI_ASSISTANT_ENDPOINT", "https://example.test/ai");
+    _resetRateLimitClientPerTest();
+    const fetchImpl = vi.fn();
+    const esito = await generaInsightDaProvider(
+      {
+        nuovoLavoro: { titolo: "x" },
+        livelloConfidenza: "bassa",
+        lavoriSimili: [],
+        statistiche: {},
+        portfolio: {},
+      },
+      {
+        fetchImpl,
+        getSession: async () => null,
+      }
+    );
+    expect(esito.ok).toBe(false);
+    expect(esito.motivo).toBe("non_autenticato");
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("invia Authorization Bearer JWT", async () => {
+    vi.stubEnv("VITE_AI_ASSISTANT_ENDPOINT", "https://example.test/ai");
+    _resetRateLimitClientPerTest();
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ valutazione: "Ok" }),
+    }));
+    await generaInsightDaProvider(
+      {
+        nuovoLavoro: { titolo: "x" },
+        livelloConfidenza: "bassa",
+        lavoriSimili: [],
+        statistiche: {},
+        portfolio: {},
+      },
+      { fetchImpl, ...sessioneTest }
+    );
+    expect(fetchImpl).toHaveBeenCalled();
+    const headers = fetchImpl.mock.calls[0][1].headers;
+    expect(headers.Authorization).toBe("Bearer test-jwt-token");
+    expect(headers.apikey).toBe("test-anon-key");
+  });
+
   it("provider errore → fallback orchestratore", async () => {
     vi.stubEnv("VITE_AI_ASSISTANT_ENDPOINT", "https://example.test/ai");
     _resetRateLimitClientPerTest();
@@ -331,6 +381,7 @@ describe("provider mock", () => {
       cantieri: [],
       nuovoLavoro: { titolo: "Manutenzione" },
       fetchImpl,
+      ...sessioneTest,
     });
     expect(esito.usatoProvider).toBe(false);
     expect(esito.motivoFallback).toBe("provider_non_raggiungibile");
@@ -360,7 +411,7 @@ describe("provider mock", () => {
         statistiche: {},
         portfolio: {},
       },
-      { fetchImpl, timeoutMs: 20 }
+      { fetchImpl, timeoutMs: 20, ...sessioneTest }
     );
     expect(esito.ok).toBe(false);
     expect(esito.motivo).toBe("timeout");
@@ -378,6 +429,7 @@ describe("provider mock", () => {
       cantieri: [],
       nuovoLavoro: { titolo: "x" },
       fetchImpl,
+      ...sessioneTest,
     });
     expect(esito.usatoProvider).toBe(false);
     expect(esito.motivoFallback).toBe("provider_upstream");
@@ -404,6 +456,7 @@ describe("provider mock", () => {
       cantieri: [],
       nuovoLavoro: { titolo: "x" },
       fetchImpl,
+      ...sessioneTest,
     });
     expect(esito.usatoProvider).toBe(true);
     expect(esito.insight.valutazione).toMatch(/materiali/i);
@@ -429,11 +482,13 @@ describe("provider mock", () => {
     const a = await generaInsightDaProvider(contesto, {
       fetchImpl,
       nowMs: 1000,
+      ...sessioneTest,
     });
     expect(a.ok).toBe(true);
     const b = await generaInsightDaProvider(contesto, {
       fetchImpl,
       nowMs: 1000 + AI_LIMITI.minIntervalloClientMs - 100,
+      ...sessioneTest,
     });
     expect(b.ok).toBe(false);
     expect(b.motivo).toBe("troppo_frequente");

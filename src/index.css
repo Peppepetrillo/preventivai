@@ -66,6 +66,12 @@
   --badge-sospeso-bg: rgba(251, 146, 60, 0.15);
   --badge-sospeso-fg: #fed7aa;
   --badge-sospeso-bd: rgba(251, 146, 60, 0.3);
+
+  /* Stacking — overlay sopra BottomNav (WebKit: backdrop-filter + transform) */
+  --z-bottom-nav: 50;
+  --z-sheet: 70;
+  --z-modal: 200;
+  --z-fullscreen: 210;
 }
 
 html {
@@ -454,7 +460,7 @@ a {
   transform: translateX(-50%);
   width: 94%;
   max-width: 42rem;
-  z-index: 50;
+  z-index: var(--z-bottom-nav, 50);
   bottom: max(10px, var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)));
 }
 
@@ -467,11 +473,66 @@ a {
   padding: 8px 6px;
 }
 
+/*
+  Overlay aperti: BottomNav non deve coprire né intercettare tap.
+  Necessario su iOS/WebKit dove transform + backdrop-filter promuovono
+  il layer della nav sopra overlay fixed anche con z-index inferiore.
+*/
+body[data-overlay-open] .ds-bottom-nav {
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.ds-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top, 0px))
+    max(16px, env(safe-area-inset-right, 0px))
+    max(16px, env(safe-area-inset-bottom, 0px))
+    max(16px, env(safe-area-inset-left, 0px));
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.ds-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.ds-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 28rem;
+  max-height: min(85dvh, 520px);
+  overflow-y: auto;
+  padding: var(--space-5);
+}
+
+.ds-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-fullscreen, 210);
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* —— UX-001 Mobile PDF Experience —— */
 .pdf-anteprima-root {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: var(--z-fullscreen, 210);
   display: flex;
   flex-direction: column;
   background: rgba(2, 6, 23, 0.55);

@@ -74,6 +74,7 @@ import {
 } from "../utils/preventivi";
 import NumericInput from "../components/NumericInput";
 import PdfAnteprima from "../components/PdfAnteprima";
+import ConfirmDialog from "../components/ConfirmDialog";
 import QualityCheckCard from "../components/QualityCheckCard";
 import FirmaClienteSection from "../features/preventivi/components/FirmaClienteSection";
 import CondivisioneSection from "../features/preventivi/components/CondivisioneSection";
@@ -135,6 +136,8 @@ export default function DettaglioPreventivo() {
   const [messaggio, setMessaggio] = useState("");
   const [bannerPostAccetta, setBannerPostAccetta] = useState(false);
   const [confermaRifiuto, setConfermaRifiuto] = useState(false);
+  const [alertStatoManuale, setAlertStatoManuale] = useState(null);
+  const [confermaStatoManuale, setConfermaStatoManuale] = useState(null);
   const [confermaEliminaPreventivo, setConfermaEliminaPreventivo] =
     useState(false);
   const [timelineTick, setTimelineTick] = useState(0);
@@ -798,16 +801,20 @@ export default function DettaglioPreventivo() {
                 prossimo === STATI_PREVENTIVO.LAVORO_COMPLETATO
               ) {
                 if (!cantiereCollegatoId) {
-                  window.alert(
-                    "Non puoi impostare questo stato senza un cantiere collegato.\nUsa «Inizia cantiere» dal percorso normale."
-                  );
+                  setAlertStatoManuale({
+                    title: "Cantiere mancante",
+                    description:
+                      "Non puoi impostare questo stato senza un cantiere collegato. Usa «Inizia cantiere» dal percorso normale.",
+                  });
                   return;
                 }
-                const messaggioConferma =
-                  "Correzione manuale dello stato.\nQuesta azione non crea né chiude automaticamente il cantiere.";
-                if (!window.confirm(messaggioConferma)) {
-                  return;
-                }
+                setConfermaStatoManuale({
+                  prossimo,
+                  title: "Correggere lo stato?",
+                  description:
+                    "Correzione manuale dello stato. Questa azione non crea né chiude automaticamente il cantiere.",
+                });
+                return;
               }
               setStato(prossimo);
             }}
@@ -1230,6 +1237,35 @@ export default function DettaglioPreventivo() {
         onContinuaSenza={() =>
           eseguiConversioneCantiere({ usaDistinta: false })
         }
+      />
+
+      <ConfirmDialog
+        open={Boolean(alertStatoManuale)}
+        title={alertStatoManuale?.title || ""}
+        description={alertStatoManuale?.description || ""}
+        confirmLabel="Ho capito"
+        cancelLabel="Chiudi"
+        danger={false}
+        onConfirm={() => setAlertStatoManuale(null)}
+        onCancel={() => setAlertStatoManuale(null)}
+        testId="preventivo-alert-stato"
+      />
+
+      <ConfirmDialog
+        open={Boolean(confermaStatoManuale)}
+        title={confermaStatoManuale?.title || ""}
+        description={confermaStatoManuale?.description || ""}
+        confirmLabel="Continua"
+        cancelLabel="Annulla"
+        danger={false}
+        onConfirm={() => {
+          if (confermaStatoManuale?.prossimo) {
+            setStato(confermaStatoManuale.prossimo);
+          }
+          setConfermaStatoManuale(null);
+        }}
+        onCancel={() => setConfermaStatoManuale(null)}
+        testId="preventivo-conferma-stato"
       />
     </div>
   );

@@ -284,6 +284,41 @@ describe("economiaService v0", () => {
     expect(r.cantieriAnalizzati).toBe(2);
   });
 
+  it("aggrega uscite per categoria (operai / materiale)", () => {
+    const r = aggregaEconomiaAttivita(
+      [
+        {
+          id: "c1",
+          totaleLavoro: 5000,
+          origine: "diretto",
+          pagamenti: [],
+          spese: [
+            {
+              id: "s1",
+              data: "05/09/2026",
+              importo: 500,
+              descrizione: "Squadra",
+              categoria: CATEGORIE_SPESA.manodopera,
+            },
+            {
+              id: "s2",
+              data: "06/09/2026",
+              importo: 350,
+              descrizione: "Cavi",
+              categoria: CATEGORIE_SPESA.materiali,
+            },
+          ],
+        },
+      ],
+      { periodo: PERIODO_ECONOMIA.questo_mese, riferimento }
+    );
+    expect(r.uscitePerCategoria.manodopera).toBe(500);
+    expect(r.uscitePerCategoria.materiali).toBe(350);
+    expect(r.riepilogoUscite.find((v) => v.key === "manodopera").importo).toBe(
+      500
+    );
+  });
+
   it("intervalloPeriodoEconomia: questo mese e mese scorso", () => {
     const questo = intervalloPeriodoEconomia(
       PERIODO_ECONOMIA.questo_mese,

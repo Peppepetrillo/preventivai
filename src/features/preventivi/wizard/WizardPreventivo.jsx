@@ -1,9 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ROUTES } from "../../../app/routes";
+import ConfirmDialog from "../../../components/ConfirmDialog";
+import { setNavigazioneIndietroHandler } from "../../../navigation/navigateBack";
 import { leggiClienti } from "../../../repositories/clientiRepository";
+import { leggiCantieri } from "../../../repositories/cantieriRepository";
 import { useSalvaEGeneraPdf } from "../hooks/useSalvaEGeneraPdf";
 import { useWizardContext } from "./useWizardContext";
 import { useWizardPreventivoState } from "./useWizardPreventivoState";
@@ -20,11 +23,23 @@ const VARIANTI_STEP = {
   uscita: { opacity: 0, x: -24 },
 };
 
+/**
+ * True se la bozza ha contenuto che andrebbe perso uscendo.
+ * @param {object} stato
+ */
+export function wizardBozzaHaDati(stato = {}) {
+  if (String(stato.cliente || "").trim()) return true;
+  if ((stato.lavorazioni || []).length > 0) return true;
+  if (String(stato.condizioni?.note || "").trim()) return true;
+  return false;
+}
+
 export default function WizardPreventivo() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { attivaWizard, disattivaWizard } = useWizardContext();
   const clienteIdElaborato = useRef(false);
+  const [confermaUscita, setConfermaUscita] = useState(false);
   const salvataggio = useSalvaEGeneraPdf();
   const {
     stato,
@@ -48,35 +63,16 @@ export default function WizardPreventivo() {
   const puoAndareIndietro = indiceCorrente > 0;
   const stepCorrente = WIZARD_STEPS[indiceCorrente] || WIZARD_STEPS[0];
 
-  useEffect(() => {
-    attivaWizard(stato.stepId);
-    return () => disattivaWizard();
-  }, [attivaWizard, disattivaWizard, stato.stepId]);
+  const esciDalWizard = useCallback(() => {
+    salvataggio.resetEsito();
+    reset();
+    setConfermaUscita(false);
+    navigate(ROUTES.preventivi);
+  }, [navigate, reset, salvataggio]);
 
-  useEffect(() => {
-    const clienteId = searchParams.get("clienteId");
-    if (!clienteId || clienteIdElaborato.current) return;
-
-    const cliente = leggiClienti().find((item) => String(item.id) === clienteId);
-    if (!cliente?.nome) return;
-
-    clienteIdElaborato.current = true;
-    impostaCliente({ nome: cliente.nome, id: cliente.id });
-    vaiAStep("componi");
-  }, [searchParams, impostaCliente, vaiAStep]);
-
-  useEffect(() => {
-    if (stato.stepId !== "conferma") {
-      salvataggio.resetEsito();
-    }
-    // salvataggio: oggetto hook; resetEsito è stabile a sufficienza per lo step corrente
-  }, [stato.stepId, salvataggio]);
-
-  function gestisciIndietro() {
+  const gestisciIndietro = useCallback(() => {
     if (esitoSuccesso) {
-      salvataggio.resetEsito();
-      reset();
-      navigate(ROUTES.preventivi);
+      esciDalWizard();
       return;
     }
 
@@ -85,9 +81,72 @@ export default function WizardPreventivo() {
       return;
     }
 
-    reset();
-    navigate(ROUTES.preventivi);
-  }
+    if (wizardBozzaHaDati(stato)) {
+      setConfermaUscita(true);
+      return;
+    }
+
+    esciDalWizard();
+  }, [esciDalWizard, esitoSuccesso, indietro, puoAndareIndietro, stato]);
+
+  useEffect(() => {
+    attivaWizard(stato.stepId);
+    return () => disattivaWizard();
+  }, [attivaWizard, disattivaWizard, stato.stepId]);
+
+  useEffect(() => {
+    setNavigazioneIndietroHandler(() => {
+      gestisciIndietro();
+    });
+    return () => setNavigazioneIndietroHandler(null);
+  }, [gestisciIndietro]);
+
+  useEffect(() => {
+    const clienteId = searchParams.get("clienteId");
+    const cantiereId = searchParams.get("cantiereId");
+    const clienteNome = searchParams.get("cliente");
+    if (clienteIdElaborato.current) return;
+
+    if (clienteId) {
+      const cliente = leggiClienti().find((item) => String(item.id) === clienteId);
+      if (cliente?.nome) {
+        clienteIdElaborato.current = true;
+        impostaCliente({ nome: cliente.nome, id: cliente.id });
+        vaiAStep("componi");
+        return;
+      }
+    }
+
+    if (cantiereId) {
+      const cantiere = leggiCantieri().find(
+        (item) => String(item.id) === String(cantiereId)
+      );
+      const nome =
+        String(cantiere?.cliente || clienteNome || "").trim() || "";
+      if (nome) {
+        clienteIdElaborato.current = true;
+        impostaCliente({
+          nome,
+          id: cantiere?.clienteId ?? null,
+        });
+        vaiAStep("componi");
+        return;
+      }
+    }
+
+    if (clienteNome?.trim()) {
+      clienteIdElaborato.current = true;
+      impostaCliente({ nome: clienteNome.trim(), id: null });
+      vaiAStep("componi");
+    }
+  }, [searchParams, impostaCliente, vaiAStep]);
+
+  useEffect(() => {
+    if (stato.stepId !== "conferma") {
+      salvataggio.resetEsito();
+    }
+    // salvataggio: oggetto hook; resetEsito è stabile a sufficienza per lo step corrente
+  }, [stato.stepId, salvataggio]);
 
   function gestisciNuovoPreventivo() {
     salvataggio.resetEsito();
@@ -132,7 +191,12 @@ export default function WizardPreventivo() {
             pdfGenerato={salvataggio.pdfGenerato}
             pdfBlob={salvataggio.pdfBlob}
             pdfNomeFile={salvataggio.pdfNomeFile}
-            onSalva={() => salvataggio.salvaEGeneraPdf(stato)}
+            onSalva={() =>
+              salvataggio.salvaEGeneraPdf({
+                ...stato,
+                cantiereId: searchParams.get("cantiereId") || null,
+              })
+            }
             onRiprovaPdf={() => salvataggio.riprovaPdf(stato.condizioni)}
             onNuovoPreventivo={gestisciNuovoPreventivo}
             onModificaComposizione={indietro}
@@ -180,6 +244,18 @@ export default function WizardPreventivo() {
           {renderStep()}
         </motion.div>
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={confermaUscita}
+        title="Vuoi uscire?"
+        description="La bozza non salvata andrà persa."
+        confirmLabel="Esci"
+        cancelLabel="Continua"
+        danger
+        onConfirm={esciDalWizard}
+        onCancel={() => setConfermaUscita(false)}
+        testId="wizard-conferma-uscita"
+      />
     </div>
   );
 }

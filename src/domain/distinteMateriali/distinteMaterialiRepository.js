@@ -1,8 +1,7 @@
 /**
  * Repository Distinte Materiali — persistenza isolata, senza UI.
  * Storage key: preventivai.distinteMateriali
- *
- * Locale-only: non entra in APP_DATA_KEYS.
+ * Sync/backup: in APP_DATA_KEYS da Sprint 22.
  */
 
 import { STORAGE_FALLBACKS, STORAGE_KEYS } from "../../app/storageKeys";

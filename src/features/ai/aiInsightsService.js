@@ -23,6 +23,8 @@ import {
  *   forzaFallback?: boolean,
  *   fetchImpl?: typeof fetch,
  *   timeoutMs?: number,
+ *   getSession?: () => Promise<{ access_token?: string }|null>,
+ *   anonKey?: string,
  * }} input
  */
 export async function analizzaNuovoLavoroIntelligence(input = {}) {
@@ -48,6 +50,8 @@ export async function analizzaNuovoLavoroIntelligence(input = {}) {
     const esito = await generaInsightDaProvider(contesto, {
       fetchImpl: input.fetchImpl,
       timeoutMs: input.timeoutMs,
+      getSession: input.getSession,
+      anonKey: input.anonKey,
     });
     if (esito.ok) {
       usatoProvider = true;

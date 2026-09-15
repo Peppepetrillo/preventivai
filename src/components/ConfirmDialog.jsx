@@ -1,6 +1,15 @@
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
+
+import { acquisisciOverlayLock } from "./overlayLock";
+
 /**
  * Dialogo di conferma in-app (sostituisce window.confirm).
- * z-[80]: sopra BottomSheet (70) quando annidato in sheet/modali.
+ *
+ * - Portal su document.body (fuori stacking context di PageWrapper / framer-motion)
+ * - z-index da token CSS --z-modal (sopra BottomNav)
+ * - body[data-overlay-open] disattiva la BottomNav (fix / WebKit backdrop-filter)
+ * - pannello centrato: pulsanti mai sotto la BottomNav
  */
 export default function ConfirmDialog({
   open,
@@ -13,17 +22,30 @@ export default function ConfirmDialog({
   onCancel,
   testId = "confirm-dialog",
 }) {
-  if (!open) return null;
+  useEffect(() => {
+    if (!open) return undefined;
+    return acquisisciOverlayLock();
+  }, [open]);
 
-  return (
+  if (!open || typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 safe-bottom safe-top"
+      className="ds-modal-overlay"
       role="dialog"
       aria-modal="true"
       aria-labelledby={`${testId}-title`}
       data-testid={testId}
     >
-      <div className="pro-panel-strong w-full max-w-md max-h-[min(85dvh,520px)] overflow-y-auto p-5">
+      <button
+        type="button"
+        aria-label="Chiudi"
+        className="ds-modal-backdrop"
+        onClick={onCancel}
+        tabIndex={-1}
+        data-testid={`${testId}-backdrop`}
+      />
+      <div className="ds-modal-panel pro-panel-strong">
         <p id={`${testId}-title`} className="ds-card-title">
           {title}
         </p>
@@ -49,6 +71,7 @@ export default function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

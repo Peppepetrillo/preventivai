@@ -12,6 +12,7 @@ import {
 } from "./aiContract";
 import { costruisciPayloadInsightAi } from "./aiPromptBuilder";
 import { ETICHETTE_CONFIDENZA_AI, LIVELLI_CONFIDENZA_AI } from "./aiTypes";
+import { supabase } from "../../lib/supabaseClient";
 
 /** Anti doppio-tap / spam client-side. null = mai inviato. */
 let ultimoInvioMs = null;
@@ -119,6 +120,8 @@ export function messaggioErroreAi(codice) {
   switch (codice) {
     case "provider_non_configurato":
       return "Analisi AI non configurata. Uso i dati disponibili.";
+    case "non_autenticato":
+      return "Accedi per usare l'analisi PreventivAI. Uso i dati disponibili.";
     case "timeout":
       return "L'analisi sta impiegando troppo. Riprova o usa i tuoi dati.";
     case "rate_limit":
@@ -131,6 +134,41 @@ export function messaggioErroreAi(codice) {
     default:
       return "Non riesco a completare l'analisi in questo momento.";
   }
+}
+
+/**
+ * Header autenticati per Edge Function (JWT sessione Supabase + anon key).
+ * Nessuna OPENAI key. Se sessione assente → null (fallback deterministico).
+ * @param {{
+ *   getSession?: () => Promise<{ access_token?: string }|null>,
+ *   anonKey?: string,
+ * }=} opzioni
+ * @returns {Promise<Record<string, string>|null>}
+ */
+export async function costruisciHeadersRichiestaAi(opzioni = {}) {
+  const getSession =
+    opzioni.getSession ||
+    (async () => {
+      if (!supabase) return null;
+      const { data } = await supabase.auth.getSession();
+      return data?.session || null;
+    });
+
+  const sessione = await getSession();
+  const token = String(sessione?.access_token || "").trim();
+  if (!token) return null;
+
+  const anonKey = String(
+    opzioni.anonKey ?? import.meta.env.VITE_SUPABASE_ANON_KEY ?? ""
+  ).trim();
+
+  /** @type {Record<string, string>} */
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+  if (anonKey) headers.apikey = anonKey;
+  return headers;
 }
 
 /**
@@ -195,12 +233,31 @@ export async function generaInsightDaProvider(contesto, opzioni = {}) {
   ultimoInvioMs = now;
 
   try {
+    const headers = await costruisciHeadersRichiestaAi(opzioni);
+    if (!headers) {
+      return {
+        ok: false,
+        motivo: "non_autenticato",
+        messaggioUtente: messaggioErroreAi("non_autenticato"),
+        puoRiprovare: true,
+      };
+    }
+
     const risposta = await fetchImpl(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: serializzato,
       signal: controller.signal,
     });
+
+    if (risposta.status === 401 || risposta.status === 403) {
+      return {
+        ok: false,
+        motivo: "non_autenticato",
+        messaggioUtente: messaggioErroreAi("non_autenticato"),
+        puoRiprovare: true,
+      };
+    }
 
     if (risposta.status === 429) {
       return {

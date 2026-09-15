@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Download, Share2, X } from "lucide-react";
 
 import { condividiBlob, esportaBlob } from "../utils/nativeExport";
+import { acquisisciOverlayLock } from "./overlayLock";
 
 const DURATA_MS = 250;
 
@@ -122,6 +124,11 @@ export default function PdfAnteprima({
 
   useEffect(() => {
     if (!montato) return undefined;
+    return acquisisciOverlayLock();
+  }, [montato]);
+
+  useEffect(() => {
+    if (!montato) return undefined;
     const prevOverflow = document.body.style.overflow;
     const prevTouch = document.body.style.touchAction;
     document.body.style.overflow = "hidden";
@@ -173,12 +180,15 @@ export default function PdfAnteprima({
 
   const viewerSrc = urlPdfFitWidth(blobUrl);
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
       className={`pdf-anteprima-root ${apertoVisivo ? "is-open" : ""}`}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      data-testid="pdf-anteprima"
     >
       <div className="pdf-anteprima-shell">
         <header className="pdf-anteprima-header">
@@ -266,6 +276,7 @@ export default function PdfAnteprima({
           </button>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
