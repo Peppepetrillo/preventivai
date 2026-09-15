@@ -66,13 +66,13 @@ describe("preventivoHeroCta", () => {
     ).toEqual({ id: HERO_CTA.ACCETTA, label: "Cliente ha accettato" });
   });
 
-  it("Accettato → Inizia cantiere", () => {
+  it("Accettato → Crea cantiere", () => {
     expect(
       risolviHeroCta({
         stato: STATI_PREVENTIVO.ACCETTATO,
         azioniDisponibili: [AZIONI_PREVENTIVO.CONVERTI_CANTIERE],
       })
-    ).toEqual({ id: HERO_CTA.CONVERTI_CANTIERE, label: "Inizia cantiere" });
+    ).toEqual({ id: HERO_CTA.CONVERTI_CANTIERE, label: "Crea cantiere" });
   });
 
   it("Convertito → Apri cantiere", () => {

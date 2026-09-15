@@ -121,7 +121,7 @@ export function risolviHeroCta({
   }
 
   if (azioni.includes(AZIONI_PREVENTIVO.CONVERTI_CANTIERE)) {
-    return { id: HERO_CTA.CONVERTI_CANTIERE, label: "Inizia cantiere" };
+    return { id: HERO_CTA.CONVERTI_CANTIERE, label: "Crea cantiere" };
   }
 
   if (s === STATI_PREVENTIVO.BOZZA) {

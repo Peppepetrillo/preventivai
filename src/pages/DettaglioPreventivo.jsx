@@ -145,6 +145,7 @@ export default function DettaglioPreventivo() {
   const [showCollegaDistinta, setShowCollegaDistinta] = useState(false);
   const [ricercaDistinta, setRicercaDistinta] = useState("");
   const [showUsaDistinta, setShowUsaDistinta] = useState(false);
+  const [conversioneInCorso, setConversioneInCorso] = useState(false);
 
   const sezioneLavorazioniRef = useRef(null);
   const sezioneDocumentiRef = useRef(null);
@@ -443,6 +444,7 @@ export default function DettaglioPreventivo() {
   }
 
   function trasformaInCantiere() {
+    if (conversioneInCorso) return;
     try {
       salvaModificheSilenzioso();
       const distinta = trovaDistintaCollegataAlPreventivo(preventivo.id);
@@ -462,6 +464,8 @@ export default function DettaglioPreventivo() {
   }
 
   function eseguiConversioneCantiere({ usaDistinta }) {
+    if (conversioneInCorso) return;
+    setConversioneInCorso(true);
     try {
       salvaModificheSilenzioso();
       const risultato = convertiInCantiere(preventivo.id);
@@ -473,6 +477,7 @@ export default function DettaglioPreventivo() {
           )
         );
         setShowUsaDistinta(false);
+        setConversioneInCorso(false);
         return;
       }
 
@@ -498,6 +503,7 @@ export default function DettaglioPreventivo() {
         state: statoNavigazioneCantiere(CANTIERE_SEZIONI.PAGAMENTI) });
     } catch (errore) {
       setShowUsaDistinta(false);
+      setConversioneInCorso(false);
       setMessaggio(
         messaggioErroreWorkflow(
           errore?.message,
@@ -653,9 +659,20 @@ export default function DettaglioPreventivo() {
       />
 
       {bannerPostAccetta && stato === STATI_PREVENTIVO.ACCETTATO ? (
-        <BannerPostAccettazione onIniziaCantiere={trasformaInCantiere} />
+        <BannerPostAccettazione
+          onIniziaCantiere={trasformaInCantiere}
+          inCorso={conversioneInCorso}
+        />
       ) : (
-        <PreventivoHeroCta hero={heroCta} onAzione={gestisciHeroCta} />
+        <PreventivoHeroCta
+          hero={
+            conversioneInCorso && heroCta?.id === HERO_CTA.CONVERTI_CANTIERE
+              ? { ...heroCta, label: "Creazione cantiere…" }
+              : heroCta
+          }
+          onAzione={gestisciHeroCta}
+          disabled={conversioneInCorso}
+        />
       )}
 
       <PreventivoWorkflowAzioni
@@ -799,7 +816,7 @@ export default function DettaglioPreventivo() {
               ) {
                 if (!cantiereCollegatoId) {
                   window.alert(
-                    "Non puoi impostare questo stato senza un cantiere collegato.\nUsa «Inizia cantiere» dal percorso normale."
+                    "Non puoi impostare questo stato senza un cantiere collegato.\nUsa «Crea cantiere» dal percorso normale."
                   );
                   return;
                 }
@@ -837,7 +854,7 @@ export default function DettaglioPreventivo() {
               data-testid="preventivo-stato-orfano-hint"
             >
               Stato senza cantiere collegato. Correggi lo stato (es. Accettato)
-              oppure usa il percorso «Inizia cantiere» quando disponibile.
+              oppure usa il percorso «Crea cantiere» quando disponibile.
             </p>
           ) : null}
         </label>

@@ -1,13 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { STORAGE_KEYS } from "../../../app/storageKeys";
+import { APP_EVENTS } from "../../../app/events";
+import { CLOUD_SYNC_STORAGE_KEYS, STORAGE_KEYS } from "../../../app/storageKeys";
+import { STATI_PREVENTIVO } from "../../../domain/workflow";
+import {
+  leggiCantieri,
+  leggiCantieriTutti,
+} from "../../../repositories/cantieriRepository";
+import { leggiPreventivi } from "../../../repositories/preventiviRepository";
 import {
   convertiPreventivoInCantiere,
   creaCantierePerPreventivo,
+  creaCantierePerPreventivoId,
   trovaCantiereCollegato,
 } from "./preventivoCantiereService";
 
 vi.mock("../../../services/cloudSyncService", () => ({
-  salvaDatoCloud: vi.fn(),
+  salvaDatoCloud: vi.fn((chiave, valore) => {
+    const coda = JSON.parse(
+      localStorage.getItem(CLOUD_SYNC_STORAGE_KEYS.queue) || "[]"
+    );
+    const senza = coda.filter((entry) => entry?.[0] !== chiave);
+    senza.push([chiave, valore]);
+    localStorage.setItem(
+      CLOUD_SYNC_STORAGE_KEYS.queue,
+      JSON.stringify(senza)
+    );
+  }),
 }));
 
 const preventivoBase = {
@@ -69,7 +87,9 @@ describe("preventivoCantiereService", () => {
     expect(cantieri[0].lavorazioniOrigine).toHaveLength(1);
     expect(cantieri[0].varianti).toEqual([]);
     expect(cantieri[0].preventivoOriginaleTotale).toBe(90);
-    expect(cantieri[0].checklist[0].testo).toBe("Eseguire Installazione punto luce");
+    expect(cantieri[0].checklist[0].testo).toBe(
+      "Eseguire Installazione punto luce"
+    );
     expect(preventivi[0]).toMatchObject({
       stato: "Convertito",
       cantiereId: cantieri[0].id,
@@ -128,5 +148,62 @@ describe("preventivoCantiereService", () => {
 
     expect(risultato.creato).toBe(true);
     expect(trovaCantiereCollegato(risultato.preventivo)).not.toBeNull();
+  });
+
+  it("creaCantierePerPreventivoId rifiuta preventivo non accettato", () => {
+    localStorage.setItem(STORAGE_KEYS.preventivi, JSON.stringify([preventivoBase]));
+    const esito = creaCantierePerPreventivoId(101);
+    expect(esito.success).toBe(false);
+    expect(esito.error).toBe("solo_accettato_convertibile");
+    expect(leggiCantieri()).toHaveLength(0);
+  });
+
+  it("creaCantierePerPreventivoId rifiuta preventivo inesistente", () => {
+    localStorage.setItem(STORAGE_KEYS.preventivi, JSON.stringify([]));
+    const esito = creaCantierePerPreventivoId(999);
+    expect(esito.success).toBe(false);
+    expect(esito.error).toBe("preventivo_non_trovato");
+  });
+
+  it("dopo conversione la relazione sopravvive a «reload» (rilettura storage)", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([{ ...preventivoBase, stato: STATI_PREVENTIVO.ACCETTATO }])
+    );
+    const creato = creaCantierePerPreventivoId(101);
+    expect(creato.success).toBe(true);
+
+    const preventivoDopo = leggiPreventivi().find((p) => String(p.id) === "101");
+    const cantiereDopo = leggiCantieriTutti().find(
+      (c) => String(c.id) === String(creato.cantiere.id)
+    );
+    expect(preventivoDopo.cantiereId).toBe(cantiereDopo.id);
+    expect(cantiereDopo.preventivoId).toBe(101);
+    expect(cantiereDopo.lavorazioniOrigine).toHaveLength(1);
+    expect(cantiereDopo.clienteId).toBe(55);
+  });
+
+  it("conversione accoda cantieri/preventivi alla coda sync persistente e notifica evento", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([{ ...preventivoBase, stato: STATI_PREVENTIVO.ACCETTATO }])
+    );
+    localStorage.setItem(CLOUD_SYNC_STORAGE_KEYS.queue, JSON.stringify([]));
+
+    const spy = vi.fn();
+    window.addEventListener(APP_EVENTS.cantieriAggiornati, spy);
+
+    const esito = creaCantierePerPreventivoId(101);
+    expect(esito.success).toBe(true);
+    expect(spy).toHaveBeenCalled();
+
+    const coda = JSON.parse(
+      localStorage.getItem(CLOUD_SYNC_STORAGE_KEYS.queue) || "[]"
+    );
+    const chiavi = coda.map((entry) => entry[0]);
+    expect(chiavi).toContain(STORAGE_KEYS.cantieri);
+    expect(chiavi).toContain(STORAGE_KEYS.preventivi);
+
+    window.removeEventListener(APP_EVENTS.cantieriAggiornati, spy);
   });
 });

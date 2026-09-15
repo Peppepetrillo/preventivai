@@ -1,9 +1,12 @@
 import { HardHat } from "lucide-react";
 
 /**
- * Banner post-accettazione — spinge verso Inizia cantiere.
+ * Banner post-accettazione — spinge verso Crea cantiere.
  */
-export default function BannerPostAccettazione({ onIniziaCantiere }) {
+export default function BannerPostAccettazione({
+  onIniziaCantiere,
+  inCorso = false,
+}) {
   return (
     <div
       className="pro-panel p-4 mb-4 border-yellow-300/35 bg-yellow-400/8 space-y-3"
@@ -20,11 +23,12 @@ export default function BannerPostAccettazione({ onIniziaCantiere }) {
       <button
         type="button"
         onClick={onIniziaCantiere}
-        className="w-full btn-primary min-h-[48px] flex items-center justify-center gap-2"
+        disabled={inCorso}
+        className="w-full btn-primary min-h-[48px] flex items-center justify-center gap-2 disabled:opacity-60"
         data-testid="banner-inizia-cantiere"
       >
         <HardHat size={18} aria-hidden="true" />
-        Inizia cantiere
+        {inCorso ? "Creazione cantiere…" : "Crea cantiere"}
       </button>
     </div>
   );

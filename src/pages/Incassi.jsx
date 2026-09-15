@@ -108,7 +108,7 @@ export default function Incassi() {
           <p className="section-label">Prima del cantiere</p>
           <h1 className="ds-page-title mt-1">Pagamenti sui preventivi</h1>
           <p className="ds-text-secondary mt-2">
-            Solo preventivi non ancora in cantiere. Dopo «Inizia cantiere», i
+            Solo preventivi non ancora in cantiere. Dopo «Crea cantiere», i
             pagamenti si registrano nel tab Pagamenti del cantiere.
           </p>
         </section>
