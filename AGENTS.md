@@ -12,7 +12,7 @@ PreventivAI is a private offline-first work app for electricians. Treat it as pr
 
 ## Operating rules
 
-1. Start every task by reading the relevant code, tests, `README.md`, `ROADMAP.md`, and any matching file in `.cursor/rules/`.
+1. Start every task by reading the relevant code, tests, `README.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, and any matching file in `.cursor/rules/`.
 2. Work on one feature or bug at a time. Keep changes small and reviewable.
 3. Do not rewrite architecture, storage keys, sync behavior, or data formats unless the task explicitly requires it.
 4. Never commit secrets, `.env`, local credentials, generated private data, or real customer data.
@@ -20,7 +20,7 @@ PreventivAI is a private offline-first work app for electricians. Treat it as pr
 6. Add or update focused tests for changed domain logic, hooks, services, and critical UI flows.
 7. Do not silently weaken tests, remove assertions, skip suites, or lower lint/build quality gates.
 8. If existing unrelated changes are present, do not revert them. Work around them or stop and report if they block the task.
-
+9. After each session update `docs/ROADMAP.md` and `docs/CHANGELOG.md` for continuity.
 ## Cursor Cloud specific instructions
 
 Cursor Cloud Agents should start from the remote Git repository, create a dedicated branch, finish with a pull request, and include evidence in the PR.
