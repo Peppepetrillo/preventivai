@@ -84,7 +84,7 @@ Usare questa sezione per registrare run automatici da Cursor Cloud / CI.
 
 | Data (UTC) | Ambiente | `npm test` | `npm run lint` | `npm run build` | Note |
 |------------|----------|------------|----------------|-----------------|------|
-| _da compilare in PR_ | Cursor Cloud | | | | |
+| 2026-09-15 | Cursor Cloud (`cursor/overnight-cloud-hardening-74ac`) | 1761 pass / **3 fail** (`pinSecurity` WebCrypto salt) | 0 errori / 22 warning | OK | PWA/device ancora pending. Fix PIN proposto in PR #10 (attende OK umano). |
 
 ### Come compilare
 
