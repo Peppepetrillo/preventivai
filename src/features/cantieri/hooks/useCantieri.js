@@ -166,8 +166,13 @@ export function useCantieri({
     : 0;
 
   function salvaListaCantieri(cantieriAggiornati) {
+    const esito = salvaCantieri(cantieriAggiornati);
+    if (esito?.ok === false) {
+      // Non aggiornare React con dati non persistiti.
+      return esito;
+    }
     setCantieri(cantieriAggiornati);
-    salvaCantieri(cantieriAggiornati);
+    return esito;
   }
 
   function aggiornaCantiereConEventi(idTarget, aggiornatore) {
@@ -175,14 +180,16 @@ export function useCantieri({
     let precedente = null;
     // Leggi sempre da storage: evita race su snapshot React stale (doppio tap).
     const elencoAttuale = leggiCantieriTutti();
-    salvaListaCantieri(
-      elencoAttuale.map((cantiere) => {
-        if (String(cantiere.id) !== String(idTarget)) return cantiere;
-        precedente = cantiere;
-        aggiornato = aggiornatore(cantiere);
-        return aggiornato;
-      })
-    );
+    const prossimo = elencoAttuale.map((cantiere) => {
+      if (String(cantiere.id) !== String(idTarget)) return cantiere;
+      precedente = cantiere;
+      aggiornato = aggiornatore(cantiere);
+      return aggiornato;
+    });
+    const esito = salvaListaCantieri(prossimo);
+    if (esito?.ok === false) {
+      return null;
+    }
 
     if (aggiornato && precedente) {
       const completato =
@@ -199,6 +206,13 @@ export function useCantieri({
     }
 
     return aggiornato;
+  }
+
+  function esitoMutazione(aggiornato, extra = {}) {
+    if (!aggiornato) {
+      return { success: false, error: "salvataggio_non_riuscito" };
+    }
+    return { success: true, cantiere: aggiornato, ...extra };
   }
 
   function creaEventiAutomatici(prev, next, opzioni = {}) {
@@ -760,7 +774,7 @@ export function useCantieri({
           }
         }
       }
-      return { success: true, cantiere: aggiornato };
+      return esitoMutazione(aggiornato);
     } catch (errore) {
       return { success: false, error: errore?.message || "giornata_non_valida" };
     }
@@ -791,7 +805,7 @@ export function useCantieri({
     ) {
       void notificationService.resyncNotificheGiornata(aggiornato, nuova);
     }
-    return { success: true, cantiere: aggiornato };
+    return esitoMutazione(aggiornato);
   }
 
   function eliminaGiornata(giornataId) {
@@ -805,7 +819,7 @@ export function useCantieri({
       (precedente) =>
         aggiornaCantiere(eliminaGiornataProgrammata(precedente, giornataId), {})
     );
-    return { success: true, cantiere: aggiornato };
+    return esitoMutazione(aggiornato);
   }
 
   function aggiungiGiornataRegistro(input) {
@@ -816,7 +830,7 @@ export function useCantieri({
         (precedente) =>
           aggiornaCantiere(aggiungiGiornataLavorativa(precedente, input), {})
       );
-      return { success: true, cantiere: aggiornato };
+      return esitoMutazione(aggiornato);
     } catch (errore) {
       return { success: false, error: errore?.message || "giornata_non_valida" };
     }
@@ -832,7 +846,7 @@ export function useCantieri({
           {}
         )
     );
-    return { success: true, cantiere: aggiornato };
+    return esitoMutazione(aggiornato);
   }
 
   function eliminaGiornataRegistro(giornataId) {
@@ -842,7 +856,7 @@ export function useCantieri({
       (precedente) =>
         aggiornaCantiere(eliminaGiornataLavorativa(precedente, giornataId), {})
     );
-    return { success: true, cantiere: aggiornato };
+    return esitoMutazione(aggiornato);
   }
 
   function aggiungiPagamento(input) {
@@ -873,6 +887,9 @@ export function useCantieri({
           return appendDiarioEvents(aggiornaCantiere(next, {}), [evento]);
         }
       );
+      if (!aggiornato) {
+        return { success: false, error: "salvataggio_non_riuscito" };
+      }
       return { success: true, cantiere: aggiornato, pagamento: pagamentoSalvato };
     } catch (errore) {
       return { success: false, error: errore?.message || "pagamento_non_valido" };
@@ -904,6 +921,9 @@ export function useCantieri({
           return appendDiarioEvents(aggiornaCantiere(next, {}), [evento]);
         }
       );
+      if (!aggiornato) {
+        return { success: false, error: "salvataggio_non_riuscito" };
+      }
       return { success: true, cantiere: aggiornato, pagamento: pagamentoSalvato };
     } catch (errore) {
       return { success: false, error: errore?.message || "pagamento_non_valido" };
@@ -917,6 +937,9 @@ export function useCantieri({
       (precedente) =>
         aggiornaCantiere(eliminaPagamentoDomain(precedente, pagamentoId), {})
     );
+    if (!aggiornato) {
+      return { success: false, error: "salvataggio_non_riuscito" };
+    }
     return { success: true, cantiere: aggiornato };
   }
 
@@ -937,6 +960,9 @@ export function useCantieri({
           return aggiornaCantiere(next, {});
         }
       );
+      if (!aggiornato) {
+        return { success: false, error: "salvataggio_non_riuscito" };
+      }
       return { success: true, cantiere: aggiornato, spesa: spesaSalvata };
     } catch (errore) {
       return { success: false, error: errore?.message || "spesa_non_valida" };
@@ -956,6 +982,9 @@ export function useCantieri({
           return aggiornaCantiere(next, {});
         }
       );
+      if (!aggiornato) {
+        return { success: false, error: "salvataggio_non_riuscito" };
+      }
       return { success: true, cantiere: aggiornato, spesa: spesaSalvata };
     } catch (errore) {
       return { success: false, error: errore?.message || "spesa_non_valida" };
@@ -969,7 +998,7 @@ export function useCantieri({
       (precedente) =>
         aggiornaCantiere(rimuoviSpesaDomain(precedente, spesaId), {})
     );
-    return { success: true, cantiere: aggiornato };
+    return esitoMutazione(aggiornato);
   }
 
   return {

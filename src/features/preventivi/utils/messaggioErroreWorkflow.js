@@ -29,6 +29,8 @@ export function messaggioErroreWorkflow(codice, fallback = "") {
     nessun_cantiere: "Nessun cantiere selezionato.",
     cantiere_obbligatorio: "Seleziona un cantiere.",
     cantiere_non_trovato: "Cantiere non trovato.",
+    salvataggio_non_riuscito:
+      "Salvataggio non riuscito. Controlla lo spazio sul dispositivo e riprova.",
   };
 
   const chiave = String(codice || "").trim();

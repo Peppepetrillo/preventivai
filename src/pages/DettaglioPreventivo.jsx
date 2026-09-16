@@ -258,7 +258,7 @@ function DettaglioPreventivoContenuto() {
   }
 
   function persistiPreventivoCorrente(prossimo) {
-    salvaPreventivi(
+    return salvaPreventivi(
       leggiPreventiviTutti().map((item) =>
         String(item.id) === String(id) ? prossimo : item
       )
@@ -315,7 +315,11 @@ function DettaglioPreventivoContenuto() {
   }
 
   function salvaModifiche() {
-    persistiPreventivoCorrente(datiAggiornati());
+    const esito = persistiPreventivoCorrente(datiAggiornati());
+    if (esito?.ok === false) {
+      setMessaggio("Salvataggio non riuscito. Riprova.");
+      return;
+    }
     setMessaggio("Preventivo aggiornato sul dispositivo.");
   }
 

@@ -182,9 +182,17 @@ function DettaglioClienteContenuto() {
       return cantiere;
     });
 
-    salvaClienti(clientiAggiornati);
-    salvaPreventivi(archivioAggiornato);
-    salvaCantieri(cantieriAggiornati);
+    const esitoClienti = salvaClienti(clientiAggiornati);
+    const esitoPreventivi = salvaPreventivi(archivioAggiornato);
+    const esitoCantieri = salvaCantieri(cantieriAggiornati);
+    if (
+      esitoClienti?.ok === false ||
+      esitoPreventivi?.ok === false ||
+      esitoCantieri?.ok === false
+    ) {
+      setMessaggio("Salvataggio non riuscito. Riprova.");
+      return;
+    }
     setMessaggio("Salvato.");
     setTimeout(() => setMessaggio(""), 2000);
   }
