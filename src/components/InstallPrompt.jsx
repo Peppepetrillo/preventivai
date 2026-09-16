@@ -132,8 +132,9 @@ export default function InstallPrompt() {
               <button
                 type="button"
                 onClick={chiudi}
-                className="w-9 h-9 rounded-full border border-white/10 text-slate-300 flex items-center justify-center hover:bg-white/10"
+                className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-full border border-white/10 text-slate-300 flex items-center justify-center hover:bg-white/10"
                 aria-label="Chiudi guida installazione"
+                data-testid="install-prompt-chiudi"
               >
                 <X size={18} />
               </button>

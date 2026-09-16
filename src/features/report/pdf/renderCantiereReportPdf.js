@@ -72,8 +72,21 @@ function disegnaCopertina(doc, document) {
 
   setText(doc, settings.coloreTesto);
   applicaFont(doc, settings, "normal", settings.fontSizeBase + 1);
-  y = testo(doc, settings, `Cliente: ${riga(document.copertina.cliente)}`, area.x, y, area.width);
-  y = testo(doc, settings, `Indirizzo: ${riga(document.copertina.indirizzo)}`, area.x, y, area.width);
+  const clienteCopertina = String(document.copertina.cliente || "").trim();
+  const indirizzoCopertina = String(document.copertina.indirizzo || "").trim();
+  if (clienteCopertina) {
+    y = testo(doc, settings, `Cliente: ${clienteCopertina}`, area.x, y, area.width);
+  }
+  if (indirizzoCopertina) {
+    y = testo(
+      doc,
+      settings,
+      `Indirizzo: ${indirizzoCopertina}`,
+      area.x,
+      y,
+      area.width
+    );
+  }
   if (document.lavoroDiretto && document.copertina.tipoIntervento) {
     y = testo(
       doc,
@@ -508,20 +521,20 @@ function disegnaIntestazioneTabellaSpese(doc, settings, y, mostraGiornata) {
   return y + 5;
 }
 
-function formattaRigaSpesa(spesa, mostraGiornata) {
-  const fornitore = riga(spesa.fornitore, "—");
-  const metodo = riga(spesa.metodoLabel, "—");
+export function formattaRigaSpesa(spesa, mostraGiornata) {
   const parti = [
-    riga(spesa.data),
-    riga(spesa.descrizione),
-    riga(spesa.categoriaLabel),
-    fornitore,
-    metodo,
-  ];
+    String(spesa.data || "").trim(),
+    String(spesa.descrizione || "").trim(),
+    String(spesa.categoriaLabel || "").trim(),
+    String(spesa.fornitore || "").trim(),
+    String(spesa.metodoLabel || "").trim(),
+  ].filter(Boolean);
   if (mostraGiornata) {
-    parti.push(riga(spesa.giornataLabel, "Generale"));
+    const giornata = String(spesa.giornataLabel || "").trim() || "Generale";
+    parti.push(giornata);
   }
-  parti.push(riga(spesa.importoLabel));
+  const importo = String(spesa.importoLabel || "").trim();
+  if (importo) parti.push(importo);
   return parti.join(" · ");
 }
 

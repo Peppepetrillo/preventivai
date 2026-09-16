@@ -22,7 +22,29 @@ describe("miglioraDescrizioneIntervento", () => {
     const esito = await miglioraDescrizioneIntervento("cambiato mt");
     expect(esito.ok).toBe(false);
     expect(esito.nonConfigurato).toBe(true);
+    expect(esito.errore).not.toMatch(/VITE_/);
     expect(esito.bozza).toBeUndefined();
+  });
+
+  it("timeout → messaggio italiano senza hang", async () => {
+    vi.stubEnv("VITE_AI_ASSISTANT_ENDPOINT", "https://example.test/ai");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_url, opts) =>
+        new Promise((_resolve, reject) => {
+          opts?.signal?.addEventListener("abort", () => {
+            const err = new Error("aborted");
+            err.name = "AbortError";
+            reject(err);
+          });
+        })
+      )
+    );
+    const esito = await miglioraDescrizioneIntervento("test timeout", {
+      timeoutMs: 20,
+    });
+    expect(esito.ok).toBe(false);
+    expect(esito.errore).toMatch(/tempo scaduto|connessione/i);
   });
 
   it("con endpoint restituisce bozza senza sostituire automaticamente", async () => {
