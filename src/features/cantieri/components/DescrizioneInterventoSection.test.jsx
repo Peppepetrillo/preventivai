@@ -68,7 +68,8 @@ describe("DescrizioneInterventoSection", () => {
     miglioraDescrizioneIntervento.mockResolvedValue({
       ok: false,
       nonConfigurato: true,
-      errore: "Assistente IA non configurato.",
+      errore:
+        "Assistente IA non disponibile su questo dispositivo. Puoi continuare a scrivere la descrizione a mano.",
     });
     render(
       <DescrizioneInterventoSection descrizione="test" onSalva={vi.fn()} />
@@ -76,7 +77,7 @@ describe("DescrizioneInterventoSection", () => {
     fireEvent.click(screen.getByTestId("migliora-descrizione-ia"));
     await waitFor(() => {
       expect(screen.getByTestId("migliora-descrizione-errore")).toHaveTextContent(
-        /non configurato/i
+        /non disponibile/i
       );
     });
   });
