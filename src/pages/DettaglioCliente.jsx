@@ -59,7 +59,7 @@ function DettaglioClienteContenuto() {
   const nelCestino = isRecordCestinato(cliente);
   const archivio = leggiPreventivi();
 
-  const { cantieriAttivi, aggiornaCampoNuovoCantiere } = useCantieri();
+  const { cantieriAttivi } = useCantieri();
 
   const [nome, setNome] = useState(cliente?.nome || "");
   const [telefono, setTelefono] = useState(cliente?.telefono || "");
@@ -195,11 +195,12 @@ function DettaglioClienteContenuto() {
   }
 
   function nuovoCantiereDaCliente() {
-    aggiornaCampoNuovoCantiere("cliente", cliente.nome);
-    aggiornaCampoNuovoCantiere("clienteId", cliente.id);
-    aggiornaCampoNuovoCantiere("indirizzo", cliente.indirizzo || indirizzo || "");
-    aggiornaCampoNuovoCantiere("nome", "");
-    navigate(ROUTES.cantieri + "?nuovoCantiere=1");
+    const params = new URLSearchParams({ nuovoCantiere: "1" });
+    if (cliente?.id != null) params.set("clienteId", String(cliente.id));
+    if (cliente?.nome) params.set("cliente", String(cliente.nome));
+    const indirizzoPrefill = cliente.indirizzo || indirizzo || "";
+    if (indirizzoPrefill) params.set("indirizzo", indirizzoPrefill);
+    navigate(`${ROUTES.cantieri}?${params.toString()}`);
   }
 
   function etichettaTipoPreventivo(preventivo) {

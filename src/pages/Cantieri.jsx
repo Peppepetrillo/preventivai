@@ -95,12 +95,25 @@ export default function Cantieri() {
       searchParams.get("nuovo") === "1" ||
       searchParams.get("nuovoCantiere") === "1";
     if (!apriNuovo) return;
+
+    const clienteId = searchParams.get("clienteId");
+    const clienteNome = searchParams.get("cliente");
+    const indirizzoPrefill = searchParams.get("indirizzo");
+    if (clienteId) aggiornaCampoNuovoCantiere("clienteId", clienteId);
+    if (clienteNome) aggiornaCampoNuovoCantiere("cliente", clienteNome);
+    if (indirizzoPrefill) {
+      aggiornaCampoNuovoCantiere("indirizzo", indirizzoPrefill);
+    }
+
     setFormAperto(true);
     const prossimo = new URLSearchParams(searchParams);
     prossimo.delete("nuovo");
     prossimo.delete("nuovoCantiere");
+    prossimo.delete("clienteId");
+    prossimo.delete("cliente");
+    prossimo.delete("indirizzo");
     setSearchParams(prossimo, { replace: true });
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, aggiornaCampoNuovoCantiere]);
 
   const cantieriPreparati = useMemo(() => {
     let elenco = filtraCantieriLocali(cantieri, ricerca);
