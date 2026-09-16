@@ -6,6 +6,7 @@ Session-oriented log for Cloud Agents. Product release notes remain in root `CHA
 
 ### Completed
 - S6: remount `InsightRapidoSheet`, `NuovoLavoroSheet`, `AttivitaFormSheet` (no setState-in-effect)
+- S6: remount `PagamentoSheet`, `GiornataProgrammataSheet` (lint 21→16)
 - AI: `scrubTestoLiberoAi` masks email/IBAN/CF/cellulare IT in `normalizzaNuovoLavoroAi`
 
 ### Intentionally not done
