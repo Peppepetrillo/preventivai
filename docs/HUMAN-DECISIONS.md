@@ -54,3 +54,30 @@ need human deploy of secrets + `verify_jwt=true`.
 **Options:** map each `DIARIO_EVENT_TYPES` to a Lucide icon in timeline UI.
 
 **Status:** 🛑 Deferred P3 (Sprint 22A) — typography polished; icon swap needs visual QA.
+
+## 7. Freemium persistence key for trial start
+
+**Problem:** Trial 15 giorni needs `trialIniziatoIl` (and later Store entitlement) persisted.
+Domain logic exists in `src/domain/freemium/freemiumDomain.js` without a storage key.
+
+**Options:**
+- A) New `STORAGE_KEYS.abbonamento` (device-local, outside APP_DATA_KEYS until Store sync)
+- B) Field on `datiAzienda` (changes azienda shape)
+- C) Supabase Auth metadata / RevenueCat (cloud-only)
+
+**Consequences:** A needs NATIVE key + backup decision; B touches azienda SoT; C needs accounts.
+
+**Status:** 🛑 Waiting human GO. Do not invent STORAGE_KEYS.
+
+## 8. Freemium — prezzi e catalogo feature PRO
+
+**Problem:** Commercial model is TRIAL → FREE → PRO, but € prices and which features are Free vs Pro are undefined.
+
+**Status:** 🛑 Human commercial decision. Paywall must stay non-destructive (data retained).
+
+## 9. Voice incremental commands
+
+**Problem:** Full-utterance Preventivo vocale is shipped (match + confirm). Incremental commands
+(“Aggiungi 10 prese”, “Elimina due punti luce”, “Fammi vedere il totale”) not yet implemented.
+
+**Status:** 🛑 / P2 product — document in VOICE-QUOTE.md; implement after October baseline.

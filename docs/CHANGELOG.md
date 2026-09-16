@@ -2,6 +2,24 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-16 — October release: Preventivo vocale + freemium scaffold
+
+### Completed
+- Branch `cursor/autonomous-october-release-74ac`
+- Preventivo vocale: listino match only, preview + confirm (no auto-apply, no invented prices)
+- Unmatched UX: Aggiungi al listino / Modifica / Ignora
+- Speech hook: offline/network/permission Italian errors; mic requires rete
+- Home CTA → `/preventivi/nuovo?express=1`; wizard deep-link
+- Freemium pure domain: TRIAL 15d → FREE → PRO (`docs/FREEMIUM.md`)
+- iOS mic+speech usage strings; Android `RECORD_AUDIO`
+- Docs: `VOICE-QUOTE.md`, `FREEMIUM.md`; HUMAN-DECISIONS #7–#9
+
+### Intentionally not done
+- Trial persistence STORAGE_KEY (HUMAN #7)
+- Prezzi / feature PRO catalog (HUMAN #8)
+- Incremental voice commands (HUMAN #9)
+- SoT / APP_DATA_KEYS / remote AI deploy
+
 ## 2026-09-16 — Production polish + QA (UX / performance)
 
 ### Completed

@@ -87,16 +87,29 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 
 ## Next agent actions (ordered)
 
-1. **Human device QA** — iPhone notch + Android: install, share→Inviato, PDF, sticky CTA, offline reopen (`docs/RELEASE-CANDIDATE.md`).
-2. **Human deploy** — AI `verify_jwt=true` + server `OPENAI_API_KEY` (only if remote AI required for cohort).
-3. Human: `APP_DATA_KEYS` expansion decision before promising multi-device satellite restore.
-4. Tag `v1.0.0-rc3` after device QA GO.
-5. Optional polish: Diario emoji → Lucide (HUMAN-DECISIONS #6) after visual QA.
+1. **Human device QA** — iPhone notch + Android: install, share→Inviato, PDF, sticky CTA, offline reopen, **Preventivo vocale** mic permission (`docs/RELEASE-CANDIDATE.md`, `docs/VOICE-QUOTE.md`).
+2. **Human commercial** — prezzi + feature PRO (HUMAN-DECISIONS #8); trial persistence key (#7).
+3. **Human deploy** — AI `verify_jwt=true` + server `OPENAI_API_KEY` (only if remote AI required for cohort).
+4. Human: `APP_DATA_KEYS` expansion decision before promising multi-device satellite restore.
+5. Tag `v1.0.0-rc3` after device QA GO.
+6. Optional: voice incremental commands (HUMAN-DECISIONS #9); Diario emoji → Lucide (#6).
+
+## October 2026 — product track
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Product audit matrix | ✅ | See CHANGELOG night report; P0/P1 first |
+| Preventivo vocale (match listino + confirm) | ✅ / 🟡 | `docs/VOICE-QUOTE.md`; incremental cmds P2 |
+| Quick quote Home `?express=1` | ✅ | Dashboard CTA |
+| Freemium domain 15d trial | ✅ scaffolding | Persistence 🛑 #7; prices 🛑 #8 |
+| Mic / speech permissions iOS+Android | ✅ | Info.plist + RECORD_AUDIO |
+| Voice incremental commands | ⬜ P2 | HUMAN-DECISIONS #9 |
 
 ## Stop / ask human
 
 - Expanding `APP_DATA_KEYS` / storage key renames
 - Sync conflict strategy beyond collection LWW
 - Destructive Supabase migrations
-- Pricing / legal copy
+- Pricing / legal copy / PRO feature catalog
 - New major frameworks
+- Trial persistence key without GO
