@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Lightbulb } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
@@ -16,18 +16,25 @@ export default function InsightRapidoSheet({
   const [problema, setProblema] = useState("");
   const [soluzione, setSoluzione] = useState("");
   const [priorita, setPriorita] = useState(PRIORITA_INSIGHT.MEDIA);
+  const [salvando, setSalvando] = useState(false);
+  const salvataggioInCorso = useRef(false);
 
   useEffect(() => {
     if (aperto) {
       setProblema("");
       setSoluzione("");
       setPriorita(PRIORITA_INSIGHT.MEDIA);
+      salvataggioInCorso.current = false;
+      setSalvando(false);
     }
   }, [aperto]);
 
   function invia(event) {
     event.preventDefault();
+    if (salvataggioInCorso.current) return;
     if (!problema.trim()) return;
+    salvataggioInCorso.current = true;
+    setSalvando(true);
     onSalva?.({
       titolo: problema.trim().slice(0, 80),
       problema: problema.trim(),
@@ -92,8 +99,12 @@ export default function InsightRapidoSheet({
           </select>
         </label>
 
-        <button type="submit" className="btn-primary w-full min-h-[52px] font-black">
-          Salva idea
+        <button
+          type="submit"
+          disabled={salvando}
+          className="btn-primary w-full min-h-[52px] font-black disabled:opacity-40"
+        >
+          {salvando ? "Salvataggio…" : "Salva idea"}
         </button>
       </form>
     </BottomSheet>

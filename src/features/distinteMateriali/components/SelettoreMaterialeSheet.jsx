@@ -234,7 +234,7 @@ function SelettoreForm({
             setFamiglia(null);
             setCategoriaId(null);
           }}
-          className="inline-flex items-center gap-1.5 min-h-[40px] text-slate-400 text-xs font-semibold"
+          className="inline-flex items-center gap-1.5 min-h-[44px] text-slate-400 text-xs font-semibold"
         >
           <ArrowLeft size={14} aria-hidden="true" />
           Cambia categoria

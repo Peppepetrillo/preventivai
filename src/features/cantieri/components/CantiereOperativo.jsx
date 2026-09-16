@@ -600,7 +600,7 @@ export default function CantiereOperativo({
             <button
               type="button"
               onClick={annullaComprato}
-              className="shrink-0 text-sm font-black text-yellow-200 min-h-[40px] px-2"
+              className="shrink-0 text-sm font-black text-yellow-200 min-h-[44px] px-2"
             >
               Annulla
             </button>

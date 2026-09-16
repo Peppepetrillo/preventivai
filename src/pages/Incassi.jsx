@@ -5,7 +5,7 @@ import PageWrapper from "../components/PageWrapper";
 import PageBackLink from "../components/PageBackLink";
 import NumericInput from "../components/NumericInput";
 import { APP_EVENTS } from "../app/events";
-import { routeCantierePagamenti, routePreventivo } from "../app/routes";
+import { routeCantierePagamenti, routePreventivo, ROUTES } from "../app/routes";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import { leggiPreventivi, leggiPreventiviTutti, salvaPreventivi } from "../repositories/preventiviRepository";
 import { isRecordCestinato } from "../domain/cestino";
@@ -166,9 +166,31 @@ export default function Incassi() {
 
         <section className="grid gap-3" data-testid="incassi-lista-operativa">
           {preventiviOperativi.length === 0 && (
-            <div className="pro-panel p-6 text-center text-slate-400">
-              Nessun preventivo da gestire qui. I pagamenti dei lavori in
-              cantiere sono nel tab Pagamenti del cantiere.
+            <div className="pro-panel ds-empty" data-testid="incassi-vuoto">
+              <div className="ds-empty-icon" aria-hidden="true">
+                <Wallet size={28} />
+              </div>
+              <p className="ds-card-title">Nessun preventivo da incassare</p>
+              <p className="ds-text-secondary mt-2 max-w-sm mx-auto">
+                Qui gestisci solo i preventivi non ancora in cantiere. I
+                pagamenti dei lavori aperti sono nel tab Pagamenti del cantiere.
+              </p>
+              <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  to={ROUTES.preventivi}
+                  className="btn-primary inline-flex items-center justify-center min-h-[48px] px-5 font-bold"
+                  data-testid="incassi-vuoto-cta-preventivi"
+                >
+                  Apri preventivi
+                </Link>
+                <Link
+                  to={ROUTES.cantieri}
+                  className="btn-secondary inline-flex items-center justify-center min-h-[48px] px-5 font-bold"
+                  data-testid="incassi-vuoto-cta-cantieri"
+                >
+                  Apri cantieri
+                </Link>
+              </div>
             </div>
           )}
 

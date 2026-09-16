@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, ClipboardList, Play, Plus, X } from "lucide-react";
 
 import NumericInput from "../../../components/NumericInput";
 import { formatEuro } from "../../../utils/preventivi";
+import { messaggioErroreWorkflow } from "../../preventivi/utils/messaggioErroreWorkflow";
 import {
   STATI_VARIANTE,
   STATI_VARIANTE_LABEL,
@@ -55,6 +56,8 @@ export default function CantiereVarianti({
   const [form, setForm] = useState(FORM_INIZIALE);
   const [errore, setErrore] = useState("");
   const [dialogoPreventivo, setDialogoPreventivo] = useState(null);
+  const [salvando, setSalvando] = useState(false);
+  const salvataggioInCorso = useRef(false);
 
   // refreshKey forza il re-render dal parent dopo mutazioni workflow
   void refreshKey;
@@ -73,12 +76,15 @@ export default function CantiereVarianti({
 
   function salvaVariante(event) {
     event.preventDefault();
+    if (salvataggioInCorso.current) return;
     try {
       const titolo = String(form.titolo || form.descrizione || "").trim();
       if (!titolo) {
         setErrore("Inserisci un titolo per il lavoro extra.");
         return;
       }
+      salvataggioInCorso.current = true;
+      setSalvando(true);
       const risultato = onCreaVariante?.({
         tipo: form.tipo,
         titolo,
@@ -89,10 +95,19 @@ export default function CantiereVarianti({
         note: form.note,
       });
       if (risultato && risultato.success === false) {
-        setErrore(risultato.error || "Impossibile salvare il lavoro extra.");
+        setErrore(
+          messaggioErroreWorkflow(
+            risultato.error,
+            "Impossibile salvare il lavoro extra."
+          )
+        );
+        salvataggioInCorso.current = false;
+        setSalvando(false);
         return;
       }
       resetForm();
+      salvataggioInCorso.current = false;
+      setSalvando(false);
       if (
         risultato?.success &&
         risultato.variante &&
@@ -103,6 +118,8 @@ export default function CantiereVarianti({
       }
     } catch (e) {
       setErrore(e.message || "Impossibile salvare il lavoro extra.");
+      salvataggioInCorso.current = false;
+      setSalvando(false);
     }
   }
 
@@ -257,11 +274,11 @@ export default function CantiereVarianti({
           ) : null}
 
           <div className="grid gap-2 sm:grid-cols-2">
-            <button type="button" onClick={resetForm} className="btn-secondary min-h-11">
+            <button type="button" onClick={resetForm} className="btn-secondary min-h-11" disabled={salvando}>
               Annulla
             </button>
-            <button type="submit" className="btn-primary min-h-11">
-              Salva proposta
+            <button type="submit" className="btn-primary min-h-11 disabled:opacity-40" disabled={salvando}>
+              {salvando ? "Salvataggio…" : "Salva proposta"}
             </button>
           </div>
         </form>

@@ -2,6 +2,19 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-16 — Money integrity + soft-delete clarity (Cloud Agent)
+
+### Completed
+- Pagamento/Spesa sheets: close + flash only when save returns success (no false-positive feedback)
+- Cantiere Overview: preventivo soft-deleted → amber banner + link Cestino (not “mancante”)
+- AI migliora descrizione: 20s timeout, offline copy, no `VITE_*` in user-facing errors
+- Agenda Attività/Insight + Varianti: double-submit guards
+- Incassi/Storico empty: CTA verso preventivi/cantieri; filtri spese e tap target ≥44px
+- `messaggioErroreWorkflow`: titoli/variante/pagamento/spesa/nessun_cantiere
+
+### Intentionally not done
+- Remote AI deploy, `APP_DATA_KEYS`, economia.movimenti SoT (🛑)
+
 ## 2026-09-16 — Professional UX polish (Cloud Agent)
 
 ### Completed

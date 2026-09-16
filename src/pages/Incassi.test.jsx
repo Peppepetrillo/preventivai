@@ -64,6 +64,18 @@ describe("Incassi UX-8.6", () => {
     ).toBeInTheDocument();
   });
 
+  it("empty state ha CTA verso cantieri e preventivi", () => {
+    seedPreventivi([]);
+    render(
+      <MemoryRouter>
+        <Incassi />
+      </MemoryRouter>
+    );
+    expect(screen.getByTestId("incassi-vuoto")).toBeInTheDocument();
+    expect(screen.getByTestId("incassi-vuoto-cta-preventivi")).toBeInTheDocument();
+    expect(screen.getByTestId("incassi-vuoto-cta-cantieri")).toBeInTheDocument();
+  });
+
   it("mostra feedback dopo registra pagamento", async () => {
     const { default: userEvent } = await import("@testing-library/user-event");
     const user = userEvent.setup();

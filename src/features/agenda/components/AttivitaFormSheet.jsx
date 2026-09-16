@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import BottomSheet from "../../../components/BottomSheet";
 import {
@@ -34,9 +34,15 @@ export default function AttivitaFormSheet({
   dataDefault = "",
 }) {
   const [form, setForm] = useState(() => statoIniziale(attivita, dataDefault));
+  const [salvando, setSalvando] = useState(false);
+  const salvataggioInCorso = useRef(false);
 
   useEffect(() => {
-    if (aperto) setForm(statoIniziale(attivita, dataDefault));
+    if (aperto) {
+      setForm(statoIniziale(attivita, dataDefault));
+      salvataggioInCorso.current = false;
+      setSalvando(false);
+    }
   }, [aperto, attivita, dataDefault]);
 
   function aggiorna(campo, valore) {
@@ -45,7 +51,10 @@ export default function AttivitaFormSheet({
 
   function invia(event) {
     event.preventDefault();
+    if (salvataggioInCorso.current) return;
     if (!form.titolo.trim()) return;
+    salvataggioInCorso.current = true;
+    setSalvando(true);
     onSalva?.(form);
     onChiudi?.();
   }
@@ -129,8 +138,12 @@ export default function AttivitaFormSheet({
           <span className="ds-text-primary text-sm">Attiva reminder</span>
         </label>
 
-        <button type="submit" className="btn-primary w-full min-h-[52px] font-black">
-          Salva
+        <button
+          type="submit"
+          disabled={salvando}
+          className="btn-primary w-full min-h-[52px] font-black disabled:opacity-40"
+        >
+          {salvando ? "Salvataggio…" : "Salva"}
         </button>
       </form>
     </BottomSheet>
