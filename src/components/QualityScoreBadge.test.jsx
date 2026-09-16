@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-import QualityScoreBadge, { fasciaScoreQualita } from "./QualityScoreBadge";
+import QualityScoreBadge from "./QualityScoreBadge";
+import { fasciaScoreQualita } from "./qualityScore";
 
 describe("QualityScoreBadge", () => {
   it("fasciaScoreQualita: verde / arancione / rosso", () => {

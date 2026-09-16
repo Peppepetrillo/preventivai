@@ -1,6 +1,6 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
-const GlobalCreateContext = createContext(null);
+import { GlobalCreateContext } from "./globalCreateContextInstance";
 
 export function GlobalCreateProvider({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -19,12 +19,4 @@ export function GlobalCreateProvider({ children }) {
       {children}
     </GlobalCreateContext.Provider>
   );
-}
-
-export function useGlobalCreate() {
-  const ctx = useContext(GlobalCreateContext);
-  if (!ctx) {
-    throw new Error("useGlobalCreate richiede GlobalCreateProvider");
-  }
-  return ctx;
 }

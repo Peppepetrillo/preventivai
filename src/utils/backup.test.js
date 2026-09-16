@@ -117,3 +117,79 @@ describe("backup UX-6.6 struttura e UX-6.5 round-trip", () => {
     expect(ripristinato.pagamenti[0].importo).toBe(50);
   });
 });
+
+describe("backup — confini offline safety (nessuna migrazione chiavi)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("backup include solo APP_DATA_KEYS e lascia fuori chiavi solo-device note", () => {
+    const chiaviBackup = Object.keys(APP_DATA_KEYS);
+    expect(chiaviBackup).toEqual(
+      expect.arrayContaining([
+        STORAGE_KEYS.preventivi,
+        STORAGE_KEYS.cantieri,
+        STORAGE_KEYS.clienti,
+        STORAGE_KEYS.datiAzienda,
+        STORAGE_KEYS.listino,
+        STORAGE_KEYS.esperienze,
+      ])
+    );
+
+    // Chiavi operative note come device-local oggi — non devono entrare nel backup
+    // senza decisione umana esplicita (no APP_DATA_KEYS expansion in questo test).
+    expect(STORAGE_KEYS.catalogoMateriali in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.attivita in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.brainObservations in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.pinAccesso in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.distinteMateriali in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.listaSpesa in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.firme in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.varianti in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.variantiTimeline in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.workflowTimeline in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.appLockConfig in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.backupAutomaticoConfig in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.backupAutomaticoUltimo in APP_DATA_KEYS).toBe(false);
+
+    salvaStorage(STORAGE_KEYS.catalogoMateriali, [{ id: "mat-1", nome: "Cavo" }]);
+    salvaStorage(STORAGE_KEYS.attivita, [{ id: "a1", titolo: "Sopralluogo" }]);
+    salvaStorage(STORAGE_KEYS.distinteMateriali, [{ id: "d1", titolo: "Distinta" }]);
+    salvaStorage(STORAGE_KEYS.listaSpesa, [{ id: "ls1", nome: "Cavo" }]);
+    salvaStorage(STORAGE_KEYS.firme, [{ id: "f1" }]);
+    salvaStorage(STORAGE_KEYS.varianti, [{ id: "v1" }]);
+
+    const backup = creaBackupCompleto();
+    expect(STORAGE_KEYS.catalogoMateriali in backup.dati).toBe(false);
+    expect(STORAGE_KEYS.attivita in backup.dati).toBe(false);
+    expect(STORAGE_KEYS.pinAccesso in backup.dati).toBe(false);
+    expect(STORAGE_KEYS.distinteMateriali in backup.dati).toBe(false);
+    expect(STORAGE_KEYS.listaSpesa in backup.dati).toBe(false);
+    expect(STORAGE_KEYS.firme in backup.dati).toBe(false);
+    expect(STORAGE_KEYS.varianti in backup.dati).toBe(false);
+  });
+
+  it("ripristino non cancella chiavi solo-device non presenti nel backup", async () => {
+    salvaStorage(STORAGE_KEYS.catalogoMateriali, [{ id: "mat-keep", nome: "Canalina" }]);
+    salvaStorage(STORAGE_KEYS.clienti, [{ id: "c1", nome: "Bianchi" }]);
+
+    const backup = creaBackupCompleto();
+    expect(backup.dati[STORAGE_KEYS.clienti]).toEqual([{ id: "c1", nome: "Bianchi" }]);
+
+    // Simula restore su device che ha ancora catalogo locale
+    await ripristinaBackupCompleto({
+      ...backup,
+      dati: {
+        ...backup.dati,
+        [STORAGE_KEYS.clienti]: [{ id: "c2", nome: "Verdi" }],
+      },
+    });
+
+    expect(leggiStorage(STORAGE_KEYS.clienti, [])).toEqual([
+      { id: "c2", nome: "Verdi" },
+    ]);
+    expect(leggiStorage(STORAGE_KEYS.catalogoMateriali, [])).toEqual([
+      { id: "mat-keep", nome: "Canalina" },
+    ]);
+  });
+});

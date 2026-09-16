@@ -1,10 +1,14 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { STORAGE_KEYS } from "../app/storageKeys";
 import { ROUTES } from "../app/routes";
 import { CATALOGO_MATERIALI_SEED } from "../domain/catalogoMateriali/materialiCatalogoSeed";
+import {
+  eseguiNavigazioneIndietro,
+  setGuardiaNavigazioneIndietro,
+} from "../navigation/navigateBack";
 import CatalogoMateriali from "./CatalogoMateriali";
 
 function renderPage() {
@@ -24,6 +28,10 @@ describe("CatalogoMateriali UI", () => {
       STORAGE_KEYS.catalogoMateriali,
       JSON.stringify(CATALOGO_MATERIALI_SEED)
     );
+  });
+
+  afterEach(() => {
+    setGuardiaNavigazioneIndietro(null);
   });
 
   it("apre la pagina con titolo e categorie", () => {
@@ -197,6 +205,22 @@ describe("CatalogoMateriali UI", () => {
     fireEvent.click(screen.getByRole("button", { name: /Indietro/i }));
     expect(
       screen.getByRole("heading", { name: /Catalogo Materiali/i })
+    ).toBeInTheDocument();
+  });
+
+  it("edge swipe / hardware back scende di un livello invece di uscire", async () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /Corrugati e tubazioni/i }));
+    expect(
+      screen.getByRole("heading", { name: /Corrugati e tubazioni/i })
+    ).toBeInTheDocument();
+
+    const navigate = vi.fn();
+    const esito = eseguiNavigazioneIndietro(navigate, ROUTES.catalogoMateriali);
+    expect(esito.metodo).toBe("bloccato");
+    expect(navigate).not.toHaveBeenCalled();
+    expect(
+      await screen.findByRole("heading", { name: /Catalogo Materiali/i })
     ).toBeInTheDocument();
   });
 

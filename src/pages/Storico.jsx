@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { HardHat, History, Lightbulb } from "lucide-react";
 
 import {
+  ROUTES,
   routeCantierePagamenti
 } from "../app/routes";
 import PageWrapper from "../components/PageWrapper";
@@ -242,6 +243,13 @@ export default function Storico() {
                   ? "Quando chiudi un cantiere come Completato, compare qui con giornate e conti reali."
                   : "Non ci sono cantieri da mostrare."}
               </p>
+              <Link
+                to={ROUTES.cantieri}
+                className="btn-primary inline-flex items-center justify-center min-h-[48px] mt-6 px-5 font-bold"
+                data-testid="storico-vuoto-cta-cantieri"
+              >
+                Apri cantieri
+              </Link>
             </div>
           ) : (
             <ul className="flex flex-col gap-3" data-testid="storico-lista">

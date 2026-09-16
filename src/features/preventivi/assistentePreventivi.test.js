@@ -1,6 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
-import { generaBozzaPreventivoLocale } from "./assistentePreventivi";
+import {
+  generaBozzaPreventivoAI,
+  generaBozzaPreventivoLocale,
+} from "./assistentePreventivi";
 
 describe("generaBozzaPreventivoLocale", () => {
   const clienti = [{ id: 1, nome: "Mario Rossi" }];
@@ -45,5 +48,27 @@ describe("generaBozzaPreventivoLocale", () => {
 
     expect(bozza.avvisi.length).toBeGreaterThan(0);
     expect(bozza.lavorazioni).toHaveLength(0);
+  });
+});
+
+describe("generaBozzaPreventivoAI", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn());
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("non POST-a clienti/listino anche se endpoint è configurato", async () => {
+    vi.stubEnv("VITE_AI_ASSISTANT_ENDPOINT", "https://example.test/ai");
+    const clienti = [{ id: 1, nome: "Mario Rossi", telefono: "333", email: "a@b.it" }];
+    const listino = [{ id: "1", nome: "Punto luce", prezzo: 45 }];
+    const bozza = await generaBozzaPreventivoAI({
+      testo: "preventivo per Mario Rossi punto luce",
+      clienti,
+      listino,
+    });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(bozza.cliente).toBe("Mario Rossi");
   });
 });

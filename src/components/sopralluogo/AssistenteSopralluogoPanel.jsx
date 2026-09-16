@@ -299,7 +299,7 @@ export default function AssistenteSopralluogoPanel({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="min-h-[40px] px-3 py-2 text-sm font-semibold rounded-[12px] border border-white/10 bg-white/[0.04] text-slate-200 disabled:opacity-40"
+              className="min-h-[44px] px-3 py-2 text-sm font-semibold rounded-[12px] border border-white/10 bg-white/[0.04] text-slate-200 disabled:opacity-40"
               disabled={!sessioneAttiva || typeof onChiudiSessione !== "function"}
               onClick={() => {
                 onChiudiSessione?.();
@@ -310,7 +310,7 @@ export default function AssistenteSopralluogoPanel({
             </button>
             <button
               type="button"
-              className="btn-primary min-h-[40px] px-3 py-2 text-sm font-semibold"
+              className="btn-primary min-h-[44px] px-3 py-2 text-sm font-semibold"
               disabled={typeof onNuovaSessione !== "function"}
               onClick={() => {
                 onNuovaSessione?.();
@@ -427,21 +427,21 @@ export default function AssistenteSopralluogoPanel({
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
-                          className="btn-primary min-h-[40px] px-3 py-2 text-sm font-semibold"
+                          className="btn-primary min-h-[44px] px-3 py-2 text-sm font-semibold"
                           onClick={() => onRispondi(domanda)}
                         >
                           Rispondi
                         </button>
                         <button
                           type="button"
-                          className="min-h-[40px] px-3 py-2 text-sm font-semibold rounded-[12px] border border-white/10 bg-white/[0.04] text-slate-200"
+                          className="min-h-[44px] px-3 py-2 text-sm font-semibold rounded-[12px] border border-white/10 bg-white/[0.04] text-slate-200"
                           onClick={() => onIgnoraDomanda(domanda)}
                         >
                           Ignora
                         </button>
                         <button
                           type="button"
-                          className="min-h-[40px] px-3 py-2 text-sm font-semibold rounded-[12px] border border-white/10 bg-transparent text-slate-400"
+                          className="min-h-[44px] px-3 py-2 text-sm font-semibold rounded-[12px] border border-white/10 bg-transparent text-slate-400"
                           onClick={() =>
                             aggiornaStato(
                               domanda.id,
@@ -484,7 +484,7 @@ export default function AssistenteSopralluogoPanel({
                           />
                           <button
                             type="button"
-                            className="btn-primary min-h-[40px] px-3 py-2 text-sm font-semibold"
+                            className="btn-primary min-h-[44px] px-3 py-2 text-sm font-semibold"
                             onClick={() => onSalvaModifica(domanda)}
                           >
                             Aggiorna proposta
@@ -494,21 +494,21 @@ export default function AssistenteSopralluogoPanel({
                         <div className="mt-3 flex flex-wrap gap-2">
                           <button
                             type="button"
-                            className="btn-primary min-h-[40px] px-3 py-2 text-sm font-semibold"
+                            className="btn-primary min-h-[44px] px-3 py-2 text-sm font-semibold"
                             onClick={() => onConfermaProposta(domanda)}
                           >
                             Conferma
                           </button>
                           <button
                             type="button"
-                            className="min-h-[40px] px-3 py-2 text-sm font-semibold rounded-[12px] border border-white/10 bg-white/[0.04] text-slate-200"
+                            className="min-h-[44px] px-3 py-2 text-sm font-semibold rounded-[12px] border border-white/10 bg-white/[0.04] text-slate-200"
                             onClick={() => onModificaProposta(domanda)}
                           >
                             Modifica
                           </button>
                           <button
                             type="button"
-                            className="min-h-[40px] px-3 py-2 text-sm font-semibold rounded-[12px] border border-white/10 bg-transparent text-slate-400"
+                            className="min-h-[44px] px-3 py-2 text-sm font-semibold rounded-[12px] border border-white/10 bg-transparent text-slate-400"
                             onClick={() => onIgnoraProposta(domanda)}
                           >
                             Ignora

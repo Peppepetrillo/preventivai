@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
@@ -66,12 +66,15 @@ function VarianteForm({
   const [form, setForm] = useState(() => formDaVariante(variante, famiglia));
   const [errore, setErrore] = useState("");
   const [confermaElimina, setConfermaElimina] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const salvataggioInCorso = useRef(false);
 
   function aggiorna(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
   }
 
   function gestisciSalva() {
+    if (salvataggioInCorso.current) return;
     const etichetta = String(form.etichetta || "").trim();
     if (!etichetta) {
       setErrore("Inserisci l'etichetta della variante.");
@@ -97,11 +100,18 @@ function VarianteForm({
       }
     }
 
+    salvataggioInCorso.current = true;
+    setSalvando(true);
     const ok = isNuova
       ? onCrea?.(famiglia.id, payload)
       : onSalva?.(famiglia.id, variante.id, payload);
 
-    if (ok !== false && ok != null) onClose?.();
+    if (ok === false || ok == null) {
+      salvataggioInCorso.current = false;
+      setSalvando(false);
+      return;
+    }
+    onClose?.();
   }
 
   function confermaEliminazione() {
@@ -202,9 +212,14 @@ function VarianteForm({
       <button
         type="button"
         onClick={gestisciSalva}
-        className="btn-primary w-full min-h-[52px] font-black"
+        disabled={salvando}
+        className="btn-primary w-full min-h-[52px] font-black disabled:opacity-40"
       >
-        {isNuova ? "Salva variante" : "Salva modifiche"}
+        {salvando
+          ? "Salvataggio…"
+          : isNuova
+            ? "Salva variante"
+            : "Salva modifiche"}
       </button>
 
       {!isNuova ? (
