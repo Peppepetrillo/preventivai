@@ -133,12 +133,25 @@ export function duplicaPreventivo({
   datiPreventivo,
   cliente,
 }) {
+  const {
+    cantiereId: _cantiereIdIgnorato,
+    inviatoAt: _inviatoAt,
+    accettatoAt: _accettatoAt,
+    convertitoAt: _convertitoAt,
+    convertitoBy: _convertitoBy,
+    rifiutatoAt: _rifiutatoAt,
+    annullatoAt: _annullatoAt,
+    dataAccettazione: _dataAccettazione,
+    ...resto
+  } = datiPreventivo || {};
+
   return {
-    ...datiPreventivo,
+    ...resto,
     id: new Date().getTime(),
     numero: creaProssimoNumeroPreventivo(archivio),
     cliente: `${cliente} - copia`,
     stato: "Bozza",
     data: new Date().toLocaleDateString("it-IT"),
+    cantiereId: null,
   };
 }
