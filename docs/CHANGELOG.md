@@ -2,6 +2,23 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-16 — Sprint 22B Deep Navigation + State Hardening
+
+### Completed
+- Branch `cursor/autonomous-sprint-22b-74ac`
+- Remount `DettaglioPreventivo` / `DettaglioCliente` on `:id` (stale form after duplica / deep-link)
+- Double-submit guard on preventivo Duplica
+- `CantiereOverview` keyed by cantiere id; `useCantieri` clears drafts on id change
+- `CantiereOperativo` closes material sheets on cantiere switch
+- Catalogo Materiali: edge/hardware back drills one vista level via `setGuardiaNavigazioneIndietro`
+- Distinta editor: clear sheets/flash when route id changes
+
+### Intentionally not done
+- Expanding `APP_DATA_KEYS` (🛑)
+- `economia.movimenti` SoT (🛑)
+- Remote AI deploy (🛑)
+- Diario emoji → Lucide (P3)
+
 ## 2026-09-16 — Sprint 22A Production UX + Navigation Hardening
 
 ### Completed
