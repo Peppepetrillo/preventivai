@@ -74,6 +74,6 @@ describe("CondivisioneSection", () => {
     expect(screen.queryByText(/Nessuna condivisione ancora/i)).not.toBeInTheDocument();
     expect(screen.getByText("Completato")).toBeInTheDocument();
     expect(screen.getByText("Locale")).toBeInTheDocument();
-    expect(screen.getAllByText("Download").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Scarica").length).toBeGreaterThan(0);
   });
 });
