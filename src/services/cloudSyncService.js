@@ -12,6 +12,7 @@ import {
   deveProteggereLocaleDaWipeCloud,
   deveRispingereLocaleVersoCloud,
   haValoreLocaleSignificativo,
+  normalizzaPayloadCloud,
 } from "./cloudSyncIntegrity";
 import {
   creaPathFotoCantiereImmutabile,
@@ -37,7 +38,15 @@ function leggiCodaPersistente() {
 }
 
 function salvaCodaPersistente(codaArray) {
-  void salvaStorage(STORAGE_CODA, Array.isArray(codaArray) ? codaArray : []);
+  const payload = Array.isArray(codaArray) ? codaArray : [];
+  void salvaStorage(STORAGE_CODA, payload).then((esito) => {
+    if (!esito?.ok) {
+      console.error(
+        "cloudSync: persistenza coda offline fallita",
+        esito?.error || "unknown"
+      );
+    }
+  });
 }
 
 const codaSalvataggi = new Map(leggiCodaPersistente());
@@ -112,7 +121,14 @@ function salvaCodaEliminazioneMedia() {
   void salvaStorage(
     STORAGE_CODA_ELIMINAZIONE_MEDIA,
     Array.from(codaEliminazioneMedia)
-  );
+  ).then((esito) => {
+    if (!esito?.ok) {
+      console.error(
+        "cloudSync: persistenza coda eliminazione media fallita",
+        esito?.error || "unknown"
+      );
+    }
+  });
 }
 
 function accodaEliminazioneMedia(paths) {
@@ -161,7 +177,8 @@ function applicaRecordLocale(record) {
     return false;
   }
 
-  salvaStorage(record.record_key, record.payload ?? fallback);
+  const payloadDaApplicare = normalizzaPayloadCloud(record.payload, fallback);
+  salvaStorage(record.record_key, payloadDaApplicare);
   salvaRevisioneLocale(record.record_key, record.updated_at);
   return true;
 }
@@ -608,7 +625,10 @@ async function eseguiSincronizzazioneDaCloud() {
           aggiungiACoda(chiave, preparaPayloadCloud(chiave, valoreLocale));
           continue;
         }
-        await salvaStorage(chiave, recordCloudChiave.payload ?? fallback);
+        await salvaStorage(
+          chiave,
+          normalizzaPayloadCloud(recordCloudChiave.payload, fallback)
+        );
         salvaRevisioneLocale(chiave, recordCloudChiave.updated_at);
         continue;
       }

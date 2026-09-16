@@ -73,6 +73,19 @@ export function deveProteggereLocaleDaWipeCloud({
 }
 
 /**
+ * Payload da scrivere in locale: mai forma errata (es. {} su chiave array).
+ * Cloud vuoto/null/tipo sbagliato → fallback della chiave.
+ * @param {unknown} payload
+ * @param {unknown} fallback
+ */
+export function normalizzaPayloadCloud(payload, fallback) {
+  if (isPayloadCloudVuoto(payload, fallback)) {
+    return fallback;
+  }
+  return payload ?? fallback;
+}
+
+/**
  * True se l'aggiornamento cloud può sostituire la copia locale.
  * La coda offline vince sempre: non applicare mai il cloud su chiavi sporche.
  *

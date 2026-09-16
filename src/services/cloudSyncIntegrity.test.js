@@ -3,6 +3,7 @@ import {
   deveApplicareAggiornamentoCloud,
   deveProteggereLocaleDaWipeCloud,
   deveRispingereLocaleVersoCloud,
+  normalizzaPayloadCloud,
   tempoDaIso,
 } from "./cloudSyncIntegrity";
 
@@ -120,6 +121,18 @@ describe("cloudSyncIntegrity", () => {
           fallback: {},
         })
       ).toBe(false);
+    });
+  });
+
+  describe("normalizzaPayloadCloud", () => {
+    it("sostituisce payload di forma errata con il fallback", () => {
+      expect(normalizzaPayloadCloud({}, [])).toEqual([]);
+      expect(normalizzaPayloadCloud(null, [])).toEqual([]);
+      expect(normalizzaPayloadCloud([{ id: 1 }], [])).toEqual([{ id: 1 }]);
+      expect(normalizzaPayloadCloud([], { a: 1 })).toEqual({ a: 1 });
+      expect(normalizzaPayloadCloud({ ragioneSociale: "X" }, {})).toEqual({
+        ragioneSociale: "X",
+      });
     });
   });
 });
