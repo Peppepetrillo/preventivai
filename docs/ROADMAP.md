@@ -61,16 +61,34 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 
 ---
 
+## Beta readiness (Sprint 23 evidence)
+
+| Priority | Item | Status | Notes |
+|----------|------|--------|-------|
+| P0 | PDF invents brand as ragione sociale | ✅ fixed | empty → «Ditta non impostata» / blank DTO |
+| P0 | Report empty Data apertura / Preventivo origine as `—` | ✅ fixed | omit lines |
+| P1 | Cliente→Nuovo cantiere drops prefill | ✅ fixed | query params |
+| P1 | Sticky cantiere CTA vs safe-area BottomNav | ✅ fixed | calc + inset |
+| P1 | First-5-min no azienda setup | ✅ fixed | Home CTA |
+| P1 | Accetta CTA unclear / hard to tap on Bozza | ✅ fixed | Segna accettato + btn-secondary |
+| P2 | Distinta→Acquisti silent without cantiere | ✅ fixed | flash hint |
+| P2 | Chiusura looks like delete on Attivi list | ✅ fixed | Completati/Storico copy |
+| P2 | AI offline hard-error wording | ✅ fixed | provider_non_raggiungibile map |
+| P2 | Share success never offers Inviato | ⬜ | UX prompt only (safe backlog) |
+| P2 | Empty ACCONTO / firme blocks on PDF | ⬜ | layout polish |
+| P3 | Diario emoji → Lucide | 🛑 / P3 | HUMAN-DECISIONS #6 |
+| 🛑 | APP_DATA_KEYS satellites | 🛑 | HUMAN-DECISIONS #1 |
+| 🛑 | economia.movimenti SoT | 🛑 | HUMAN-DECISIONS #2 |
+| 🛑 | Remote AI verify_jwt deploy | 🛑 | HUMAN-DECISIONS #3 |
+
 ## Next agent actions (ordered)
 
-1. **Human deploy** — apply `supabase/config.toml` `verify_jwt=true` for AI function on the linked project.
-2. **S6** — Continue lint setState-in-effect on list pages only if remount-safe; skip hash/animation.
-3. Human: decide `APP_DATA_KEYS` expansion (distinte / listaSpesa / firme / varianti) before coding sync.
-4. Human: PWA + A/B offline sync smoke (empty-cloud wipe protection should be re-verified on device).
-5. Optional: economia generale senza cantiere (`preventivai.economia.movimenti`) — product decision first.
-6. Optional: seed `preventivo.incassato` into `cantiere.pagamenti[]` on convert — product decision (SoT).
-7. Optional P3: Diario event icons emoji → Lucide (design system).
-8. Optional: Acquisti / Listino sheet remount audit if deep-link A→B without unmount appears in device QA.
+1. **Human deploy** — AI `verify_jwt=true` + server `OPENAI_API_KEY`.
+2. Share success → soft «Segna come inviato?» from Bozza (copy/UX only).
+3. PDF: omit ACCONTO box when 0; call firme only when signature flow.
+4. Human: `APP_DATA_KEYS` expansion decision before satellite sync.
+5. Device QA: Cliente→cantiere prefill + sticky CTA on notched iPhone.
+6. Optional: seed `preventivo.incassato` → `pagamenti[]` (SoT decision).
 
 ## Stop / ask human
 

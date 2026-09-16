@@ -363,7 +363,9 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
     const { rerender } = renderOverview();
 
     const cta = screen.getByTestId("cantiere-cta-fissa");
-    expect(cta).toHaveClass("bottom-[88px]");
+    expect(cta).toHaveStyle({
+      bottom: "calc(88px + env(safe-area-inset-bottom, 0px))",
+    });
     expect(cta).toHaveClass("z-40");
     expect(
       screen.getByRole("button", { name: /Inizia lavoro/i })
