@@ -2,6 +2,21 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-16 — Production polish + QA (UX / performance)
+
+### Completed
+- Branch `cursor/production-polish-qa-74ac`
+- Backup auto errors: Italian labels (no snake_case in Impostazioni)
+- Typology chips / AI copy: no emoji; Express undo ≥44px
+- Acquisti + Preventivi filtered empty: «Azzera ricerca e filtri»
+- PDF blobUrl revoke when callers keep only Blob (wizard / distinta / acquisti share)
+- Tests for each change
+
+### Intentionally not done
+- Diario emoji → Lucide (HUMAN-DECISIONS #6)
+- Broad setState-in-effect remount sweep
+- SoT / APP_DATA_KEYS / AI contract / remote deploy
+
 ## 2026-09-16 — Sprint 25 Release Candidate audit
 
 ### Completed
