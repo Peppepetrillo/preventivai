@@ -604,6 +604,14 @@ export default function CantiereOverview({
     };
   }, [cantiere.preventivoId]);
 
+  const preventivoCollegatoLive = useMemo(() => {
+    const id = String(cantiere.preventivoId || "").trim();
+    if (!id) return null;
+    return (
+      (preventivi || []).find((p) => String(p.id) === id) || null
+    );
+  }, [cantiere.preventivoId, preventivi]);
+
   function toggleMaterialeAcquistato(materialeId) {
     if (typeof onToggleMaterialeAcquistato === "function") {
       onToggleMaterialeAcquistato(materialeId);
@@ -1000,15 +1008,28 @@ export default function CantiereOverview({
             Report e preventivo
           </h2>
           <div className="space-y-2">
-            {cantiere.preventivoId ? (
+            {preventivoCollegatoLive ? (
               <Link
-                to={routePreventivo(cantiere.preventivoId)}
+                to={routePreventivo(preventivoCollegatoLive.id)}
                 className="flex items-center justify-between gap-3 min-h-[52px] rounded-[14px] border border-white/10 bg-black/[0.14] px-4 py-3 font-bold text-white"
                 data-testid="cantiere-link-preventivo"
               >
-                <span>Preventivo {cantiere.preventivoNumero || ""}</span>
+                <span>
+                  Preventivo{" "}
+                  {cantiere.preventivoNumero ||
+                    preventivoCollegatoLive.numero ||
+                    ""}
+                </span>
                 <span className="text-slate-400 text-sm">Apri</span>
               </Link>
+            ) : cantiere.preventivoId ? (
+              <p
+                className="ds-text-secondary text-sm py-2"
+                data-testid="cantiere-preventivo-mancante"
+              >
+                Preventivo collegato non trovato (eliminato). I pagamenti
+                restano su questo cantiere.
+              </p>
             ) : diretto ? (
               <div
                 className="ds-empty rounded-[14px] border border-white/10 bg-black/[0.14] px-4 py-5 text-center"
