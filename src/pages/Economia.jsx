@@ -220,6 +220,13 @@ export default function Economia() {
                 cantiere per registrare un pagamento, un materiale o un&apos;altra
                 uscita.
               </p>
+              <Link
+                to={ROUTES.cantieri}
+                className="btn-primary inline-flex items-center justify-center min-h-[48px] mt-6 px-5 font-bold"
+                data-testid="economia-vuoto-cta-cantieri"
+              >
+                Apri cantieri
+              </Link>
             </div>
           ) : (
             <ul className="flex flex-col gap-3" data-testid="economia-lista-movimenti">

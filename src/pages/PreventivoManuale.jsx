@@ -202,11 +202,12 @@ export default function PreventivoManuale() {
                   className="input-pro flex-1 py-2 text-sm"
                 />
                 <button
+                  type="button"
                   onClick={() => eliminaRiga(riga.id)}
-                  className="p-2 text-red-400 hover:text-red-300 transition shrink-0"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center text-red-400 hover:text-red-300 transition shrink-0"
                   aria-label="Elimina riga"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={16} aria-hidden="true" />
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-2 pl-7">

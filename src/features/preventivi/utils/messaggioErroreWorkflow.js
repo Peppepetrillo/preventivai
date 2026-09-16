@@ -17,6 +17,11 @@ export function messaggioErroreWorkflow(codice, fallback = "") {
     non_annullabile_convertito:
       "Non puoi rifiutare un preventivo già in cantiere.",
     conversione_fallita: "Non è stato possibile creare il cantiere. Riprova.",
+    preventivo_non_collegato:
+      "Questo cantiere non ha un preventivo collegato.",
+    cantiere_non_selezionato: "Seleziona un cantiere prima di continuare.",
+    variante_non_trovata: "Variante non trovata.",
+    richiede_approvazione: "La variante va approvata prima di eseguirla.",
   };
 
   const chiave = String(codice || "").trim();

@@ -83,4 +83,19 @@ describe("Economia v0 pagina", () => {
     expect(uscita).toHaveAttribute("data-cantiere-id", "c-rossi");
     expect(uscita.getAttribute("href")).toContain("sezione-spese");
   });
+
+  it("empty state ha CTA verso cantieri", () => {
+    vi.mocked(leggiCantieri).mockReturnValue([]);
+    render(
+      <MemoryRouter initialEntries={[ROUTES.economia]}>
+        <Economia />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByTestId("economia-vuoto")).toBeInTheDocument();
+    expect(screen.getByTestId("economia-vuoto-cta-cantieri")).toHaveAttribute(
+      "href",
+      ROUTES.cantieri
+    );
+  });
 });

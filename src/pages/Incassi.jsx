@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle, FileText, HardHat, Plus, Wallet } from "lucide-react";
 import PageWrapper from "../components/PageWrapper";
@@ -47,12 +47,22 @@ export default function Incassi() {
     [APP_EVENTS.preventiviAggiornati]
   );
   const [importi, setImporti] = useState({});
+  const [messaggio, setMessaggio] = useState("");
+  const [salvandoId, setSalvandoId] = useState("");
+  const salvataggioInCorso = useRef(false);
+  const flashTimer = useRef(null);
 
   const preventiviOperativi = useMemo(
     () => (preventivi || []).filter(isPreventivoOperativoIncassi),
     [preventivi]
   );
   const riepilogo = riepilogaIncassi(preventiviOperativi);
+
+  function flash(testo) {
+    if (flashTimer.current) window.clearTimeout(flashTimer.current);
+    setMessaggio(testo);
+    flashTimer.current = window.setTimeout(() => setMessaggio(""), 2200);
+  }
 
   function salvaListaPreventivi(nuoviPreventiviAttivi) {
     const tutti = leggiPreventiviTutti();
@@ -75,9 +85,12 @@ export default function Incassi() {
 
   function registraPagamento(preventivo) {
     if (!isPreventivoOperativoIncassi(preventivo)) return;
+    if (salvataggioInCorso.current) return;
     const importo = normalizzaNumero(importi[preventivo.id]);
     if (importo <= 0) return;
 
+    salvataggioInCorso.current = true;
+    setSalvandoId(String(preventivo.id));
     salvaListaPreventivi(
       preventivi.map((item) =>
         String(item.id) === String(preventivo.id)
@@ -86,10 +99,17 @@ export default function Incassi() {
       )
     );
     aggiornaImporto(preventivo.id, "");
+    flash("Pagamento registrato.");
+    salvataggioInCorso.current = false;
+    setSalvandoId("");
   }
 
   function segnaSaldato(preventivo) {
     if (!isPreventivoOperativoIncassi(preventivo)) return;
+    if (salvataggioInCorso.current) return;
+
+    salvataggioInCorso.current = true;
+    setSalvandoId(String(preventivo.id));
     salvaListaPreventivi(
       preventivi.map((item) =>
         String(item.id) === String(preventivo.id)
@@ -97,6 +117,9 @@ export default function Incassi() {
           : item
       )
     );
+    flash("Segnato come saldato.");
+    salvataggioInCorso.current = false;
+    setSalvandoId("");
   }
 
   return (
@@ -112,6 +135,16 @@ export default function Incassi() {
             pagamenti si registrano nel tab Pagamenti del cantiere.
           </p>
         </section>
+
+        {messaggio ? (
+          <div
+            className="pro-panel px-3.5 py-3 mb-4 text-sm text-yellow-100 border-yellow-300/30"
+            role="status"
+            data-testid="incassi-feedback"
+          >
+            {messaggio}
+          </div>
+        ) : null}
 
         <section className="grid gap-3 sm:grid-cols-3 mb-6">
           <div className="pro-panel p-4">
@@ -177,14 +210,18 @@ export default function Incassi() {
                     <button
                       type="button"
                       onClick={() => registraPagamento(preventivo)}
-                      className="btn-primary px-4 py-3"
+                      disabled={salvandoId === String(preventivo.id)}
+                      className="btn-primary px-4 py-3 min-h-[48px] disabled:opacity-40"
                     >
-                      Registra pagamento
+                      {salvandoId === String(preventivo.id)
+                        ? "Salvataggio…"
+                        : "Registra pagamento"}
                     </button>
                     <button
                       type="button"
                       onClick={() => segnaSaldato(preventivo)}
-                      className="btn-secondary px-4 py-3"
+                      disabled={salvandoId === String(preventivo.id)}
+                      className="btn-secondary px-4 py-3 min-h-[48px] disabled:opacity-40"
                     >
                       Segna saldato
                     </button>

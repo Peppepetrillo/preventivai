@@ -6,6 +6,7 @@ import {
   creaVoceChecklist,
   aggiornaCantiere,
 } from "../cantieriDomain";
+import { messaggioErroreWorkflow } from "../../preventivi/utils/messaggioErroreWorkflow";
 import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
 import {
   leggiCantieriTutti,
@@ -489,7 +490,12 @@ export function useCantieri({
     if (risultato.success) {
       setMessaggio("Preventivo aggiornato con la variante.");
     } else {
-      setMessaggio(risultato.error || "Aggiornamento preventivo non riuscito.");
+      setMessaggio(
+        messaggioErroreWorkflow(
+          risultato.error,
+          "Aggiornamento preventivo non riuscito."
+        )
+      );
     }
     return risultato;
   }
@@ -530,7 +536,12 @@ export function useCantieri({
             : "Variante proposta registrata."
       );
     } else {
-      setMessaggio(risultato.error || "Impossibile creare la variante.");
+      setMessaggio(
+        messaggioErroreWorkflow(
+          risultato.error,
+          "Impossibile creare la variante."
+        )
+      );
     }
     return risultato;
   }
@@ -549,7 +560,9 @@ export function useCantieri({
       setVariantiTick((n) => n + 1);
       setMessaggio("Variante approvata.");
     } else {
-      setMessaggio(risultato.error || "Approvazione non riuscita.");
+      setMessaggio(
+        messaggioErroreWorkflow(risultato.error, "Approvazione non riuscita.")
+      );
     }
     return risultato;
   }
@@ -568,7 +581,9 @@ export function useCantieri({
       setVariantiTick((n) => n + 1);
       setMessaggio("Variante eseguita.");
     } else {
-      setMessaggio(risultato.error || "Esecuzione non riuscita.");
+      setMessaggio(
+        messaggioErroreWorkflow(risultato.error, "Esecuzione non riuscita.")
+      );
     }
     return risultato;
   }
@@ -587,7 +602,9 @@ export function useCantieri({
       setVariantiTick((n) => n + 1);
       setMessaggio("Variante annullata.");
     } else {
-      setMessaggio(risultato.error || "Annullamento non riuscito.");
+      setMessaggio(
+        messaggioErroreWorkflow(risultato.error, "Annullamento non riuscito.")
+      );
     }
     return risultato;
   }

@@ -63,4 +63,32 @@ describe("Incassi UX-8.6", () => {
       screen.getByRole("button", { name: /Registra pagamento/i })
     ).toBeInTheDocument();
   });
+
+  it("mostra feedback dopo registra pagamento", async () => {
+    const { default: userEvent } = await import("@testing-library/user-event");
+    const user = userEvent.setup();
+    seedPreventivi([
+      {
+        id: "p1",
+        numero: "PREV-1",
+        cliente: "Aperto",
+        stato: STATI_PREVENTIVO.ACCETTATO,
+        totale: 1000,
+        incassato: 0,
+        acconto: 0,
+      },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <Incassi />
+      </MemoryRouter>
+    );
+
+    await user.type(screen.getByPlaceholderText("Importo"), "100");
+    await user.click(screen.getByRole("button", { name: /Registra pagamento/i }));
+    expect(screen.getByTestId("incassi-feedback")).toHaveTextContent(
+      /Pagamento registrato/i
+    );
+  });
 });
