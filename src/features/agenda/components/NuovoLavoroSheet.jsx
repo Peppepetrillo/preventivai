@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import BottomSheet from "../../../components/BottomSheet";
 import { TIPO_LAVORO } from "../../lavori/lavoriTypes";
@@ -44,9 +44,15 @@ export default function NuovoLavoroSheet({
   descrizione = "Crea un nuovo cantiere o intervento.",
 }) {
   const [form, setForm] = useState(() => statoIniziale(dataDefault));
+  const [salvando, setSalvando] = useState(false);
+  const salvataggioInCorso = useRef(false);
 
   useEffect(() => {
-    if (aperto) setForm(statoIniziale(dataDefault));
+    if (aperto) {
+      setForm(statoIniziale(dataDefault));
+      salvataggioInCorso.current = false;
+      setSalvando(false);
+    }
   }, [aperto, dataDefault]);
 
   function aggiorna(campo, valore) {
@@ -55,7 +61,10 @@ export default function NuovoLavoroSheet({
 
   function invia(event) {
     event.preventDefault();
+    if (salvataggioInCorso.current) return;
     if (!form.titolo.trim() && !form.cliente.trim()) return;
+    salvataggioInCorso.current = true;
+    setSalvando(true);
     onSalva?.(form);
     onChiudi?.();
   }
@@ -182,8 +191,12 @@ export default function NuovoLavoroSheet({
           />
         </label>
 
-        <button type="submit" className="btn-primary w-full min-h-[52px] font-black">
-          Salva in agenda
+        <button
+          type="submit"
+          disabled={salvando}
+          className="btn-primary w-full min-h-[52px] font-black disabled:opacity-40"
+        >
+          {salvando ? "Salvataggio…" : "Salva in agenda"}
         </button>
       </form>
     </BottomSheet>
