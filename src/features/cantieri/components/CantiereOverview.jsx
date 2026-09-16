@@ -1101,6 +1101,8 @@ export default function CantiereOverview({
                       setMessaggioDocumenti(
                         esito.errore === "cantiere_cestinato"
                           ? "Ripristina il cantiere dal Cestino prima di creare il preventivo."
+                          : esito.errore === "preventivo_cestinato"
+                            ? "Il preventivo collegato è nel Cestino. Ripristinalo da lì."
                           : "Non riesco a creare il preventivo. Riprova."
                       );
                       return;

@@ -6,7 +6,11 @@ import { spostaNelCestino, TIPI_CESTINO } from "../../../domain/cestino";
 import { creaCantiere, ORIGINE_CANTIERE } from "../cantieriDomain";
 import { creaPreventivoDaCantiereDiretto } from "./creaPreventivoDaCantiereDiretto";
 import { leggiCantieri, salvaCantieri } from "../../../repositories/cantieriRepository";
-import { leggiPreventivi } from "../../../repositories/preventiviRepository";
+import {
+  leggiPreventivi,
+  leggiPreventiviTutti,
+  salvaNuovoPreventivo,
+} from "../../../repositories/preventiviRepository";
 
 describe("creaPreventivoDaCantiereDiretto", () => {
   beforeEach(() => {
@@ -60,5 +64,24 @@ describe("creaPreventivoDaCantiereDiretto", () => {
     expect(esito.ok).toBe(false);
     expect(esito.errore).toBe("cantiere_cestinato");
     expect(localStorage.getItem(STORAGE_KEYS.preventivi)).toBeNull();
+  });
+
+  it("non ricrea un preventivo se quello collegato è nel Cestino", () => {
+    const cantiere = creaCantiere({
+      nome: "Diretto",
+      cliente: "Rossi",
+    });
+    salvaCantieri([cantiere]);
+    const creato = creaPreventivoDaCantiereDiretto(cantiere.id);
+    expect(creato.ok).toBe(true);
+    spostaNelCestino(TIPI_CESTINO.preventivo, creato.preventivo.id);
+
+    const esito = creaPreventivoDaCantiereDiretto(cantiere.id);
+    expect(esito.ok).toBe(false);
+    expect(esito.errore).toBe("preventivo_cestinato");
+    expect(leggiPreventiviTutti()).toHaveLength(1);
+    expect(String(leggiCantieri()[0]?.preventivoId || creato.cantiere.preventivoId)).toBe(
+      String(creato.preventivo.id)
+    );
   });
 });

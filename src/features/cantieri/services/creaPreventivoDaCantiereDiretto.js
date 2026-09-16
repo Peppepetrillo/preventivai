@@ -68,6 +68,9 @@ export function creaPreventivoDaCantiereDiretto(cantiereId, opzioni = {}) {
         cantiere,
       };
     }
+    if (esistente && isRecordCestinato(esistente)) {
+      return { ok: false, errore: "preventivo_cestinato" };
+    }
   }
 
   const lavorazioni = Array.isArray(opzioni.lavorazioni)
