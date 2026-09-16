@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import PageBackLink from "../components/PageBackLink";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -23,6 +23,7 @@ function creaRiga() {
 export default function PreventivoManuale() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const salvataggioInCorso = useRef(false);
 
   const clienteIdParam = searchParams.get("clienteId");
   const clientiIniziali = leggiClienti();
@@ -40,6 +41,7 @@ export default function PreventivoManuale() {
   const [note, setNote] = useState("");
   const [pagamento, setPagamento] = useState("Bonifico bancario");
   const [errore, setErrore] = useState("");
+  const [salvando, setSalvando] = useState(false);
 
   const lavorazioniCalcolo = useMemo(
     () =>
@@ -69,6 +71,7 @@ export default function PreventivoManuale() {
   }
 
   function salva() {
+    if (salvataggioInCorso.current) return;
     if (!nomeCliente.trim()) {
       setErrore("Inserisci il nome del cliente.");
       return;
@@ -77,6 +80,9 @@ export default function PreventivoManuale() {
       setErrore("Aggiungi almeno una lavorazione.");
       return;
     }
+
+    salvataggioInCorso.current = true;
+    setSalvando(true);
 
     const archivio = leggiPreventivi();
     const lavorazioni = righe.map((r) =>
@@ -196,11 +202,12 @@ export default function PreventivoManuale() {
                   className="input-pro flex-1 py-2 text-sm"
                 />
                 <button
+                  type="button"
                   onClick={() => eliminaRiga(riga.id)}
-                  className="p-2 text-red-400 hover:text-red-300 transition shrink-0"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center text-red-400 hover:text-red-300 transition shrink-0"
                   aria-label="Elimina riga"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={16} aria-hidden="true" />
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-2 pl-7">
@@ -324,10 +331,12 @@ export default function PreventivoManuale() {
       </div>
 
       <button
+        type="button"
         onClick={salva}
-        className="btn-primary w-full py-4 font-black text-base mb-8"
+        disabled={salvando}
+        className="btn-primary w-full py-4 font-black text-base mb-8 disabled:opacity-40"
       >
-        Crea preventivo
+        {salvando ? "Creazione…" : "Crea preventivo"}
       </button>
     </div>
   );

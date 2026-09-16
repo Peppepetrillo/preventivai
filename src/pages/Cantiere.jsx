@@ -139,6 +139,7 @@ export default function Cantiere() {
         ) : null}
 
         <CantiereOverview
+          key={String(cantiereSelezionato.id)}
           cantiere={cantiereSelezionato}
           avanzamento={avanzamento}
           nuovaChecklist={nuovaChecklist}

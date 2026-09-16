@@ -12,7 +12,11 @@ vi.mock("../../../services/cantiereReportPdfService", () => ({
 }));
 
 vi.mock("../../../components/PdfAnteprima", () => ({
-  default: ({ aperto }) => (aperto ? <div data-testid="pdf-anteprima">Anteprima</div> : null),
+  default: ({ aperto }) =>
+    aperto ? <div data-testid="pdf-anteprima">Anteprima</div> : null,
+}));
+
+vi.mock("../../../components/pdfAnteprimaUtils", () => ({
   scaricaDaBlobUrl: vi.fn(),
   condividiDaBlobUrl: vi.fn(),
 }));

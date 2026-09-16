@@ -1,11 +1,12 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 
-import PdfAnteprima, {
+import PdfAnteprima from "./PdfAnteprima";
+import {
   condividiDaBlobUrl,
   scaricaDaBlobUrl,
-  urlPdfFitWidth
-} from "./PdfAnteprima";
+  urlPdfFitWidth,
+} from "./pdfAnteprimaUtils";
 
 const condividiBlob = vi.fn();
 const esportaBlob = vi.fn();

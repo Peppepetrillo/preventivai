@@ -314,11 +314,73 @@ describe("provider mock", () => {
     _resetRateLimitClientPerTest();
   });
 
+  const sessioneOk = async () => ({ access_token: "jwt-test" });
+
   it("provider non configurato → ok false", async () => {
     vi.stubEnv("VITE_AI_ASSISTANT_ENDPOINT", "");
     const esito = await generaInsightDaProvider({});
     expect(esito.ok).toBe(false);
     expect(esito.motivo).toBe("provider_non_configurato");
+  });
+
+  it("senza sessione → non_autenticato (niente chiamata)", async () => {
+    vi.stubEnv("VITE_AI_ASSISTANT_ENDPOINT", "https://example.test/ai");
+    _resetRateLimitClientPerTest();
+    const fetchImpl = vi.fn();
+    const esito = await generaInsightDaProvider(
+      { nuovoLavoro: { titolo: "x" } },
+      { fetchImpl, getSession: async () => null }
+    );
+    expect(esito.ok).toBe(false);
+    expect(esito.motivo).toBe("non_autenticato");
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("invia Authorization Bearer + apikey", async () => {
+    vi.stubEnv("VITE_AI_ASSISTANT_ENDPOINT", "https://example.test/ai");
+    _resetRateLimitClientPerTest();
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ valutazione: "Ok dai dati." }),
+    }));
+    await generaInsightDaProvider(
+      {
+        nuovoLavoro: { titolo: "x" },
+        livelloConfidenza: "insufficiente",
+        lavoriSimili: [],
+        statistiche: {},
+        portfolio: {},
+      },
+      {
+        fetchImpl,
+        getSession: sessioneOk,
+        anonKey: "anon-test",
+      }
+    );
+    expect(fetchImpl).toHaveBeenCalled();
+    const headers = fetchImpl.mock.calls[0][1].headers;
+    expect(headers.Authorization).toBe("Bearer jwt-test");
+    expect(headers.apikey).toBe("anon-test");
+  });
+
+  it("provider 401 → non_autenticato con fallback orchestratore", async () => {
+    vi.stubEnv("VITE_AI_ASSISTANT_ENDPOINT", "https://example.test/ai");
+    _resetRateLimitClientPerTest();
+    const fetchImpl = vi.fn(async () => ({
+      ok: false,
+      status: 401,
+      json: async () => ({ codice: "non_autenticato" }),
+    }));
+    const esito = await analizzaNuovoLavoroIntelligence({
+      cantieri: [],
+      nuovoLavoro: { titolo: "Manutenzione" },
+      fetchImpl,
+      getSession: sessioneOk,
+    });
+    expect(esito.usatoProvider).toBe(false);
+    expect(esito.motivoFallback).toBe("non_autenticato");
+    expect(esito.insight.fonte).toBe("deterministico");
   });
 
   it("provider errore → fallback orchestratore", async () => {
@@ -331,6 +393,7 @@ describe("provider mock", () => {
       cantieri: [],
       nuovoLavoro: { titolo: "Manutenzione" },
       fetchImpl,
+      getSession: sessioneOk,
     });
     expect(esito.usatoProvider).toBe(false);
     expect(esito.motivoFallback).toBe("provider_non_raggiungibile");
@@ -360,7 +423,7 @@ describe("provider mock", () => {
         statistiche: {},
         portfolio: {},
       },
-      { fetchImpl, timeoutMs: 20 }
+      { fetchImpl, timeoutMs: 20, getSession: sessioneOk }
     );
     expect(esito.ok).toBe(false);
     expect(esito.motivo).toBe("timeout");
@@ -378,6 +441,7 @@ describe("provider mock", () => {
       cantieri: [],
       nuovoLavoro: { titolo: "x" },
       fetchImpl,
+      getSession: sessioneOk,
     });
     expect(esito.usatoProvider).toBe(false);
     expect(esito.motivoFallback).toBe("provider_upstream");
@@ -389,6 +453,7 @@ describe("provider mock", () => {
     _resetRateLimitClientPerTest();
     const fetchImpl = vi.fn(async () => ({
       ok: true,
+      status: 200,
       json: async () => ({
         valutazione: "Considera bene i materiali.",
         motivazione: "Dai confronti storici.",
@@ -404,6 +469,7 @@ describe("provider mock", () => {
       cantieri: [],
       nuovoLavoro: { titolo: "x" },
       fetchImpl,
+      getSession: sessioneOk,
     });
     expect(esito.usatoProvider).toBe(true);
     expect(esito.insight.valutazione).toMatch(/materiali/i);
@@ -417,6 +483,7 @@ describe("provider mock", () => {
     _resetRateLimitClientPerTest();
     const fetchImpl = vi.fn(async () => ({
       ok: true,
+      status: 200,
       json: async () => ({ valutazione: "Ok" }),
     }));
     const contesto = {
@@ -429,11 +496,13 @@ describe("provider mock", () => {
     const a = await generaInsightDaProvider(contesto, {
       fetchImpl,
       nowMs: 1000,
+      getSession: sessioneOk,
     });
     expect(a.ok).toBe(true);
     const b = await generaInsightDaProvider(contesto, {
       fetchImpl,
       nowMs: 1000 + AI_LIMITI.minIntervalloClientMs - 100,
+      getSession: sessioneOk,
     });
     expect(b.ok).toBe(false);
     expect(b.motivo).toBe("troppo_frequente");

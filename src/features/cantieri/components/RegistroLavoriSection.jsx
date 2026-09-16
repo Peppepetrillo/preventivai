@@ -33,11 +33,10 @@ export default function RegistroLavoriSection({
   }
 
   function gestisciSalva(payload) {
-    if (inModifica?.id) {
-      onAggiorna?.(inModifica.id, payload);
-    } else {
-      onAggiungi?.(payload);
-    }
+    const esito = inModifica?.id
+      ? onAggiorna?.(inModifica.id, payload)
+      : onAggiungi?.(payload);
+    return esito || { success: true };
   }
 
   return (
