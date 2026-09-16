@@ -99,7 +99,15 @@ import {
   generateQualityChecks
 } from "../domain/qualityCheck";
 
+/**
+ * Remount on :id so form state never leaks across preventivi (duplica / deep-link).
+ */
 export default function DettaglioPreventivo() {
+  const { id } = useParams();
+  return <DettaglioPreventivoContenuto key={String(id || "mancante")} />;
+}
+
+function DettaglioPreventivoContenuto() {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -148,6 +156,8 @@ export default function DettaglioPreventivo() {
   const [showUsaDistinta, setShowUsaDistinta] = useState(false);
   const [statoBloccoAlert, setStatoBloccoAlert] = useState(false);
   const [statoConfermaManuale, setStatoConfermaManuale] = useState(null);
+  const [duplicazioneInCorso, setDuplicazioneInCorso] = useState(false);
+  const duplicazioneLock = useRef(false);
   const [conversioneInCorso, setConversioneInCorso] = useState(false);
   const conversioneLock = useRef(false);
 
@@ -304,13 +314,21 @@ export default function DettaglioPreventivo() {
   }
 
   function duplicaPreventivo() {
-    const nuovoPreventivo = duplicaDatiPreventivo({
-      archivio: leggiPreventiviTutti(),
-      datiPreventivo: datiAggiornati(),
-      cliente });
+    if (duplicazioneLock.current) return;
+    duplicazioneLock.current = true;
+    setDuplicazioneInCorso(true);
+    try {
+      const nuovoPreventivo = duplicaDatiPreventivo({
+        archivio: leggiPreventiviTutti(),
+        datiPreventivo: datiAggiornati(),
+        cliente });
 
-    salvaNuovoPreventivo(nuovoPreventivo);
-    navigate(routePreventivo(nuovoPreventivo.id));
+      salvaNuovoPreventivo(nuovoPreventivo);
+      navigate(routePreventivo(nuovoPreventivo.id));
+    } catch {
+      duplicazioneLock.current = false;
+      setDuplicazioneInCorso(false);
+    }
   }
 
   function eliminaPreventivo() {
@@ -1200,11 +1218,12 @@ export default function DettaglioPreventivo() {
         <button
           type="button"
           onClick={duplicaPreventivo}
-          className="w-full btn-secondary p-4 min-h-[44px] flex items-center justify-center gap-2"
+          disabled={duplicazioneInCorso}
+          className="w-full btn-secondary p-4 min-h-[44px] flex items-center justify-center gap-2 disabled:opacity-45"
           data-testid="preventivo-duplica"
         >
           <Copy size={20} />
-          Duplica
+          {duplicazioneInCorso ? "Duplicazione…" : "Duplica"}
         </button>
 
         {!confermaEliminaPreventivo ? (
