@@ -111,9 +111,9 @@ describe("aziendaService", () => {
     expect(linee.join(" ")).not.toContain("PEC ");
   });
 
-  it("risolviAziendaPerPdf con profilo vuoto resta generabile", () => {
+  it("risolviAziendaPerPdf con profilo vuoto resta generabile senza inventare il brand", () => {
     const a = risolviAziendaPerPdf({});
-    expect(a.nome).toBe("PreventivAI");
+    expect(a.nome).toBe("");
     expect(a.iban).toBe("");
   });
 });

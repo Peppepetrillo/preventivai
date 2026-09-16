@@ -95,7 +95,7 @@ describe("DistinteMateriali UI — elenco", () => {
     renderLista();
     fireEvent.click(screen.getByRole("button", { name: "Elimina" }));
     expect(screen.getByText(/Elimina distinta\?/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId("distinte-confirm-delete"));
+    fireEvent.click(screen.getByTestId("distinte-confirm-delete-dialog-confirm"));
     expect(screen.getByTestId("distinte-empty")).toBeInTheDocument();
     expect(localStorage.getItem(STORAGE_KEYS.distinteMateriali)).toMatch(/\[\]/);
   });

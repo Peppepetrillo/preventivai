@@ -159,4 +159,66 @@ describe("renderCantiereReportPdf", () => {
     expect(testiPdf.join("\n")).toContain("Spesa 0");
     expect(testiPdf.join("\n")).toContain("Spesa 39");
   });
+
+  it("omite Cliente/Indirizzo vuoti (niente — in copertina)", async () => {
+    const document = buildCantiereReport({
+      cantiere: {
+        id: "c-empty",
+        nome: "Intervento urgente",
+        cliente: "",
+        indirizzo: "   ",
+        diario: [],
+      },
+      datiAzienda: { nomeDitta: "Giuseppe Impianti" },
+    });
+
+    await renderCantiereReportPdf(document, { salva: false });
+    const testo = testiPdf.join("\n");
+    expect(testo).not.toMatch(/Cliente:\s*—/);
+    expect(testo).not.toMatch(/Indirizzo:\s*—/);
+    expect(testo).toContain("Intervento urgente");
+  });
+
+  it("omite fornitore/metodo vuoti nelle righe spese (niente —)", async () => {
+    const document = buildCantiereReport({
+      cantiere: {
+        id: "c-spese-empty",
+        cliente: "Bianchi",
+        spese: [
+          {
+            id: "s1",
+            data: "03/09/2026",
+            importo: 40,
+            descrizione: "Benzina",
+            categoria: CATEGORIE_SPESA.carburante,
+            fornitore: "",
+            metodoPagamento: "",
+          },
+        ],
+        diario: [],
+      },
+    });
+
+    await renderCantiereReportPdf(document, { salva: false });
+    const testo = testiPdf.join("\n");
+    expect(testo).toContain("Benzina");
+    expect(testo).not.toMatch(/Benzina[^\n]*—/);
+  });
+
+  it("omite sezione Firme vuota (niente linee placeholder)", async () => {
+    const document = buildCantiereReport({
+      cantiere: {
+        id: "c-no-firme",
+        cliente: "Rossi",
+        diario: [],
+      },
+      datiAzienda: { nomeDitta: "Demo" },
+    });
+
+    await renderCantiereReportPdf(document, { salva: false });
+    const testo = testiPdf.join("\n");
+    expect(testo).not.toContain("Firme");
+    expect(testo).not.toContain("Firma Tecnico");
+    expect(testo).not.toContain("________________");
+  });
 });

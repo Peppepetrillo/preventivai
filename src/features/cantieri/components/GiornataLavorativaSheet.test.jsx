@@ -51,4 +51,30 @@ describe("GiornataLavorativaSheet — conferma eliminazione", () => {
       screen.getByText(/Controlla ore e attività dal previsto/i)
     ).toBeInTheDocument();
   });
+
+  it("non chiude se onSalva restituisce success:false", () => {
+    const onClose = vi.fn();
+    const onSalva = vi.fn(() => ({
+      success: false,
+      error: "cantiere_obbligatorio",
+    }));
+    render(
+      <GiornataLavorativaSheet
+        open
+        onClose={onClose}
+        onSalva={onSalva}
+        cantieriOpzioni={[{ id: "c1", nome: "Villa" }]}
+        dataDefault="29/07/2026"
+      />
+    );
+
+    fireEvent.change(screen.getByTestId("registro-cantiere"), {
+      target: { value: "c1" },
+    });
+    fireEvent.click(screen.getByTestId("registro-salva"));
+
+    expect(onSalva).toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByTestId("registro-errore")).toHaveTextContent(/cantiere/i);
+  });
 });

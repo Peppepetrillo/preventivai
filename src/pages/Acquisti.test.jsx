@@ -186,6 +186,25 @@ describe("Acquisti UI Step 8.2", () => {
     expect(screen.queryByText(/Cavo Cat\.6/)).not.toBeInTheDocument();
   });
 
+  it("empty ricerca: CTA Azzera ricerca e filtri ripristina la lista", () => {
+    seedVoci([
+      creaVoceListaSpesa({
+        nome: "Cavo Cat.6",
+        quantita: 10,
+        unita: "m",
+        lavoroId: "c1",
+      }),
+    ]);
+    renderPage();
+    fireEvent.change(screen.getByLabelText(/Cerca materiale/i), {
+      target: { value: "zzzz-inesistente" },
+    });
+    expect(screen.getByTestId("acquisti-no-results")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("acquisti-azzera-filtri"));
+    expect(screen.queryByTestId("acquisti-no-results")).not.toBeInTheDocument();
+    expect(screen.getByText(/Cavo Cat\.6/)).toBeInTheDocument();
+  });
+
   it("filtro Da comprare / Tutti", () => {
     seedVoci([
       creaVoceListaSpesa({

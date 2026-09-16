@@ -114,6 +114,14 @@ export default function CantiereOperativo({
   }, [cantiere.id, cantiere.note]);
 
   useEffect(() => {
+    setMenuMateriale(false);
+    setShowCatalogo(false);
+    setShowManuale(false);
+    setUndoMateriale(null);
+    setFlashIds(new Set());
+  }, [cantiere.id]);
+
+  useEffect(() => {
     return () => {
       if (notaTimer.current) window.clearTimeout(notaTimer.current);
       if (undoTimer.current) window.clearTimeout(undoTimer.current);
@@ -528,7 +536,7 @@ export default function CantiereOperativo({
                                   spesaCollegata
                                 )
                               }
-                              className="text-xs font-semibold text-emerald-300 min-h-[32px]"
+                              className="text-xs font-semibold text-emerald-300 min-h-[44px]"
                               data-testid={`cantiere-materiale-spesa-registrata-${materiale.id}`}
                             >
                               {analisi.numeroSpese > 1
@@ -542,7 +550,7 @@ export default function CantiereOperativo({
                                   forzaNuova: true,
                                 })
                               }
-                              className="text-xs font-medium text-slate-400 min-h-[32px]"
+                              className="text-xs font-medium text-slate-400 min-h-[44px]"
                               data-testid={`cantiere-materiale-altra-spesa-${materiale.id}`}
                             >
                               Registra altra spesa
@@ -552,7 +560,7 @@ export default function CantiereOperativo({
                           <button
                             type="button"
                             onClick={() => onRegistraSpesaDaMateriale(materiale)}
-                            className="text-xs font-semibold text-yellow-200 min-h-[32px]"
+                            className="text-xs font-semibold text-yellow-200 min-h-[44px]"
                             data-testid={`cantiere-materiale-registra-spesa-${materiale.id}`}
                           >
                             Registra spesa
@@ -595,12 +603,12 @@ export default function CantiereOperativo({
             role="status"
           >
             <p className="text-sm text-emerald-50 font-semibold truncate">
-              ✔ {undoMateriale.nome} comprato
+              {undoMateriale.nome} comprato
             </p>
             <button
               type="button"
               onClick={annullaComprato}
-              className="shrink-0 text-sm font-black text-yellow-200 min-h-[40px] px-2"
+              className="shrink-0 text-sm font-black text-yellow-200 min-h-[44px] px-2"
             >
               Annulla
             </button>
@@ -715,7 +723,7 @@ export default function CantiereOperativo({
                       onEliminaFoto(fotoVoce.id);
                     }
                   }}
-                  className="absolute top-1.5 right-1.5 min-h-[36px] min-w-[36px] rounded-full bg-black/70 text-red-100 flex items-center justify-center"
+                  className="absolute top-1.5 right-1.5 min-h-[44px] min-w-[44px] rounded-full bg-black/70 text-red-100 flex items-center justify-center"
                   aria-label="Elimina foto"
                 >
                   <Trash2 size={14} />

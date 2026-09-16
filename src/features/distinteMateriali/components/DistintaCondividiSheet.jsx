@@ -47,6 +47,13 @@ export default function DistintaCondividiSheet({
         mostraPrezzi,
         salva: true,
       });
+      if (risultato?.blobUrl && typeof URL !== "undefined") {
+        try {
+          URL.revokeObjectURL(risultato.blobUrl);
+        } catch {
+          // ignore
+        }
+      }
       onMessaggio?.(`PDF generato: ${risultato.nomeFile}`);
       onClose?.();
     } catch {
