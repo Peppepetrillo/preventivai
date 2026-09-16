@@ -142,14 +142,31 @@ describe("backup — confini offline safety (nessuna migrazione chiavi)", () => 
     expect(STORAGE_KEYS.attivita in APP_DATA_KEYS).toBe(false);
     expect(STORAGE_KEYS.brainObservations in APP_DATA_KEYS).toBe(false);
     expect(STORAGE_KEYS.pinAccesso in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.distinteMateriali in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.listaSpesa in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.firme in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.varianti in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.variantiTimeline in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.workflowTimeline in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.appLockConfig in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.backupAutomaticoConfig in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.backupAutomaticoUltimo in APP_DATA_KEYS).toBe(false);
 
     salvaStorage(STORAGE_KEYS.catalogoMateriali, [{ id: "mat-1", nome: "Cavo" }]);
     salvaStorage(STORAGE_KEYS.attivita, [{ id: "a1", titolo: "Sopralluogo" }]);
+    salvaStorage(STORAGE_KEYS.distinteMateriali, [{ id: "d1", titolo: "Distinta" }]);
+    salvaStorage(STORAGE_KEYS.listaSpesa, [{ id: "ls1", nome: "Cavo" }]);
+    salvaStorage(STORAGE_KEYS.firme, [{ id: "f1" }]);
+    salvaStorage(STORAGE_KEYS.varianti, [{ id: "v1" }]);
 
     const backup = creaBackupCompleto();
     expect(STORAGE_KEYS.catalogoMateriali in backup.dati).toBe(false);
     expect(STORAGE_KEYS.attivita in backup.dati).toBe(false);
     expect(STORAGE_KEYS.pinAccesso in backup.dati).toBe(false);
+    expect(STORAGE_KEYS.distinteMateriali in backup.dati).toBe(false);
+    expect(STORAGE_KEYS.listaSpesa in backup.dati).toBe(false);
+    expect(STORAGE_KEYS.firme in backup.dati).toBe(false);
+    expect(STORAGE_KEYS.varianti in backup.dati).toBe(false);
   });
 
   it("ripristino non cancella chiavi solo-device non presenti nel backup", async () => {
