@@ -81,7 +81,7 @@ export default function NuovoCantiereForm({
         <button
           type="button"
           onClick={onCreaCantiere}
-          disabled={salvando || !String(cantiere?.nome || "").trim()}
+          disabled={salvando}
           className="btn-primary min-h-[48px] px-5 py-3 flex items-center justify-center gap-2 text-sm font-black sm:col-span-2 disabled:opacity-40"
           data-testid="nuovo-cantiere-crea"
         >
