@@ -31,7 +31,7 @@ describe("Listino — navigazione Back", () => {
     expect(screen.getByRole("button", { name: /Nuova lavorazione/i })).toBeInTheDocument();
   });
 
-  it("empty state mostra CTA Nuova lavorazione", () => {
+  it("empty state mostra CTA Nuova lavorazione", async () => {
     localStorage.setItem(STORAGE_KEYS.listino, JSON.stringify([]));
 
     render(
@@ -41,6 +41,12 @@ describe("Listino — navigazione Back", () => {
     );
 
     expect(screen.getByText("Catalogo vuoto")).toBeInTheDocument();
-    expect(screen.getByTestId("listino-empty-cta")).toBeInTheDocument();
+    const cta = screen.getByTestId("listino-empty-cta");
+    expect(cta).toBeInTheDocument();
+
+    cta.click();
+    expect(
+      await screen.findByRole("heading", { name: /Nuova lavorazione/i })
+    ).toBeInTheDocument();
   });
 });
