@@ -47,12 +47,14 @@ describe("CondivisioneSection", () => {
     const blob = new Blob(["%PDF"], { type: "application/pdf" });
     const preparaDocumento = vi.fn(async () => ({ blob, nomeFile: "PREV-1.pdf" }));
     const onMessaggio = vi.fn();
+    const onCondivisioneSuccess = vi.fn();
 
     const { rerender } = render(
       <CondivisioneSection
         preventivo={{ id: "p1", numero: "PREV-1", cliente: "Mario" }}
         preparaDocumento={preparaDocumento}
         onMessaggio={onMessaggio}
+        onCondivisioneSuccess={onCondivisioneSuccess}
       />
     );
 
@@ -62,12 +64,18 @@ describe("CondivisioneSection", () => {
 
     expect(preparaDocumento).toHaveBeenCalled();
     expect(onMessaggio).toHaveBeenCalled();
+    expect(onCondivisioneSuccess).toHaveBeenCalled();
+    expect(onCondivisioneSuccess.mock.calls[0][0]?.success).toBe(true);
+    expect(onCondivisioneSuccess.mock.calls[0][0]?.condivisione?.tipo).toBe(
+      "DOWNLOAD"
+    );
 
     rerender(
       <CondivisioneSection
         preventivo={{ id: "p1", numero: "PREV-1", cliente: "Mario" }}
         preparaDocumento={preparaDocumento}
         onMessaggio={onMessaggio}
+        onCondivisioneSuccess={onCondivisioneSuccess}
       />
     );
 

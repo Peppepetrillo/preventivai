@@ -92,7 +92,10 @@ import {
 } from "../features/preventivi/utils/preventivoHeroCta";
 import { messaggioErroreWorkflow } from "../features/preventivi/utils/messaggioErroreWorkflow";
 import { salvaFirma, ottieniFirma } from "../domain/firma";
-import { risolviDocumentoDaCondividere } from "../domain/condivisione";
+import {
+  risolviDocumentoDaCondividere,
+} from "../domain/condivisione";
+import { deveChiedereSegnaInviatoDopoShare } from "../features/preventivi/utils/promptSegnaInviatoDopoShare";
 import { arricchisciPreventivoLegacy } from "../domain/catalogo";
 import {
   contaRegoleAttive,
@@ -160,6 +163,9 @@ function DettaglioPreventivoContenuto() {
   const duplicazioneLock = useRef(false);
   const [conversioneInCorso, setConversioneInCorso] = useState(false);
   const conversioneLock = useRef(false);
+  const [confermaSegnaInviato, setConfermaSegnaInviato] = useState(false);
+  const [segnaInviatoInCorso, setSegnaInviatoInCorso] = useState(false);
+  const segnaInviatoLock = useRef(false);
 
   const sezioneLavorazioniRef = useRef(null);
   const sezioneDocumentiRef = useRef(null);
@@ -456,18 +462,35 @@ function DettaglioPreventivoContenuto() {
   }
 
   function eseguiInvia() {
-    salvaModificheSilenzioso();
-    const risultato = inviaPreventivo(preventivo.id);
-    if (!risultato.success) {
-      setMessaggio(
-        messaggioErroreWorkflow(
-          risultato.error,
-          "Non è stato possibile segnare il preventivo come inviato."
-        )
+    if (segnaInviatoLock.current) return;
+    segnaInviatoLock.current = true;
+    setSegnaInviatoInCorso(true);
+    try {
+      salvaModificheSilenzioso();
+      const risultato = inviaPreventivo(preventivo.id);
+      if (!risultato.success) {
+        setMessaggio(
+          messaggioErroreWorkflow(
+            risultato.error,
+            "Non è stato possibile segnare il preventivo come inviato."
+          )
+        );
+        return;
+      }
+      setConfermaSegnaInviato(false);
+      sincronizzaDaWorkflow(
+        risultato.preventivo,
+        "Preventivo segnato come inviato."
       );
-      return;
+    } finally {
+      segnaInviatoLock.current = false;
+      setSegnaInviatoInCorso(false);
     }
-    sincronizzaDaWorkflow(risultato.preventivo, "Preventivo segnato come inviato.");
+  }
+
+  function gestisciCondivisioneSuccess(esito) {
+    if (!deveChiedereSegnaInviatoDopoShare(stato, esito)) return;
+    setConfermaSegnaInviato(true);
   }
 
   function salvaModificheSilenzioso() {
@@ -1097,6 +1120,7 @@ function DettaglioPreventivoContenuto() {
           preventivo={{ ...datiAggiornati(), stato }}
           onMessaggio={setMessaggio}
           inElaborazione={pdfInElaborazione}
+          onCondivisioneSuccess={gestisciCondivisioneSuccess}
           onVisualizzaPdf={() =>
             generaDocumentoPdf({
               salva: false,
@@ -1322,6 +1346,26 @@ function DettaglioPreventivoContenuto() {
         onConfirm={() => {
           if (statoConfermaManuale) setStato(statoConfermaManuale);
           setStatoConfermaManuale(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confermaSegnaInviato}
+        title="Segna questo preventivo come inviato?"
+        description="Lo stato passerà a Inviato. Puoi farlo anche più tardi."
+        confirmLabel={
+          segnaInviatoInCorso ? "Aggiornamento…" : "Segna come inviato"
+        }
+        cancelLabel="Non ora"
+        danger={false}
+        testId="preventivo-segna-inviato-dopo-share"
+        onCancel={() => {
+          if (segnaInviatoInCorso) return;
+          setConfermaSegnaInviato(false);
+        }}
+        onConfirm={() => {
+          if (segnaInviatoInCorso) return;
+          eseguiInvia();
         }}
       />
     </div>
