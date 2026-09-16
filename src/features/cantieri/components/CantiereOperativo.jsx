@@ -528,7 +528,7 @@ export default function CantiereOperativo({
                                   spesaCollegata
                                 )
                               }
-                              className="text-xs font-semibold text-emerald-300 min-h-[32px]"
+                              className="text-xs font-semibold text-emerald-300 min-h-[44px]"
                               data-testid={`cantiere-materiale-spesa-registrata-${materiale.id}`}
                             >
                               {analisi.numeroSpese > 1
@@ -542,7 +542,7 @@ export default function CantiereOperativo({
                                   forzaNuova: true,
                                 })
                               }
-                              className="text-xs font-medium text-slate-400 min-h-[32px]"
+                              className="text-xs font-medium text-slate-400 min-h-[44px]"
                               data-testid={`cantiere-materiale-altra-spesa-${materiale.id}`}
                             >
                               Registra altra spesa
@@ -552,7 +552,7 @@ export default function CantiereOperativo({
                           <button
                             type="button"
                             onClick={() => onRegistraSpesaDaMateriale(materiale)}
-                            className="text-xs font-semibold text-yellow-200 min-h-[32px]"
+                            className="text-xs font-semibold text-yellow-200 min-h-[44px]"
                             data-testid={`cantiere-materiale-registra-spesa-${materiale.id}`}
                           >
                             Registra spesa

@@ -323,7 +323,7 @@ export default function CantiereVarianti({
                         <button
                           type="button"
                           onClick={() => onApprovaVariante?.(variante.id)}
-                          className="btn-secondary min-h-[40px] px-3 text-xs font-semibold flex items-center gap-1.5"
+                          className="btn-secondary min-h-[44px] px-3 text-xs font-semibold flex items-center gap-1.5"
                         >
                           <Check size={14} aria-hidden="true" />
                           Approva
@@ -331,7 +331,7 @@ export default function CantiereVarianti({
                         <button
                           type="button"
                           onClick={() => onAnnullaVariante?.(variante.id)}
-                          className="btn-secondary min-h-[40px] px-3 text-xs font-semibold flex items-center gap-1.5 text-red-200"
+                          className="btn-secondary min-h-[44px] px-3 text-xs font-semibold flex items-center gap-1.5 text-red-200"
                         >
                           <X size={14} aria-hidden="true" />
                           Annulla
@@ -343,7 +343,7 @@ export default function CantiereVarianti({
                         <button
                           type="button"
                           onClick={() => onEseguiVariante?.(variante.id)}
-                          className="btn-secondary min-h-[40px] px-3 text-xs font-semibold flex items-center gap-1.5"
+                          className="btn-secondary min-h-[44px] px-3 text-xs font-semibold flex items-center gap-1.5"
                         >
                           <Play size={14} aria-hidden="true" />
                           Esegui
@@ -351,7 +351,7 @@ export default function CantiereVarianti({
                         <button
                           type="button"
                           onClick={() => onAnnullaVariante?.(variante.id)}
-                          className="btn-secondary min-h-[40px] px-3 text-xs font-semibold flex items-center gap-1.5 text-red-200"
+                          className="btn-secondary min-h-[44px] px-3 text-xs font-semibold flex items-center gap-1.5 text-red-200"
                         >
                           <X size={14} aria-hidden="true" />
                           Annulla
