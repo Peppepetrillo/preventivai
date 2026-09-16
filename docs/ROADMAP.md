@@ -16,8 +16,8 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 
 | ID | Item | Status | Notes |
 |----|------|--------|-------|
-| S1 | Offline queue persistence | ✅ | `cloudSyncService` + Preferences reload; covered by `affidabilitaOffline.test.js` |
-| S2 | Wipe-safe sync | ✅ | RC-2A tests |
+| S1 | Offline queue persistence | ✅ | Persist + log on save failure; Preferences reload |
+| S2 | Wipe-safe sync | ✅ | Empty/null/wrong-type cloud vs non-empty local; DELETE protected |
 | S3 | Photo payload / no orphan `data:` in records | ✅ / 🟡 | Immutable paths; keep watching delete queue |
 | S4 | PIN hash (no plaintext) | ✅ | PBKDF2; Cloud WebCrypto uses `Uint8Array` salt (compat fix) |
 | S5 | Automated test/lint/build green on Cloud | ✅ | Verified after salt fix |
@@ -64,10 +64,11 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 ## Next agent actions (ordered)
 
 1. **Human deploy** — apply `supabase/config.toml` `verify_jwt=true` for AI function on the linked project.
-2. **S6** — One page of safe `set-state-in-effect` cleanup with tests.
+2. **S6** — One page of safe `set-state-in-effect` cleanup with tests (do not mass-refactor hooks).
 3. Human: decide `APP_DATA_KEYS` expansion (distinte / listaSpesa / firme / varianti) before coding sync.
-4. Human: PWA + A/B offline sync smoke.
+4. Human: PWA + A/B offline sync smoke (empty-cloud wipe protection should be re-verified on device).
 5. Optional: economia generale senza cantiere (`preventivai.economia.movimenti`) — product decision first.
+6. Optional: seed `preventivo.incassato` into `cantiere.pagamenti[]` on convert — product decision (SoT).
 
 ## Stop / ask human
 
