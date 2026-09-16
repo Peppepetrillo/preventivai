@@ -5,6 +5,7 @@ import BottomSheet from "../../../components/BottomSheet";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import NumericInput from "../../../components/NumericInput";
 import DatePickerField from "../../agenda/components/DatePickerField";
+import { messaggioErroreWorkflow } from "../../preventivi/utils/messaggioErroreWorkflow";
 import {
   CATEGORIE_SPESA,
   ETICHETTE_CATEGORIA_SPESA,
@@ -109,7 +110,7 @@ export default function SpesaSheet({
     }
 
     setSalvataggioInCorso(true);
-    onSalva?.({
+    const esito = onSalva?.({
       ...(inModifica ? { id: spesa.id } : {}),
       descrizione,
       data,
@@ -122,6 +123,13 @@ export default function SpesaSheet({
       materialeId: String(form.materialeId || "").trim(),
       listaSpesaId: String(form.listaSpesaId || "").trim(),
     });
+    if (esito && esito.success === false) {
+      setErrore(
+        messaggioErroreWorkflow(esito.error, "Impossibile salvare la spesa.")
+      );
+      setSalvataggioInCorso(false);
+      return;
+    }
     onClose?.();
   }
 

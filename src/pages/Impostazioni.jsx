@@ -320,7 +320,8 @@ export default function Impostazioni() {
             </div>
           ) : (
             <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4 text-slate-400">
-              Configura `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` per attivare il cloud.
+              Cloud non configurato su questo dispositivo. Contatta chi gestisce
+              l&apos;installazione per attivare la sincronizzazione.
             </div>
           )}
         </div>

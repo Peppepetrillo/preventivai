@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronRight,
   HardHat,
@@ -87,6 +87,8 @@ export default function Cantieri() {
   const [ricerca, setRicerca] = useState("");
   const [filtro, setFiltro] = useState("attivi");
   const [formAperto, setFormAperto] = useState(false);
+  const [creandoCantiere, setCreandoCantiere] = useState(false);
+  const creazioneInCorso = useRef(false);
 
   useEffect(() => {
     const apriNuovo =
@@ -132,11 +134,17 @@ export default function Cantieri() {
   );
 
   function gestisciCreaCantiere() {
+    if (creazioneInCorso.current) return;
+    creazioneInCorso.current = true;
+    setCreandoCantiere(true);
     const creato = aggiungiCantiere();
     if (creato?.id) {
       setFormAperto(false);
       navigate(routeCantiere(creato.id));
+      return;
     }
+    creazioneInCorso.current = false;
+    setCreandoCantiere(false);
   }
 
   function aggiornaRicerca(event) {
@@ -226,6 +234,7 @@ export default function Cantieri() {
                     cantiere={nuovoCantiere}
                     onAggiornaCampo={aggiornaCampoNuovoCantiere}
                     onCreaCantiere={gestisciCreaCantiere}
+                    salvando={creandoCantiere}
                   />
                 </div>
               ) : (
@@ -266,6 +275,7 @@ export default function Cantieri() {
                   cantiere={nuovoCantiere}
                   onAggiornaCampo={aggiornaCampoNuovoCantiere}
                   onCreaCantiere={gestisciCreaCantiere}
+                  salvando={creandoCantiere}
                 />
               </div>
             </div>

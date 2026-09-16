@@ -48,6 +48,8 @@ export async function analizzaNuovoLavoroIntelligence(input = {}) {
     const esito = await generaInsightDaProvider(contesto, {
       fetchImpl: input.fetchImpl,
       timeoutMs: input.timeoutMs,
+      getSession: input.getSession,
+      anonKey: input.anonKey,
     });
     if (esito.ok) {
       usatoProvider = true;
