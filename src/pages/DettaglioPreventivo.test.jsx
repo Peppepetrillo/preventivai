@@ -457,4 +457,41 @@ describe("DettaglioPreventivo UX-8.6", () => {
     expect(valori).toContain(STATI_PREVENTIVO.BOZZA);
     expect(valori).toContain(STATI_PREVENTIVO.ACCETTATO);
   });
+
+  it("Convertito con cantiere nel Cestino: banner e niente Apri cantiere", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([
+        creaPreventivo({
+          id: "p-cest",
+          stato: STATI_PREVENTIVO.CONVERTITO,
+          cantiereId: "c-trash",
+        }),
+      ])
+    );
+    localStorage.setItem(
+      STORAGE_KEYS.cantieri,
+      JSON.stringify([
+        {
+          id: "c-trash",
+          nome: "Cantiere trash",
+          cliente: "Mario Rossi",
+          stato: "In corso",
+          preventivoId: "p-cest",
+          deletedAt: "2026-09-01T00:00:00.000Z",
+        },
+      ])
+    );
+
+    renderDettaglio("p-cest");
+
+    expect(
+      screen.getByTestId("preventivo-cantiere-nel-cestino")
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("preventivo-apri-cestino")).toHaveAttribute(
+      "href",
+      "/cestino"
+    );
+    expect(screen.queryByTestId("preventivo-hero-cta")).not.toBeInTheDocument();
+  });
 });

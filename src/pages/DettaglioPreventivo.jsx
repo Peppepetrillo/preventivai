@@ -170,8 +170,17 @@ export default function DettaglioPreventivo() {
     stato,
     cantiereId: cantiereId || preventivo?.cantiereId };
   const cantiereCollegato = trovaCantiereCollegato(preventivoCorrente);
-  const cantiereCollegatoId =
-    cantiereId || preventivo?.cantiereId || cantiereCollegato?.id;
+  // Solo id live (trovaCantiereCollegato ignora cestinati) — mai navigare su id stale.
+  const cantiereCollegatoId = cantiereCollegato?.id || null;
+  const cantiereIdPersistito = String(
+    cantiereId || preventivo?.cantiereId || ""
+  ).trim();
+  const cantiereNelCestino =
+    !cantiereCollegatoId &&
+    Boolean(cantiereIdPersistito) &&
+    (stato === STATI_PREVENTIVO.CONVERTITO ||
+      stato === STATI_PREVENTIVO.LAVORO_COMPLETATO ||
+      stato === STATI_PREVENTIVO.ACCETTATO);
   const azioniDisponibili = ottieniAzioniDisponibili(preventivoCorrente);
   const heroCta = risolviHeroCta({
     stato,
@@ -661,6 +670,27 @@ export default function DettaglioPreventivo() {
         <PreventivoHeroCta hero={heroCta} onAzione={gestisciHeroCta} />
       )}
 
+      {cantiereNelCestino ? (
+        <div
+          className="pro-panel p-4 mb-4 border border-amber-400/30"
+          data-testid="preventivo-cantiere-nel-cestino"
+          role="status"
+        >
+          <p className="ds-card-title">Cantiere nel Cestino</p>
+          <p className="ds-text-secondary mt-2">
+            Il cantiere collegato è nel Cestino. Ripristinalo per continuare a
+            lavorare su questo preventivo.
+          </p>
+          <Link
+            to={ROUTES.cestino}
+            className="btn-secondary mt-3 inline-flex min-h-[48px] items-center justify-center px-4 font-bold"
+            data-testid="preventivo-apri-cestino"
+          >
+            Apri Cestino
+          </Link>
+        </div>
+      ) : null}
+
       <PreventivoWorkflowAzioni
         azioni={azioniSecondarie}
         stato={stato}
@@ -834,8 +864,9 @@ export default function DettaglioPreventivo() {
               className="ds-text-secondary text-sm mt-2"
               data-testid="preventivo-stato-orfano-hint"
             >
-              Stato senza cantiere collegato. Correggi lo stato (es. Accettato)
-              oppure usa il percorso «Inizia cantiere» quando disponibile.
+              {cantiereNelCestino
+                ? "Il cantiere collegato è nel Cestino. Ripristinalo da Cestino per continuare."
+                : "Stato senza cantiere collegato. Correggi lo stato (es. Accettato) oppure usa il percorso «Inizia cantiere» quando disponibile."}
             </p>
           ) : null}
         </label>
