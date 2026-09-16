@@ -142,6 +142,9 @@ export function duplicaPreventivo({
     "rifiutatoAt",
     "annullatoAt",
     "dataAccettazione",
+    "incassato",
+    "noteIncasso",
+    "deletedAt",
   ]);
   const resto = Object.fromEntries(
     Object.entries(datiPreventivo || {}).filter(
@@ -157,5 +160,6 @@ export function duplicaPreventivo({
     stato: "Bozza",
     data: new Date().toLocaleDateString("it-IT"),
     cantiereId: null,
+    incassato: 0,
   };
 }

@@ -19,6 +19,9 @@ describe("duplicaPreventivo — niente link cantiere ereditato", () => {
         convertitoAt: "2026-01-03T00:00:00.000Z",
         convertitoBy: "user",
         dataAccettazione: "03/01/2026",
+        incassato: 500,
+        noteIncasso: "Acconto ricevuto",
+        deletedAt: "2026-01-04T00:00:00.000Z",
         lavorazioni: [{ id: "1", nome: "Quadro", prezzo: 100, quantita: 1 }],
         totale: 122,
         note: "Nota utile",
@@ -30,6 +33,9 @@ describe("duplicaPreventivo — niente link cantiere ereditato", () => {
     expect(copia.stato).toBe(STATI_PREVENTIVO.BOZZA);
     expect(copia.cliente).toBe("Rossi - copia");
     expect(copia.cantiereId).toBeNull();
+    expect(copia.incassato).toBe(0);
+    expect(copia.noteIncasso).toBeUndefined();
+    expect(copia.deletedAt).toBeUndefined();
     expect(copia.inviatoAt).toBeUndefined();
     expect(copia.accettatoAt).toBeUndefined();
     expect(copia.convertitoAt).toBeUndefined();
