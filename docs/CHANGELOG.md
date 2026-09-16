@@ -2,6 +2,20 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-16 — PDF empty fields + catalog guards (Cloud Agent)
+
+### Completed
+- Preventivo PDF: omit empty Data / Validità / Oggetto (no `—`)
+- Report cantiere: omit empty fornitore/metodo on expense rows
+- Listino badge On/Off → Attiva/Spenta; Impostazioni cloud copy without `VITE_*`
+- Double-submit guards: listino, famiglie/varianti materiali, voce distinta
+- Cestino empty CTA; `.ds-chip` min-height 44px
+- Auth/Condivisione: Italian error/fallback copy (no English technical toast)
+
+### Intentionally not done
+- Remote AI deploy, `APP_DATA_KEYS`, economia.movimenti SoT (🛑)
+- Free-text PII scrubbing for AI payloads (needs product decision)
+
 ## 2026-09-16 — Money integrity + soft-delete clarity (Cloud Agent)
 
 ### Completed
