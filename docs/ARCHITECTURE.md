@@ -83,6 +83,7 @@ Implemented in `src/services/cloudSyncService.js`:
 | UI CTA | Hero «Inizia cantiere» when accepted (`preventivoHeroCta`) |
 | Link fields | `preventivo.cantiereId` ↔ `cantiere.preventivoId` |
 | Direct work (no quote) | `creaCantiere` with `origine: diretto` |
+| Direct → linked quote | `creaPreventivoDaCantiereDiretto` (same ids, no second cantiere) |
 
 Tests cover conversion, no-duplicate, and UI hero CTA.
 

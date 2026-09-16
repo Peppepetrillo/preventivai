@@ -2,6 +2,21 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-16 — Autonomous night (Cloud Agent)
+
+### Completed
+- P0: `duplicaPreventivo` no longer inherits `cantiereId` / workflow timestamps
+- P1: Convertito + cantiere soft-deleted → live id only + Cestino banner (no dead navigate / no second cantiere)
+- P1: Cantiere diretto → **Crea preventivo** linked to same cantiere (idempotent SoT)
+- P1: Economia breakdown entrate/uscite per categoria from existing movimenti
+- P2: InstallPrompt close tap target ≥44px; backup tests document more local-only keys
+- Docs: ROADMAP Candidate A / P5 marked done
+
+### Intentionally not done
+- `APP_DATA_KEYS` expansion (🛑)
+- `preventivai.economia.movimenti` general SoT (🛑 product)
+- Remote AI `verify_jwt` deploy (human)
+
 ## 2026-09-15 — Night session Sprint 22/23 (Cloud Agent)
 
 ### Completed
