@@ -103,4 +103,28 @@ describe("DettaglioCliente UX-12", () => {
       `${ROUTES.preventiviNuovo}?clienteId=1`
     );
   });
+
+  it("cambio id remounta e non lascia i campi del cliente precedente", async () => {
+    const { default: DettaglioCliente } = await import("./DettaglioCliente");
+
+    function Harness({ id }) {
+      return (
+        <MemoryRouter key={id} initialEntries={[`/cliente/${id}`]}>
+          <Routes>
+            <Route path="/cliente/:id" element={<DettaglioCliente />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    }
+
+    const { rerender } = render(<Harness id="1" />);
+
+    expect(screen.getByDisplayValue("111")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("222")).not.toBeInTheDocument();
+
+    rerender(<Harness id="2" />);
+
+    expect(screen.getByDisplayValue("222")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("111")).not.toBeInTheDocument();
+  });
 });

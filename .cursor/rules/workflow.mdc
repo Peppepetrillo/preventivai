@@ -1,0 +1,14 @@
+---
+description: Night / Cloud Agent task workflow
+alwaysApply: true
+---
+
+# Workflow
+
+1. Analyze code and Git state before editing.
+2. Prefer one dedicated branch and one PR; never merge unless a human asks.
+3. Smallest complete change; reuse architecture.
+4. Implement → targeted tests → full `npm test` / `lint` / `build` → fix own failures.
+5. Update `docs/ROADMAP.md` and `docs/CHANGELOG.md` for the next agent.
+6. Stop for destructive data, storage-key, sync-conflict, or major architecture decisions.
+7. Details: `AGENTS.md`, `.cursor/rules/preventivai-agent-workflow.mdc`, `docs/CLOUD-AGENT-OVERNIGHT.md`.

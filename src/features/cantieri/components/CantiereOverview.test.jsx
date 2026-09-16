@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { STORAGE_KEYS } from "../../../app/storageKeys";
 import CantiereOverview from "./CantiereOverview";
 
 vi.mock("./CantiereAssistantPanel", () => ({
@@ -125,6 +126,18 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
     Element.prototype.scrollIntoView = vi.fn();
     window.location.hash = "";
     sessionStorage.clear();
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([
+        {
+          id: 101,
+          numero: "PREV-101",
+          cliente: "Mario Rossi",
+          stato: "Convertito",
+          totale: 900,
+        },
+      ])
+    );
   });
 
   it("mostra segment bar con 4 tab principali", () => {
@@ -209,6 +222,34 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
     expect(
       within(documenti).getByText(/cosa è successo in questo cantiere/i)
     ).toBeInTheDocument();
+  });
+
+  it("tab Documenti: messaggio se preventivoId punta a record eliminato", () => {
+    localStorage.setItem(STORAGE_KEYS.preventivi, JSON.stringify([]));
+    renderOverview();
+
+    fireEvent.click(tab("Diario"));
+    expect(screen.getByTestId("cantiere-preventivo-mancante")).toBeInTheDocument();
+    expect(screen.queryByTestId("cantiere-link-preventivo")).not.toBeInTheDocument();
+  });
+
+  it("tab Documenti: preventivo in Cestino mostra link ripristino", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([
+        {
+          id: 101,
+          numero: "PREV-101",
+          cliente: "Mario Rossi",
+          deletedAt: "2026-09-16T10:00:00.000Z",
+        },
+      ])
+    );
+    renderOverview();
+    fireEvent.click(tab("Diario"));
+    expect(screen.getByTestId("cantiere-preventivo-cestinato")).toBeInTheDocument();
+    expect(screen.getByTestId("cantiere-preventivo-apri-cestino")).toBeInTheDocument();
+    expect(screen.queryByTestId("cantiere-preventivo-mancante")).not.toBeInTheDocument();
   });
 
   it("tab Giornate: previsto e fatto", () => {
@@ -631,5 +672,37 @@ describe("CantiereOverview UX-Azioni intelligenti v8", () => {
     await waitFor(() => {
       expect(screen.getByTestId("pagamento-sheet")).toBeInTheDocument();
     });
+  });
+});
+
+describe("CantiereOverview — Crea preventivo da lavoro diretto", () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    window.location.hash = "";
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  it("mostra CTA Crea preventivo se diretto senza preventivoId", () => {
+    renderOverview({
+      cantiere: {
+        id: "c-dir",
+        nome: "Riparazione",
+        cliente: "Verdi",
+        stato: "In corso",
+        origine: "diretto",
+        foto: [],
+        materiali: [],
+        checklist: [],
+        pagamenti: [],
+        spese: [],
+      },
+    });
+
+    fireEvent.click(tab("Diario"));
+    expect(
+      screen.getByTestId("cantiere-crea-preventivo-empty")
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("cantiere-crea-preventivo")).toBeInTheDocument();
   });
 });

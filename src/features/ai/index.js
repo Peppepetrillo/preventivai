@@ -16,6 +16,7 @@ export {
   costruisciContestoPreventivAI,
   normalizzaNuovoLavoroAi,
 } from "./aiContextService";
+export { scrubTestoLiberoAi } from "./scrubTestoLiberoAi";
 export { generaInsightDeterministico } from "./aiFallback";
 export { costruisciPayloadInsightAi } from "./aiPromptBuilder";
 export {

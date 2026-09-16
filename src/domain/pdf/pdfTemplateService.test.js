@@ -5,6 +5,7 @@ const getNumberOfPages = vi.fn(() => 1);
 const save = vi.fn();
 const setPage = vi.fn();
 const output = vi.fn(() => new Blob(["%PDF"], { type: "application/pdf" }));
+const testiPdf = [];
 
 vi.mock("jspdf", () => ({
   default: class {
@@ -19,7 +20,9 @@ vi.mock("jspdf", () => ({
     setFontSize() {}
     setFont() {}
     setLineWidth() {}
-    text() {}
+    text(valore) {
+      testiPdf.push(String(valore ?? ""));
+    }
     rect() {}
     roundedRect() {}
     line() {}
@@ -89,6 +92,7 @@ describe("pdfTemplateService", () => {
     save.mockClear();
     setPage.mockClear();
     getNumberOfPages.mockReturnValue(1);
+    testiPdf.length = 0;
     globalThis.URL.createObjectURL = vi.fn(() => "blob:mock-pdf");
     globalThis.URL.revokeObjectURL = vi.fn();
   });
@@ -335,5 +339,30 @@ describe("pdfTemplateService", () => {
     );
     expect(conIban.document.azienda.iban).toContain("IT60");
     expect(conIban.pagine).toBeGreaterThanOrEqual(1);
+  });
+
+  it("omite Data/Validità/Oggetto vuoti (niente — nel blocco documento)", async () => {
+    await generaPreventivoPdfDaInput(
+      {
+        datiAzienda: { nomeDitta: "Demo" },
+        cliente: { nome: "Rossi" },
+        preventivo: { numero: "PREV-EMPTY-META", data: "", validita: "" },
+        oggetto: "",
+        lavorazioni: [{ nome: "A", quantita: 1, prezzo: 10, unita: "cad" }],
+        totali: {
+          subtotale: 10,
+          importoSconto: 0,
+          imponibile: 10,
+          importoIva: 2.2,
+          totale: 12.2,
+        },
+      },
+      { salva: false }
+    );
+    const testo = testiPdf.join("\n");
+    expect(testo).not.toMatch(/Data:\s*—/);
+    expect(testo).not.toMatch(/Validità:\s*—/);
+    expect(testo).not.toMatch(/Oggetto:\s*—/);
+    expect(testo).toContain("PREV-EMPTY-META");
   });
 });

@@ -89,7 +89,7 @@ export default function PreventivAISuggestions({
                     <button
                       type="button"
                       onClick={() => risolvi(voce.id)}
-                      className="min-h-[40px] min-w-[40px] rounded-[12px] bg-emerald-500/15 text-emerald-200 flex items-center justify-center"
+                      className="min-h-[44px] min-w-[44px] rounded-[12px] bg-emerald-500/15 text-emerald-200 flex items-center justify-center"
                       aria-label="Segna come risolto"
                       title="Risolto"
                     >
@@ -98,7 +98,7 @@ export default function PreventivAISuggestions({
                     <button
                       type="button"
                       onClick={() => ignora(voce.id)}
-                      className="min-h-[40px] min-w-[40px] rounded-[12px] bg-white/5 text-slate-400 flex items-center justify-center"
+                      className="min-h-[44px] min-w-[44px] rounded-[12px] bg-white/5 text-slate-400 flex items-center justify-center"
                       aria-label="Ignora suggerimento"
                       title="Ignora"
                     >

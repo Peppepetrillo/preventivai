@@ -40,6 +40,27 @@ function trovaInElenco(elenco, id) {
   return (elenco || []).find((item) => stessoId(item?.id, id)) || null;
 }
 
+/**
+ * Hard-delete preventivo: toglie puntatori morti dai cantieri collegati.
+ * @param {string|number} preventivoId
+ */
+function scollegaCantieriDalPreventivo(preventivoId) {
+  const id = String(preventivoId ?? "");
+  if (!id) return;
+
+  const cantieri = leggiCantieriTutti();
+  let cambiato = false;
+  const prossimo = cantieri.map((cantiere) => {
+    if (!stessoId(cantiere?.preventivoId, id)) return cantiere;
+    cambiato = true;
+    const aggiornato = { ...cantiere };
+    delete aggiornato.preventivoId;
+    delete aggiornato.preventivoNumero;
+    return aggiornato;
+  });
+  if (cambiato) salvaCantieri(prossimo);
+}
+
 function notificaAggiornamentoCestino() {
   notificaEventoApp(APP_EVENTS.cloudSyncAggiornata);
   notificaEventoApp(APP_EVENTS.preventiviAggiornati);
@@ -202,6 +223,7 @@ export function eliminaDefinitivamente(tipo, id) {
   if (tipo === TIPI_CESTINO.preventivo) {
     const esistente = trovaPreventivo(id, { includiCestinati: true });
     if (!esistente) return { success: true, alreadyAbsent: true };
+    scollegaCantieriDalPreventivo(id);
     eliminaPreventivoHard(id);
     notificaAggiornamentoCestino();
     return { success: true };

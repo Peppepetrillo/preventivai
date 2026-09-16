@@ -41,7 +41,15 @@ import {
 } from "../features/clienti/clientePreventiviUtils";
 import { useCantieri } from "../features/cantieri/hooks/useCantieri";
 
+/**
+ * Remount on :id so form fields never leak across clienti (deep-link / back).
+ */
 export default function DettaglioCliente() {
+  const { id } = useParams();
+  return <DettaglioClienteContenuto key={String(id || "mancante")} />;
+}
+
+function DettaglioClienteContenuto() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [cestinoTick, setCestinoTick] = useState(0);

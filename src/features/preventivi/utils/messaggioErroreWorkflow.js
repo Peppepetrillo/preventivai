@@ -17,6 +17,18 @@ export function messaggioErroreWorkflow(codice, fallback = "") {
     non_annullabile_convertito:
       "Non puoi rifiutare un preventivo già in cantiere.",
     conversione_fallita: "Non è stato possibile creare il cantiere. Riprova.",
+    preventivo_non_collegato:
+      "Questo cantiere non ha un preventivo collegato.",
+    cantiere_non_selezionato: "Seleziona un cantiere prima di continuare.",
+    variante_non_trovata: "Variante non trovata.",
+    richiede_approvazione: "La variante va approvata prima di eseguirla.",
+    titolo_obbligatorio: "Inserisci un titolo.",
+    variante_annullata: "Questa variante è già annullata.",
+    pagamento_non_valido: "Pagamento non valido. Controlla importo e data.",
+    spesa_non_valida: "Spesa non valida. Controlla descrizione e importo.",
+    nessun_cantiere: "Nessun cantiere selezionato.",
+    cantiere_obbligatorio: "Seleziona un cantiere.",
+    cantiere_non_trovato: "Cantiere non trovato.",
   };
 
   const chiave = String(codice || "").trim();
