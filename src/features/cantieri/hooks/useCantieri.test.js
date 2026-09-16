@@ -226,6 +226,31 @@ describe("useCantieri", () => {
     expect(salvati.find((c) => c.id === "c-attivo").deletedAt).toBeTruthy();
   });
 
+  it("cambio cantiereId resetta bozze checklist/materiale e messaggio", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.cantieri,
+      JSON.stringify([
+        { id: "c-a", nome: "A", stato: "In corso", foto: [], checklist: [], materiali: [] },
+        { id: "c-b", nome: "B", stato: "Da iniziare", foto: [], checklist: [], materiali: [] },
+      ])
+    );
+
+    const { result, rerender } = renderHook(
+      ({ id }) => useCantieri({ cantiereId: id }),
+      { initialProps: { id: "c-a" } }
+    );
+
+    act(() => {
+      result.current.setNuovaChecklist("Voce bozza");
+    });
+    expect(result.current.nuovaChecklist).toBe("Voce bozza");
+
+    rerender({ id: "c-b" });
+
+    expect(result.current.nuovaChecklist).toBe("");
+    expect(result.current.cantiereSelezionato.id).toBe("c-b");
+  });
+
   it("due aggiornamenti rapidi non perdono la prima scrittura (storage SoT)", () => {
     const { result } = renderHook(() => useCantieri());
 
