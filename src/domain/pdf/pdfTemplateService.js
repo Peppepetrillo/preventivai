@@ -186,7 +186,7 @@ function disegnaHeaderPrincipale(doc, document) {
   const textX = area.x + 28;
   setText(doc, settings.coloreBianco);
   applicaFont(doc, settings, "bold", 14);
-  doc.text(riga(azienda.nome, "PreventivAI"), textX, y0 + 11);
+  doc.text(riga(azienda.nome, "Ditta non impostata"), textX, y0 + 11);
 
   applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
   setText(doc, [220, 224, 230]);

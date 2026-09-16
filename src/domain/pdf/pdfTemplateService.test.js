@@ -99,11 +99,12 @@ describe("pdfTemplateService", () => {
 
   it("buildPreventivoPdfDocument gestisce dati mancanti", () => {
     const doc = buildPreventivoPdfDocument({});
-    expect(doc.azienda.nome).toBe("PreventivAI");
+    expect(doc.azienda.nome).toBe("");
     expect(doc.lavorazioni).toEqual([]);
     expect(doc.cliente.nome).toBe("");
     expect(doc.riepilogo.totale).toBe(0);
     expect(doc.firme.clienteLabel).toContain("Cliente");
+    expect(doc.firme.installatorePlaceholder).toBe(false);
   });
 
   it("buildPreventivoPdfDocument mappa sezioni complete", () => {
@@ -315,7 +316,7 @@ describe("pdfTemplateService", () => {
       { salva: false }
     );
     expect(senza.pagine).toBeGreaterThanOrEqual(1);
-    expect(senza.document.azienda.nome).toBe("PreventivAI");
+    expect(senza.document.azienda.nome).toBe("");
 
     const conIban = await generaPreventivoPdfDaInput(
       {

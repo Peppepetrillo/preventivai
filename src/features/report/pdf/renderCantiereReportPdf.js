@@ -107,14 +107,16 @@ function disegnaCopertina(doc, document) {
     y,
     area.width
   );
-  y = testo(
-    doc,
-    settings,
-    `Data apertura: ${riga(document.copertina.dataApertura)}`,
-    area.x,
-    y,
-    area.width
-  );
+  if (String(document.copertina.dataApertura || "").trim()) {
+    y = testo(
+      doc,
+      settings,
+      `Data apertura: ${String(document.copertina.dataApertura).trim()}`,
+      area.x,
+      y,
+      area.width
+    );
+  }
   y = testo(
     doc,
     settings,
@@ -165,14 +167,16 @@ function disegnaRiepilogo(doc, document, y) {
     return y + 4;
   }
 
-  y = testo(
-    doc,
-    settings,
-    `Preventivo di origine: ${riga(document.riepilogo.preventivoOrigine.numero)} · ${document.riepilogo.preventivoOrigine.totaleLabel}`,
-    area.x,
-    y,
-    area.width
-  );
+  if (String(document.riepilogo?.preventivoOrigine?.numero || "").trim()) {
+    y = testo(
+      doc,
+      settings,
+      `Preventivo di origine: ${String(document.riepilogo.preventivoOrigine.numero).trim()} · ${document.riepilogo.preventivoOrigine.totaleLabel}`,
+      area.x,
+      y,
+      area.width
+    );
+  }
   y = testo(
     doc,
     settings,
