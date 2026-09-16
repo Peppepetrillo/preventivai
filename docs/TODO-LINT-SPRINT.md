@@ -6,7 +6,7 @@
 ## Progresso overnight (Cloud Agent)
 
 - [x] Split `react-refresh/only-export-components` helpers/constants into dedicated modules (HMR-only issue).
-- [ ] `react-hooks/set-state-in-effect` — ancora aperto (rischio UX; pagina per pagina).
+- [ ] `react-hooks/set-state-in-effect` — ancora aperto (rischio UX; pagina per pagina). Progresso: `DescrizioneInterventoSection` usa remount `key={cantiere.id}`.
 
 ## Warning ancora aperti (non errori)
 

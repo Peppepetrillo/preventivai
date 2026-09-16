@@ -2,6 +2,19 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-16 — Continuous night hardening (Cloud Agent)
+
+### Completed
+- Agenda: storage-backed `creaLavoro` / `segnaCompletato` / `registraGiornataLavorativa` + NuovoLavoroSheet double-submit guard
+- Cantieri / Distinte: double-submit guards on create/save
+- Foto delete hit target ≥44px
+- Report cantiere PDF: omit empty Cliente/Indirizzo (no `—` blocks)
+- S6 slice: `DescrizioneInterventoSection` remount by `cantiere.id` (lint 22→21 warnings)
+
+### Intentionally not done
+- Remote AI deploy, `APP_DATA_KEYS` expansion, economia.movimenti SoT (🛑)
+- Remaining `set-state-in-effect` sheets (page-by-page)
+
 ## 2026-09-16 — Sprint 22 pre-release hardening (Cloud Agent)
 
 ### Completed
