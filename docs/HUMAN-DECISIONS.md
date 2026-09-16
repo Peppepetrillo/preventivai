@@ -46,3 +46,11 @@ need human deploy of secrets + `verify_jwt=true`.
 ## 5. AI scrub of verbal addresses in free-text
 
 **Status:** 🛑 Optional; structured PII scrub already shipped.
+
+## 6. Diario event icons: emoji → Lucide
+
+**Problem:** `features/diario/events/constants.js` still uses emoji icons; DS says Lucide only.
+
+**Options:** map each `DIARIO_EVENT_TYPES` to a Lucide icon in timeline UI.
+
+**Status:** 🛑 Deferred P3 (Sprint 22A) — typography polished; icon swap needs visual QA.

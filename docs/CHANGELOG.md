@@ -2,6 +2,22 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-16 — Sprint 22A Production UX + Navigation Hardening
+
+### Completed
+- Branch `cursor/autonomous-sprint-22a-74ac`
+- Remount `SuggerimentiAccessoriSheet` (no setState-in-effect) + double-submit guard
+- Giornata programmata: close only on save success; parent sections return esito
+- Double-submit: `LavorazionePersonalizzataSheet`, `SelettoreMaterialeSheet`
+- Listino empty CTA; DiarioTimeline DS typography; Varianti dialog `z-[80]`
+- Condivisione DOWNLOAD label «Scarica»; accessori «Q.tà ×»
+
+### Intentionally not done
+- Expanding `APP_DATA_KEYS` (🛑)
+- `economia.movimenti` SoT (🛑)
+- Remote AI deploy (🛑)
+- Diario emoji → Lucide (P3; needs icon map + test updates)
+
 ## 2026-09-16 — Production hardening branch (Cloud Agent)
 
 ### Completed
