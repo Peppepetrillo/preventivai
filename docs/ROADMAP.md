@@ -91,6 +91,7 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 2. **Human deploy** — AI `verify_jwt=true` + server `OPENAI_API_KEY` (only if remote AI required for cohort).
 3. Human: `APP_DATA_KEYS` expansion decision before promising multi-device satellite restore.
 4. Tag `v1.0.0-rc3` after device QA GO.
+5. Optional polish: Diario emoji → Lucide (HUMAN-DECISIONS #6) after visual QA.
 
 ## Stop / ask human
 
