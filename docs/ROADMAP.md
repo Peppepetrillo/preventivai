@@ -21,7 +21,7 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 | S3 | Photo payload / no orphan `data:` in records | ✅ / 🟡 | Immutable paths; keep watching delete queue |
 | S4 | PIN hash (no plaintext) | ✅ | PBKDF2; Cloud WebCrypto uses `Uint8Array` salt (compat fix) |
 | S5 | Automated test/lint/build green on Cloud | ✅ | Verified after salt fix |
-| S6 | Lint warning backlog | 🟡 | 0 errors; 16 warnings left (agenda + Pagamento/GiornataProgrammata remounted; pages/nav remain) |
+| S6 | Lint warning backlog | 🟡 | 0 errors; 14 warnings (money/agenda sheets remounted; pages/nav remain) |
 | S7 | Backup boundary clarity | 🟡 | Tests document device-local keys; expanding `APP_DATA_KEYS` is 🛑 |
 
 ## PRIORITÀ 2 — PREVENTIVO → CANTIERE

@@ -2,6 +2,21 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-16 — Production hardening branch (Cloud Agent)
+
+### Completed
+- Branch `cursor/autonomous-production-hardening-74ac`
+- Remount `SpesaSheet` + `GiornataLavorativaSheet`; consuntivo closes only on save success
+- Banner «Inizia cantiere» double-submit guard
+- Impostazioni backup honesty (satellite data device-local)
+- Listino compact row `min-h-[44px]`
+- Docs: `HUMAN-DECISIONS.md` for APP_DATA_KEYS / economia / AI deploy
+
+### Intentionally not done
+- Expanding `APP_DATA_KEYS` (🛑)
+- `economia.movimenti` SoT (🛑)
+- Remote AI deploy (🛑)
+
 ## 2026-09-16 — S6 remount + AI free-text scrub (Cloud Agent)
 
 ### Completed
