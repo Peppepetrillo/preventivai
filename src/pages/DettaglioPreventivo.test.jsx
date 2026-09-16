@@ -22,6 +22,32 @@ vi.mock("../services/cloudSyncService", () => ({
   salvaDatoCloud: vi.fn(),
 }));
 
+vi.mock("../domain/condivisione", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    condividiEmail: vi.fn(async () => ({
+      success: true,
+      condivisione: {
+        id: "c-email",
+        tipo: actual.TIPI_CONDIVISIONE.EMAIL,
+        esito: "Aperto",
+      },
+      canale: "mailto",
+      fallback: true,
+    })),
+    downloadPdf: vi.fn(async () => ({
+      success: true,
+      condivisione: {
+        id: "c-dl",
+        tipo: actual.TIPI_CONDIVISIONE.DOWNLOAD,
+        esito: "Completato",
+      },
+      canale: "download",
+    })),
+  };
+});
+
 function creaPreventivo(overrides = {}) {
   return {
     id: "p1",
@@ -110,6 +136,58 @@ describe("DettaglioPreventivo UX-2.1", () => {
     );
     expect(screen.getByTestId("preventivo-condivisione-section")).toBeVisible();
     expect(screen.getByTestId("preventivo-condividi-whatsapp")).toBeInTheDocument();
+  });
+
+  it("dopo Email su Bozza: soft prompt Segna come inviato / Non ora; Scarica non apre", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([creaPreventivo()])
+    );
+
+    renderDettaglio();
+
+    await user.click(screen.getByTestId("preventivo-hero-cta"));
+    await user.click(screen.getByRole("button", { name: /Invia Email/i }));
+
+    const dialog = await screen.findByTestId(
+      "preventivo-segna-inviato-dopo-share"
+    );
+    expect(dialog).toHaveTextContent(/Segna questo preventivo come inviato/i);
+    expect(
+      screen.getByTestId("preventivo-segna-inviato-dopo-share-confirm")
+    ).toHaveTextContent(/Segna come inviato/i);
+    expect(
+      screen.getByTestId("preventivo-segna-inviato-dopo-share-cancel")
+    ).toHaveTextContent(/Non ora/i);
+
+    await user.click(
+      screen.getByTestId("preventivo-segna-inviato-dopo-share-cancel")
+    );
+    expect(
+      screen.queryByTestId("preventivo-segna-inviato-dopo-share")
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("preventivo-stato-badge")).toHaveTextContent(
+      "Bozza"
+    );
+
+    await user.click(screen.getByRole("button", { name: /Scarica PDF/i }));
+    expect(
+      screen.queryByTestId("preventivo-segna-inviato-dopo-share")
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Invia Email/i }));
+    await screen.findByTestId("preventivo-segna-inviato-dopo-share");
+    await user.click(
+      screen.getByTestId("preventivo-segna-inviato-dopo-share-confirm")
+    );
+
+    expect(
+      await screen.findByTestId("preventivo-stato-badge")
+    ).toHaveTextContent("Inviato");
+    expect(
+      screen.queryByTestId("preventivo-segna-inviato-dopo-share")
+    ).not.toBeInTheDocument();
   });
 
   it("Inviato: hero Segna accettato", () => {
