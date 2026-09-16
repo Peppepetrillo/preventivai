@@ -27,6 +27,7 @@ import {
   apriWhatsAppConTesto,
   generaTestoRiepilogoLavoroDiretto
 } from "../services/lavoroDirettoTestoService";
+import { creaPreventivoDaCantiereDiretto } from "../services/creaPreventivoDaCantiereDiretto";
 import { risolviSrcFotoCantiere } from "../services/cantieriFotoService";
 import CantiereAssistantPanel from "./CantiereAssistantPanel";
 import CantiereFotoViewer from "./CantiereFotoViewer";
@@ -152,6 +153,8 @@ export default function CantiereOverview({
   const [origineRegistraIncasso, setOrigineRegistraIncasso] = useState(null);
   const [operazioneRegistrata, setOperazioneRegistrata] = useState(null);
   const [operazioneRegistrataTick, setOperazioneRegistrataTick] = useState(0);
+  const [creaPreventivoInCorso, setCreaPreventivoInCorso] = useState(false);
+  const [messaggioDocumenti, setMessaggioDocumenti] = useState("");
   const [preventivi] = useDatiLocaliSincronizzati(leggiPreventivi);
   const sezioneModifica = useRef(null);
   const sezioneChecklist = useRef(null);
@@ -1006,11 +1009,54 @@ export default function CantiereOverview({
                 <span>Preventivo {cantiere.preventivoNumero || ""}</span>
                 <span className="text-slate-400 text-sm">Apri</span>
               </Link>
+            ) : diretto ? (
+              <div
+                className="ds-empty rounded-[14px] border border-white/10 bg-black/[0.14] px-4 py-5 text-center"
+                data-testid="cantiere-crea-preventivo-empty"
+              >
+                <p className="ds-card-title">Nessun preventivo</p>
+                <p className="ds-text-secondary mt-2">
+                  Lavoro diretto: i pagamenti stanno qui. Puoi creare un
+                  preventivo collegato a questo stesso cantiere (niente
+                  duplicati).
+                </p>
+                <button
+                  type="button"
+                  className="btn-primary mt-4 inline-flex min-h-[48px] items-center justify-center px-5 font-bold"
+                  data-testid="cantiere-crea-preventivo"
+                  disabled={creaPreventivoInCorso}
+                  onClick={() => {
+                    if (creaPreventivoInCorso) return;
+                    setCreaPreventivoInCorso(true);
+                    setMessaggioDocumenti("");
+                    const esito = creaPreventivoDaCantiereDiretto(cantiere.id);
+                    setCreaPreventivoInCorso(false);
+                    if (!esito.ok) {
+                      setMessaggioDocumenti(
+                        esito.errore === "cantiere_cestinato"
+                          ? "Ripristina il cantiere dal Cestino prima di creare il preventivo."
+                          : "Non riesco a creare il preventivo. Riprova."
+                      );
+                      return;
+                    }
+                    onAggiornaCampo?.({
+                      preventivoId: esito.cantiere.preventivoId,
+                      preventivoNumero: esito.cantiere.preventivoNumero,
+                    });
+                    navigate(routePreventivo(esito.preventivo.id));
+                  }}
+                >
+                  {creaPreventivoInCorso ? "Creazione…" : "Crea preventivo"}
+                </button>
+                {messaggioDocumenti ? (
+                  <p className="ds-text-secondary mt-3 text-sm text-rose-200">
+                    {messaggioDocumenti}
+                  </p>
+                ) : null}
+              </div>
             ) : (
               <p className="text-sm text-slate-400 py-2">
-                {diretto
-                  ? "Lavoro diretto — nessun preventivo collegato."
-                  : "Nessun preventivo collegato."}
+                Nessun preventivo collegato.
               </p>
             )}
             {!diretto ? (

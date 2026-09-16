@@ -633,3 +633,35 @@ describe("CantiereOverview UX-Azioni intelligenti v8", () => {
     });
   });
 });
+
+describe("CantiereOverview — Crea preventivo da lavoro diretto", () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    window.location.hash = "";
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  it("mostra CTA Crea preventivo se diretto senza preventivoId", () => {
+    renderOverview({
+      cantiere: {
+        id: "c-dir",
+        nome: "Riparazione",
+        cliente: "Verdi",
+        stato: "In corso",
+        origine: "diretto",
+        foto: [],
+        materiali: [],
+        checklist: [],
+        pagamenti: [],
+        spese: [],
+      },
+    });
+
+    fireEvent.click(tab("Diario"));
+    expect(
+      screen.getByTestId("cantiere-crea-preventivo-empty")
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("cantiere-crea-preventivo")).toBeInTheDocument();
+  });
+});
