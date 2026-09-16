@@ -31,7 +31,7 @@ export default function PreventivAISuggestions({
         <span className="inline-flex items-center gap-2">
           <Lightbulb size={16} className="text-yellow-200/80" aria-hidden="true" />
           <span className="group-open:hidden">
-            💡 Suggerimenti PreventivAI
+            Suggerimenti PreventivAI
             {count > 0 ? ` (${count})` : ""}
           </span>
           <span className="hidden group-open:inline">Nascondi suggerimenti</span>

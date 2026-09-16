@@ -255,7 +255,7 @@ function StepComponi({
               <button
                 type="button"
                 onClick={annullaExpress}
-                className="shrink-0 text-sm font-black text-yellow-200 flex items-center gap-1"
+                className="shrink-0 text-sm font-semibold text-yellow-200 flex items-center gap-1 min-h-[44px] px-2"
               >
                 <Undo2 size={15} aria-hidden="true" />
                 Annulla

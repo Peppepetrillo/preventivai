@@ -603,7 +603,7 @@ export default function CantiereOperativo({
             role="status"
           >
             <p className="text-sm text-emerald-50 font-semibold truncate">
-              ✔ {undoMateriale.nome} comprato
+              {undoMateriale.nome} comprato
             </p>
             <button
               type="button"
