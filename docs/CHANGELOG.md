@@ -2,6 +2,15 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-16 — S6 remount + AI free-text scrub (Cloud Agent)
+
+### Completed
+- S6: remount `InsightRapidoSheet`, `NuovoLavoroSheet`, `AttivitaFormSheet` (no setState-in-effect)
+- AI: `scrubTestoLiberoAi` masks email/IBAN/CF/cellulare IT in `normalizzaNuovoLavoroAi`
+
+### Intentionally not done
+- Address free-text redaction (product), remote AI deploy, `APP_DATA_KEYS`, economia.movimenti SoT (🛑)
+
 ## 2026-09-16 — PDF empty fields + catalog guards (Cloud Agent)
 
 ### Completed
@@ -14,7 +23,7 @@ Session-oriented log for Cloud Agents. Product release notes remain in root `CHA
 
 ### Intentionally not done
 - Remote AI deploy, `APP_DATA_KEYS`, economia.movimenti SoT (🛑)
-- Free-text PII scrubbing for AI payloads (needs product decision)
+- Address free-text redaction in AI payloads (product decision)
 
 ## 2026-09-16 — Money integrity + soft-delete clarity (Cloud Agent)
 

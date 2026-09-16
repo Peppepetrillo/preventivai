@@ -21,7 +21,7 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 | S3 | Photo payload / no orphan `data:` in records | ✅ / 🟡 | Immutable paths; keep watching delete queue |
 | S4 | PIN hash (no plaintext) | ✅ | PBKDF2; Cloud WebCrypto uses `Uint8Array` salt (compat fix) |
 | S5 | Automated test/lint/build green on Cloud | ✅ | Verified after salt fix |
-| S6 | Lint warning backlog | 🟡 | 0 errors; 20 `set-state-in-effect` warnings (Descrizione + LavorazionePersonalizzata remount) |
+| S6 | Lint warning backlog | 🟡 | 0 errors; 18 warnings left (sheet remounts done for Insight/NuovoLavoro/Attivita; pages/nav remain) |
 | S7 | Backup boundary clarity | 🟡 | Tests document device-local keys; expanding `APP_DATA_KEYS` is 🛑 |
 
 ## PRIORITÀ 2 — PREVENTIVO → CANTIERE
@@ -64,7 +64,7 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 ## Next agent actions (ordered)
 
 1. **Human deploy** — apply `supabase/config.toml` `verify_jwt=true` for AI function on the linked project.
-2. **S6** — One page of safe `set-state-in-effect` cleanup with tests (do not mass-refactor hooks).
+2. **S6** — Continue safe remount of remaining sheets (`PagamentoSheet` / `GiornataProgrammataSheet`); skip pages/hash/animation.
 3. Human: decide `APP_DATA_KEYS` expansion (distinte / listaSpesa / firme / varianti) before coding sync.
 4. Human: PWA + A/B offline sync smoke (empty-cloud wipe protection should be re-verified on device).
 5. Optional: economia generale senza cantiere (`preventivai.economia.movimenti`) — product decision first.
