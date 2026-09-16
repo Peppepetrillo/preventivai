@@ -9,7 +9,9 @@ import { leggiStorage, salvaStorage } from "../utils/storage";
 import { comprimiImmagine, generaMiniatura } from "../utils/immagini";
 import {
   deveApplicareAggiornamentoCloud,
+  deveProteggereLocaleDaWipeCloud,
   deveRispingereLocaleVersoCloud,
+  haValoreLocaleSignificativo,
 } from "./cloudSyncIntegrity";
 import {
   creaPathFotoCantiereImmutabile,
@@ -126,11 +128,7 @@ function svuotaCodaEliminazioneMedia() {
 }
 
 function haValoreLocale(valore, fallback) {
-  if (Array.isArray(fallback)) return Array.isArray(valore) && valore.length > 0;
-  if (fallback && typeof fallback === "object") {
-    return valore && typeof valore === "object" && Object.keys(valore).length > 0;
-  }
-  return valore !== undefined && valore !== null && valore !== fallback;
+  return haValoreLocaleSignificativo(valore, fallback);
 }
 
 function salvaMetaSync(meta) {
@@ -147,6 +145,19 @@ function applicaRecordLocale(record) {
   const fallback = APP_DATA_KEYS[record.record_key];
 
   if (fallback === undefined && !(record.record_key in APP_DATA_KEYS)) {
+    return false;
+  }
+
+  const valoreLocale = leggiStorage(record.record_key, fallback);
+  if (
+    deveProteggereLocaleDaWipeCloud({
+      haValoreLocale: haValoreLocale(valoreLocale, fallback),
+      payloadCloud: record.payload,
+      fallback,
+    })
+  ) {
+    // Cloud vuoto non deve cancellare dati locali: rispingi il locale.
+    aggiungiACoda(record.record_key, preparaPayloadCloud(record.record_key, valoreLocale));
     return false;
   }
 
@@ -500,7 +511,18 @@ function gestisciEventoRealtime(evento) {
       return;
     }
 
-    salvaStorage(chiave, APP_DATA_KEYS[chiave]);
+    const fallback = APP_DATA_KEYS[chiave];
+    const valoreLocale = leggiStorage(chiave, fallback);
+    if (haValoreLocale(valoreLocale, fallback)) {
+      // DELETE remoto non deve wipeare dati locali non vuoti: rispingi.
+      aggiungiACoda(chiave, preparaPayloadCloud(chiave, valoreLocale));
+      inviaCodaSalvataggi().catch((errore) => {
+        console.error("Errore flush coda dopo DELETE realtime protetto:", errore);
+      });
+      return;
+    }
+
+    salvaStorage(chiave, fallback);
     salvaRevisioneLocale(chiave, new Date().toISOString());
     notificaDatiAggiornati();
     return;
@@ -576,6 +598,16 @@ async function eseguiSincronizzazioneDaCloud() {
       });
 
       if (applicabile) {
+        if (
+          deveProteggereLocaleDaWipeCloud({
+            haValoreLocale: haValoreLocale(valoreLocale, fallback),
+            payloadCloud: recordCloudChiave.payload,
+            fallback,
+          })
+        ) {
+          aggiungiACoda(chiave, preparaPayloadCloud(chiave, valoreLocale));
+          continue;
+        }
         await salvaStorage(chiave, recordCloudChiave.payload ?? fallback);
         salvaRevisioneLocale(chiave, recordCloudChiave.updated_at);
         continue;

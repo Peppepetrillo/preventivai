@@ -14,6 +14,65 @@ export function tempoDaIso(iso) {
 }
 
 /**
+ * True se il valore locale ha contenuto reale rispetto al fallback della chiave.
+ * @param {unknown} valore
+ * @param {unknown} fallback
+ */
+export function haValoreLocaleSignificativo(valore, fallback) {
+  if (Array.isArray(fallback)) {
+    return Array.isArray(valore) && valore.length > 0;
+  }
+  if (fallback && typeof fallback === "object") {
+    return (
+      Boolean(valore) &&
+      typeof valore === "object" &&
+      !Array.isArray(valore) &&
+      Object.keys(valore).length > 0
+    );
+  }
+  return valore !== undefined && valore !== null && valore !== fallback;
+}
+
+/**
+ * True se il payload cloud è vuoto/null in modo che applicare
+ * sovrascriverebbe un locale non vuoto (wipe accidentale).
+ * @param {unknown} payload
+ * @param {unknown} fallback
+ */
+export function isPayloadCloudVuoto(payload, fallback) {
+  if (payload == null) return true;
+  if (Array.isArray(fallback)) {
+    return !Array.isArray(payload) || payload.length === 0;
+  }
+  if (fallback && typeof fallback === "object") {
+    return (
+      typeof payload !== "object" ||
+      payload === null ||
+      Array.isArray(payload) ||
+      Object.keys(payload).length === 0
+    );
+  }
+  return false;
+}
+
+/**
+ * Protezione anti-wipe: locale pieno + cloud vuoto → non applicare.
+ * @param {{
+ *   haValoreLocale: boolean,
+ *   payloadCloud?: unknown,
+ *   fallback?: unknown,
+ * }} params
+ */
+export function deveProteggereLocaleDaWipeCloud({
+  haValoreLocale,
+  payloadCloud,
+  fallback,
+}) {
+  if (!haValoreLocale) return false;
+  return isPayloadCloudVuoto(payloadCloud, fallback);
+}
+
+/**
  * True se l'aggiornamento cloud può sostituire la copia locale.
  * La coda offline vince sempre: non applicare mai il cloud su chiavi sporche.
  *

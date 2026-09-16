@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   deveApplicareAggiornamentoCloud,
+  deveProteggereLocaleDaWipeCloud,
   deveRispingereLocaleVersoCloud,
   tempoDaIso,
 } from "./cloudSyncIntegrity";
@@ -72,34 +73,51 @@ describe("cloudSyncIntegrity", () => {
     });
   });
 
-  describe("deveRispingereLocaleVersoCloud", () => {
-    it("rispinge se locale più recente e non in coda", () => {
+  describe("deveProteggereLocaleDaWipeCloud", () => {
+    it("protegge array locale non vuoto da payload cloud vuoto/null", () => {
       expect(
-        deveRispingereLocaleVersoCloud({
-          chiaveInCoda: false,
-          updatedAtCloud: "2026-07-22T10:00:00.000Z",
-          updatedAtLocale: "2026-07-22T12:00:00.000Z",
+        deveProteggereLocaleDaWipeCloud({
           haValoreLocale: true,
+          payloadCloud: [],
+          fallback: [],
         })
       ).toBe(true);
-    });
-
-    it("non rispinge se in coda o senza valore locale", () => {
       expect(
-        deveRispingereLocaleVersoCloud({
-          chiaveInCoda: true,
-          updatedAtCloud: "2026-07-22T10:00:00.000Z",
-          updatedAtLocale: "2026-07-22T12:00:00.000Z",
+        deveProteggereLocaleDaWipeCloud({
           haValoreLocale: true,
+          payloadCloud: null,
+          fallback: [],
+        })
+      ).toBe(true);
+      expect(
+        deveProteggereLocaleDaWipeCloud({
+          haValoreLocale: true,
+          payloadCloud: [{ id: 1 }],
+          fallback: [],
         })
       ).toBe(false);
-
       expect(
-        deveRispingereLocaleVersoCloud({
-          chiaveInCoda: false,
-          updatedAtCloud: "2026-07-22T10:00:00.000Z",
-          updatedAtLocale: "2026-07-22T12:00:00.000Z",
+        deveProteggereLocaleDaWipeCloud({
           haValoreLocale: false,
+          payloadCloud: [],
+          fallback: [],
+        })
+      ).toBe(false);
+    });
+
+    it("protegge oggetto locale non vuoto da cloud {}", () => {
+      expect(
+        deveProteggereLocaleDaWipeCloud({
+          haValoreLocale: true,
+          payloadCloud: {},
+          fallback: {},
+        })
+      ).toBe(true);
+      expect(
+        deveProteggereLocaleDaWipeCloud({
+          haValoreLocale: true,
+          payloadCloud: { ragioneSociale: "X" },
+          fallback: {},
         })
       ).toBe(false);
     });
