@@ -320,9 +320,12 @@ function bloccoClienteIntestazione(doc, document, y) {
   doc.text("CLIENTE", area.x + 4, y + 6);
   setText(doc, settings.coloreTesto);
   applicaFont(doc, settings, "bold", 10);
-  doc.text(riga(cliente.nome), area.x + 4, y + 12, { maxWidth: colW - 8 });
+  const nomeCliente = String(cliente.nome || "").trim();
+  if (nomeCliente) {
+    doc.text(nomeCliente, area.x + 4, y + 12, { maxWidth: colW - 8 });
+  }
   applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
-  let cy = y + 17;
+  let cy = y + (nomeCliente ? 17 : 12);
   [cliente.telefono, cliente.email, cliente.indirizzo]
     .filter((v) => String(v || "").trim())
     .forEach((linea) => {
