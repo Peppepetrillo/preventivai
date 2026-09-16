@@ -32,7 +32,7 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 | P2 | `creaCantiereDaPreventivo` + bi-directional ids | ✅ | Domain + workflow tests |
 | P3 | Prevent duplicate cantiere | ✅ | `trovaCantiereCollegato` / convert path |
 | P4 | Lavoro diretto senza preventivo | ✅ | `origine: diretto` |
-| P5 | UX copy / edge cases | 🟡 | See `docs/NEXT-PR-CANDIDATES.md` Candidate A |
+| P5 | UX copy / edge cases | ✅ | Soft-delete banner, duplica strip, diretto→crea preventivo |
 
 **Do not re-build this feature.** Prefer small reliability/UX PRs only.
 
@@ -65,9 +65,9 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 
 1. **Human deploy** — apply `supabase/config.toml` `verify_jwt=true` for AI function on the linked project.
 2. **S6** — One page of safe `set-state-in-effect` cleanup with tests.
-3. **P5** — Cantieri↔preventivi connection clarity (copy + tests only).
-4. Human: decide `APP_DATA_KEYS` expansion (distinte / listaSpesa / firme / varianti) before coding sync.
-5. Human: PWA + A/B offline sync smoke.
+3. Human: decide `APP_DATA_KEYS` expansion (distinte / listaSpesa / firme / varianti) before coding sync.
+4. Human: PWA + A/B offline sync smoke.
+5. Optional: economia generale senza cantiere (`preventivai.economia.movimenti`) — product decision first.
 
 ## Stop / ask human
 

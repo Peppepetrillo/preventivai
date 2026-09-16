@@ -59,6 +59,8 @@ describe("Economia v0 pagina", () => {
     expect(screen.getByRole("heading", { name: /Economia/i })).toBeInTheDocument();
     expect(screen.getByTestId("economia-entrate")).toBeInTheDocument();
     expect(screen.getByTestId("economia-uscite")).toBeInTheDocument();
+    expect(screen.getByTestId("economia-dettaglio-categorie")).toBeInTheDocument();
+    expect(screen.getByTestId("economia-uscita-cat-materiali")).toBeInTheDocument();
     expect(screen.getByTestId("economia-link-storico")).toHaveAttribute(
       "href",
       ROUTES.storico
