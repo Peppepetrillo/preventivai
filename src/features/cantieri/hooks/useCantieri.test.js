@@ -225,4 +225,29 @@ describe("useCantieri", () => {
     expect(salvati).toHaveLength(2);
     expect(salvati.find((c) => c.id === "c-attivo").deletedAt).toBeTruthy();
   });
+
+  it("due aggiornamenti rapidi non perdono la prima scrittura (storage SoT)", () => {
+    const { result } = renderHook(() => useCantieri());
+
+    act(() => {
+      result.current.aggiornaCampoNuovoCantiere("nome", "Race");
+    });
+    act(() => {
+      result.current.aggiungiCantiere();
+    });
+
+    act(() => {
+      result.current.setNuovaChecklist("Prima");
+    });
+    act(() => {
+      // Due add sullo stesso snapshot React: entrambe devono restare in storage.
+      result.current.aggiungiChecklist();
+      result.current.aggiungiChecklist();
+    });
+
+    expect(result.current.cantiereSelezionato.checklist).toHaveLength(2);
+    expect(
+      result.current.cantiereSelezionato.checklist.map((v) => v.testo)
+    ).toEqual(["Prima", "Prima"]);
+  });
 });

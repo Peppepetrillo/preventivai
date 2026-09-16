@@ -1,8 +1,10 @@
 /**
  * Migliora descrizione intervento (UX-6.5).
- * Usa VITE_AI_ASSISTANT_ENDPOINT se configurato — nessuna API key nel frontend.
+ * Usa endpoint pubblico se configurato — nessuna API key nel frontend.
  * NON inventa contenuti in assenza di endpoint.
  */
+
+const TIMEOUT_MS = 20000;
 
 /**
  * @typedef {object} EsitoMiglioraDescrizione
@@ -14,7 +16,7 @@
 
 /**
  * @param {string} testo
- * @param {{ stile?: string }=} opzioni
+ * @param {{ stile?: string, timeoutMs?: number }=} opzioni
  * @returns {Promise<EsitoMiglioraDescrizione>}
  */
 export async function miglioraDescrizioneIntervento(testo, opzioni = {}) {
@@ -33,16 +35,21 @@ export async function miglioraDescrizioneIntervento(testo, opzioni = {}) {
       ok: false,
       nonConfigurato: true,
       errore:
-        "Assistente IA non configurato. Imposta VITE_AI_ASSISTANT_ENDPOINT per abilitarlo.",
+        "Assistente IA non disponibile su questo dispositivo. Puoi continuare a scrivere la descrizione a mano.",
     };
   }
 
   const stile = String(opzioni.stile || "professionale").trim() || "professionale";
+  const timeoutMs =
+    Number(opzioni.timeoutMs) > 0 ? Number(opzioni.timeoutMs) : TIMEOUT_MS;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const risposta = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
       body: JSON.stringify({
         azione: "miglioraDescrizioneIntervento",
         testo: originale,
@@ -76,10 +83,24 @@ export async function miglioraDescrizioneIntervento(testo, opzioni = {}) {
     }
 
     return { ok: true, bozza };
-  } catch {
+  } catch (errore) {
+    if (errore?.name === "AbortError") {
+      return {
+        ok: false,
+        errore: "Tempo scaduto. Controlla la connessione e riprova.",
+      };
+    }
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      return {
+        ok: false,
+        errore: "Sei offline. Riprova quando hai connessione.",
+      };
+    }
     return {
       ok: false,
       errore: "Impossibile contattare l'assistente IA.",
     };
+  } finally {
+    clearTimeout(timer);
   }
 }

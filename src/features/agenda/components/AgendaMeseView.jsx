@@ -5,7 +5,7 @@ import { selezionaInterventiGiorno } from "../agendaSelectors";
 import {
   costruisciGrigliaCalendario,
   stessoGiorno,
-} from "./DateCalendarSheet";
+} from "./dateCalendarUtils";
 
 /**
  * Vista mese Agenda (UX-7.4): griglia + indicatori impegni/registro.

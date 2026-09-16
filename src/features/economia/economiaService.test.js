@@ -46,6 +46,13 @@ describe("economiaService v0", () => {
           descrizione: "Materiale",
           categoria: CATEGORIE_SPESA.materiali,
         },
+        {
+          id: "s2",
+          data: "09/09/2026",
+          importo: 100,
+          descrizione: "Operaio",
+          categoria: CATEGORIE_SPESA.manodopera,
+        },
       ],
     };
     const r = aggregaEconomiaAttivita([cantiere], {
@@ -53,8 +60,14 @@ describe("economiaService v0", () => {
       riferimento,
     });
     expect(r.entrate).toBe(1000);
-    expect(r.uscite).toBe(300);
-    expect(r.saldo).toBe(700);
+    expect(r.uscite).toBe(400);
+    expect(r.saldo).toBe(600);
+    expect(r.dettaglioUscite.map((d) => d.categoria)).toEqual([
+      CATEGORIE_SPESA.materiali,
+      CATEGORIE_SPESA.manodopera,
+    ]);
+    expect(r.dettaglioUscite[0].importo).toBe(300);
+    expect(r.dettaglioEntrate[0].categoria).toBe("acconto");
   });
 
   it("3–4. filtro mese: esclude mesi diversi", () => {

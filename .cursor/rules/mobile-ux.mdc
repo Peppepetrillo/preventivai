@@ -1,0 +1,13 @@
+---
+description: Mobile-first UX for electricians on iPhone / cantiere
+alwaysApply: true
+---
+
+# Mobile UX
+
+- One-hand primary actions; touch targets ≥ 44pt; respect Safe Area.
+- Keep BottomNav patterns; overlays use portal + overlay lock (never under nav).
+- Prefer existing DS classes: `.ds-page-title`, `.btn-primary` / `.btn-secondary` / `.btn-danger`, cards, `SearchInput`.
+- Lucide icons only — no emoji UI.
+- Do not turn mobile flows into dense desktop dashboards.
+- Full rules: `.cursor/rules/preventivai-design-system.mdc`.

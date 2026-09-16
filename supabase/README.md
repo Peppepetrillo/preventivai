@@ -84,10 +84,13 @@ Regole in `src/services/cloudSyncService.js` + `cloudSyncIntegrity.js`:
 2. Foto cantieri con path immutabili.
 3. UI live su `cloud-sync-aggiornata`.
 
-## Edge Function AI (Sprint 21 / 21B)
+## Edge Function AI (Sprint 22/23)
 
 Funzione: `analisi-preventivo-intelligence`  
-`verify_jwt = false` in `supabase/config.toml` (niente auth obbligatoria in questo sprint).  
+`verify_jwt = true` in `supabase/config.toml` (JWT sessione obbligatorio).  
+Il client invia `Authorization: Bearer <access_token>` + `apikey` anon.  
+Senza sessione l'app usa il fallback deterministico (`non_autenticato`).  
+**Deploy remoto:** richiede intervento umano (`supabase functions deploy` + secrets).  
 CORS: Capacitor (`capacitor://localhost`) + localhost Vite; extra via secret `ALLOWED_ORIGINS` (csv).
 
 Una chiamata AI reale ha un costo lato provider (token OpenAI).  
