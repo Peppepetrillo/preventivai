@@ -344,7 +344,7 @@ async function sincronizzaMediaCantieri() {
             accodaEliminazioneMedia([pathPrecedente]);
           }
         } catch (errore) {
-          console.error(`Errore caricamento storage foto ${foto.nome}:`, errore);
+          console.error(`Errore caricamento storage foto ${foto?.id || "sconosciuta"}:`, errore);
         }
       }
     }

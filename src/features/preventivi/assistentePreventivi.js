@@ -157,27 +157,8 @@ export function generaBozzaPreventivoLocale({ testo, clienti, listino }) {
 }
 
 export async function generaBozzaPreventivoAI({ testo, clienti, listino }) {
-  const endpoint = import.meta.env.VITE_AI_ASSISTANT_ENDPOINT;
-
-  if (!endpoint) {
-    return generaBozzaPreventivoLocale({ testo, clienti, listino });
-  }
-
-  const risposta = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      testo,
-      clienti,
-      listino,
-    }),
-  });
-
-  if (!risposta.ok) {
-    throw new Error("Assistente AI non disponibile.");
-  }
-
-  return risposta.json();
+  // Non POST-are l'anagrafica clienti/listino a endpoint remoti senza JWT/scrub.
+  // Finché non esiste un contract autenticato dedicato, resta locale e deterministico.
+  void import.meta.env.VITE_AI_ASSISTANT_ENDPOINT;
+  return generaBozzaPreventivoLocale({ testo, clienti, listino });
 }

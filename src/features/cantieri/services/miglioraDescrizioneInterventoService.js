@@ -4,6 +4,8 @@
  * NON inventa contenuti in assenza di endpoint.
  */
 
+import { scrubTestoLiberoAi } from "../../ai/scrubTestoLiberoAi";
+
 const TIMEOUT_MS = 20000;
 
 /**
@@ -52,7 +54,7 @@ export async function miglioraDescrizioneIntervento(testo, opzioni = {}) {
       signal: controller.signal,
       body: JSON.stringify({
         azione: "miglioraDescrizioneIntervento",
-        testo: originale,
+        testo: scrubTestoLiberoAi(originale),
         stile,
         vincoli: {
           nonInventare: true,
