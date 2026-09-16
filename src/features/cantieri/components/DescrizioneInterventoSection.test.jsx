@@ -80,4 +80,28 @@ describe("DescrizioneInterventoSection", () => {
       );
     });
   });
+
+  it("rimonta con nuova descrizione iniziale via key (niente sync effect)", () => {
+    const { rerender } = render(
+      <DescrizioneInterventoSection
+        key="c1"
+        descrizione="Prima"
+        onSalva={vi.fn()}
+      />
+    );
+    expect(screen.getByTestId("descrizione-intervento-input")).toHaveValue(
+      "Prima"
+    );
+
+    rerender(
+      <DescrizioneInterventoSection
+        key="c2"
+        descrizione="Seconda"
+        onSalva={vi.fn()}
+      />
+    );
+    expect(screen.getByTestId("descrizione-intervento-input")).toHaveValue(
+      "Seconda"
+    );
+  });
 });

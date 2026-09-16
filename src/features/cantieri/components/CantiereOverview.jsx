@@ -857,6 +857,7 @@ export default function CantiereOverview({
               </p>
             ) : null}
             <DescrizioneInterventoSection
+              key={String(cantiere.id)}
               descrizione={
                 cantiere.descrizioneIntervento || cantiere.descrizione || ""
               }

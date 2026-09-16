@@ -159,4 +159,23 @@ describe("renderCantiereReportPdf", () => {
     expect(testiPdf.join("\n")).toContain("Spesa 0");
     expect(testiPdf.join("\n")).toContain("Spesa 39");
   });
+
+  it("omite Cliente/Indirizzo vuoti (niente — in copertina)", async () => {
+    const document = buildCantiereReport({
+      cantiere: {
+        id: "c-empty",
+        nome: "Intervento urgente",
+        cliente: "",
+        indirizzo: "   ",
+        diario: [],
+      },
+      datiAzienda: { nomeDitta: "Giuseppe Impianti" },
+    });
+
+    await renderCantiereReportPdf(document, { salva: false });
+    const testo = testiPdf.join("\n");
+    expect(testo).not.toMatch(/Cliente:\s*—/);
+    expect(testo).not.toMatch(/Indirizzo:\s*—/);
+    expect(testo).toContain("Intervento urgente");
+  });
 });

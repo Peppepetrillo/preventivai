@@ -715,7 +715,7 @@ export default function CantiereOperativo({
                       onEliminaFoto(fotoVoce.id);
                     }
                   }}
-                  className="absolute top-1.5 right-1.5 min-h-[36px] min-w-[36px] rounded-full bg-black/70 text-red-100 flex items-center justify-center"
+                  className="absolute top-1.5 right-1.5 min-h-[44px] min-w-[44px] rounded-full bg-black/70 text-red-100 flex items-center justify-center"
                   aria-label="Elimina foto"
                 >
                   <Trash2 size={14} />

@@ -72,8 +72,21 @@ function disegnaCopertina(doc, document) {
 
   setText(doc, settings.coloreTesto);
   applicaFont(doc, settings, "normal", settings.fontSizeBase + 1);
-  y = testo(doc, settings, `Cliente: ${riga(document.copertina.cliente)}`, area.x, y, area.width);
-  y = testo(doc, settings, `Indirizzo: ${riga(document.copertina.indirizzo)}`, area.x, y, area.width);
+  const clienteCopertina = String(document.copertina.cliente || "").trim();
+  const indirizzoCopertina = String(document.copertina.indirizzo || "").trim();
+  if (clienteCopertina) {
+    y = testo(doc, settings, `Cliente: ${clienteCopertina}`, area.x, y, area.width);
+  }
+  if (indirizzoCopertina) {
+    y = testo(
+      doc,
+      settings,
+      `Indirizzo: ${indirizzoCopertina}`,
+      area.x,
+      y,
+      area.width
+    );
+  }
   if (document.lavoroDiretto && document.copertina.tipoIntervento) {
     y = testo(
       doc,
