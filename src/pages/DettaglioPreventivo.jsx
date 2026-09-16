@@ -148,6 +148,8 @@ export default function DettaglioPreventivo() {
   const [showUsaDistinta, setShowUsaDistinta] = useState(false);
   const [statoBloccoAlert, setStatoBloccoAlert] = useState(false);
   const [statoConfermaManuale, setStatoConfermaManuale] = useState(null);
+  const [conversioneInCorso, setConversioneInCorso] = useState(false);
+  const conversioneLock = useRef(false);
 
   const sezioneLavorazioniRef = useRef(null);
   const sezioneDocumentiRef = useRef(null);
@@ -455,15 +457,22 @@ export default function DettaglioPreventivo() {
   }
 
   function trasformaInCantiere() {
+    if (conversioneLock.current) return;
     try {
+      conversioneLock.current = true;
+      setConversioneInCorso(true);
       salvaModificheSilenzioso();
       const distinta = trovaDistintaCollegataAlPreventivo(preventivo.id);
       if (distinta) {
         setShowUsaDistinta(true);
+        conversioneLock.current = false;
+        setConversioneInCorso(false);
         return;
       }
       eseguiConversioneCantiere({ usaDistinta: false });
     } catch (errore) {
+      conversioneLock.current = false;
+      setConversioneInCorso(false);
       setMessaggio(
         messaggioErroreWorkflow(
           errore?.message,
@@ -475,9 +484,13 @@ export default function DettaglioPreventivo() {
 
   function eseguiConversioneCantiere({ usaDistinta }) {
     try {
+      conversioneLock.current = true;
+      setConversioneInCorso(true);
       salvaModificheSilenzioso();
       const risultato = convertiInCantiere(preventivo.id);
       if (!risultato.success) {
+        conversioneLock.current = false;
+        setConversioneInCorso(false);
         setMessaggio(
           messaggioErroreWorkflow(
             risultato.error,
@@ -509,6 +522,8 @@ export default function DettaglioPreventivo() {
       navigate(routeCantierePagamenti(risultato.cantiere.id), {
         state: statoNavigazioneCantiere(CANTIERE_SEZIONI.PAGAMENTI) });
     } catch (errore) {
+      conversioneLock.current = false;
+      setConversioneInCorso(false);
       setShowUsaDistinta(false);
       setMessaggio(
         messaggioErroreWorkflow(
@@ -665,7 +680,10 @@ export default function DettaglioPreventivo() {
       />
 
       {bannerPostAccetta && stato === STATI_PREVENTIVO.ACCETTATO ? (
-        <BannerPostAccettazione onIniziaCantiere={trasformaInCantiere} />
+        <BannerPostAccettazione
+          onIniziaCantiere={trasformaInCantiere}
+          inCorso={conversioneInCorso}
+        />
       ) : (
         <PreventivoHeroCta hero={heroCta} onAzione={gestisciHeroCta} />
       )}

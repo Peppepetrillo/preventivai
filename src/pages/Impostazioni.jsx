@@ -412,7 +412,9 @@ export default function Impostazioni() {
             <div>
               <h2 className="text-2xl font-bold">Backup dati</h2>
               <p className="text-slate-400 mt-1">
-                Esporta o ripristina clienti, preventivi, listino e dati azienda.
+                Esporta o ripristina clienti, preventivi, cantieri, listino e dati
+                azienda. Distinte, liste spesa, firme e varianti restano solo su
+                questo dispositivo finché non vengono incluse nel backup cloud.
               </p>
             </div>
           </div>
@@ -447,7 +449,9 @@ export default function Impostazioni() {
             <div>
               <p className="section-label">Backup automatico</p>
               <p className="ds-text-secondary text-sm mt-2 leading-relaxed">
-                Il backup automatico salva una copia locale dei tuoi dati.
+                Il backup automatico salva una copia locale dei dati principali
+                (clienti, preventivi, cantieri, listino, azienda). Distinte, liste
+                spesa, firme e varianti restano solo su questo dispositivo.
                 Per conservare il file fuori dall&apos;app usa Esporta backup.
               </p>
             </div>
