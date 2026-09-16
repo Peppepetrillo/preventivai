@@ -344,19 +344,23 @@ function bloccoClienteIntestazione(doc, document, y) {
   applicaFont(doc, settings, "bold", 10);
   doc.text(riga(intestazione.numero), ix + 4, y + 12);
   applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
-  doc.text(`Data: ${riga(intestazione.data)}`, ix + 4, y + 17);
-  doc.text(
-    `Validità: ${
-      intestazione.validita === "" || intestazione.validita === null
-        ? "—"
-        : `${intestazione.validita} gg`
-    }`,
-    ix + 4,
-    y + 22
-  );
-  doc.text(`Oggetto: ${riga(intestazione.oggetto)}`, ix + 4, y + 27, {
-    maxWidth: colW - 8,
-  });
+  let dy = y + 17;
+  const dataDoc = String(intestazione.data || "").trim();
+  if (dataDoc) {
+    doc.text(`Data: ${dataDoc}`, ix + 4, dy);
+    dy += 5;
+  }
+  const validitaDoc = String(intestazione.validita ?? "").trim();
+  if (validitaDoc) {
+    doc.text(`Validità: ${validitaDoc} gg`, ix + 4, dy);
+    dy += 5;
+  }
+  const oggettoDoc = String(intestazione.oggetto || "").trim();
+  if (oggettoDoc) {
+    doc.text(`Oggetto: ${oggettoDoc}`, ix + 4, dy, {
+      maxWidth: colW - 8,
+    });
+  }
 
   return y + 38;
 }

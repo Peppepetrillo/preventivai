@@ -521,20 +521,20 @@ function disegnaIntestazioneTabellaSpese(doc, settings, y, mostraGiornata) {
   return y + 5;
 }
 
-function formattaRigaSpesa(spesa, mostraGiornata) {
-  const fornitore = riga(spesa.fornitore, "—");
-  const metodo = riga(spesa.metodoLabel, "—");
+export function formattaRigaSpesa(spesa, mostraGiornata) {
   const parti = [
-    riga(spesa.data),
-    riga(spesa.descrizione),
-    riga(spesa.categoriaLabel),
-    fornitore,
-    metodo,
-  ];
+    String(spesa.data || "").trim(),
+    String(spesa.descrizione || "").trim(),
+    String(spesa.categoriaLabel || "").trim(),
+    String(spesa.fornitore || "").trim(),
+    String(spesa.metodoLabel || "").trim(),
+  ].filter(Boolean);
   if (mostraGiornata) {
-    parti.push(riga(spesa.giornataLabel, "Generale"));
+    const giornata = String(spesa.giornataLabel || "").trim() || "Generale";
+    parti.push(giornata);
   }
-  parti.push(riga(spesa.importoLabel));
+  const importo = String(spesa.importoLabel || "").trim();
+  if (importo) parti.push(importo);
   return parti.join(" · ");
 }
 

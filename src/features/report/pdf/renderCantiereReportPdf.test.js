@@ -178,4 +178,30 @@ describe("renderCantiereReportPdf", () => {
     expect(testo).not.toMatch(/Indirizzo:\s*—/);
     expect(testo).toContain("Intervento urgente");
   });
+
+  it("omite fornitore/metodo vuoti nelle righe spese (niente —)", async () => {
+    const document = buildCantiereReport({
+      cantiere: {
+        id: "c-spese-empty",
+        cliente: "Bianchi",
+        spese: [
+          {
+            id: "s1",
+            data: "03/09/2026",
+            importo: 40,
+            descrizione: "Benzina",
+            categoria: CATEGORIE_SPESA.carburante,
+            fornitore: "",
+            metodoPagamento: "",
+          },
+        ],
+        diario: [],
+      },
+    });
+
+    await renderCantiereReportPdf(document, { salva: false });
+    const testo = testiPdf.join("\n");
+    expect(testo).toContain("Benzina");
+    expect(testo).not.toMatch(/Benzina[^\n]*—/);
+  });
 });
