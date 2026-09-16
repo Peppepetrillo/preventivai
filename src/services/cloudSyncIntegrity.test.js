@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   deveApplicareAggiornamentoCloud,
   deveProteggereLocaleDaWipeCloud,
-  deveRispingereLocaleVersoCloud,
   normalizzaPayloadCloud,
   tempoDaIso,
 } from "./cloudSyncIntegrity";
