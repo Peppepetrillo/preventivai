@@ -9,7 +9,6 @@ import { leggiCantieri, salvaCantieri } from "../../../repositories/cantieriRepo
 import {
   leggiPreventivi,
   leggiPreventiviTutti,
-  salvaNuovoPreventivo,
 } from "../../../repositories/preventiviRepository";
 
 describe("creaPreventivoDaCantiereDiretto", () => {
