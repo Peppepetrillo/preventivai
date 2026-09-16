@@ -5,6 +5,7 @@ import BottomSheet from "../../../components/BottomSheet";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import NumericInput from "../../../components/NumericInput";
 import DatePickerField from "../../agenda/components/DatePickerField";
+import { messaggioErroreWorkflow } from "../../preventivi/utils/messaggioErroreWorkflow";
 import {
   STATI_GIORNATA,
   ETICHETTE_STATO_GIORNATA,
@@ -81,7 +82,7 @@ function GiornataProgrammataBody({ onClose, giornata, onSalva, onElimina }) {
     const operai = Math.max(1, Math.round(Number(form.operai) || 1));
     const orePreviste = Math.max(0, Number(form.orePreviste) || 0);
     setSalvataggioInCorso(true);
-    onSalva?.({
+    const esito = onSalva?.({
       ...(inModifica ? { id: giornata.id } : {}),
       data,
       operai,
@@ -90,6 +91,16 @@ function GiornataProgrammataBody({ onClose, giornata, onSalva, onElimina }) {
       note: String(form.note || "").trim(),
       stato: form.stato || STATI_GIORNATA.programmata,
     });
+    if (esito && esito.success === false) {
+      setErrore(
+        messaggioErroreWorkflow(
+          esito.error,
+          "Impossibile salvare la giornata."
+        )
+      );
+      setSalvataggioInCorso(false);
+      return;
+    }
     onClose?.();
   }
 

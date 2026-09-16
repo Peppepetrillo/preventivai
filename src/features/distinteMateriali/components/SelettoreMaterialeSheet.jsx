@@ -87,7 +87,9 @@ function SelettoreForm({
   const [feedbackVisbile, setFeedbackVisibile] = useState(false);
   const [feedbackNome, setFeedbackNome] = useState("");
   const [contatoreAggiunte, setContatoreAggiunte] = useState(0);
+  const [confermando, setConfermando] = useState(false);
   const feedbackTimer = useRef(null);
+  const confermaInCorso = useRef(false);
 
   // Cleanup timer al dismount
   useEffect(() => {
@@ -138,7 +140,7 @@ function SelettoreForm({
   }
 
   function conferma() {
-    if (!variante || !famiglia) return;
+    if (!variante || !famiglia || confermaInCorso.current) return;
 
     const q = Number(quantita);
     const prezzoNum = Number(prezzoUnitario);
@@ -172,17 +174,26 @@ function SelettoreForm({
         : undefined,
     };
 
-    onConferma?.(payload);
+    confermaInCorso.current = true;
+    setConfermando(true);
+    try {
+      onConferma?.(payload);
 
-    if (mantieniApertoDopoConferma) {
-      // Resta aperto: torna alle varianti della stessa famiglia per aggiunta rapida.
-      mostraFeedback(`${famiglia.nome} — ${variante.etichetta}`);
-      setContatoreAggiunte((n) => n + 1);
-      setVariante(null);
-      setQuantita(1);
-      setPrezzoUnitario("");
-    } else {
-      onClose?.();
+      if (mantieniApertoDopoConferma) {
+        // Resta aperto: torna alle varianti della stessa famiglia per aggiunta rapida.
+        mostraFeedback(`${famiglia.nome} — ${variante.etichetta}`);
+        setContatoreAggiunte((n) => n + 1);
+        setVariante(null);
+        setQuantita(1);
+        setPrezzoUnitario("");
+        confermaInCorso.current = false;
+        setConfermando(false);
+      } else {
+        onClose?.();
+      }
+    } catch {
+      confermaInCorso.current = false;
+      setConfermando(false);
     }
   }
 
@@ -426,9 +437,11 @@ function SelettoreForm({
           <button
             type="button"
             onClick={conferma}
-            className="btn-primary w-full min-h-[52px] font-black"
+            disabled={confermando}
+            className="btn-primary w-full min-h-[52px] font-bold disabled:opacity-45"
+            data-testid="selettore-materiale-conferma"
           >
-            {labelConferma}
+            {confermando ? "Aggiunta…" : labelConferma}
           </button>
         </div>
       ) : null}

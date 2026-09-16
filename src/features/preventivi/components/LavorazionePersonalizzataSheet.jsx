@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import BottomSheet from "../../../components/BottomSheet";
 import NumericInput from "../../../components/NumericInput";
@@ -14,20 +14,30 @@ function statoIniziale() {
 
 function FormLavorazionePersonalizzata({ onClose, onSalva }) {
   const [form, setForm] = useState(statoIniziale);
+  const [salvando, setSalvando] = useState(false);
+  const salvataggioInCorso = useRef(false);
 
   function gestisciSalva() {
+    if (salvataggioInCorso.current) return;
     const nome = form.nome.trim();
     if (!nome) return;
 
-    onSalva(
-      creaLavorazioneManuale({
-        id: `custom-${Date.now()}`,
-        nome,
-        prezzo: form.prezzo,
-        quantita: form.quantita,
-      })
-    );
-    onClose();
+    salvataggioInCorso.current = true;
+    setSalvando(true);
+    try {
+      onSalva(
+        creaLavorazioneManuale({
+          id: `custom-${Date.now()}`,
+          nome,
+          prezzo: form.prezzo,
+          quantita: form.quantita,
+        })
+      );
+      onClose();
+    } catch {
+      salvataggioInCorso.current = false;
+      setSalvando(false);
+    }
   }
 
   return (
@@ -75,10 +85,11 @@ function FormLavorazionePersonalizzata({ onClose, onSalva }) {
       <button
         type="button"
         onClick={gestisciSalva}
-        disabled={!form.nome.trim()}
+        disabled={!form.nome.trim() || salvando}
         className="btn-primary w-full min-h-[44px] disabled:opacity-40"
+        data-testid="lavorazione-personalizzata-salva"
       >
-        Aggiungi
+        {salvando ? "Aggiunta…" : "Aggiungi"}
       </button>
     </div>
   );

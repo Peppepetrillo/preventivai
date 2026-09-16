@@ -401,7 +401,7 @@ export default function CantiereVarianti({
 
       {dialogoPreventivo ? (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 px-4 safe-bottom"
+          className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/70 px-4 safe-bottom"
           role="dialog"
           aria-modal="true"
           aria-labelledby="variante-preventivo-title"
