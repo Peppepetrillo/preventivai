@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import BottomSheet from "../../../components/BottomSheet";
 import {
@@ -26,6 +26,10 @@ function statoIniziale(attivita, dataDefault) {
   };
 }
 
+/**
+ * Sheet crea/modifica attività.
+ * Remount on open/id → seed senza setState-in-effect.
+ */
 export default function AttivitaFormSheet({
   aperto,
   onChiudi,
@@ -33,17 +37,30 @@ export default function AttivitaFormSheet({
   attivita = null,
   dataDefault = "",
 }) {
+  return (
+    <BottomSheet
+      open={aperto}
+      onClose={onChiudi}
+      title={attivita ? "Modifica attività" : "Nuova attività"}
+      descrizione="Promemoria, telefonate, acquisti e altro."
+    >
+      {aperto ? (
+        <AttivitaForm
+          key={attivita?.id ?? `nuova-${dataDefault || "oggi"}`}
+          onChiudi={onChiudi}
+          onSalva={onSalva}
+          attivita={attivita}
+          dataDefault={dataDefault}
+        />
+      ) : null}
+    </BottomSheet>
+  );
+}
+
+function AttivitaForm({ onChiudi, onSalva, attivita, dataDefault }) {
   const [form, setForm] = useState(() => statoIniziale(attivita, dataDefault));
   const [salvando, setSalvando] = useState(false);
   const salvataggioInCorso = useRef(false);
-
-  useEffect(() => {
-    if (aperto) {
-      setForm(statoIniziale(attivita, dataDefault));
-      salvataggioInCorso.current = false;
-      setSalvando(false);
-    }
-  }, [aperto, attivita, dataDefault]);
 
   function aggiorna(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
@@ -60,92 +77,85 @@ export default function AttivitaFormSheet({
   }
 
   return (
-    <BottomSheet
-      open={aperto}
-      onClose={onChiudi}
-      title={attivita ? "Modifica attività" : "Nuova attività"}
-      descrizione="Promemoria, telefonate, acquisti e altro."
-    >
-      <form onSubmit={invia} className="space-y-4 pb-2">
+    <form onSubmit={invia} className="space-y-4 pb-2">
+      <label className="block">
+        <span className="ds-text-secondary text-xs font-bold uppercase tracking-wide">
+          Titolo
+        </span>
+        <input
+          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-white"
+          value={form.titolo}
+          onChange={(e) => aggiorna("titolo", e.target.value)}
+          placeholder="Es. Chiama fornitore"
+          required
+          autoFocus
+        />
+      </label>
+
+      <div className="grid grid-cols-2 gap-3">
         <label className="block">
           <span className="ds-text-secondary text-xs font-bold uppercase tracking-wide">
-            Titolo
+            Ora
           </span>
           <input
+            type="time"
             className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-white"
-            value={form.titolo}
-            onChange={(e) => aggiorna("titolo", e.target.value)}
-            placeholder="Es. Chiama fornitore"
-            required
-            autoFocus
+            value={form.ora}
+            onChange={(e) => aggiorna("ora", e.target.value)}
           />
         </label>
-
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="ds-text-secondary text-xs font-bold uppercase tracking-wide">
-              Ora
-            </span>
-            <input
-              type="time"
-              className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-4 text-white"
-              value={form.ora}
-              onChange={(e) => aggiorna("ora", e.target.value)}
-            />
-          </label>
-          <label className="block">
-            <span className="ds-text-secondary text-xs font-bold uppercase tracking-wide">
-              Priorità
-            </span>
-            <select
-              className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-3 text-white"
-              value={form.priorita}
-              onChange={(e) => aggiorna("priorita", e.target.value)}
-            >
-              {PRIORITA_OPZIONI.map((op) => (
-                <option key={op.id} value={op.id}>
-                  {op.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
         <label className="block">
           <span className="ds-text-secondary text-xs font-bold uppercase tracking-wide">
-            Categoria
+            Priorità
           </span>
           <select
             className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-3 text-white"
-            value={form.categoria}
-            onChange={(e) => aggiorna("categoria", e.target.value)}
+            value={form.priorita}
+            onChange={(e) => aggiorna("priorita", e.target.value)}
           >
-            {CATEGORIE_ATTIVITA.map((cat) => (
-              <option key={cat} value={cat}>
-                {ETICHETTE_CATEGORIA_ATTIVITA[cat]}
+            {PRIORITA_OPZIONI.map((op) => (
+              <option key={op.id} value={op.id}>
+                {op.label}
               </option>
             ))}
           </select>
         </label>
+      </div>
 
-        <label className="flex items-center gap-3 min-h-[44px]">
-          <input
-            type="checkbox"
-            checked={form.reminder}
-            onChange={(e) => aggiorna("reminder", e.target.checked)}
-            className="w-5 h-5"
-          />
-          <span className="ds-text-primary text-sm">Attiva reminder</span>
-        </label>
-
-        <button
-          type="submit"
-          disabled={salvando}
-          className="btn-primary w-full min-h-[52px] font-black disabled:opacity-40"
+      <label className="block">
+        <span className="ds-text-secondary text-xs font-bold uppercase tracking-wide">
+          Categoria
+        </span>
+        <select
+          className="mt-1.5 w-full min-h-[48px] rounded-[16px] border border-white/10 bg-black/30 px-3 text-white"
+          value={form.categoria}
+          onChange={(e) => aggiorna("categoria", e.target.value)}
         >
-          {salvando ? "Salvataggio…" : "Salva"}
-        </button>
-      </form>
-    </BottomSheet>
+          {CATEGORIE_ATTIVITA.map((cat) => (
+            <option key={cat} value={cat}>
+              {ETICHETTE_CATEGORIA_ATTIVITA[cat]}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="flex items-center gap-3 min-h-[44px]">
+        <input
+          type="checkbox"
+          checked={form.reminder}
+          onChange={(e) => aggiorna("reminder", e.target.checked)}
+          className="w-5 h-5"
+        />
+        <span className="ds-text-primary text-sm">Attiva reminder</span>
+      </label>
+
+      <button
+        type="submit"
+        disabled={salvando}
+        className="btn-primary w-full min-h-[52px] font-black disabled:opacity-40"
+      >
+        {salvando ? "Salvataggio…" : "Salva"}
+      </button>
+    </form>
   );
 }
