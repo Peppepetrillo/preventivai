@@ -204,4 +204,21 @@ describe("renderCantiereReportPdf", () => {
     expect(testo).toContain("Benzina");
     expect(testo).not.toMatch(/Benzina[^\n]*—/);
   });
+
+  it("omite sezione Firme vuota (niente linee placeholder)", async () => {
+    const document = buildCantiereReport({
+      cantiere: {
+        id: "c-no-firme",
+        cliente: "Rossi",
+        diario: [],
+      },
+      datiAzienda: { nomeDitta: "Demo" },
+    });
+
+    await renderCantiereReportPdf(document, { salva: false });
+    const testo = testiPdf.join("\n");
+    expect(testo).not.toContain("Firme");
+    expect(testo).not.toContain("Firma Tecnico");
+    expect(testo).not.toContain("________________");
+  });
 });

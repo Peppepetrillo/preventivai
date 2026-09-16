@@ -449,12 +449,18 @@ function disegnaLavorazioni(doc, document, yStart) {
   return y + 4;
 }
 
+function haAccontoDaStampare(acconto) {
+  return Number(acconto?.richiesto) > 0;
+}
+
 function disegnaRiepilogoEAcconto(doc, document, y) {
   const { settings, riepilogo, acconto, intestazione } = document;
   const area = areaUtile(settings);
   const boxW = 88;
   const boxX = area.x + area.width - boxW;
-  const h = 48;
+  const mostraAcconto = haAccontoDaStampare(acconto);
+  const pagamento = String(intestazione?.pagamento || "").trim();
+  const h = mostraAcconto || pagamento ? 48 : 40;
 
   y = assicuratiSpazio(doc, settings, y, h + 8, (d) =>
     disegnaHeaderContinuo(d, document)
@@ -491,24 +497,32 @@ function disegnaRiepilogoEAcconto(doc, document, y) {
   doc.line(boxX + 4, ry - 2, boxX + boxW - 4, ry - 2);
   rigaTot("Totale", euro(riepilogo.totale), ry + 2, true);
 
-  // Acconto a sinistra
-  const leftW = area.width - boxW - 8;
-  setFill(doc, settings.coloreFondo);
-  doc.roundedRect(area.x, y, leftW, h, 2, 2, "FD");
-  setText(doc, settings.coloreTenue);
-  applicaFont(doc, settings, "bold", settings.fontSizePiccolo);
-  doc.text("ACCONTO", area.x + 4, y + 7);
-  setText(doc, settings.coloreTesto);
-  applicaFont(doc, settings, "normal", 8);
-  doc.text(`Richiesto: ${euro(acconto.richiesto)}`, area.x + 4, y + 14);
-  applicaFont(doc, settings, "bold", 10);
-  doc.text(`Residuo: ${euro(acconto.residuo)}`, area.x + 4, y + 22);
-  if (intestazione.pagamento) {
-    applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
-    setText(doc, settings.coloreTenue);
-    doc.text(`Pagamento: ${intestazione.pagamento}`, area.x + 4, y + 30, {
-      maxWidth: leftW - 8,
-    });
+  // Acconto / pagamento a sinistra solo se dati reali
+  if (mostraAcconto || pagamento) {
+    const leftW = area.width - boxW - 8;
+    setFill(doc, settings.coloreFondo);
+    doc.roundedRect(area.x, y, leftW, h, 2, 2, "FD");
+    let ly = y + 7;
+    if (mostraAcconto) {
+      setText(doc, settings.coloreTenue);
+      applicaFont(doc, settings, "bold", settings.fontSizePiccolo);
+      doc.text("ACCONTO", area.x + 4, ly);
+      ly += 7;
+      setText(doc, settings.coloreTesto);
+      applicaFont(doc, settings, "normal", 8);
+      doc.text(`Richiesto: ${euro(acconto.richiesto)}`, area.x + 4, ly);
+      ly += 8;
+      applicaFont(doc, settings, "bold", 10);
+      doc.text(`Residuo: ${euro(acconto.residuo)}`, area.x + 4, ly);
+      ly += 8;
+    }
+    if (pagamento) {
+      applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
+      setText(doc, settings.coloreTenue);
+      doc.text(`Pagamento: ${pagamento}`, area.x + 4, ly, {
+        maxWidth: leftW - 8,
+      });
+    }
   }
 
   return y + h + 8;
@@ -530,11 +544,26 @@ function disegnaTestoSezione(doc, document, titolo, contenuto, y) {
   return testoMultilinea(doc, testo, area.x, y, area.width, 4.2) + 6;
 }
 
+function haFirmeDaStampare(firme) {
+  if (!firme || typeof firme !== "object") return false;
+  return Boolean(
+    firme.clienteImmagine ||
+      firme.installatoreImmagine ||
+      String(firme.firmatario || "").trim() ||
+      String(firme.dataFirma || "").trim()
+  );
+}
+
 function disegnaFirme(doc, document, y) {
   const { settings, firme } = document;
+  if (!haFirmeDaStampare(firme)) {
+    return y;
+  }
+
   const area = areaUtile(settings);
   const haImmagineCliente = Boolean(firme?.clienteImmagine);
-  const altezzaBlocco = haImmagineCliente ? 48 : 36;
+  const haImmagineInstallatore = Boolean(firme?.installatoreImmagine);
+  const altezzaBlocco = haImmagineCliente || haImmagineInstallatore ? 48 : 36;
 
   y = assicuratiSpazio(doc, settings, y, altezzaBlocco, (d) =>
     disegnaHeaderContinuo(d, document)
@@ -543,7 +572,7 @@ function disegnaFirme(doc, document, y) {
 
   const mid = area.x + area.width / 2;
   const colW = area.width / 2 - 12;
-  const lineY = y + (haImmagineCliente ? 28 : 16);
+  const lineY = y + (haImmagineCliente || haImmagineInstallatore ? 28 : 16);
 
   if (haImmagineCliente) {
     try {
@@ -565,10 +594,9 @@ function disegnaFirme(doc, document, y) {
     }
   }
 
-  // Placeholder installatore (linea vuota / box)
   setStroke(doc, settings.coloreBordo);
   doc.setLineWidth(0.35);
-  if (firme?.installatoreImmagine) {
+  if (haImmagineInstallatore) {
     try {
       const formato = String(firme.installatoreImmagine).includes("image/jpeg")
         ? "JPEG"
@@ -584,24 +612,26 @@ function disegnaFirme(doc, document, y) {
     } catch {
       doc.line(mid + 10, lineY, area.x + area.width, lineY);
     }
-  } else {
+  } else if (firme?.installatorePlaceholder) {
     doc.line(mid + 10, lineY, area.x + area.width, lineY);
   }
 
-  if (!haImmagineCliente) {
-    doc.line(area.x, lineY, mid - 10, lineY);
-  } else {
+  if (haImmagineCliente || String(firme.firmatario || "").trim() || String(firme.dataFirma || "").trim()) {
     doc.line(area.x, lineY, mid - 10, lineY);
   }
 
   setText(doc, settings.coloreTenue);
   applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
-  doc.text(firme.clienteLabel || "Firma Cliente", area.x, lineY + 5);
-  doc.text(
-    firme.installatoreLabel || "Firma Installatore",
-    mid + 10,
-    lineY + 5
-  );
+  if (haImmagineCliente || String(firme.firmatario || "").trim() || String(firme.dataFirma || "").trim()) {
+    doc.text(firme.clienteLabel || "Firma Cliente", area.x, lineY + 5);
+  }
+  if (haImmagineInstallatore || firme?.installatorePlaceholder) {
+    doc.text(
+      firme.installatoreLabel || "Firma Installatore",
+      mid + 10,
+      lineY + 5
+    );
+  }
 
   let yMeta = lineY + 10;
   if (firme?.firmatario || firme?.dataFirma) {
@@ -617,7 +647,7 @@ function disegnaFirme(doc, document, y) {
     }
   }
 
-  if (firme?.installatorePlaceholder && !firme?.installatoreImmagine) {
+  if (firme?.installatorePlaceholder && !haImmagineInstallatore) {
     setText(doc, settings.coloreTenue);
     applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
     doc.text("(da firmare)", mid + 10, lineY + 10);

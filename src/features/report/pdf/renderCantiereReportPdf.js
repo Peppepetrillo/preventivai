@@ -641,7 +641,23 @@ function disegnaNote(doc, document, y) {
   return y + 2;
 }
 
+function haFirmeReportDaStampare(firme) {
+  if (!firme || typeof firme !== "object") return false;
+  return Boolean(
+    firme.tecnicoImmagine ||
+      firme.clienteImmagine ||
+      String(firme.firmatario || "").trim() ||
+      String(firme.dataFirma || "").trim()
+  );
+}
+
 function disegnaFirme(doc, document, y) {
+  const firme = document.firme;
+  // Niente linee/placeholder vuoti: solo se esistono dati firma reali.
+  if (!haFirmeReportDaStampare(firme)) {
+    return y;
+  }
+
   const settings = document.settings;
   const area = areaUtile(settings);
   y = titoloSezione(doc, settings, "Firme", y);
@@ -656,13 +672,45 @@ function disegnaFirme(doc, document, y) {
 
   setText(doc, settings.coloreTesto);
   applicaFont(doc, settings, "bold", settings.fontSizeBase);
-  doc.text(document.firme.tecnicoLabel, area.x, y + 8);
-  doc.text(document.firme.clienteLabel, area.x + meta + 8, y + 8);
+  doc.text(firme.tecnicoLabel || "Firma Tecnico", area.x, y + 8);
+  doc.text(firme.clienteLabel || "Firma Cliente", area.x + meta + 8, y + 8);
+
+  if (firme.tecnicoImmagine) {
+    try {
+      const formato = String(firme.tecnicoImmagine).includes("image/jpeg")
+        ? "JPEG"
+        : "PNG";
+      doc.addImage(firme.tecnicoImmagine, formato, area.x, y, Math.min(meta, 55), 16);
+    } catch {
+      // linea già disegnata
+    }
+  }
+  if (firme.clienteImmagine) {
+    try {
+      const formato = String(firme.clienteImmagine).includes("image/jpeg")
+        ? "JPEG"
+        : "PNG";
+      doc.addImage(
+        firme.clienteImmagine,
+        formato,
+        area.x + meta + 8,
+        y,
+        Math.min(meta, 55),
+        16
+      );
+    } catch {
+      // linea già disegnata
+    }
+  }
 
   setText(doc, settings.coloreTenue);
   applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
-  doc.text("________________", area.x, lineY + 6);
-  doc.text("________________", area.x + meta + 8, lineY + 6);
+  if (firme.firmatario) {
+    doc.text(String(firme.firmatario), area.x, lineY + 6);
+  }
+  if (firme.dataFirma) {
+    doc.text(`Data: ${firme.dataFirma}`, area.x + meta + 8, lineY + 6);
+  }
 
   return lineY + 14;
 }
