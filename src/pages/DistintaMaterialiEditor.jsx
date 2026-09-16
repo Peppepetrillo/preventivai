@@ -72,12 +72,30 @@ export default function DistintaMaterialiEditor() {
       setDistintaId(null);
       setNonTrovata(false);
       setSavedDistinta(null);
+      setShowSelettore(false);
+      setShowManuale(false);
+      setShowAggiungiMenu(false);
+      setEditingVoce(null);
+      setShowCondividi(false);
+      setShowCollegaCantiere(false);
+      setSuggerimentiSession(null);
+      setErrore("");
+      setMessaggio("");
+      salvataggioInCorso.current = false;
+      setSalvando(false);
       return;
     }
     const d = trovaDistintaPerId(id);
     if (!d) {
       setNonTrovata(true);
       setDraft(emptyDraft());
+      setShowSelettore(false);
+      setShowManuale(false);
+      setShowAggiungiMenu(false);
+      setEditingVoce(null);
+      setSuggerimentiSession(null);
+      setErrore("");
+      setMessaggio("");
       return;
     }
     setNonTrovata(false);
@@ -88,6 +106,17 @@ export default function DistintaMaterialiEditor() {
       clienteNome: d.clienteNome || "",
       note: d.note || "",
       voci: Array.isArray(d.voci) ? d.voci : [] });
+    setShowSelettore(false);
+    setShowManuale(false);
+    setShowAggiungiMenu(false);
+    setEditingVoce(null);
+    setShowCondividi(false);
+    setShowCollegaCantiere(false);
+    setSuggerimentiSession(null);
+    setErrore("");
+    setMessaggio("");
+    salvataggioInCorso.current = false;
+    setSalvando(false);
   }, [id, isNuova]);
 
   useEffect(() => {
