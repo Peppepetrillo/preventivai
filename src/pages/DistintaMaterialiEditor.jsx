@@ -183,7 +183,12 @@ export default function DistintaMaterialiEditor() {
         setSavedDistinta(created);
         setDistintaId(created.id);
         mantieniFlashRef.current = true;
-        flash("Distinta creata.");
+        const collegata = Boolean(created?.collegamenti?.cantiereId);
+        flash(
+          collegata
+            ? "Distinta creata."
+            : "Distinta creata. Collega un cantiere per mandare i materiali in Acquisti."
+        );
         navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
           replace: true });
         return;
@@ -201,7 +206,15 @@ export default function DistintaMaterialiEditor() {
         clienteNome: finale.clienteNome || "",
         note: finale.note || "",
         voci: Array.isArray(finale.voci) ? finale.voci : [] });
-      flash(sync.ok ? "Salvata e sincronizzata sul cantiere." : "Salvata.");
+      if (sync.ok) {
+        flash("Salvata e sincronizzata sul cantiere.");
+      } else if (!finale?.collegamenti?.cantiereId) {
+        flash(
+          "Salvata. Collega un cantiere per mandare i materiali in Acquisti."
+        );
+      } else {
+        flash("Salvata.");
+      }
     } catch (e) {
       setErrore(e?.message || "Errore salvataggio");
     } finally {

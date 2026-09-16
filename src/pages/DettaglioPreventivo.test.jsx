@@ -112,7 +112,7 @@ describe("DettaglioPreventivo UX-2.1", () => {
     expect(screen.getByTestId("preventivo-condividi-whatsapp")).toBeInTheDocument();
   });
 
-  it("Inviato: hero Cliente ha accettato", () => {
+  it("Inviato: hero Segna accettato", () => {
     localStorage.setItem(
       STORAGE_KEYS.preventivi,
       JSON.stringify([
@@ -123,7 +123,7 @@ describe("DettaglioPreventivo UX-2.1", () => {
     renderDettaglio("p2");
 
     expect(screen.getByTestId("preventivo-hero-cta")).toHaveTextContent(
-      /^Cliente ha accettato$/
+      /^Segna accettato$/
     );
     expect(screen.getByTestId("preventivo-stato-badge")).toHaveTextContent(
       "Inviato"

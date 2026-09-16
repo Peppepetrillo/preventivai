@@ -120,6 +120,8 @@ export function messaggioErroreAi(codice) {
   switch (codice) {
     case "provider_non_configurato":
       return "Analisi AI non configurata. Uso i dati disponibili.";
+    case "provider_non_raggiungibile":
+      return "Sei offline o l'AI non è raggiungibile. Uso i tuoi dati.";
     case "non_autenticato":
       return "Accedi per usare l'analisi PreventivAI. Uso i dati disponibili.";
     case "timeout":

@@ -661,7 +661,9 @@ export function useCantieri({
     }
 
     registraEsperienzaCompletamento(cantiereCompletato);
-    setMessaggio("Lavoro finito.");
+    setMessaggio(
+      "Lavoro finito. Lo trovi in Cantieri → Completati e in Storico."
+    );
     return { success: true, cantiere: cantiereCompletato };
   }
 

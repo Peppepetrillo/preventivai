@@ -107,7 +107,9 @@ describe("useCantieri", () => {
     });
 
     expect(result.current.cantiereSelezionato.stato).toBe("Completato");
-    expect(result.current.messaggio).toBe("Lavoro finito.");
+    expect(result.current.messaggio).toBe(
+      "Lavoro finito. Lo trovi in Cantieri → Completati e in Storico."
+    );
   });
 
   it("avvia il lavoro impostando lo stato In corso", () => {

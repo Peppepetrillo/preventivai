@@ -1191,7 +1191,10 @@ export default function CantiereOverview({
 
       {(mostraAzioniDaIniziare || mostraAzioniInCorso) && (
         <div
-          className="fixed bottom-[88px] left-0 right-0 z-40 px-4 safe-bottom"
+          className="fixed left-0 right-0 z-40 px-4"
+          style={{
+            bottom: "calc(88px + env(safe-area-inset-bottom, 0px))",
+          }}
           data-testid="cantiere-cta-fissa"
         >
           <div className="max-w-[1120px] mx-auto pro-panel-strong p-3">
