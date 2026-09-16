@@ -12,6 +12,7 @@ Session-oriented log for Cloud Agents. Product release notes remain in root `CHA
 - PDF report cantiere: omit empty Firme placeholder lines
 - Tests: prompt helper, PDF omit/print, CondivisioneSection callback
 - Verified: `npm test` 1820 pass, lint 0 errors, build OK, `npx cap sync ios` OK
+- InstallPrompt: removed emoji title (Lucide Smartphone already present)
 
 ### Intentionally not done
 - HUMAN-DECISIONS (APP_DATA_KEYS, economia.movimenti, remote AI JWT, seed incassato, diario emoji)
