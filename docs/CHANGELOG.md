@@ -7,6 +7,7 @@ Session-oriented log for Cloud Agents. Product release notes remain in root `CHA
 ### Completed
 - Branch `cursor/autonomous-production-hardening-74ac`
 - Remount `SpesaSheet` + `GiornataLavorativaSheet`; consuntivo closes only on save success
+- Remount `DateCalendarSheet` (lint 14→13)
 - Banner «Inizia cantiere» double-submit guard
 - Impostazioni backup honesty (satellite data device-local)
 - Listino compact row `min-h-[44px]`
