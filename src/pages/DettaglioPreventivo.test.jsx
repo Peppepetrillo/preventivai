@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -112,7 +112,7 @@ describe("DettaglioPreventivo UX-2.1", () => {
     expect(screen.getByTestId("preventivo-condividi-whatsapp")).toBeInTheDocument();
   });
 
-  it("Inviato: hero Cliente ha accettato", () => {
+  it("Inviato: hero Segna accettato", () => {
     localStorage.setItem(
       STORAGE_KEYS.preventivi,
       JSON.stringify([
@@ -123,7 +123,7 @@ describe("DettaglioPreventivo UX-2.1", () => {
     renderDettaglio("p2");
 
     expect(screen.getByTestId("preventivo-hero-cta")).toHaveTextContent(
-      /^Cliente ha accettato$/
+      /^Segna accettato$/
     );
     expect(screen.getByTestId("preventivo-stato-badge")).toHaveTextContent(
       "Inviato"
@@ -456,5 +456,99 @@ describe("DettaglioPreventivo UX-8.6", () => {
     expect(valori).not.toContain(STATI_PREVENTIVO.LAVORO_COMPLETATO);
     expect(valori).toContain(STATI_PREVENTIVO.BOZZA);
     expect(valori).toContain(STATI_PREVENTIVO.ACCETTATO);
+  });
+
+  it("Convertito con cantiere nel Cestino: banner e niente Apri cantiere", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([
+        creaPreventivo({
+          id: "p-cest",
+          stato: STATI_PREVENTIVO.CONVERTITO,
+          cantiereId: "c-trash",
+        }),
+      ])
+    );
+    localStorage.setItem(
+      STORAGE_KEYS.cantieri,
+      JSON.stringify([
+        {
+          id: "c-trash",
+          nome: "Cantiere trash",
+          cliente: "Mario Rossi",
+          stato: "In corso",
+          preventivoId: "p-cest",
+          deletedAt: "2026-09-01T00:00:00.000Z",
+        },
+      ])
+    );
+
+    renderDettaglio("p-cest");
+
+    expect(
+      screen.getByTestId("preventivo-cantiere-nel-cestino")
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("preventivo-apri-cestino")).toHaveAttribute(
+      "href",
+      "/cestino"
+    );
+    expect(screen.queryByTestId("preventivo-hero-cta")).not.toBeInTheDocument();
+  });
+
+  it("cambio id remounta: form non eredita stato/cliente del preventivo precedente", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([
+        creaPreventivo({
+          id: "p-a",
+          cliente: "Cliente A",
+          stato: STATI_PREVENTIVO.CONVERTITO,
+          cantiereId: "c-a",
+          note: "Nota A",
+        }),
+        creaPreventivo({
+          id: "p-b",
+          cliente: "Cliente B",
+          stato: STATI_PREVENTIVO.BOZZA,
+          cantiereId: "",
+          note: "Nota B",
+          numero: "PREV-002",
+        }),
+      ])
+    );
+
+    function Harness({ id }) {
+      return (
+        <MemoryRouter key={id} initialEntries={[routePreventivo(id)]}>
+          <Routes>
+            <Route path="/preventivo/:id" element={<DettaglioPreventivo />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    }
+
+    const { rerender } = render(<Harness id="p-a" />);
+    expect(screen.getByText("Cliente A")).toBeInTheDocument();
+
+    rerender(<Harness id="p-b" />);
+    expect(screen.getByText("Cliente B")).toBeInTheDocument();
+    expect(screen.queryByText("Cliente A")).not.toBeInTheDocument();
+    expect(screen.getByTestId("preventivo-stato-badge")).toHaveTextContent("Bozza");
+  });
+
+  it("doppio tap su Duplica crea una sola copia", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([creaPreventivo()])
+    );
+
+    renderDettaglio();
+
+    const btn = screen.getByTestId("preventivo-duplica");
+    fireEvent.click(btn);
+    fireEvent.click(btn);
+
+    const archivio = JSON.parse(localStorage.getItem(STORAGE_KEYS.preventivi));
+    expect(archivio).toHaveLength(2);
   });
 });

@@ -186,7 +186,7 @@ function disegnaHeaderPrincipale(doc, document) {
   const textX = area.x + 28;
   setText(doc, settings.coloreBianco);
   applicaFont(doc, settings, "bold", 14);
-  doc.text(riga(azienda.nome, "PreventivAI"), textX, y0 + 11);
+  doc.text(riga(azienda.nome, "Ditta non impostata"), textX, y0 + 11);
 
   applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
   setText(doc, [220, 224, 230]);
@@ -320,9 +320,12 @@ function bloccoClienteIntestazione(doc, document, y) {
   doc.text("CLIENTE", area.x + 4, y + 6);
   setText(doc, settings.coloreTesto);
   applicaFont(doc, settings, "bold", 10);
-  doc.text(riga(cliente.nome), area.x + 4, y + 12, { maxWidth: colW - 8 });
+  const nomeCliente = String(cliente.nome || "").trim();
+  if (nomeCliente) {
+    doc.text(nomeCliente, area.x + 4, y + 12, { maxWidth: colW - 8 });
+  }
   applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
-  let cy = y + 17;
+  let cy = y + (nomeCliente ? 17 : 12);
   [cliente.telefono, cliente.email, cliente.indirizzo]
     .filter((v) => String(v || "").trim())
     .forEach((linea) => {
@@ -341,19 +344,23 @@ function bloccoClienteIntestazione(doc, document, y) {
   applicaFont(doc, settings, "bold", 10);
   doc.text(riga(intestazione.numero), ix + 4, y + 12);
   applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
-  doc.text(`Data: ${riga(intestazione.data)}`, ix + 4, y + 17);
-  doc.text(
-    `Validità: ${
-      intestazione.validita === "" || intestazione.validita === null
-        ? "—"
-        : `${intestazione.validita} gg`
-    }`,
-    ix + 4,
-    y + 22
-  );
-  doc.text(`Oggetto: ${riga(intestazione.oggetto)}`, ix + 4, y + 27, {
-    maxWidth: colW - 8,
-  });
+  let dy = y + 17;
+  const dataDoc = String(intestazione.data || "").trim();
+  if (dataDoc) {
+    doc.text(`Data: ${dataDoc}`, ix + 4, dy);
+    dy += 5;
+  }
+  const validitaDoc = String(intestazione.validita ?? "").trim();
+  if (validitaDoc) {
+    doc.text(`Validità: ${validitaDoc} gg`, ix + 4, dy);
+    dy += 5;
+  }
+  const oggettoDoc = String(intestazione.oggetto || "").trim();
+  if (oggettoDoc) {
+    doc.text(`Oggetto: ${oggettoDoc}`, ix + 4, dy, {
+      maxWidth: colW - 8,
+    });
+  }
 
   return y + 38;
 }

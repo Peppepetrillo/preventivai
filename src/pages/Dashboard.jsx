@@ -76,14 +76,24 @@ export default function Dashboard() {
               <p className="ds-text-secondary mt-2">
                 Non hai lavori programmati per oggi.
               </p>
-              <Link
-                to={ROUTES.agenda}
-                className="btn-secondary mt-4 min-h-[48px] inline-flex items-center justify-center gap-2 px-4"
-                data-testid="home-apri-agenda-vuoto"
-              >
-                <CalendarDays size={18} aria-hidden="true" />
-                Apri Agenda
-              </Link>
+              {!String(datiAzienda?.nomeDitta || "").trim() ? (
+                <Link
+                  to={ROUTES.datiAzienda}
+                  className="btn-primary mt-4 min-h-[48px] inline-flex items-center justify-center gap-2 px-4"
+                  data-testid="home-setup-dati-azienda"
+                >
+                  Completa i dati azienda
+                </Link>
+              ) : (
+                <Link
+                  to={ROUTES.agenda}
+                  className="btn-secondary mt-4 min-h-[48px] inline-flex items-center justify-center gap-2 px-4"
+                  data-testid="home-apri-agenda-vuoto"
+                >
+                  <CalendarDays size={18} aria-hidden="true" />
+                  Apri Agenda
+                </Link>
+              )}
             </div>
           ) : (
             <ul className="space-y-3">

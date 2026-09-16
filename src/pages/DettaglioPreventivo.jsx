@@ -8,6 +8,7 @@ import {
   Trash2
 } from "lucide-react";
 import PageBackLink from "../components/PageBackLink";
+import ConfirmDialog from "../components/ConfirmDialog";
 import {
   ROUTES,
   routeCantiere,
@@ -98,7 +99,15 @@ import {
   generateQualityChecks
 } from "../domain/qualityCheck";
 
+/**
+ * Remount on :id so form state never leaks across preventivi (duplica / deep-link).
+ */
 export default function DettaglioPreventivo() {
+  const { id } = useParams();
+  return <DettaglioPreventivoContenuto key={String(id || "mancante")} />;
+}
+
+function DettaglioPreventivoContenuto() {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -145,6 +154,12 @@ export default function DettaglioPreventivo() {
   const [showCollegaDistinta, setShowCollegaDistinta] = useState(false);
   const [ricercaDistinta, setRicercaDistinta] = useState("");
   const [showUsaDistinta, setShowUsaDistinta] = useState(false);
+  const [statoBloccoAlert, setStatoBloccoAlert] = useState(false);
+  const [statoConfermaManuale, setStatoConfermaManuale] = useState(null);
+  const [duplicazioneInCorso, setDuplicazioneInCorso] = useState(false);
+  const duplicazioneLock = useRef(false);
+  const [conversioneInCorso, setConversioneInCorso] = useState(false);
+  const conversioneLock = useRef(false);
 
   const sezioneLavorazioniRef = useRef(null);
   const sezioneDocumentiRef = useRef(null);
@@ -167,8 +182,17 @@ export default function DettaglioPreventivo() {
     stato,
     cantiereId: cantiereId || preventivo?.cantiereId };
   const cantiereCollegato = trovaCantiereCollegato(preventivoCorrente);
-  const cantiereCollegatoId =
-    cantiereId || preventivo?.cantiereId || cantiereCollegato?.id;
+  // Solo id live (trovaCantiereCollegato ignora cestinati) — mai navigare su id stale.
+  const cantiereCollegatoId = cantiereCollegato?.id || null;
+  const cantiereIdPersistito = String(
+    cantiereId || preventivo?.cantiereId || ""
+  ).trim();
+  const cantiereNelCestino =
+    !cantiereCollegatoId &&
+    Boolean(cantiereIdPersistito) &&
+    (stato === STATI_PREVENTIVO.CONVERTITO ||
+      stato === STATI_PREVENTIVO.LAVORO_COMPLETATO ||
+      stato === STATI_PREVENTIVO.ACCETTATO);
   const azioniDisponibili = ottieniAzioniDisponibili(preventivoCorrente);
   const heroCta = risolviHeroCta({
     stato,
@@ -290,13 +314,21 @@ export default function DettaglioPreventivo() {
   }
 
   function duplicaPreventivo() {
-    const nuovoPreventivo = duplicaDatiPreventivo({
-      archivio: leggiPreventiviTutti(),
-      datiPreventivo: datiAggiornati(),
-      cliente });
+    if (duplicazioneLock.current) return;
+    duplicazioneLock.current = true;
+    setDuplicazioneInCorso(true);
+    try {
+      const nuovoPreventivo = duplicaDatiPreventivo({
+        archivio: leggiPreventiviTutti(),
+        datiPreventivo: datiAggiornati(),
+        cliente });
 
-    salvaNuovoPreventivo(nuovoPreventivo);
-    navigate(routePreventivo(nuovoPreventivo.id));
+      salvaNuovoPreventivo(nuovoPreventivo);
+      navigate(routePreventivo(nuovoPreventivo.id));
+    } catch {
+      duplicazioneLock.current = false;
+      setDuplicazioneInCorso(false);
+    }
   }
 
   function eliminaPreventivo() {
@@ -443,15 +475,22 @@ export default function DettaglioPreventivo() {
   }
 
   function trasformaInCantiere() {
+    if (conversioneLock.current) return;
     try {
+      conversioneLock.current = true;
+      setConversioneInCorso(true);
       salvaModificheSilenzioso();
       const distinta = trovaDistintaCollegataAlPreventivo(preventivo.id);
       if (distinta) {
         setShowUsaDistinta(true);
+        conversioneLock.current = false;
+        setConversioneInCorso(false);
         return;
       }
       eseguiConversioneCantiere({ usaDistinta: false });
     } catch (errore) {
+      conversioneLock.current = false;
+      setConversioneInCorso(false);
       setMessaggio(
         messaggioErroreWorkflow(
           errore?.message,
@@ -463,9 +502,13 @@ export default function DettaglioPreventivo() {
 
   function eseguiConversioneCantiere({ usaDistinta }) {
     try {
+      conversioneLock.current = true;
+      setConversioneInCorso(true);
       salvaModificheSilenzioso();
       const risultato = convertiInCantiere(preventivo.id);
       if (!risultato.success) {
+        conversioneLock.current = false;
+        setConversioneInCorso(false);
         setMessaggio(
           messaggioErroreWorkflow(
             risultato.error,
@@ -497,6 +540,8 @@ export default function DettaglioPreventivo() {
       navigate(routeCantierePagamenti(risultato.cantiere.id), {
         state: statoNavigazioneCantiere(CANTIERE_SEZIONI.PAGAMENTI) });
     } catch (errore) {
+      conversioneLock.current = false;
+      setConversioneInCorso(false);
       setShowUsaDistinta(false);
       setMessaggio(
         messaggioErroreWorkflow(
@@ -653,10 +698,34 @@ export default function DettaglioPreventivo() {
       />
 
       {bannerPostAccetta && stato === STATI_PREVENTIVO.ACCETTATO ? (
-        <BannerPostAccettazione onIniziaCantiere={trasformaInCantiere} />
+        <BannerPostAccettazione
+          onIniziaCantiere={trasformaInCantiere}
+          inCorso={conversioneInCorso}
+        />
       ) : (
         <PreventivoHeroCta hero={heroCta} onAzione={gestisciHeroCta} />
       )}
+
+      {cantiereNelCestino ? (
+        <div
+          className="pro-panel p-4 mb-4 border border-amber-400/30"
+          data-testid="preventivo-cantiere-nel-cestino"
+          role="status"
+        >
+          <p className="ds-card-title">Cantiere nel Cestino</p>
+          <p className="ds-text-secondary mt-2">
+            Il cantiere collegato è nel Cestino. Ripristinalo per continuare a
+            lavorare su questo preventivo.
+          </p>
+          <Link
+            to={ROUTES.cestino}
+            className="btn-secondary mt-3 inline-flex min-h-[48px] items-center justify-center px-4 font-bold"
+            data-testid="preventivo-apri-cestino"
+          >
+            Apri Cestino
+          </Link>
+        </div>
+      ) : null}
 
       <PreventivoWorkflowAzioni
         azioni={azioniSecondarie}
@@ -798,16 +867,11 @@ export default function DettaglioPreventivo() {
                 prossimo === STATI_PREVENTIVO.LAVORO_COMPLETATO
               ) {
                 if (!cantiereCollegatoId) {
-                  window.alert(
-                    "Non puoi impostare questo stato senza un cantiere collegato.\nUsa «Inizia cantiere» dal percorso normale."
-                  );
+                  setStatoBloccoAlert(true);
                   return;
                 }
-                const messaggioConferma =
-                  "Correzione manuale dello stato.\nQuesta azione non crea né chiude automaticamente il cantiere.";
-                if (!window.confirm(messaggioConferma)) {
-                  return;
-                }
+                setStatoConfermaManuale(prossimo);
+                return;
               }
               setStato(prossimo);
             }}
@@ -836,8 +900,9 @@ export default function DettaglioPreventivo() {
               className="ds-text-secondary text-sm mt-2"
               data-testid="preventivo-stato-orfano-hint"
             >
-              Stato senza cantiere collegato. Correggi lo stato (es. Accettato)
-              oppure usa il percorso «Inizia cantiere» quando disponibile.
+              {cantiereNelCestino
+                ? "Il cantiere collegato è nel Cestino. Ripristinalo da Cestino per continuare."
+                : "Stato senza cantiere collegato. Correggi lo stato (es. Accettato) oppure usa il percorso «Inizia cantiere» quando disponibile."}
             </p>
           ) : null}
         </label>
@@ -1153,11 +1218,12 @@ export default function DettaglioPreventivo() {
         <button
           type="button"
           onClick={duplicaPreventivo}
-          className="w-full btn-secondary p-4 min-h-[44px] flex items-center justify-center gap-2"
+          disabled={duplicazioneInCorso}
+          className="w-full btn-secondary p-4 min-h-[44px] flex items-center justify-center gap-2 disabled:opacity-45"
           data-testid="preventivo-duplica"
         >
           <Copy size={20} />
-          Duplica
+          {duplicazioneInCorso ? "Duplicazione…" : "Duplica"}
         </button>
 
         {!confermaEliminaPreventivo ? (
@@ -1230,6 +1296,33 @@ export default function DettaglioPreventivo() {
         onContinuaSenza={() =>
           eseguiConversioneCantiere({ usaDistinta: false })
         }
+      />
+
+      <ConfirmDialog
+        open={statoBloccoAlert}
+        title="Cantiere richiesto"
+        description="Non puoi impostare questo stato senza un cantiere collegato. Usa «Inizia cantiere» dal percorso normale."
+        confirmLabel="Ho capito"
+        cancelLabel="Chiudi"
+        danger={false}
+        testId="preventivo-stato-blocco"
+        onCancel={() => setStatoBloccoAlert(false)}
+        onConfirm={() => setStatoBloccoAlert(false)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(statoConfermaManuale)}
+        title="Correzione manuale dello stato"
+        description="Questa azione non crea né chiude automaticamente il cantiere."
+        confirmLabel="Conferma"
+        cancelLabel="Annulla"
+        danger={false}
+        testId="preventivo-stato-conferma"
+        onCancel={() => setStatoConfermaManuale(null)}
+        onConfirm={() => {
+          if (statoConfermaManuale) setStato(statoConfermaManuale);
+          setStatoConfermaManuale(null);
+        }}
       />
     </div>
   );
