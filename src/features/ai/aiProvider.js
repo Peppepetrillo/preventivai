@@ -18,13 +18,14 @@ import { supabase } from "../../lib/supabaseClient";
 let ultimoInvioMs = null;
 
 /**
- * Hook freemium futuro: oggi sempre consentito.
+ * Hook freemium: oggi sempre consentito.
+ * Collegare `calcolaStatoFreemium` + limiti PRO quando human decide catalogo piani.
  * @param {{ piano?: string }=} ctx
  * @returns {{ ok: boolean, codice?: string }}
  */
 export function puoEseguireAnalisiAi(ctx = {}) {
-  void ctx;
-  // Sprint 21: nessun limite piano. Collegare qui usage Free in Sprint 22+.
+  // Soft-wire: Free non blocca ancora (HUMAN-DECISIONS: feature PRO).
+  void ctx?.piano;
   return { ok: true };
 }
 
