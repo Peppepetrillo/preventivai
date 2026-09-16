@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link2, Plus, Share2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -61,6 +61,8 @@ export default function DistintaMaterialiEditor() {
   const [showCollegaCantiere, setShowCollegaCantiere] = useState(false);
   const [cantieriDisponibili, setCantieriDisponibili] = useState([]);
   const [suggerimentiSession, setSuggerimentiSession] = useState(null);
+  const [salvando, setSalvando] = useState(false);
+  const salvataggioInCorso = useRef(false);
 
   const catalogo = useMemo(() => caricaCatalogoMateriali(), []);
 
@@ -131,8 +133,11 @@ export default function DistintaMaterialiEditor() {
   }, [savedDistinta, buildPayload, distintaId]);
 
   function handleSave() {
+    if (salvataggioInCorso.current) return;
     setErrore("");
     const payload = buildPayload();
+    salvataggioInCorso.current = true;
+    setSalvando(true);
     try {
       if (isNuova || !distintaId) {
         const created = creaDistintaMateriali(payload);
@@ -163,19 +168,29 @@ export default function DistintaMaterialiEditor() {
       flash(sync.ok ? "Salvata e sincronizzata sul cantiere." : "Salvata.");
     } catch (e) {
       setErrore(e?.message || "Errore salvataggio");
+    } finally {
+      salvataggioInCorso.current = false;
+      setSalvando(false);
     }
   }
 
   function assicuratiSalvata() {
+    if (salvataggioInCorso.current && savedDistinta) return savedDistinta;
     const payload = buildPayload();
     if (isNuova || !distintaId) {
-      const created = creaDistintaMateriali(payload);
-      if (!created) return null;
-      setSavedDistinta(created);
-      setDistintaId(created.id);
-      navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
-        replace: true });
-      return created;
+      if (salvataggioInCorso.current) return savedDistinta;
+      salvataggioInCorso.current = true;
+      try {
+        const created = creaDistintaMateriali(payload);
+        if (!created) return null;
+        setSavedDistinta(created);
+        setDistintaId(created.id);
+        navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
+          replace: true });
+        return created;
+      } finally {
+        salvataggioInCorso.current = false;
+      }
     }
     const updated = aggiornaDistintaMateriali(distintaId, payload);
     if (!updated) return null;
@@ -488,10 +503,11 @@ export default function DistintaMaterialiEditor() {
         <button
           type="button"
           onClick={handleSave}
-          className="btn-primary w-full min-h-[52px] text-base font-bold"
+          disabled={salvando}
+          className="btn-primary w-full min-h-[52px] text-base font-bold disabled:opacity-40"
           data-testid="distinta-salva"
         >
-          Salva distinta
+          {salvando ? "Salvataggio…" : "Salva distinta"}
         </button>
       </div>
 
