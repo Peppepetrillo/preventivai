@@ -63,6 +63,8 @@ export default function DistintaMaterialiEditor() {
   const [suggerimentiSession, setSuggerimentiSession] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const salvataggioInCorso = useRef(false);
+  /** Dopo crea→navigate, non cancellare il flash nel load effect. */
+  const mantieniFlashRef = useRef(false);
 
   const catalogo = useMemo(() => caricaCatalogoMateriali(), []);
 
@@ -113,8 +115,12 @@ export default function DistintaMaterialiEditor() {
     setShowCondividi(false);
     setShowCollegaCantiere(false);
     setSuggerimentiSession(null);
-    setErrore("");
-    setMessaggio("");
+    if (mantieniFlashRef.current) {
+      mantieniFlashRef.current = false;
+    } else {
+      setErrore("");
+      setMessaggio("");
+    }
     salvataggioInCorso.current = false;
     setSalvando(false);
   }, [id, isNuova]);
@@ -176,6 +182,7 @@ export default function DistintaMaterialiEditor() {
         }
         setSavedDistinta(created);
         setDistintaId(created.id);
+        mantieniFlashRef.current = true;
         flash("Distinta creata.");
         navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
           replace: true });
@@ -214,6 +221,7 @@ export default function DistintaMaterialiEditor() {
         if (!created) return null;
         setSavedDistinta(created);
         setDistintaId(created.id);
+        mantieniFlashRef.current = true;
         navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
           replace: true });
         return created;
@@ -335,6 +343,7 @@ export default function DistintaMaterialiEditor() {
         }
         setSavedDistinta(created);
         setDistintaId(created.id);
+        mantieniFlashRef.current = true;
         navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
           replace: true });
       } else {
