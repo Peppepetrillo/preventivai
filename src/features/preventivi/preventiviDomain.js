@@ -133,17 +133,21 @@ export function duplicaPreventivo({
   datiPreventivo,
   cliente,
 }) {
-  const {
-    cantiereId: _cantiereIdIgnorato,
-    inviatoAt: _inviatoAt,
-    accettatoAt: _accettatoAt,
-    convertitoAt: _convertitoAt,
-    convertitoBy: _convertitoBy,
-    rifiutatoAt: _rifiutatoAt,
-    annullatoAt: _annullatoAt,
-    dataAccettazione: _dataAccettazione,
-    ...resto
-  } = datiPreventivo || {};
+  const CAMPI_NON_COPIARE = new Set([
+    "cantiereId",
+    "inviatoAt",
+    "accettatoAt",
+    "convertitoAt",
+    "convertitoBy",
+    "rifiutatoAt",
+    "annullatoAt",
+    "dataAccettazione",
+  ]);
+  const resto = Object.fromEntries(
+    Object.entries(datiPreventivo || {}).filter(
+      ([chiave]) => !CAMPI_NON_COPIARE.has(chiave)
+    )
+  );
 
   return {
     ...resto,
