@@ -4,13 +4,17 @@ import PageBackLink from "../../../components/PageBackLink";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import ConfirmDialog from "../../../components/ConfirmDialog";
-import { routeCliente, routePreventivo, sezioneDaLocation } from "../../../app/routes";
+import { ROUTES, routeCliente, routePreventivo, sezioneDaLocation } from "../../../app/routes";
 import { getCantiereAssistant } from "../../../services/assistantService";
 import { ottieniFirma } from "../../../domain/firma";
 import { aggiungiInsight } from "../../../domain/insights";
 import { ottieniVarianti } from "../../../domain/varianti";
+import { isRecordCestinato } from "../../../domain/cestino";
 import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
-import { leggiPreventivi } from "../../../repositories/preventiviRepository";
+import {
+  leggiPreventivi,
+  trovaPreventivo,
+} from "../../../repositories/preventiviRepository";
 import { PreventivAISuggestions } from "../../intelligence";
 import CantiereDiarioSection from "../../diario/components/CantiereDiarioSection";
 import CantiereReportPanel from "../../report/components/CantiereReportPanel";
@@ -222,16 +226,22 @@ export default function CantiereOverview({
 
   const gestisciAggiungiSpesa = useCallback(
     (payload) => {
-      onAggiungiSpesa?.(payload);
-      notificaOperazioneEconomica("spesa", payload);
+      const esito = onAggiungiSpesa?.(payload);
+      if (!esito || esito.success !== false) {
+        notificaOperazioneEconomica("spesa", payload);
+      }
+      return esito || { success: true };
     },
     [onAggiungiSpesa, notificaOperazioneEconomica]
   );
 
   const gestisciAggiungiPagamento = useCallback(
     (payload) => {
-      onAggiungiPagamento?.(payload);
-      notificaOperazioneEconomica("incasso", payload);
+      const esito = onAggiungiPagamento?.(payload);
+      if (!esito || esito.success !== false) {
+        notificaOperazioneEconomica("incasso", payload);
+      }
+      return esito || { success: true };
     },
     [onAggiungiPagamento, notificaOperazioneEconomica]
   );
@@ -247,12 +257,17 @@ export default function CantiereOverview({
         ...(materialeId ? { materialeId } : {}),
         ...(listaSpesaId ? { listaSpesaId } : {}),
       };
+      let esito;
       if (spesaMaterialeSheet.spesa?.id) {
-        onAggiornaSpesa?.(spesaMaterialeSheet.spesa.id, dati);
+        esito = onAggiornaSpesa?.(spesaMaterialeSheet.spesa.id, dati);
       } else {
-        gestisciAggiungiSpesa(dati);
+        esito = gestisciAggiungiSpesa(dati);
+      }
+      if (esito && esito.success === false) {
+        return esito;
       }
       chiudiSpesaMaterialeSheet();
+      return esito || { success: true };
     },
     [
       spesaMaterialeSheet,
@@ -611,6 +626,15 @@ export default function CantiereOverview({
       (preventivi || []).find((p) => String(p.id) === id) || null
     );
   }, [cantiere.preventivoId, preventivi]);
+
+  const preventivoCollegatoCestinato = useMemo(() => {
+    if (preventivoCollegatoLive) return null;
+    const id = String(cantiere.preventivoId || "").trim();
+    if (!id) return null;
+    const trovato = trovaPreventivo(id, { includiCestinati: true });
+    if (!trovato || !isRecordCestinato(trovato)) return null;
+    return trovato;
+  }, [cantiere.preventivoId, preventivoCollegatoLive, preventivi]);
 
   function toggleMaterialeAcquistato(materialeId) {
     if (typeof onToggleMaterialeAcquistato === "function") {
@@ -1023,6 +1047,26 @@ export default function CantiereOverview({
                 </span>
                 <span className="text-slate-400 text-sm">Apri</span>
               </Link>
+            ) : preventivoCollegatoCestinato ? (
+              <div
+                className="rounded-[14px] border border-amber-400/25 bg-amber-400/10 px-4 py-3"
+                data-testid="cantiere-preventivo-cestinato"
+              >
+                <p className="ds-text-secondary text-sm">
+                  Preventivo{" "}
+                  {cantiere.preventivoNumero ||
+                    preventivoCollegatoCestinato.numero ||
+                    ""}{" "}
+                  è nel Cestino. I pagamenti restano su questo cantiere.
+                </p>
+                <Link
+                  to={ROUTES.cestino}
+                  className="inline-flex items-center min-h-[44px] mt-1 text-sm font-bold text-yellow-200"
+                  data-testid="cantiere-preventivo-apri-cestino"
+                >
+                  Apri Cestino
+                </Link>
+              </div>
             ) : cantiere.preventivoId ? (
               <p
                 className="ds-text-secondary text-sm py-2"

@@ -29,5 +29,11 @@ describe("messaggioErroreWorkflow", () => {
     expect(messaggioErroreWorkflow("preventivo_non_collegato")).toMatch(
       /preventivo collegato/i
     );
+    expect(messaggioErroreWorkflow("pagamento_non_valido")).toMatch(
+      /pagamento/i
+    );
+    expect(messaggioErroreWorkflow("spesa_non_valida")).toMatch(/spesa/i);
+    expect(messaggioErroreWorkflow("nessun_cantiere")).toMatch(/cantiere/i);
+    expect(messaggioErroreWorkflow("titolo_obbligatorio")).toMatch(/titolo/i);
   });
 });

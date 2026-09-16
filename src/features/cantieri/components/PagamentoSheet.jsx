@@ -6,6 +6,7 @@ import ConfirmDialog from "../../../components/ConfirmDialog";
 import NumericInput from "../../../components/NumericInput";
 import DatePickerField from "../../agenda/components/DatePickerField";
 import { formatEuro, normalizzaNumero } from "../../../utils/preventivi";
+import { messaggioErroreWorkflow } from "../../preventivi/utils/messaggioErroreWorkflow";
 import {
   ETICHETTE_METODO_PAGAMENTO,
   ETICHETTE_TIPO_PAGAMENTO,
@@ -106,7 +107,7 @@ export default function PagamentoSheet({
     }
 
     setSalvataggioInCorso(true);
-    onSalva?.({
+    const esito = onSalva?.({
       ...(inModifica ? { id: pagamento.id } : {}),
       data,
       importo,
@@ -114,6 +115,16 @@ export default function PagamentoSheet({
       metodo: form.metodo,
       note: String(form.note || "").trim(),
     });
+    if (esito && esito.success === false) {
+      setErrore(
+        messaggioErroreWorkflow(
+          esito.error,
+          "Impossibile salvare il pagamento."
+        )
+      );
+      setSalvataggioInCorso(false);
+      return;
+    }
     onClose?.();
   }
 

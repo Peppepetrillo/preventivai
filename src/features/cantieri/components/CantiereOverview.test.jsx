@@ -233,6 +233,25 @@ describe("CantiereOverview UX-4.1 — Lavoro a tab", () => {
     expect(screen.queryByTestId("cantiere-link-preventivo")).not.toBeInTheDocument();
   });
 
+  it("tab Documenti: preventivo in Cestino mostra link ripristino", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([
+        {
+          id: 101,
+          numero: "PREV-101",
+          cliente: "Mario Rossi",
+          deletedAt: "2026-09-16T10:00:00.000Z",
+        },
+      ])
+    );
+    renderOverview();
+    fireEvent.click(tab("Diario"));
+    expect(screen.getByTestId("cantiere-preventivo-cestinato")).toBeInTheDocument();
+    expect(screen.getByTestId("cantiere-preventivo-apri-cestino")).toBeInTheDocument();
+    expect(screen.queryByTestId("cantiere-preventivo-mancante")).not.toBeInTheDocument();
+  });
+
   it("tab Giornate: previsto e fatto", () => {
     renderOverview();
 
