@@ -2,6 +2,20 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-16 — Professional UX polish (Cloud Agent)
+
+### Completed
+- Incassi: save feedback + double-submit guard on pagamento/saldato
+- Economia empty: CTA “Apri cantieri”
+- Preventivo manuale: delete-row hit target 44px
+- NuovoClienteSheet: create guard
+- LavorazionePersonalizzataSheet: remount form (S6, lint 21→20)
+- Variante/cantiere errors: Italian copy via `messaggioErroreWorkflow`
+- Preventivo PDF: no `—` placeholder for empty cliente nome
+
+### Intentionally not done
+- Remote AI deploy, `APP_DATA_KEYS`, economia.movimenti SoT (🛑)
+
 ## 2026-09-16 — Continuous night hardening (Cloud Agent)
 
 ### Completed
