@@ -5,6 +5,8 @@ import { miglioraDescrizioneIntervento } from "../services/miglioraDescrizioneIn
 
 /**
  * Sezione descrizione intervento + flusso conferma bozza IA (UX-6.5).
+ * Remount con key={cantiere.id} dal parent quando cambia cantiere
+ * (niente sync effect descrizione → locale).
  */
 export default function DescrizioneInterventoSection({
   descrizione = "",
@@ -15,10 +17,6 @@ export default function DescrizioneInterventoSection({
   const [errore, setErrore] = useState("");
   const [inCorso, setInCorso] = useState(false);
   const timer = useRef(null);
-
-  useEffect(() => {
-    setLocale(descrizione);
-  }, [descrizione]);
 
   useEffect(() => {
     return () => {

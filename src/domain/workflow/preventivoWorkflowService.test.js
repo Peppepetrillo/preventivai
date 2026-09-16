@@ -91,6 +91,19 @@ describe("preventivoWorkflowTypes", () => {
         cantiereId: 1,
       })
     ).toEqual([]);
+    // cantiereId stale (es. soft-delete) → niente Apri né Converti
+    expect(
+      calcolaAzioniDisponibili({
+        stato: STATI_PREVENTIVO.ACCETTATO,
+        cantiereId: "c-trashed",
+      })
+    ).not.toContain(AZIONI_PREVENTIVO.APRI_CANTIERE);
+    expect(
+      calcolaAzioniDisponibili({
+        stato: STATI_PREVENTIVO.ACCETTATO,
+        cantiereId: "c-trashed",
+      })
+    ).not.toContain(AZIONI_PREVENTIVO.CONVERTI_CANTIERE);
   });
 });
 

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,6 +21,32 @@ vi.mock("../services/preventiviPdfService", () => ({
 vi.mock("../services/cloudSyncService", () => ({
   salvaDatoCloud: vi.fn(),
 }));
+
+vi.mock("../domain/condivisione", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    condividiEmail: vi.fn(async () => ({
+      success: true,
+      condivisione: {
+        id: "c-email",
+        tipo: actual.TIPI_CONDIVISIONE.EMAIL,
+        esito: "Aperto",
+      },
+      canale: "mailto",
+      fallback: true,
+    })),
+    downloadPdf: vi.fn(async () => ({
+      success: true,
+      condivisione: {
+        id: "c-dl",
+        tipo: actual.TIPI_CONDIVISIONE.DOWNLOAD,
+        esito: "Completato",
+      },
+      canale: "download",
+    })),
+  };
+});
 
 function creaPreventivo(overrides = {}) {
   return {
@@ -112,7 +138,59 @@ describe("DettaglioPreventivo UX-2.1", () => {
     expect(screen.getByTestId("preventivo-condividi-whatsapp")).toBeInTheDocument();
   });
 
-  it("Inviato: hero Cliente ha accettato", () => {
+  it("dopo Email su Bozza: soft prompt Segna come inviato / Non ora; Scarica non apre", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([creaPreventivo()])
+    );
+
+    renderDettaglio();
+
+    await user.click(screen.getByTestId("preventivo-hero-cta"));
+    await user.click(screen.getByRole("button", { name: /Invia Email/i }));
+
+    const dialog = await screen.findByTestId(
+      "preventivo-segna-inviato-dopo-share"
+    );
+    expect(dialog).toHaveTextContent(/Segna questo preventivo come inviato/i);
+    expect(
+      screen.getByTestId("preventivo-segna-inviato-dopo-share-confirm")
+    ).toHaveTextContent(/Segna come inviato/i);
+    expect(
+      screen.getByTestId("preventivo-segna-inviato-dopo-share-cancel")
+    ).toHaveTextContent(/Non ora/i);
+
+    await user.click(
+      screen.getByTestId("preventivo-segna-inviato-dopo-share-cancel")
+    );
+    expect(
+      screen.queryByTestId("preventivo-segna-inviato-dopo-share")
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("preventivo-stato-badge")).toHaveTextContent(
+      "Bozza"
+    );
+
+    await user.click(screen.getByRole("button", { name: /Scarica PDF/i }));
+    expect(
+      screen.queryByTestId("preventivo-segna-inviato-dopo-share")
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Invia Email/i }));
+    await screen.findByTestId("preventivo-segna-inviato-dopo-share");
+    await user.click(
+      screen.getByTestId("preventivo-segna-inviato-dopo-share-confirm")
+    );
+
+    expect(
+      await screen.findByTestId("preventivo-stato-badge")
+    ).toHaveTextContent("Inviato");
+    expect(
+      screen.queryByTestId("preventivo-segna-inviato-dopo-share")
+    ).not.toBeInTheDocument();
+  });
+
+  it("Inviato: hero Segna accettato", () => {
     localStorage.setItem(
       STORAGE_KEYS.preventivi,
       JSON.stringify([
@@ -123,7 +201,7 @@ describe("DettaglioPreventivo UX-2.1", () => {
     renderDettaglio("p2");
 
     expect(screen.getByTestId("preventivo-hero-cta")).toHaveTextContent(
-      /^Cliente ha accettato$/
+      /^Segna accettato$/
     );
     expect(screen.getByTestId("preventivo-stato-badge")).toHaveTextContent(
       "Inviato"
@@ -456,5 +534,99 @@ describe("DettaglioPreventivo UX-8.6", () => {
     expect(valori).not.toContain(STATI_PREVENTIVO.LAVORO_COMPLETATO);
     expect(valori).toContain(STATI_PREVENTIVO.BOZZA);
     expect(valori).toContain(STATI_PREVENTIVO.ACCETTATO);
+  });
+
+  it("Convertito con cantiere nel Cestino: banner e niente Apri cantiere", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([
+        creaPreventivo({
+          id: "p-cest",
+          stato: STATI_PREVENTIVO.CONVERTITO,
+          cantiereId: "c-trash",
+        }),
+      ])
+    );
+    localStorage.setItem(
+      STORAGE_KEYS.cantieri,
+      JSON.stringify([
+        {
+          id: "c-trash",
+          nome: "Cantiere trash",
+          cliente: "Mario Rossi",
+          stato: "In corso",
+          preventivoId: "p-cest",
+          deletedAt: "2026-09-01T00:00:00.000Z",
+        },
+      ])
+    );
+
+    renderDettaglio("p-cest");
+
+    expect(
+      screen.getByTestId("preventivo-cantiere-nel-cestino")
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("preventivo-apri-cestino")).toHaveAttribute(
+      "href",
+      "/cestino"
+    );
+    expect(screen.queryByTestId("preventivo-hero-cta")).not.toBeInTheDocument();
+  });
+
+  it("cambio id remounta: form non eredita stato/cliente del preventivo precedente", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([
+        creaPreventivo({
+          id: "p-a",
+          cliente: "Cliente A",
+          stato: STATI_PREVENTIVO.CONVERTITO,
+          cantiereId: "c-a",
+          note: "Nota A",
+        }),
+        creaPreventivo({
+          id: "p-b",
+          cliente: "Cliente B",
+          stato: STATI_PREVENTIVO.BOZZA,
+          cantiereId: "",
+          note: "Nota B",
+          numero: "PREV-002",
+        }),
+      ])
+    );
+
+    function Harness({ id }) {
+      return (
+        <MemoryRouter key={id} initialEntries={[routePreventivo(id)]}>
+          <Routes>
+            <Route path="/preventivo/:id" element={<DettaglioPreventivo />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    }
+
+    const { rerender } = render(<Harness id="p-a" />);
+    expect(screen.getByText("Cliente A")).toBeInTheDocument();
+
+    rerender(<Harness id="p-b" />);
+    expect(screen.getByText("Cliente B")).toBeInTheDocument();
+    expect(screen.queryByText("Cliente A")).not.toBeInTheDocument();
+    expect(screen.getByTestId("preventivo-stato-badge")).toHaveTextContent("Bozza");
+  });
+
+  it("doppio tap su Duplica crea una sola copia", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.preventivi,
+      JSON.stringify([creaPreventivo()])
+    );
+
+    renderDettaglio();
+
+    const btn = screen.getByTestId("preventivo-duplica");
+    fireEvent.click(btn);
+    fireEvent.click(btn);
+
+    const archivio = JSON.parse(localStorage.getItem(STORAGE_KEYS.preventivi));
+    expect(archivio).toHaveLength(2);
   });
 });

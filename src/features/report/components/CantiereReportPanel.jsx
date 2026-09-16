@@ -1,9 +1,10 @@
 import { Download, Eye, FileText, Share2 } from "lucide-react";
 
-import PdfAnteprima, {
+import PdfAnteprima from "../../../components/PdfAnteprima";
+import {
   condividiDaBlobUrl,
-  scaricaDaBlobUrl
-} from "../../../components/PdfAnteprima";
+  scaricaDaBlobUrl,
+} from "../../../components/pdfAnteprimaUtils";
 import { leggiDatiAzienda } from "../../../repositories/impostazioniRepository";
 import { useCantiereReport } from "../hooks/useCantiereReport";
 

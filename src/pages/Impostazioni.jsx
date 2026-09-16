@@ -320,7 +320,8 @@ export default function Impostazioni() {
             </div>
           ) : (
             <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4 text-slate-400">
-              Configura `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` per attivare il cloud.
+              Cloud non configurato su questo dispositivo. Contatta chi gestisce
+              l&apos;installazione per attivare la sincronizzazione.
             </div>
           )}
         </div>
@@ -411,7 +412,9 @@ export default function Impostazioni() {
             <div>
               <h2 className="text-2xl font-bold">Backup dati</h2>
               <p className="text-slate-400 mt-1">
-                Esporta o ripristina clienti, preventivi, listino e dati azienda.
+                Esporta o ripristina clienti, preventivi, cantieri, listino e dati
+                azienda. Distinte, liste spesa, firme e varianti restano solo su
+                questo dispositivo finché non vengono incluse nel backup cloud.
               </p>
             </div>
           </div>
@@ -446,7 +449,9 @@ export default function Impostazioni() {
             <div>
               <p className="section-label">Backup automatico</p>
               <p className="ds-text-secondary text-sm mt-2 leading-relaxed">
-                Il backup automatico salva una copia locale dei tuoi dati.
+                Il backup automatico salva una copia locale dei dati principali
+                (clienti, preventivi, cantieri, listino, azienda). Distinte, liste
+                spesa, firme e varianti restano solo su questo dispositivo.
                 Per conservare il file fuori dall&apos;app usa Esporta backup.
               </p>
             </div>

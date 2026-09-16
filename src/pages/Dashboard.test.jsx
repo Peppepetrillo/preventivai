@@ -72,13 +72,33 @@ describe("Dashboard Home Oggi UX-8.2", () => {
     expect(
       screen.getByText("Non hai lavori programmati per oggi.")
     ).toBeInTheDocument();
-    expect(screen.getByTestId("home-apri-agenda-vuoto")).toHaveAttribute(
+    // Senza nomeDitta: guida first-5-minutes verso dati azienda
+    expect(screen.getByTestId("home-setup-dati-azienda")).toHaveAttribute(
       "href",
-      ROUTES.agenda
+      ROUTES.datiAzienda
     );
     expect(screen.getByTestId("home-frase")).toHaveTextContent(
       "Oggi non hai lavori programmati"
     );
+  });
+
+  it("empty state con dati azienda mostra Apri Agenda", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.datiAzienda,
+      JSON.stringify({ nomeDitta: "Elettro Demo", nomeOperatore: "Giuseppe" })
+    );
+
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByTestId("home-apri-agenda-vuoto")).toHaveAttribute(
+      "href",
+      ROUTES.agenda
+    );
+    expect(screen.queryByTestId("home-setup-dati-azienda")).not.toBeInTheDocument();
   });
 
   it("sezione Da fare con preventivo, incasso e materiali", () => {

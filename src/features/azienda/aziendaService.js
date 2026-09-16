@@ -137,7 +137,7 @@ export function haDatiPagamentoAzienda(profilo = {}) {
 export function risolviAziendaPerPdf(grezzo = {}) {
   const p = normalizzaProfiloAzienda(grezzo);
   return {
-    nome: p.nomeDitta || "PreventivAI",
+    nome: p.nomeDitta || "",
     nomeTitolare: p.nomeTitolare,
     indirizzo: formattaIndirizzoAzienda(p) || p.indirizzo,
     telefono: p.telefono,
