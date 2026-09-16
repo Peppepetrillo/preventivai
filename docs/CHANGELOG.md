@@ -2,6 +2,22 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-16 — Sprint 24 Release polish + document workflow
+
+### Completed
+- Branch `cursor/autonomous-sprint-24-74ac` (PR draft)
+- Share (Email/WhatsApp/Share) on Bozza → soft ConfirmDialog «Segna questo preventivo come inviato?» (Segna come inviato / Non ora)
+- Scarica PDF does **not** prompt (local only); no auto state change; double-submit guard
+- PDF preventivo: omit ACCONTO when richiesto=0; omit Firme when no signature data
+- PDF report cantiere: omit empty Firme placeholder lines
+- Tests: prompt helper, PDF omit/print, CondivisioneSection callback
+- Verified: `npm test` 1820 pass, lint 0 errors, build OK, `npx cap sync ios` OK
+
+### Intentionally not done
+- HUMAN-DECISIONS (APP_DATA_KEYS, economia.movimenti, remote AI JWT, seed incassato, diario emoji)
+- No new preventivo stati / SoT / storage keys
+- No cantiere redesign
+
 ## 2026-09-16 — Sprint 23 Beta product audit + workflow hardening
 
 ### Completed

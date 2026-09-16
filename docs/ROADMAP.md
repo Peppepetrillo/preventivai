@@ -74,8 +74,8 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 | P2 | Distinta→Acquisti silent without cantiere | ✅ fixed | flash hint |
 | P2 | Chiusura looks like delete on Attivi list | ✅ fixed | Completati/Storico copy |
 | P2 | AI offline hard-error wording | ✅ fixed | provider_non_raggiungibile map |
-| P2 | Share success never offers Inviato | ⬜ | UX prompt only (safe backlog) |
-| P2 | Empty ACCONTO / firme blocks on PDF | ⬜ | layout polish |
+| P2 | Share success never offers Inviato | ✅ fixed | soft ConfirmDialog after Email/WA/Share on Bozza |
+| P2 | Empty ACCONTO / firme blocks on PDF | ✅ fixed | omit-if-empty preventivo + report |
 | P3 | Diario emoji → Lucide | 🛑 / P3 | HUMAN-DECISIONS #6 |
 | 🛑 | APP_DATA_KEYS satellites | 🛑 | HUMAN-DECISIONS #1 |
 | 🛑 | economia.movimenti SoT | 🛑 | HUMAN-DECISIONS #2 |
@@ -84,11 +84,9 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 ## Next agent actions (ordered)
 
 1. **Human deploy** — AI `verify_jwt=true` + server `OPENAI_API_KEY`.
-2. Share success → soft «Segna come inviato?» from Bozza (copy/UX only).
-3. PDF: omit ACCONTO box when 0; call firme only when signature flow.
-4. Human: `APP_DATA_KEYS` expansion decision before satellite sync.
-5. Device QA: Cliente→cantiere prefill + sticky CTA on notched iPhone.
-6. Optional: seed `preventivo.incassato` → `pagamenti[]` (SoT decision).
+2. Device QA: soft Inviato prompt + PDF acconto/firme on notched iPhone.
+3. Human: `APP_DATA_KEYS` expansion decision before satellite sync.
+4. Optional: seed `preventivo.incassato` → `pagamenti[]` (SoT decision).
 
 ## Stop / ask human
 
