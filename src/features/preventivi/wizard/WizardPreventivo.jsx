@@ -13,7 +13,7 @@ import { useSalvaEGeneraPdf } from "../hooks/useSalvaEGeneraPdf";
 import { useWizardContext } from "./useWizardContext";
 import { useWizardPreventivoState } from "./useWizardPreventivoState";
 import { wizardHaBozzaConDati } from "./wizardBozza";
-import { WIZARD_STEPS, indiceStep } from "./wizardConfig";
+import { TIPO_LAVORO, WIZARD_STEPS, indiceStep } from "./wizardConfig";
 import WizardHeader from "./components/WizardHeader";
 import WizardProgress from "./components/WizardProgress";
 import StepCliente from "./steps/StepCliente";
@@ -31,6 +31,7 @@ export default function WizardPreventivo() {
   const [searchParams] = useSearchParams();
   const { attivaWizard, disattivaWizard } = useWizardContext();
   const clienteIdElaborato = useRef(false);
+  const expressElaborato = useRef(false);
   const salvataggio = useSalvaEGeneraPdf();
   const {
     stato,
@@ -74,6 +75,27 @@ export default function WizardPreventivo() {
     impostaCliente({ nome: cliente.nome, id: cliente.id });
     vaiAStep("componi");
   }, [searchParams, impostaCliente, vaiAStep]);
+
+  /** Quick quote: /preventivi/nuovo?express=1 apre Preventivo vocale. */
+  useEffect(() => {
+    const express =
+      searchParams.get("express") === "1" ||
+      searchParams.get("vocale") === "1";
+    if (!express || expressElaborato.current) return;
+
+    expressElaborato.current = true;
+    impostaTipoLavoro(TIPO_LAVORO.express);
+    impostaExpressAutoOpen(true);
+    if (stato.cliente || searchParams.get("clienteId")) {
+      vaiAStep("componi");
+    }
+  }, [
+    searchParams,
+    impostaTipoLavoro,
+    impostaExpressAutoOpen,
+    vaiAStep,
+    stato.cliente,
+  ]);
 
   useEffect(() => {
     if (stato.stepId !== "conferma") {

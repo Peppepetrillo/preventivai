@@ -175,6 +175,10 @@ describe("Dashboard Home Oggi UX-8.2", () => {
       "href",
       ROUTES.preventiviNuovo
     );
+    expect(screen.getByTestId("home-preventivo-vocale")).toHaveAttribute(
+      "href",
+      `${ROUTES.preventiviNuovo}?express=1`
+    );
     expect(screen.getByTestId("home-sezione-continua")).toBeInTheDocument();
     expect(screen.getByTestId("home-continua-link")).toHaveAttribute(
       "href",
