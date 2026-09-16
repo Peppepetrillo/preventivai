@@ -28,6 +28,7 @@ import {
   ETICHETTE_FREQUENZA,
   ETICHETTE_STATO,
   FREQUENZE_BACKUP,
+  etichettaErroreBackupAutomatico,
   formattaDataOraBackup,
   impostaFrequenzaBackupAutomatico,
   leggiConfigBackupAutomatico,
@@ -510,7 +511,7 @@ export default function Impostazioni() {
               <p className="text-sm text-red-200/90 leading-relaxed">
                 Salvataggio locale non riuscito
                 {configBackupAuto.ultimoErrore
-                  ? ` (${configBackupAuto.ultimoErrore}).`
+                  ? ` (${etichettaErroreBackupAutomatico(configBackupAuto.ultimoErrore)}).`
                   : "."}{" "}
                 Usa Esporta backup per una copia fuori dall&apos;app.
               </p>
