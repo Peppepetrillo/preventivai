@@ -2,6 +2,22 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-16 — Sprint 25 Release Candidate audit
+
+### Completed
+- Branch `cursor/release-candidate-audit-74ac`
+- Evidence checklist → `docs/RELEASE-CANDIDATE.md` (verdict: READY FOR HUMAN DEVICE QA)
+- Fix: false save success (`salvaStorage` sync `.ok` + UI/cantiere guards)
+- Fix: Express AI never POSTs clienti/listino (locale only)
+- Fix: scrub migliora-descrizione free-text; photo sync log uses id
+- Fix: refuse cantiere→preventivo recreate when linked preventivo is cestinato
+- Verified: `npm test` 1824 pass, lint 0 errors, build OK, `npx cap sync ios` OK
+
+### Intentionally not done
+- HUMAN-DECISIONS #1–#6 (no autonomous SoT / APP_DATA_KEYS / remote AI deploy)
+- Device PWA / cross-device sync (NOT TESTABLE in Cloud)
+- Tag `v1.0.0-rc3` (human GO)
+
 ## 2026-09-16 — Sprint 24 Release polish + document workflow
 
 ### Completed
