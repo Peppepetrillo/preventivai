@@ -114,6 +114,14 @@ export default function CantiereOperativo({
   }, [cantiere.id, cantiere.note]);
 
   useEffect(() => {
+    setMenuMateriale(false);
+    setShowCatalogo(false);
+    setShowManuale(false);
+    setUndoMateriale(null);
+    setFlashIds(new Set());
+  }, [cantiere.id]);
+
+  useEffect(() => {
     return () => {
       if (notaTimer.current) window.clearTimeout(notaTimer.current);
       if (undoTimer.current) window.clearTimeout(undoTimer.current);

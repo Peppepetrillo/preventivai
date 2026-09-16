@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   calcolaAvanzamentoChecklist,
   creaCantiere,
@@ -136,6 +136,15 @@ export function useCantieri({
   const [nuovoMateriale, setNuovoMateriale] = useState(FORM_MATERIALE_INIZIALE);
   const [messaggio, setMessaggio] = useState("");
   const [variantiTick, setVariantiTick] = useState(0);
+
+  // Reset draft UI when the URL cantiere changes (no remount of the hook).
+  useEffect(() => {
+    if (!idEsterno) return undefined;
+    setNuovaChecklist("");
+    setNuovoMateriale(FORM_MATERIALE_INIZIALE);
+    setMessaggio("");
+    return undefined;
+  }, [idEsterno]);
 
   // Con id URL/esterno la selezione è derivata; altrimenti stato locale (lista/test).
   const cantiereSelezionatoId = idEsterno || cantiereSelezionatoIdInterno;
