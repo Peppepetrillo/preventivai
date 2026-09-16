@@ -127,7 +127,7 @@ export default function InstallPrompt() {
 
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-3">
-              <h2 className="text-xl font-black text-white">📱 Installa PreventivAI</h2>
+              <h2 className="ds-card-title text-white">Installa PreventivAI</h2>
 
               <button
                 type="button"
