@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import PageWrapper from "../components/PageWrapper";
 import PageBackLink from "../components/PageBackLink";
+import ConfirmDialog from "../components/ConfirmDialog";
 import { ROUTES } from "../app/routes";
 import DistintaCard from "../features/distinteMateriali/components/DistintaCard";
 import {
@@ -149,41 +150,21 @@ export default function DistinteMateriali() {
         )}
       </div>
 
-      {confirmDelete ? (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="distinte-delete-title"
-        >
-          <div className="pro-panel-strong w-full max-w-md p-5">
-            <p id="distinte-delete-title" className="ds-card-title">
-              Elimina distinta?
-            </p>
-            <p className="ds-text-secondary mt-2">
-              «{confirmDelete.titolo || "Senza titolo"}» verrà eliminata. L&apos;azione
-              non si può annullare.
-            </p>
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(null)}
-                className="btn-secondary min-h-[48px] flex-1 font-bold"
-              >
-                Annulla
-              </button>
-              <button
-                type="button"
-                onClick={() => elimina(confirmDelete.id)}
-                className="btn-danger min-h-[48px] flex-1 font-bold"
-                data-testid="distinte-confirm-delete"
-              >
-                Elimina
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmDialog
+        open={Boolean(confirmDelete)}
+        title="Elimina distinta?"
+        description={
+          confirmDelete
+            ? `«${confirmDelete.titolo || "Senza titolo"}» verrà eliminata. L'azione non si può annullare.`
+            : ""
+        }
+        confirmLabel="Elimina"
+        cancelLabel="Annulla"
+        danger
+        testId="distinte-confirm-delete-dialog"
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={() => elimina(confirmDelete.id)}
+      />
     </PageWrapper>
   );
 }

@@ -83,7 +83,7 @@ export default function RigaVoceCatalogo({
           />
         </span>
         <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
-          {voce.attiva !== false ? "On" : "Off"}
+          {voce.attiva !== false ? "Attiva" : "Spenta"}
         </span>
       </label>
     </div>

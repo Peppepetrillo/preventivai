@@ -72,21 +72,23 @@ export default function PagamentiSection({
 
   function gestisciSalva(payload) {
     const daAssistente = sheetOrigine === "assistente-economico";
-    if (inModifica?.id) {
-      onAggiorna?.(inModifica.id, payload);
-    } else {
-      onAggiungi?.(payload);
+    const esito = inModifica?.id
+      ? onAggiorna?.(inModifica.id, payload)
+      : onAggiungi?.(payload);
+    if (esito && esito.success === false) {
+      return esito;
     }
     setSheetAperto(false);
     setApriComeSaldo(false);
     setImportoPrefill(null);
     setSheetOrigine(null);
-    if (daAssistente) return;
+    if (daAssistente) return esito || { success: true };
     requestAnimationFrame(() => {
       document
         .getElementById("sezione-pagamenti")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+    return esito || { success: true };
   }
 
   return (

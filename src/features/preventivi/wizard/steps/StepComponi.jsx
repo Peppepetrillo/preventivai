@@ -118,18 +118,29 @@ function StepComponi({
   }, [onImpostaExpressAutoOpen]);
 
   const applicaBozzaExpress = useCallback(
-    ({ lavorazioni: nuoveLavorazioni, condizioni: nuoveCondizioni, cliente: nuovoCliente, avvisi, riepilogo }) => {
+    ({
+      lavorazioni: nuoveLavorazioni,
+      condizioni: nuoveCondizioni,
+      cliente: nuovoCliente,
+      avvisi,
+      riepilogo,
+      modalita,
+    }) => {
       setSnapshotExpress({
         lavorazioni: [...lavorazioni],
         condizioni: { ...condizioni },
         cliente,
       });
 
-      if (nuoveLavorazioni?.length) {
+      if (modalita === "incrementale") {
+        onAggiornaLavorazioni(nuoveLavorazioni || []);
+      } else if (nuoveLavorazioni?.length) {
         onAggiornaLavorazioni(nuoveLavorazioni);
       }
 
-      onAggiornaCondizioni(nuoveCondizioni);
+      if (nuoveCondizioni) {
+        onAggiornaCondizioni(nuoveCondizioni);
+      }
 
       if (nuovoCliente && nuovoCliente !== cliente) {
         onImpostaCliente?.(nuovoCliente);
@@ -138,12 +149,15 @@ function StepComponi({
       onImpostaTipoLavoro?.(TIPO_LAVORO.express);
 
       const messaggioAvvisi = avvisi?.length ? ` ${avvisi.join(" ")}` : "";
-      const messaggioRiepilogo = riepilogo?.vociTrovate
-        ? ` ${riepilogo.vociTrovate} lavorazioni applicate.`
-        : "";
+      const messaggioRiepilogo =
+        modalita === "incrementale"
+          ? " Modifica vocale applicata."
+          : riepilogo?.vociTrovate
+            ? ` ${riepilogo.vociTrovate} lavorazioni applicate.`
+            : "";
 
       setFeedbackExpress(
-        `Bozza Express applicata.${messaggioRiepilogo}${messaggioAvvisi}`.trim()
+        `${modalita === "incrementale" ? "Comando vocale" : "Bozza Express"} applicat${modalita === "incrementale" ? "o" : "a"}.${messaggioRiepilogo}${messaggioAvvisi}`.trim()
       );
     },
     [
@@ -213,9 +227,10 @@ function StepComponi({
             onClick={apriExpress}
             className="shrink-0 min-h-11 px-3 py-2 rounded-[16px] bg-yellow-400/15 border border-yellow-300/30 text-yellow-100 text-sm font-semibold flex items-center gap-1.5"
             data-testid="apri-express-componi"
+            aria-label="Apri preventivo vocale"
           >
             <Sparkles size={16} aria-hidden="true" />
-            Express
+            Vocale
           </button>
         </div>
 
@@ -237,10 +252,10 @@ function StepComponi({
         {isPercorsoExpress ? (
           <div className="pro-panel p-3 border-yellow-300/25 bg-yellow-400/8">
             <p className="text-sm text-yellow-100 font-bold">
-              Percorso Express attivo
+              Preventivo vocale
             </p>
             <p className="text-xs text-slate-400 mt-1">
-              Detta o scrivi il preventivo: verrà applicato automaticamente.
+              Detta o scrivi: anteprima dal listino, poi confermi prima di applicare.
             </p>
           </div>
         ) : null}
@@ -255,7 +270,7 @@ function StepComponi({
               <button
                 type="button"
                 onClick={annullaExpress}
-                className="shrink-0 text-sm font-black text-yellow-200 flex items-center gap-1"
+                className="shrink-0 text-sm font-semibold text-yellow-200 flex items-center gap-1 min-h-[44px] px-2"
               >
                 <Undo2 size={15} aria-hidden="true" />
                 Annulla
@@ -365,6 +380,7 @@ function StepComponi({
         open={expressAperto}
         onClose={chiudiExpress}
         clienteCorrente={cliente}
+        lavorazioniCorrenti={lavorazioni}
         onApplica={applicaBozzaExpress}
       />
 

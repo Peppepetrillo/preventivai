@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   eseguiNavigazioneIndietro,
   isOverlayNavigazioneAperto,
+  provaNavigazioneGuidata,
+  setGuardiaNavigazioneIndietro,
   setNavigazioneIndietroOverride,
   targetEscludeEdgeSwipe,
 } from "./navigateBack";
@@ -11,6 +13,7 @@ describe("navigateBack — eseguiNavigazioneIndietro", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     setNavigazioneIndietroOverride(null);
+    setGuardiaNavigazioneIndietro(null);
   });
 
   it("override PageBackLink to ha priorità su history e parent", () => {
@@ -54,6 +57,27 @@ describe("navigateBack — eseguiNavigazioneIndietro", () => {
     const esito = eseguiNavigazioneIndietro(navigate, "/sconosciuta");
     expect(navigate).toHaveBeenCalledWith("/");
     expect(esito.metodo).toBe("home");
+  });
+
+  it("guardia può bloccare Back / edge / Android", () => {
+    const navigate = vi.fn();
+    const guardia = vi.fn(() => ({ blocca: true }));
+    setGuardiaNavigazioneIndietro(guardia);
+    const esito = eseguiNavigazioneIndietro(navigate, "/nuovo-preventivo");
+    expect(guardia).toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(esito).toEqual({ metodo: "bloccato", destinazione: null });
+  });
+
+  it("provaNavigazioneGuidata rispetta la guardia (BottomNav)", () => {
+    const navigate = vi.fn();
+    setGuardiaNavigazioneIndietro(() => false);
+    expect(provaNavigazioneGuidata(navigate, "/cantieri")).toBe(false);
+    expect(navigate).not.toHaveBeenCalled();
+
+    setGuardiaNavigazioneIndietro(null);
+    expect(provaNavigazioneGuidata(navigate, "/cantieri")).toBe(true);
+    expect(navigate).toHaveBeenCalledWith("/cantieri");
   });
 });
 

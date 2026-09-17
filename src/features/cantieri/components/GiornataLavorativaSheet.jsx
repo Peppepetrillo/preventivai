@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import NumericInput from "../../../components/NumericInput";
 import DatePickerField from "../../agenda/components/DatePickerField";
+import { messaggioErroreWorkflow } from "../../preventivi/utils/messaggioErroreWorkflow";
 import { formattaNomiOperai, normalizzaNomiOperai } from "../services/registroGiornateService";
 
 const FORM_VUOTO = {
@@ -15,9 +16,51 @@ const FORM_VUOTO = {
   note: "",
 };
 
+function formIniziale(giornata, cantiereIdFisso, dataDefault, valoriIniziali) {
+  if (giornata) {
+    return {
+      form: {
+        data: giornata.data || "",
+        operaiTesto: formattaNomiOperai(giornata.operai).replace(" + ", ", "),
+        oreLavorate: String(giornata.oreLavorate ?? 8),
+        attivita: giornata.attivita || "",
+        note: giornata.note || "",
+      },
+      cantiereId: String(giornata.cantiereId || cantiereIdFisso || ""),
+    };
+  }
+  const base = {
+    ...FORM_VUOTO,
+    data: dataDefault || new Date().toLocaleDateString("it-IT"),
+  };
+  if (valoriIniziali && typeof valoriIniziali === "object") {
+    return {
+      form: {
+        data: valoriIniziali.data || base.data,
+        operaiTesto: valoriIniziali.operaiTesto || base.operaiTesto,
+        oreLavorate: valoriIniziali.oreLavorate ?? base.oreLavorate,
+        attivita: valoriIniziali.attivita || "",
+        note: valoriIniziali.note || "",
+      },
+      cantiereId: String(valoriIniziali.cantiereId || cantiereIdFisso || ""),
+    };
+  }
+  return {
+    form: base,
+    cantiereId: String(cantiereIdFisso || ""),
+  };
+}
+
+function chiaveRemount(giornata, cantiereIdFisso, dataDefault, valoriIniziali) {
+  if (giornata?.id) return `giornata-${giornata.id}`;
+  const prefill = valoriIniziali?.cantiereId || valoriIniziali?.data || "";
+  return `nuova-${cantiereIdFisso || ""}-${dataDefault || ""}-${prefill}`;
+}
+
 /**
  * Sheet crea/modifica giornata lavorativa (UX-7.4).
- * Usabile dal cantiere (cantiere fisso) o da Agenda (con selettore cantiere).
+ * Remount on open → seed senza setState-in-effect.
+ * Chiude solo se onSalva non restituisce success:false.
  */
 export default function GiornataLavorativaSheet({
   open,
@@ -30,50 +73,46 @@ export default function GiornataLavorativaSheet({
   dataDefault = "",
   valoriIniziali = null,
 }) {
+  if (!open) return null;
+  return (
+    <GiornataLavorativaBody
+      key={chiaveRemount(giornata, cantiereIdFisso, dataDefault, valoriIniziali)}
+      onClose={onClose}
+      giornata={giornata}
+      onSalva={onSalva}
+      onElimina={onElimina}
+      cantieriOpzioni={cantieriOpzioni}
+      cantiereIdFisso={cantiereIdFisso}
+      dataDefault={dataDefault}
+      valoriIniziali={valoriIniziali}
+    />
+  );
+}
+
+function GiornataLavorativaBody({
+  onClose,
+  giornata,
+  onSalva,
+  onElimina,
+  cantieriOpzioni,
+  cantiereIdFisso,
+  dataDefault,
+  valoriIniziali,
+}) {
   const inModifica = Boolean(giornata?.id);
   const mostraSelettoreCantiere =
     !inModifica && Array.isArray(cantieriOpzioni) && !cantiereIdFisso;
-  const [form, setForm] = useState(FORM_VUOTO);
-  const [cantiereId, setCantiereId] = useState("");
+  const iniziale = formIniziale(
+    giornata,
+    cantiereIdFisso,
+    dataDefault,
+    valoriIniziali
+  );
+  const [form, setForm] = useState(() => iniziale.form);
+  const [cantiereId, setCantiereId] = useState(() => iniziale.cantiereId);
   const [errore, setErrore] = useState("");
   const [confermaElimina, setConfermaElimina] = useState(false);
   const [salvataggioInCorso, setSalvataggioInCorso] = useState(false);
-  useEffect(() => {
-    if (!open) {
-      setSalvataggioInCorso(false);
-      return;
-    }
-    setErrore("");
-    setConfermaElimina(false);
-    setSalvataggioInCorso(false);
-    if (giornata) {
-      setForm({
-        data: giornata.data || "",
-        operaiTesto: formattaNomiOperai(giornata.operai).replace(" + ", ", "),
-        oreLavorate: String(giornata.oreLavorate ?? 8),
-        attivita: giornata.attivita || "",
-        note: giornata.note || "",
-      });
-      setCantiereId(String(giornata.cantiereId || cantiereIdFisso || ""));
-    } else {
-      const base = { ...FORM_VUOTO, data: dataDefault || new Date().toLocaleDateString("it-IT") };
-      if (valoriIniziali && typeof valoriIniziali === "object") {
-        setForm({
-          data: valoriIniziali.data || base.data,
-          operaiTesto: valoriIniziali.operaiTesto || base.operaiTesto,
-          oreLavorate: valoriIniziali.oreLavorate ?? base.oreLavorate,
-          attivita: valoriIniziali.attivita || "",
-          note: valoriIniziali.note || "",
-        });
-        setCantiereId(
-          String(valoriIniziali.cantiereId || cantiereIdFisso || "")
-        );
-      } else {
-        setForm(base);
-        setCantiereId(String(cantiereIdFisso || ""));
-      }
-    }
-  }, [open, giornata, cantiereIdFisso, dataDefault, valoriIniziali]);
 
   function aggiorna(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
@@ -100,7 +139,7 @@ export default function GiornataLavorativaSheet({
     }
     const oreLavorate = Math.max(0, Number(form.oreLavorate) || 0);
     setSalvataggioInCorso(true);
-    onSalva?.({
+    const esito = onSalva?.({
       ...(inModifica ? { id: giornata.id } : {}),
       cantiereId: targetCantiere,
       data,
@@ -109,6 +148,16 @@ export default function GiornataLavorativaSheet({
       attivita: String(form.attivita || "").trim(),
       note: String(form.note || "").trim(),
     });
+    if (esito && esito.success === false) {
+      setErrore(
+        messaggioErroreWorkflow(
+          esito.error,
+          "Impossibile salvare il consuntivo."
+        )
+      );
+      setSalvataggioInCorso(false);
+      return;
+    }
     onClose?.();
   }
 
@@ -120,7 +169,7 @@ export default function GiornataLavorativaSheet({
   return (
     <>
       <BottomSheet
-        open={open && !confermaElimina}
+        open={!confermaElimina}
         onClose={onClose}
         title={inModifica ? "Modifica consuntivo" : "Registra consuntivo"}
         descrizione={descrizioneSheet}
@@ -210,7 +259,7 @@ export default function GiornataLavorativaSheet({
           </label>
 
           {errore ? (
-            <p className="text-sm text-red-300" role="alert">
+            <p className="text-sm text-red-300" role="alert" data-testid="registro-errore">
               {errore}
             </p>
           ) : null}
