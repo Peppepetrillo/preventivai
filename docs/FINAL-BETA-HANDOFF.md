@@ -10,7 +10,7 @@ PREVENTIVAI — FINAL BETA HANDOFF
 
 SOURCE BRANCH: `cursor/final-beta-polish-74ac`  
 
-COMMIT: `1aa3fc7`  
+COMMIT: `a32c505` (handoff tip; chore `1aa3fc7`)  
 
 TEST: **1857 PASS** / 0 FAIL  
 
