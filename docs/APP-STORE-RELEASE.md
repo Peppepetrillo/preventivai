@@ -2,10 +2,23 @@
 
 **Bundle ID (do not change):** `com.preventivai.app`  
 **Display name:** PreventivAI  
-**npm / marketing track:** `1.0.0-rc.3`  
-**Native today:** iOS `MARKETING_VERSION = 1.0` · Android `versionName "1.0"` / `versionCode 1`  
-→ **Mismatch vs npm `1.0.0-rc.3`** — document only in hardening freeze.  
-**Giuseppe:** align to `1.0.0` (or keep `1.0.0-rc.3` in TestFlight only) before public Store submit. Agents must not auto-promote to `1.0.0`.
+**npm / marketing track:** `1.0.0-rc.3` (`package.json`)  
+**Native today:** iOS `MARKETING_VERSION = 1.0` (Xcode) · Android `versionName "1.0"` / `versionCode 1`  
+
+### Version alignment — HUMAN DECISION REQUIRED
+
+| Surface | Value | File |
+|---------|-------|------|
+| npm | `1.0.0-rc.3` | `package.json` |
+| iOS marketing | `1.0` | `ios/App/App.xcodeproj/project.pbxproj` |
+| Android | `1.0` / code `1` | `android/app/build.gradle` |
+
+Agents **must not** auto-bump to public `1.0.0`. Giuseppe chooses:
+
+- **A)** Keep `1.0.0-rc.3` for TestFlight / internal until beta sign-off  
+- **B)** Align native + npm to `1.0.0` at Store submit  
+
+Until then: mismatch is documented, not a code P0.
 
 Agents must **not** touch Apple/Google accounts or signing certificates.
 

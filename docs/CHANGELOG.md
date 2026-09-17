@@ -2,6 +2,18 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-17 — Final beta polish (1.0 freeze)
+
+### Completed
+- Branch `cursor/final-beta-polish-74ac`
+- UI **Prossimamente** on Altro (roadmap only)
+- `docs/PREVENTIVAI-2.0-BACKLOG.md`, `FINAL-BETA-POLISH-REPORT.md`
+- DEVICE-QA all hardware rows `NOT TESTED`
+- Version mismatch documented as HUMAN #11
+
+### Freeze
+- No SoT / APP_DATA_KEYS / IAP / AI deploy / Bundle ID / 1.0.0 bump
+
 ## 2026-09-17 — Release hardening (pre-beta freeze)
 
 ### Completed

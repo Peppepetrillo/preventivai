@@ -96,20 +96,22 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 | AI release checklist | ✅ docs | `AI-RELEASE-CHECKLIST.md` — deploy 🛑 #3 |
 | Device QA checklist | ✅ docs | `DEVICE-QA-RELEASE.md` — human execute |
 | App Store Giuseppe checklist | ✅ docs | `APP-STORE-RELEASE.md` |
-| Preventivo vocale (match+confirm) | ✅ / 🟡 | incremental cmds FUTURE/P2 |
+| Preventivo vocale (match+confirm) | ✅ | baseline + confirm |
 | Quick quote Home `?express=1` | ✅ | |
 | Freemium domain 15d trial | ✅ scaffolding | Persistence 🛑 #7; prices 🛑 #8 |
 | Mic / speech permissions iOS+Android | ✅ | |
-| Voice incremental commands | ⬜ P2 | HUMAN-DECISIONS #9 |
+| Voice incremental commands | ✅ | preview+confirm; totals/PDF-by-voice → 2.0 |
+| Prossimamente UI + 2.0 backlog | ✅ | Altro; `PREVENTIVAI-2.0-BACKLOG.md` |
+| Final beta polish / 1.0 freeze | ✅ | `FINAL-BETA-POLISH-REPORT.md` |
 
 ## Next agent actions (ordered)
 
-1. **Human device QA** — execute `docs/DEVICE-QA-RELEASE.md` (iPhone + Android).
-2. **Human commercial** — Path X unpaid beta **or** #7+#8 for IAP (`FREEMIUM-RELEASE-PLAN.md`).
-3. **Human Store** — `docs/APP-STORE-RELEASE.md` (privacy URL, signing, screenshots).
-4. **Human deploy AI** — only if marketing needs cloud AI (`AI-RELEASE-CHECKLIST.md`).
-5. Fix only P0/P1 from device QA; no large features.
-6. Tag `v1.0.0-rc3` after GO → submit.
+1. **STOP feature work** — 1.0 freeze. Only P0/P1 from human Device QA.
+2. **Human device QA** — execute `docs/DEVICE-QA-RELEASE.md` (iPhone + Android).
+3. **Human commercial** — Path X unpaid beta **or** #7+#8 for IAP (`FREEMIUM-RELEASE-PLAN.md`).
+4. **Human Store** — `docs/APP-STORE-RELEASE.md` (privacy URL, signing, screenshots, version #11).
+5. **Human deploy AI** — only if marketing needs cloud AI (`AI-RELEASE-CHECKLIST.md`).
+6. Tag `v1.0.0-rc3` after GO → TestFlight → beta → Store.
 
 ## Stop / ask human
 
@@ -120,3 +122,5 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 - New major frameworks
 - Trial persistence key without GO
 - Apple/Google signing or account changes
+- Version bump to public `1.0.0` without GO (#11)
+- Any PreventivAI 2.0 backlog item before Device QA sign-off

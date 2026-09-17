@@ -92,3 +92,9 @@ Domain logic exists in `src/domain/freemium/freemiumDomain.js` without a storage
 - **Y)** Full TRIAL→FREE→PRO before Store submit (requires #7+#8)
 
 **Status:** 🛑 Waiting Giuseppe. CTO recommendation in `FREEMIUM-RELEASE-PLAN.md`: prefer **X** if #7/#8 slip.
+
+## 11. Version string alignment (npm vs native)
+
+**Problem:** `package.json` = `1.0.0-rc.3`; iOS/Android marketing = `1.0`.
+
+**Status:** 🛑 HUMAN — see `APP-STORE-RELEASE.md`. Do not auto-promote to `1.0.0`.
