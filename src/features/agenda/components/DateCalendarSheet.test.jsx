@@ -1,10 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import DateCalendarSheet, {
+import DateCalendarSheet from "./DateCalendarSheet";
+import {
   costruisciGrigliaCalendario,
   stessoGiorno,
-} from "./DateCalendarSheet";
+} from "./dateCalendarUtils";
 
 describe("DateCalendarSheet", () => {
   const oggi = new Date(2026, 6, 29);

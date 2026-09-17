@@ -158,10 +158,7 @@ export function calcolaAzioniDisponibili(
   const azioni = [];
 
   if (isStatoPreventivoTerminale(stato)) {
-    if (
-      stato === STATI_PREVENTIVO.LAVORO_COMPLETATO &&
-      (cantiereCollegato || preventivo?.cantiereId)
-    ) {
+    if (stato === STATI_PREVENTIVO.LAVORO_COMPLETATO && cantiereCollegato) {
       azioni.push(AZIONI_PREVENTIVO.APRI_CANTIERE);
     }
     return azioni;
@@ -183,9 +180,11 @@ export function calcolaAzioniDisponibili(
   }
 
   if (stato === STATI_PREVENTIVO.ACCETTATO) {
-    if (cantiereCollegato || preventivo?.cantiereId) {
+    // Solo cantiere live: un cantiereId stale (es. soft-delete) non deve
+    // aprire un id morto né creare un secondo cantiere.
+    if (cantiereCollegato) {
       azioni.push(AZIONI_PREVENTIVO.APRI_CANTIERE);
-    } else {
+    } else if (!preventivo?.cantiereId) {
       azioni.push(AZIONI_PREVENTIVO.CONVERTI_CANTIERE);
     }
     azioni.push(AZIONI_PREVENTIVO.RIFIUTA);

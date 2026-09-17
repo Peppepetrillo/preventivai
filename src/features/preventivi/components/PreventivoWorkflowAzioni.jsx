@@ -5,7 +5,7 @@ import { AZIONI_PREVENTIVO, STATI_PREVENTIVO, normalizzaStatoPreventivo } from "
 /**
  * Azioni workflow secondarie (non hero).
  * Bozza: primaria implicita = Condividi; secondaria naturale = "Ho inviato al cliente";
- * "Cliente ha accettato" resta ma in stile discreto (power-user).
+ * "Segna accettato" resta disponibile e tappabile anche in Bozza.
  */
 export default function PreventivoWorkflowAzioni({
   azioni = [],
@@ -73,15 +73,11 @@ export default function PreventivoWorkflowAzioni({
         <button
           type="button"
           onClick={onAccetta}
-          className={
-            isBozza
-              ? "px-3 py-2 text-sm text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline min-h-[44px] inline-flex items-center gap-1.5"
-              : "btn-secondary px-4 py-3 text-sm font-semibold inline-flex items-center gap-2 min-h-[44px]"
-          }
+          className="btn-secondary px-4 py-3 text-sm font-semibold inline-flex items-center gap-2 min-h-[44px]"
           data-testid="workflow-accetta"
         >
-          {!isBozza ? <Check size={16} aria-hidden="true" /> : null}
-          Cliente ha accettato
+          <Check size={16} aria-hidden="true" />
+          Segna accettato
         </button>
       ) : null}
       {azioni.includes(AZIONI_PREVENTIVO.ANNULLA) ||

@@ -1,10 +1,11 @@
-import { useEffect, useId, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { Check, Link2 } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
 
 /**
  * Sheet post-add: suggerimenti accessori da catalogo (opt-in).
+ * Remount on open/parent → selezione iniziale senza setState-in-effect.
  */
 export default function SuggerimentiAccessoriSheet({
   open,
@@ -14,6 +15,11 @@ export default function SuggerimentiAccessoriSheet({
   onConferma,
 }) {
   const titleId = useId();
+  const remountKey = useMemo(() => {
+    const parent = parentVoce?.id || parentVoce?.nome || "parent";
+    const chiavi = (suggerimenti || []).map((s) => s.chiave).join("|");
+    return `${parent}:${chiavi || "vuoto"}`;
+  }, [parentVoce, suggerimenti]);
 
   return (
     <BottomSheet
@@ -29,6 +35,7 @@ export default function SuggerimentiAccessoriSheet({
     >
       {open ? (
         <SuggerimentiForm
+          key={remountKey}
           titleId={titleId}
           parentVoce={parentVoce}
           suggerimenti={suggerimenti}
@@ -50,21 +57,28 @@ function SuggerimentiForm({
   const [selezionati, setSelezionati] = useState(() =>
     Object.fromEntries((suggerimenti || []).map((s) => [s.chiave, true]))
   );
-
-  useEffect(() => {
-    setSelezionati(
-      Object.fromEntries((suggerimenti || []).map((s) => [s.chiave, true]))
-    );
-  }, [suggerimenti]);
+  const [confermando, setConfermando] = useState(false);
+  const confermaInCorso = useRef(false);
 
   function toggle(chiave) {
+    if (confermaInCorso.current) return;
     setSelezionati((prev) => ({ ...prev, [chiave]: !prev[chiave] }));
   }
 
   function conferma() {
+    if (confermaInCorso.current) return;
     const scelti = (suggerimenti || []).filter((s) => selezionati[s.chiave]);
-    onConferma?.(scelti);
-    onClose?.();
+    if (scelti.length === 0) return;
+
+    confermaInCorso.current = true;
+    setConfermando(true);
+    try {
+      onConferma?.(scelti);
+      onClose?.();
+    } catch {
+      confermaInCorso.current = false;
+      setConfermando(false);
+    }
   }
 
   const conteggio = (suggerimenti || []).filter((s) => selezionati[s.chiave])
@@ -100,9 +114,10 @@ function SuggerimentiForm({
               <button
                 type="button"
                 onClick={() => toggle(item.chiave)}
+                disabled={confermando}
                 className={`w-full min-h-[56px] pro-panel px-3 py-3 text-left flex items-start gap-3 ${
                   checked ? "border border-yellow-300/35" : ""
-                }`}
+                } disabled:opacity-60`}
                 aria-pressed={checked}
                 data-testid="suggerimento-accessorio-row"
               >
@@ -134,21 +149,24 @@ function SuggerimentiForm({
       <button
         type="button"
         onClick={conferma}
-        disabled={conteggio === 0}
+        disabled={conteggio === 0 || confermando}
         className="btn-primary w-full min-h-[52px] font-bold disabled:opacity-45"
         data-testid="suggerimenti-aggiungi"
       >
-        {conteggio === 0
-          ? "Nessun accessorio selezionato"
-          : conteggio === 1
-            ? "Aggiungi selezionato"
-            : `Aggiungi selezionati (${conteggio})`}
+        {confermando
+          ? "Aggiunta…"
+          : conteggio === 0
+            ? "Nessun accessorio selezionato"
+            : conteggio === 1
+              ? "Aggiungi selezionato"
+              : `Aggiungi selezionati (${conteggio})`}
       </button>
 
       <button
         type="button"
         onClick={onClose}
-        className="btn-secondary w-full min-h-[48px]"
+        disabled={confermando}
+        className="btn-secondary w-full min-h-[48px] disabled:opacity-45"
         data-testid="suggerimenti-salta"
       >
         Salta

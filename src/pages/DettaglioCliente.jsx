@@ -41,7 +41,15 @@ import {
 } from "../features/clienti/clientePreventiviUtils";
 import { useCantieri } from "../features/cantieri/hooks/useCantieri";
 
+/**
+ * Remount on :id so form fields never leak across clienti (deep-link / back).
+ */
 export default function DettaglioCliente() {
+  const { id } = useParams();
+  return <DettaglioClienteContenuto key={String(id || "mancante")} />;
+}
+
+function DettaglioClienteContenuto() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [cestinoTick, setCestinoTick] = useState(0);
@@ -51,7 +59,7 @@ export default function DettaglioCliente() {
   const nelCestino = isRecordCestinato(cliente);
   const archivio = leggiPreventivi();
 
-  const { cantieriAttivi, aggiornaCampoNuovoCantiere } = useCantieri();
+  const { cantieriAttivi } = useCantieri();
 
   const [nome, setNome] = useState(cliente?.nome || "");
   const [telefono, setTelefono] = useState(cliente?.telefono || "");
@@ -174,9 +182,17 @@ export default function DettaglioCliente() {
       return cantiere;
     });
 
-    salvaClienti(clientiAggiornati);
-    salvaPreventivi(archivioAggiornato);
-    salvaCantieri(cantieriAggiornati);
+    const esitoClienti = salvaClienti(clientiAggiornati);
+    const esitoPreventivi = salvaPreventivi(archivioAggiornato);
+    const esitoCantieri = salvaCantieri(cantieriAggiornati);
+    if (
+      esitoClienti?.ok === false ||
+      esitoPreventivi?.ok === false ||
+      esitoCantieri?.ok === false
+    ) {
+      setMessaggio("Salvataggio non riuscito. Riprova.");
+      return;
+    }
     setMessaggio("Salvato.");
     setTimeout(() => setMessaggio(""), 2000);
   }
@@ -187,11 +203,12 @@ export default function DettaglioCliente() {
   }
 
   function nuovoCantiereDaCliente() {
-    aggiornaCampoNuovoCantiere("cliente", cliente.nome);
-    aggiornaCampoNuovoCantiere("clienteId", cliente.id);
-    aggiornaCampoNuovoCantiere("indirizzo", cliente.indirizzo || indirizzo || "");
-    aggiornaCampoNuovoCantiere("nome", "");
-    navigate(ROUTES.cantieri + "?nuovoCantiere=1");
+    const params = new URLSearchParams({ nuovoCantiere: "1" });
+    if (cliente?.id != null) params.set("clienteId", String(cliente.id));
+    if (cliente?.nome) params.set("cliente", String(cliente.nome));
+    const indirizzoPrefill = cliente.indirizzo || indirizzo || "";
+    if (indirizzoPrefill) params.set("indirizzo", indirizzoPrefill);
+    navigate(`${ROUTES.cantieri}?${params.toString()}`);
   }
 
   function etichettaTipoPreventivo(preventivo) {
