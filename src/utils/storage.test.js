@@ -62,6 +62,18 @@ describe("storage — affidabilità", () => {
     spy.mockRestore();
   });
 
+  it("espone .ok sincrono senza await (anti falso successo)", () => {
+    const ok = salvaStorage("chiave-sync-ok", [{ id: 2 }]);
+    expect(ok.ok).toBe(true);
+
+    const spy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw Object.assign(new Error("fail"), { name: "QuotaExceededError" });
+    });
+    const fail = salvaStorage("chiave-sync-fail", [{ id: 3 }]);
+    expect(fail.ok).toBe(false);
+    spy.mockRestore();
+  });
+
   it("Preferences corrotte non sovrascrivono localStorage valido", async () => {
     isNativePlatform.mockReturnValue(true);
     localStorage.setItem("archivioPreventivi", JSON.stringify([{ id: "locale" }]));

@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import BottomSheet from "../../../components/BottomSheet";
 import NumericInput from "../../../components/NumericInput";
@@ -51,12 +51,15 @@ function VoceForm({ voce, onClose, onSalva }) {
     note: voce?.note || "",
   }));
   const [errore, setErrore] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const salvataggioInCorso = useRef(false);
 
   function aggiorna(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
   }
 
   function gestisciSalva() {
+    if (salvataggioInCorso.current) return;
     const nome = String(form.nome || "").trim();
     if (!nome) {
       setErrore("Inserisci il nome del materiale.");
@@ -91,8 +94,15 @@ function VoceForm({ voce, onClose, onSalva }) {
       if (voce.varianteId) payload.varianteId = voce.varianteId;
     }
 
+    salvataggioInCorso.current = true;
+    setSalvando(true);
     const ok = onSalva?.(payload, voce?.id);
-    if (ok !== false) onClose?.();
+    if (ok === false) {
+      salvataggioInCorso.current = false;
+      setSalvando(false);
+      return;
+    }
+    onClose?.();
   }
 
   return (
@@ -175,9 +185,10 @@ function VoceForm({ voce, onClose, onSalva }) {
       <button
         type="button"
         onClick={gestisciSalva}
-        className="btn-primary w-full min-h-[52px] font-black"
+        disabled={salvando}
+        className="btn-primary w-full min-h-[52px] font-black disabled:opacity-40"
       >
-        Salva
+        {salvando ? "Salvataggio…" : "Salva"}
       </button>
     </div>
   );

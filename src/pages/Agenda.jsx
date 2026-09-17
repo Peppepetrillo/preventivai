@@ -229,8 +229,12 @@ export default function Agenda() {
         dataDefault={dataDefaultAttivita}
         valoriIniziali={prefillConsuntivo}
         onSalva={(payload) => {
-          registraGiornataLavorativa(payload);
+          const esito = registraGiornataLavorativa(payload);
+          if (esito && esito.success === false) {
+            return esito;
+          }
           setPrefillConsuntivo(null);
+          return esito || { success: true };
         }}
       />
 

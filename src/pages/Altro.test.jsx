@@ -58,5 +58,12 @@ describe("Altro UX-8.1", () => {
     expect(screen.getByText("I tuoi giorni")).toBeInTheDocument();
     expect(screen.getByText("Rubrica clienti")).toBeInTheDocument();
     expect(screen.getByText("Materiali da acquistare")).toBeInTheDocument();
+    expect(screen.getByTestId("prossimamente-section")).toBeInTheDocument();
+    expect(screen.getByText("Prossimamente")).toBeInTheDocument();
+    expect(screen.getAllByText(/IN ARRIVO|PROSSIMA VERSIONE/).length).toBeGreaterThan(0);
+    // Nessun link operativo finto nelle card roadmap
+    expect(screen.queryByTestId("prossimamente-voce-avanzata")).not.toHaveAttribute(
+      "href"
+    );
   });
 });

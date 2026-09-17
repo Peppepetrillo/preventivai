@@ -24,7 +24,7 @@ import {
 } from "../../repositories/cantieriRepository";
 import { notificationService } from "../../services/notificationService";
 import GlobalCreateSheet from "./GlobalCreateSheet";
-import { useGlobalCreate } from "./GlobalCreateContext";
+import { useGlobalCreate } from "./useGlobalCreate";
 
 /**
  * Host globale: menu Nuovo + sheet annidati (cantiere, promemoria).

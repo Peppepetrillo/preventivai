@@ -1,0 +1,48 @@
+---
+description: PreventivAI autonomous development workflow for Cursor Cloud Agents
+alwaysApply: true
+---
+
+# PreventivAI Agent Workflow
+
+Use this workflow for every autonomous task.
+
+## Before coding
+
+- Read `AGENTS.md`, `ROADMAP.md`, `README.md`, and the files relevant to the task.
+- Check the current Git state. Do not overwrite unrelated local or remote work.
+- Restate the goal, scope, and acceptance criteria before implementation.
+- Prefer one branch and one PR per task.
+
+## During implementation
+
+- Make the smallest complete change.
+- Keep domain logic in domain/service modules where existing patterns do that already.
+- Keep React components mobile-first and aligned with `.cursor/rules/preventivai-design-system.mdc`.
+- Reuse existing repositories, hooks, storage helpers, and UI components.
+- Add or update tests close to the changed behavior.
+
+## Verification
+
+Run these before finishing:
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+If a check fails, fix failures caused by the change. If failures are unrelated or ambiguous, report them clearly and stop.
+
+## Pull request handoff
+
+Open a PR only after verification is complete or after clearly documenting a blocker.
+
+The PR must include:
+
+- Summary of the change.
+- Tests and command results.
+- Manual QA notes for UI changes.
+- Risks, limitations, and follow-up recommendations.
+
+Do not merge automatically unless the human explicitly asks for it.

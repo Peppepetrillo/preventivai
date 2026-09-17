@@ -1,13 +1,19 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ROUTES } from "../../../app/routes";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import { leggiClienti } from "../../../repositories/clientiRepository";
+import {
+  eseguiNavigazioneIndietro,
+  setGuardiaNavigazioneIndietro,
+} from "../../../navigation/navigateBack";
 import { useSalvaEGeneraPdf } from "../hooks/useSalvaEGeneraPdf";
 import { useWizardContext } from "./useWizardContext";
 import { useWizardPreventivoState } from "./useWizardPreventivoState";
-import { WIZARD_STEPS, indiceStep } from "./wizardConfig";
+import { wizardHaBozzaConDati } from "./wizardBozza";
+import { TIPO_LAVORO, WIZARD_STEPS, indiceStep } from "./wizardConfig";
 import WizardHeader from "./components/WizardHeader";
 import WizardProgress from "./components/WizardProgress";
 import StepCliente from "./steps/StepCliente";
@@ -25,6 +31,7 @@ export default function WizardPreventivo() {
   const [searchParams] = useSearchParams();
   const { attivaWizard, disattivaWizard } = useWizardContext();
   const clienteIdElaborato = useRef(false);
+  const expressElaborato = useRef(false);
   const salvataggio = useSalvaEGeneraPdf();
   const {
     stato,
@@ -47,6 +54,10 @@ export default function WizardPreventivo() {
   const indiceCorrente = indiceStep(stato.stepId);
   const puoAndareIndietro = indiceCorrente > 0;
   const stepCorrente = WIZARD_STEPS[indiceCorrente] || WIZARD_STEPS[0];
+  const [confermaUscitaAperta, setConfermaUscitaAperta] = useState(false);
+  /** @type {React.MutableRefObject<{ tipo: 'path'|'indietro', path?: string }|null>} */
+  const pendingUscitaRef = useRef(null);
+  const bozzaSporca = !esitoSuccesso && wizardHaBozzaConDati(stato);
 
   useEffect(() => {
     attivaWizard(stato.stepId);
@@ -65,6 +76,27 @@ export default function WizardPreventivo() {
     vaiAStep("componi");
   }, [searchParams, impostaCliente, vaiAStep]);
 
+  /** Quick quote: /preventivi/nuovo?express=1 apre Preventivo vocale. */
+  useEffect(() => {
+    const express =
+      searchParams.get("express") === "1" ||
+      searchParams.get("vocale") === "1";
+    if (!express || expressElaborato.current) return;
+
+    expressElaborato.current = true;
+    impostaTipoLavoro(TIPO_LAVORO.express);
+    impostaExpressAutoOpen(true);
+    if (stato.cliente || searchParams.get("clienteId")) {
+      vaiAStep("componi");
+    }
+  }, [
+    searchParams,
+    impostaTipoLavoro,
+    impostaExpressAutoOpen,
+    vaiAStep,
+    stato.cliente,
+  ]);
+
   useEffect(() => {
     if (stato.stepId !== "conferma") {
       salvataggio.resetEsito();
@@ -72,11 +104,52 @@ export default function WizardPreventivo() {
     // salvataggio: oggetto hook; resetEsito è stabile a sufficienza per lo step corrente
   }, [stato.stepId, salvataggio]);
 
+  useEffect(() => {
+    if (!bozzaSporca) {
+      setGuardiaNavigazioneIndietro(null);
+      return undefined;
+    }
+
+    setGuardiaNavigazioneIndietro(({ opzioni } = {}) => {
+      pendingUscitaRef.current = opzioni?.destinazioneEsplicita
+        ? { tipo: "path", path: String(opzioni.destinazioneEsplicita) }
+        : { tipo: "indietro" };
+      setConfermaUscitaAperta(true);
+      return { blocca: true };
+    });
+
+    return () => setGuardiaNavigazioneIndietro(null);
+  }, [bozzaSporca]);
+
+  function esciDalWizard(destinazione = ROUTES.preventivi) {
+    setConfermaUscitaAperta(false);
+    pendingUscitaRef.current = null;
+    setGuardiaNavigazioneIndietro(null);
+    salvataggio.resetEsito();
+    reset();
+    navigate(destinazione);
+  }
+
+  function confermaUscitaWizard() {
+    const pending = pendingUscitaRef.current;
+    pendingUscitaRef.current = null;
+    setConfermaUscitaAperta(false);
+    setGuardiaNavigazioneIndietro(null);
+    salvataggio.resetEsito();
+    reset();
+    if (pending?.tipo === "path" && pending.path) {
+      navigate(pending.path);
+      return;
+    }
+    // Completa Back/edge/Android senza riattivare la guardia
+    eseguiNavigazioneIndietro(navigate, ROUTES.nuovoPreventivo, {
+      forceParent: true,
+    });
+  }
+
   function gestisciIndietro() {
     if (esitoSuccesso) {
-      salvataggio.resetEsito();
-      reset();
-      navigate(ROUTES.preventivi);
+      esciDalWizard(ROUTES.preventivi);
       return;
     }
 
@@ -85,8 +158,13 @@ export default function WizardPreventivo() {
       return;
     }
 
-    reset();
-    navigate(ROUTES.preventivi);
+    if (bozzaSporca) {
+      pendingUscitaRef.current = { tipo: "path", path: ROUTES.preventivi };
+      setConfermaUscitaAperta(true);
+      return;
+    }
+
+    esciDalWizard(ROUTES.preventivi);
   }
 
   function gestisciNuovoPreventivo() {
@@ -180,6 +258,21 @@ export default function WizardPreventivo() {
           {renderStep()}
         </motion.div>
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={confermaUscitaAperta}
+        title="Uscire dal preventivo?"
+        description="Hai una bozza con dati non salvati. Se esci, andranno persi."
+        confirmLabel="Esci"
+        cancelLabel="Resta"
+        danger
+        testId="wizard-conferma-uscita"
+        onCancel={() => {
+          pendingUscitaRef.current = null;
+          setConfermaUscitaAperta(false);
+        }}
+        onConfirm={confermaUscitaWizard}
+      />
     </div>
   );
 }

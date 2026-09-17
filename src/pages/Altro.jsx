@@ -15,6 +15,7 @@ import { Link } from "react-router-dom";
 
 import PageWrapper from "../components/PageWrapper";
 import { ROUTES } from "../app/routes";
+import ProssimamenteSection from "../features/roadmap/ProssimamenteSection";
 
 const VOCI_HUB = [
   {
@@ -128,6 +129,8 @@ export default function Altro() {
             );
           })}
         </div>
+
+        <ProssimamenteSection />
       </div>
     </PageWrapper>
   );
