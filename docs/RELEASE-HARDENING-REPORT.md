@@ -34,9 +34,14 @@
 
 - N/A (hardening features, not defect hotfixes)  
 
-## 5–8. Verifica (to be filled after suite)
+## 5–8. Verifica
 
-See Night Report / CI for final counts.
+| Check | Result |
+|-------|--------|
+| `npm test` | **1856 PASS** / 0 FAIL |
+| `npm run lint` | **0 errors** (warnings preexisting + minor) |
+| `npm run build` | OK |
+| `npx cap sync ios` | OK |
 
 ## 9. Voice
 

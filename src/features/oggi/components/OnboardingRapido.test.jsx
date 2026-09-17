@@ -3,10 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import OnboardingRapido, {
+import OnboardingRapido from "./OnboardingRapido";
+import {
   ONBOARDING_RAPIDO_KEY,
   marcaOnboarding,
-} from "./OnboardingRapido";
+} from "../onboardingRapidoStorage";
 
 describe("OnboardingRapido", () => {
   beforeEach(() => {
