@@ -9,12 +9,14 @@ import {
   ShoppingCart,
   Trash2,
   Users,
-  Wallet
+  Wallet,
+  Zap,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import PageWrapper from "../components/PageWrapper";
 import { ROUTES } from "../app/routes";
+import ProssimamenteSection from "../features/roadmap/ProssimamenteSection";
 
 const VOCI_HUB = [
   {
@@ -44,6 +46,13 @@ const VOCI_HUB = [
     path: ROUTES.storico,
     icon: History,
     testId: "altro-link-storico",
+  },
+  {
+    titolo: "Calcoli elettrici",
+    sottotitolo: "Strumenti rapidi per il lavoro",
+    path: ROUTES.calcoliElettrici,
+    icon: Zap,
+    testId: "altro-link-calcoli",
   },
   {
     titolo: "Da comprare",
@@ -97,8 +106,8 @@ export default function Altro() {
           <p className="section-label">Menu</p>
           <h1 className="ds-page-title mt-1">Altro</h1>
           <p className="ds-text-secondary mt-2">
-            Agenda, economia, storico, clienti, materiali e impostazioni
-            dell&apos;app.
+            Agenda, economia, storico, calcoli, clienti, materiali e
+            impostazioni dell&apos;app.
           </p>
         </div>
 
@@ -128,6 +137,8 @@ export default function Altro() {
             );
           })}
         </div>
+
+        <ProssimamenteSection />
       </div>
     </PageWrapper>
   );

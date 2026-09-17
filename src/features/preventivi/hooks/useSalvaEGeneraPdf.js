@@ -173,6 +173,14 @@ export function useSalvaEGeneraPdf() {
       setPdfBlob(esito.blob);
       setPdfNomeFile(esito.nomeFile || "");
     }
+    // Wizard tiene solo il Blob: revoca URL temporaneo del motore PDF.
+    if (esito?.blobUrl && typeof URL !== "undefined") {
+      try {
+        URL.revokeObjectURL(esito.blobUrl);
+      } catch {
+        // ignore
+      }
+    }
 
     setPdfGenerato(true);
     setAvvisoPdf("");

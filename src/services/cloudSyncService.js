@@ -9,7 +9,10 @@ import { leggiStorage, salvaStorage } from "../utils/storage";
 import { comprimiImmagine, generaMiniatura } from "../utils/immagini";
 import {
   deveApplicareAggiornamentoCloud,
+  deveProteggereLocaleDaWipeCloud,
   deveRispingereLocaleVersoCloud,
+  haValoreLocaleSignificativo,
+  normalizzaPayloadCloud,
 } from "./cloudSyncIntegrity";
 import {
   creaPathFotoCantiereImmutabile,
@@ -35,7 +38,15 @@ function leggiCodaPersistente() {
 }
 
 function salvaCodaPersistente(codaArray) {
-  void salvaStorage(STORAGE_CODA, Array.isArray(codaArray) ? codaArray : []);
+  const payload = Array.isArray(codaArray) ? codaArray : [];
+  void salvaStorage(STORAGE_CODA, payload).then((esito) => {
+    if (!esito?.ok) {
+      console.error(
+        "cloudSync: persistenza coda offline fallita",
+        esito?.error || "unknown"
+      );
+    }
+  });
 }
 
 const codaSalvataggi = new Map(leggiCodaPersistente());
@@ -110,7 +121,14 @@ function salvaCodaEliminazioneMedia() {
   void salvaStorage(
     STORAGE_CODA_ELIMINAZIONE_MEDIA,
     Array.from(codaEliminazioneMedia)
-  );
+  ).then((esito) => {
+    if (!esito?.ok) {
+      console.error(
+        "cloudSync: persistenza coda eliminazione media fallita",
+        esito?.error || "unknown"
+      );
+    }
+  });
 }
 
 function accodaEliminazioneMedia(paths) {
@@ -126,11 +144,7 @@ function svuotaCodaEliminazioneMedia() {
 }
 
 function haValoreLocale(valore, fallback) {
-  if (Array.isArray(fallback)) return Array.isArray(valore) && valore.length > 0;
-  if (fallback && typeof fallback === "object") {
-    return valore && typeof valore === "object" && Object.keys(valore).length > 0;
-  }
-  return valore !== undefined && valore !== null && valore !== fallback;
+  return haValoreLocaleSignificativo(valore, fallback);
 }
 
 function salvaMetaSync(meta) {
@@ -150,7 +164,21 @@ function applicaRecordLocale(record) {
     return false;
   }
 
-  salvaStorage(record.record_key, record.payload ?? fallback);
+  const valoreLocale = leggiStorage(record.record_key, fallback);
+  if (
+    deveProteggereLocaleDaWipeCloud({
+      haValoreLocale: haValoreLocale(valoreLocale, fallback),
+      payloadCloud: record.payload,
+      fallback,
+    })
+  ) {
+    // Cloud vuoto non deve cancellare dati locali: rispingi il locale.
+    aggiungiACoda(record.record_key, preparaPayloadCloud(record.record_key, valoreLocale));
+    return false;
+  }
+
+  const payloadDaApplicare = normalizzaPayloadCloud(record.payload, fallback);
+  salvaStorage(record.record_key, payloadDaApplicare);
   salvaRevisioneLocale(record.record_key, record.updated_at);
   return true;
 }
@@ -316,7 +344,7 @@ async function sincronizzaMediaCantieri() {
             accodaEliminazioneMedia([pathPrecedente]);
           }
         } catch (errore) {
-          console.error(`Errore caricamento storage foto ${foto.nome}:`, errore);
+          console.error(`Errore caricamento storage foto ${foto?.id || "sconosciuta"}:`, errore);
         }
       }
     }
@@ -500,7 +528,18 @@ function gestisciEventoRealtime(evento) {
       return;
     }
 
-    salvaStorage(chiave, APP_DATA_KEYS[chiave]);
+    const fallback = APP_DATA_KEYS[chiave];
+    const valoreLocale = leggiStorage(chiave, fallback);
+    if (haValoreLocale(valoreLocale, fallback)) {
+      // DELETE remoto non deve wipeare dati locali non vuoti: rispingi.
+      aggiungiACoda(chiave, preparaPayloadCloud(chiave, valoreLocale));
+      inviaCodaSalvataggi().catch((errore) => {
+        console.error("Errore flush coda dopo DELETE realtime protetto:", errore);
+      });
+      return;
+    }
+
+    salvaStorage(chiave, fallback);
     salvaRevisioneLocale(chiave, new Date().toISOString());
     notificaDatiAggiornati();
     return;
@@ -576,7 +615,20 @@ async function eseguiSincronizzazioneDaCloud() {
       });
 
       if (applicabile) {
-        await salvaStorage(chiave, recordCloudChiave.payload ?? fallback);
+        if (
+          deveProteggereLocaleDaWipeCloud({
+            haValoreLocale: haValoreLocale(valoreLocale, fallback),
+            payloadCloud: recordCloudChiave.payload,
+            fallback,
+          })
+        ) {
+          aggiungiACoda(chiave, preparaPayloadCloud(chiave, valoreLocale));
+          continue;
+        }
+        await salvaStorage(
+          chiave,
+          normalizzaPayloadCloud(recordCloudChiave.payload, fallback)
+        );
         salvaRevisioneLocale(chiave, recordCloudChiave.updated_at);
         continue;
       }

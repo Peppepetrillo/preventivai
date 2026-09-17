@@ -81,6 +81,7 @@ describe("Sprint 21B — collegamento Supabase / sicurezza client", () => {
     _resetRateLimitClientPerTest();
     const fetchImpl = vi.fn(async () => ({
       ok: true,
+      status: 200,
       json: async () => ({
         valutazione: "Controlla i materiali rispetto allo storico.",
         motivazione: "Dati aggregati.",
@@ -99,12 +100,19 @@ describe("Sprint 21B — collegamento Supabase / sicurezza client", () => {
         statistiche: { numeroConfrontabili: 2, conDatiUtili: 2 },
         portfolio: {},
       },
-      { fetchImpl }
+      {
+        fetchImpl,
+        getSession: async () => ({ access_token: "jwt-test" }),
+        anonKey: "anon-test",
+      }
     );
     expect(esito.ok).toBe(true);
     expect(fetchImpl).toHaveBeenCalled();
     const url = fetchImpl.mock.calls[0][0];
     expect(url).toContain("analisi-preventivo-intelligence");
+    expect(fetchImpl.mock.calls[0][1].headers.Authorization).toBe(
+      "Bearer jwt-test"
+    );
   });
 
   it("errore Edge Function → fallback", async () => {
@@ -122,6 +130,7 @@ describe("Sprint 21B — collegamento Supabase / sicurezza client", () => {
       cantieri: [],
       nuovoLavoro: { titolo: "x" },
       fetchImpl,
+      getSession: async () => ({ access_token: "jwt-test" }),
     });
     expect(esito.usatoProvider).toBe(false);
     expect(esito.motivoFallback).toBe("provider_upstream");

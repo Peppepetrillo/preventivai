@@ -658,7 +658,7 @@ function RagionamentoCard({ proposal, aperto, onToggle }) {
         aria-expanded={aperto}
       >
         <span className="ds-section-title text-base">
-          🧠 Come ha ragionato PreventivAI
+          Come ha ragionato PreventivAI
         </span>
         <ChevronDown
           size={18}
@@ -739,7 +739,7 @@ function RagionamentoCard({ proposal, aperto, onToggle }) {
                     {lav.descrizione}
                   </span>
                   <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500 shrink-0">
-                    {lav.origine === "BRAIN" ? "🧠 Brain" : "📘 Base"}
+                    {lav.origine === "BRAIN" ? "Motore" : "Base"}
                   </span>
                 </li>
               ))}

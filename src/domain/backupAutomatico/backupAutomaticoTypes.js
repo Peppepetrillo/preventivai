@@ -33,6 +33,25 @@ export const ETICHETTE_STATO = Object.freeze({
   [STATI_BACKUP_AUTO.errore]: "Errore",
 });
 
+/** Codici errore interni → copy italiana (mai snake_case in UI). */
+export const ETICHETTE_ERRORE_BACKUP = Object.freeze({
+  quota_superata: "spazio sul dispositivo esaurito",
+  config_save_failed: "impostazioni non salvate",
+  save_failed: "salvataggio non riuscito",
+});
+
+/**
+ * @param {string|null|undefined} codice
+ * @returns {string}
+ */
+export function etichettaErroreBackupAutomatico(codice) {
+  const chiave = String(codice || "").trim();
+  if (!chiave) return "";
+  if (ETICHETTE_ERRORE_BACKUP[chiave]) return ETICHETTE_ERRORE_BACKUP[chiave];
+  if (!chiave.includes("_")) return chiave;
+  return "riprova più tardi";
+}
+
 export const NOTIFICA_BACKUP_AUTO_ID = "backup-automatico-reminder";
 
 /**

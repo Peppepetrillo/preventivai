@@ -90,7 +90,13 @@ export default function Economia() {
             Economia
           </h1>
           <p className="ds-text-secondary mt-2">
-            Entrate e uscite reali dei cantieri. Non è contabilità.
+            Entrate = incassi dai cantieri. Uscite = materiali, manodopera,
+            carburante e altre spese di cantiere. Non è contabilità.
+          </p>
+          <p className="ds-text-secondary mt-2 text-sm">
+            Per registrare un movimento apri un cantiere → Pagamenti o Spese.
+            I movimenti generali senza cantiere arriveranno in un prossimo
+            aggiornamento.
           </p>
         </header>
 
@@ -146,6 +152,58 @@ export default function Economia() {
           />
         </section>
 
+        {aggregato.dettaglioUscite?.length > 0 ||
+        aggregato.dettaglioEntrate?.length > 0 ? (
+          <section
+            className="mb-6 space-y-4"
+            aria-label="Dettaglio per categoria"
+            data-testid="economia-dettaglio-categorie"
+          >
+            {aggregato.dettaglioEntrate?.length > 0 ? (
+              <div className="pro-panel p-4">
+                <h2 className="ds-section-title mb-3">Entrate per tipo</h2>
+                <ul className="space-y-2">
+                  {aggregato.dettaglioEntrate.map((riga) => (
+                    <li
+                      key={`e-${riga.categoria}`}
+                      className="flex items-center justify-between gap-3 min-h-[44px]"
+                      data-testid={`economia-entrata-cat-${riga.categoria}`}
+                    >
+                      <span className="ds-text-primary truncate">
+                        {riga.etichetta}
+                      </span>
+                      <span className="ds-text-primary tabular-nums text-emerald-300 shrink-0">
+                        {formatEuro(riga.importo)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {aggregato.dettaglioUscite?.length > 0 ? (
+              <div className="pro-panel p-4">
+                <h2 className="ds-section-title mb-3">Uscite per categoria</h2>
+                <ul className="space-y-2">
+                  {aggregato.dettaglioUscite.map((riga) => (
+                    <li
+                      key={`u-${riga.categoria}`}
+                      className="flex items-center justify-between gap-3 min-h-[44px]"
+                      data-testid={`economia-uscita-cat-${riga.categoria}`}
+                    >
+                      <span className="ds-text-primary truncate">
+                        {riga.etichetta}
+                      </span>
+                      <span className="ds-text-primary tabular-nums text-rose-300 shrink-0">
+                        {formatEuro(riga.importo)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
         <section aria-labelledby="economia-movimenti-title">
           <h2 id="economia-movimenti-title" className="ds-section-title mb-3">
             Ultimi movimenti
@@ -158,9 +216,17 @@ export default function Economia() {
               </div>
               <p className="ds-card-title">Nessun movimento</p>
               <p className="ds-text-secondary mt-2 max-w-sm mx-auto">
-                Nel periodo selezionato non ci sono pagamenti o spese
-                registrati nei cantieri.
+                Nel periodo non ci sono incassi o spese nei cantieri. Apri un
+                cantiere per registrare un pagamento, un materiale o un&apos;altra
+                uscita.
               </p>
+              <Link
+                to={ROUTES.cantieri}
+                className="btn-primary inline-flex items-center justify-center min-h-[48px] mt-6 px-5 font-bold"
+                data-testid="economia-vuoto-cta-cantieri"
+              >
+                Apri cantieri
+              </Link>
             </div>
           ) : (
             <ul className="flex flex-col gap-3" data-testid="economia-lista-movimenti">
