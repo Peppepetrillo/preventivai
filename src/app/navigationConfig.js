@@ -43,6 +43,14 @@ export const ROUTE_PARENTS = Object.freeze({
   [ROUTES.catalogoMateriali]: ROUTES.altro,
   [ROUTES.distinteMateriali]: ROUTES.altro,
   [ROUTES.impostazioni]: ROUTES.altro,
+  [ROUTES.calcoliElettrici]: ROUTES.altro,
+  [ROUTES.calcoliOhm]: ROUTES.calcoliElettrici,
+  [ROUTES.calcoliPotenza]: ROUTES.calcoliElettrici,
+  [ROUTES.calcoliCaduta]: ROUTES.calcoliElettrici,
+  [ROUTES.calcoliSezione]: ROUTES.calcoliElettrici,
+  [ROUTES.calcoliConsumo]: ROUTES.calcoliElettrici,
+  [ROUTES.calcoliConversioni]: ROUTES.calcoliElettrici,
+  [ROUTES.calcoliCarico]: ROUTES.calcoliElettrici,
   [ROUTES.datiAzienda]: ROUTES.impostazioni,
   [ROUTES.cestino]: ROUTES.impostazioni,
   [ROUTES.incassi]: ROUTES.preventivi,
@@ -90,6 +98,12 @@ export function risolviParentPath(pathname = "") {
   if (path.startsWith("/cliente/")) return ROUTES.clienti;
   if (path.startsWith(`${ROUTES.distinteMateriali}/`)) {
     return ROUTES.distinteMateriali;
+  }
+  if (
+    path.startsWith(`${ROUTES.calcoliElettrici}/`) &&
+    path !== ROUTES.calcoliElettrici
+  ) {
+    return ROUTES.calcoliElettrici;
   }
 
   return null;

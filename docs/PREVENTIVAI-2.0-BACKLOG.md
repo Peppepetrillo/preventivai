@@ -94,3 +94,24 @@ Source of roadmap UI: `src/features/roadmap/prossimamenteCatalog.js` (display on
 ## Explicitly out of 1.0 freeze
 
 Do not start: new SoT, IAP, pricing, Bundle ID change, destructive migrations, PDF-by-voice architecture.
+
+---
+
+## Calcoli elettrici — evoluzioni 2.0
+
+Baseline 1.0 (freeze exception): Ohm, potenza/corrente, caduta indicativa, stima sezione (solo ΔU), consumo, conversioni, stima carico. Offline, no save.
+
+**Non implementare in 1.0:**
+
+- Dimensionamento più completo (portata, posa, temperatura, fattori di correzione)
+- Verifica coordinamento protezioni
+- Calcoli trifase avanzati (sbilanciamento, sequenze)
+- Rifasamento
+- Motori / avviamento
+- Trasformatori
+- Fotovoltaico / batterie
+- Impianti speciali
+- Memoria ultimi calcoli / storico locale
+- Collegamento calcoli a un cantiere
+- Esportazione PDF dei risultati
+- Claim normativi o “sezione a norma” automatica

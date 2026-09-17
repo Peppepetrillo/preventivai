@@ -30,6 +30,10 @@ describe("Altro UX-8.1", () => {
       "href",
       ROUTES.storico
     );
+    expect(screen.getByTestId("altro-link-calcoli")).toHaveAttribute(
+      "href",
+      ROUTES.calcoliElettrici
+    );
     expect(screen.getByTestId("altro-link-acquisti")).toHaveAttribute(
       "href",
       ROUTES.acquisti
