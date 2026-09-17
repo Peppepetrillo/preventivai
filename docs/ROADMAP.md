@@ -85,25 +85,31 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 | 🛑 | economia.movimenti SoT | 🛑 | HUMAN-DECISIONS #2 |
 | 🛑 | Remote AI verify_jwt deploy | 🛑 | HUMAN-DECISIONS #3 |
 
-## Next agent actions (ordered)
-
-1. **Human device QA** — iPhone notch + Android: install, share→Inviato, PDF, sticky CTA, offline reopen, **Preventivo vocale** mic permission (`docs/RELEASE-CANDIDATE.md`, `docs/VOICE-QUOTE.md`).
-2. **Human commercial** — prezzi + feature PRO (HUMAN-DECISIONS #8); trial persistence key (#7).
-3. **Human deploy** — AI `verify_jwt=true` + server `OPENAI_API_KEY` (only if remote AI required for cohort).
-4. Human: `APP_DATA_KEYS` expansion decision before promising multi-device satellite restore.
-5. Tag `v1.0.0-rc3` after device QA GO.
-6. Optional: voice incremental commands (HUMAN-DECISIONS #9); Diario emoji → Lucide (#6).
-
 ## October 2026 — product track
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Product audit matrix | ✅ | See CHANGELOG night report; P0/P1 first |
-| Preventivo vocale (match listino + confirm) | ✅ / 🟡 | `docs/VOICE-QUOTE.md`; incremental cmds P2 |
-| Quick quote Home `?express=1` | ✅ | Dashboard CTA |
+| Product audit matrix | ✅ | `PRODUCT-AUDIT-OCTOBER.md` |
+| **Definitive release plan** | ✅ | `OCTOBER-RELEASE-PLAN.md` (2026-09-17) |
+| Freemium release plan | ✅ docs | `FREEMIUM-RELEASE-PLAN.md` — persist/prices 🛑 |
+| Backup core/satellite plan | ✅ docs | `BACKUP-RELEASE-PLAN.md` — expand 🛑 #1 |
+| AI release checklist | ✅ docs | `AI-RELEASE-CHECKLIST.md` — deploy 🛑 #3 |
+| Device QA checklist | ✅ docs | `DEVICE-QA-RELEASE.md` — human execute |
+| App Store Giuseppe checklist | ✅ docs | `APP-STORE-RELEASE.md` |
+| Preventivo vocale (match+confirm) | ✅ / 🟡 | incremental cmds FUTURE/P2 |
+| Quick quote Home `?express=1` | ✅ | |
 | Freemium domain 15d trial | ✅ scaffolding | Persistence 🛑 #7; prices 🛑 #8 |
-| Mic / speech permissions iOS+Android | ✅ | Info.plist + RECORD_AUDIO |
+| Mic / speech permissions iOS+Android | ✅ | |
 | Voice incremental commands | ⬜ P2 | HUMAN-DECISIONS #9 |
+
+## Next agent actions (ordered)
+
+1. **Human device QA** — execute `docs/DEVICE-QA-RELEASE.md` (iPhone + Android).
+2. **Human commercial** — Path X unpaid beta **or** #7+#8 for IAP (`FREEMIUM-RELEASE-PLAN.md`).
+3. **Human Store** — `docs/APP-STORE-RELEASE.md` (privacy URL, signing, screenshots).
+4. **Human deploy AI** — only if marketing needs cloud AI (`AI-RELEASE-CHECKLIST.md`).
+5. Fix only P0/P1 from device QA; no large features.
+6. Tag `v1.0.0-rc3` after GO → submit.
 
 ## Stop / ask human
 
@@ -113,3 +119,4 @@ Companion: `docs/ARCHITECTURE.md`, root `AGENTS.md`, `docs/CLOUD-AGENT-OVERNIGHT
 - Pricing / legal copy / PRO feature catalog
 - New major frameworks
 - Trial persistence key without GO
+- Apple/Google signing or account changes

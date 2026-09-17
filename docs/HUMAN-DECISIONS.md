@@ -81,3 +81,13 @@ Domain logic exists in `src/domain/freemium/freemiumDomain.js` without a storage
 (“Aggiungi 10 prese”, “Elimina due punti luce”, “Fammi vedere il totale”) not yet implemented.
 
 **Status:** 🛑 / P2 product — document in VOICE-QUOTE.md; implement after October baseline.
+
+## 10. October public path: unpaid beta vs IAP
+
+**Problem:** Inizio ottobre may arrive before prices (#8) and trial persistence (#7) are decided.
+
+**Options:**
+- **X)** Public/TestFlight beta **without** IAP/paywall; add freemium in fast follow
+- **Y)** Full TRIAL→FREE→PRO before Store submit (requires #7+#8)
+
+**Status:** 🛑 Waiting Giuseppe. CTO recommendation in `FREEMIUM-RELEASE-PLAN.md`: prefer **X** if #7/#8 slip.

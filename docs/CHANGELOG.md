@@ -2,6 +2,21 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-17 — Definitive October release plan (docs)
+
+### Completed
+- Branch `cursor/release-plan-october-74ac`
+- Master plan: `docs/OCTOBER-RELEASE-PLAN.md` (READY/NEEDS/BLOCKED/FUTURE + weeks + do-not-do)
+- `FREEMIUM-RELEASE-PLAN.md`, `BACKUP-RELEASE-PLAN.md`, `AI-RELEASE-CHECKLIST.md`
+- `DEVICE-QA-RELEASE.md`, `APP-STORE-RELEASE.md`
+- ROADMAP updated to point at release gates
+- **No SoT / APP_DATA_KEYS / pricing / deploy / signing changes**
+
+### Intentionally not done
+- Large features / voice incremental (P2)
+- Freemium persistence without HUMAN #7
+- Device QA (requires Giuseppe hardware)
+
 ## 2026-09-16 — October release: Preventivo vocale + freemium scaffold
 
 ### Completed

@@ -41,8 +41,13 @@ Prices come **only** from the user’s listino. The AI never invents prices.
 
 ## Incremental voice commands
 
-Not shipped yet (P2): “Aggiungi 10 prese”, “Elimina due punti luce”, “Fammi vedere il totale”.
-Documented for next mission; current scope is full-utterance → draft + confirm.
+| Command | Verdict |
+|---------|---------|
+| Aggiungi / togli / modifica quantità su carrello | **IMPLEMENTABILE ORA** (P2 post-baseline) |
+| Fammi vedere il totale | **IMPLEMENTABILE ORA** (UI read-only) |
+| Genera il PDF | **RICHIEDE ARCHITETTURA** (wizard + PDF + confirm) |
+
+Full-utterance → draft + confirm is the **October baseline**. Incremental is not a release blocker.
 
 ## Permissions
 
