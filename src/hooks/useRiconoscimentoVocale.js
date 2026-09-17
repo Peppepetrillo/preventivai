@@ -9,16 +9,17 @@ export const STATO_VOCE = Object.freeze({
 
 const MESSAGGI_ERRORE = Object.freeze({
   "not-allowed":
-    "Microfono non autorizzato. Consenti l’accesso nelle impostazioni del dispositivo.",
+    "Per usare il preventivo vocale devi consentire l’accesso al microfono. Puoi abilitarlo nelle Impostazioni del dispositivo.",
   "service-not-allowed":
-    "Microfono non autorizzato. Consenti l’accesso nelle impostazioni del dispositivo.",
+    "Per usare il preventivo vocale devi consentire l’accesso al microfono. Puoi abilitarlo nelle Impostazioni del dispositivo.",
   "audio-capture":
     "Nessun microfono disponibile. Controlla le impostazioni del dispositivo.",
-  "network":
-    "Riconoscimento vocale richiede connessione. Scrivi la richiesta o riprova online.",
+  network:
+    "La dettatura richiede connessione. Scrivi la richiesta a mano oppure riprova online.",
   "no-speech": "Non ho sentito nulla. Tocca di nuovo il microfono e parla.",
-  "aborted": "",
-  default: "Dettatura non riuscita. Puoi scrivere la richiesta a mano.",
+  aborted: "",
+  default:
+    "Dettatura non riuscita. Puoi scrivere la richiesta a mano.",
 });
 
 function messaggioErroreVoce(codice) {

@@ -113,4 +113,45 @@ describe("PreventivoExpress — Preventivo vocale", () => {
     expect(screen.getByTestId("preventivo-vocale-analizza")).toBeInTheDocument();
     expect(onApplica).not.toHaveBeenCalled();
   });
+
+  it("comando incrementale: anteprima diff poi conferma", async () => {
+    const user = userEvent.setup();
+    const onApplica = vi.fn();
+
+    render(
+      <MemoryRouter>
+        <PreventivoExpress
+          open
+          onClose={vi.fn()}
+          onApplica={onApplica}
+          lavorazioniCorrenti={[
+            {
+              id: "1",
+              nome: "Punto presa",
+              prezzo: 55,
+              quantita: 5,
+              prezzoDalListino: true,
+            },
+          ]}
+        />
+      </MemoryRouter>
+    );
+
+    await user.type(
+      screen.getByTestId("preventivo-vocale-testo"),
+      "Aggiungi 10 prese"
+    );
+    await user.click(screen.getByTestId("preventivo-vocale-analizza"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("preventivo-vocale-diff")).toBeInTheDocument();
+    });
+    expect(onApplica).not.toHaveBeenCalled();
+
+    await user.click(screen.getByTestId("preventivo-vocale-conferma"));
+    expect(onApplica).toHaveBeenCalledTimes(1);
+    expect(onApplica.mock.calls[0][0].modalita).toBe("incrementale");
+    expect(onApplica.mock.calls[0][0].lavorazioni[0].quantita).toBe(15);
+    expect(onApplica.mock.calls[0][0].lavorazioni[0].prezzo).toBe(55);
+  });
 });

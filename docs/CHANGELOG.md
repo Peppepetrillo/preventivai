@@ -2,6 +2,20 @@
 
 Session-oriented log for Cloud Agents. Product release notes remain in root `CHANGELOG.md`.
 
+## 2026-09-17 — Release hardening (pre-beta freeze)
+
+### Completed
+- Branch `cursor/release-hardening-october-74ac`
+- Voice incremental: aggiungi/togli/imposta with preview+confirm (listino prices only)
+- Onboarding rapido 5′ skippable on Home (local pref, no APP_DATA_KEYS)
+- Cloud/backup honesty copy (CORE vs satellite)
+- Mic permission Italian messages
+- `docs/RELEASE-HARDENING-REPORT.md` + DEVICE-QA refresh
+
+### Intentionally not done
+- IAP / prezzi / APP_DATA_KEYS / AI deploy / Bundle ID / version→1.0.0
+- PDF-by-voice, Face ID, Diario Lucide
+
 ## 2026-09-17 — Definitive October release plan (docs)
 
 ### Completed

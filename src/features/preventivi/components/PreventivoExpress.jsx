@@ -17,6 +17,7 @@ import { leggiClienti } from "../../../repositories/clientiRepository";
 import { leggiListino } from "../../../repositories/listinoRepository";
 import { useRiconoscimentoVocale } from "../../../hooks/useRiconoscimentoVocale";
 import { generaBozzaPreventivoAI } from "../assistentePreventivi";
+import { interpretaComandoIncrementale } from "../voiceIncremental";
 import { CONDIZIONI_DEFAULT } from "../wizard/wizardConfig";
 import { formatEuro, normalizzaNumero } from "../../../utils/preventivi";
 import { registraUsoLavorazione, chiaveUsoDaLavorazione } from "../utils/lavorazioniUsage";
@@ -34,10 +35,12 @@ export default function PreventivoExpress({
   onClose,
   onApplica,
   clienteCorrente,
+  lavorazioniCorrenti = [],
 }) {
   const [testo, setTesto] = useState("");
   const [fase, setFase] = useState(FASE.IDLE);
   const [bozza, setBozza] = useState(null);
+  const [incrementale, setIncrementale] = useState(null);
   const [ignorate, setIgnorate] = useState(() => new Set());
   const [errore, setErrore] = useState("");
   const testoId = useId();
@@ -47,6 +50,7 @@ export default function PreventivoExpress({
     setErrore("");
     setFase(FASE.IDLE);
     setBozza(null);
+    setIncrementale(null);
   }, []);
 
   const {
@@ -65,6 +69,7 @@ export default function PreventivoExpress({
     setTesto("");
     setFase(FASE.IDLE);
     setBozza(null);
+    setIncrementale(null);
     setIgnorate(new Set());
     setErrore("");
     resetErrore?.();
@@ -79,6 +84,7 @@ export default function PreventivoExpress({
   function tornaAModifica() {
     setFase(FASE.IDLE);
     setBozza(null);
+    setIncrementale(null);
     setIgnorate(new Set());
     setErrore("");
   }
@@ -94,13 +100,27 @@ export default function PreventivoExpress({
     setFase(FASE.PROCESSING);
     setErrore("");
     setBozza(null);
+    setIncrementale(null);
     setIgnorate(new Set());
 
     try {
+      const listino = selezionaVociAttive(leggiListino());
+      const cmd = interpretaComandoIncrementale({
+        testo,
+        lavorazioni: lavorazioniCorrenti,
+        listino,
+      });
+
+      if (cmd) {
+        setIncrementale(cmd);
+        setFase(FASE.READY);
+        return;
+      }
+
       const risultato = await generaBozzaPreventivoAI({
         testo,
         clienti: leggiClienti(),
-        listino: selezionaVociAttive(leggiListino()),
+        listino,
       });
       setBozza(risultato);
       setFase(FASE.READY);
@@ -119,6 +139,40 @@ export default function PreventivoExpress({
   }
 
   function confermaBozza() {
+    if (incrementale) {
+      const soloMiss =
+        (incrementale.nonTrovate || []).filter((v) => !ignorate.has(v.chiave))
+          .length > 0 && !(incrementale.diff || []).length;
+
+      if (soloMiss) {
+        setErrore(
+          "Non ho trovato una corrispondenza nel tuo listino. Modifica, scegli dal listino o ignora."
+        );
+        return;
+      }
+
+      incrementale.diff?.forEach((d) => {
+        if (d.a > d.da) {
+          registraUsoLavorazione(d.nome, d.a - d.da);
+        }
+      });
+
+      onApplica({
+        modalita: "incrementale",
+        lavorazioni: incrementale.lavorazioni || [],
+        avvisi: incrementale.avvisi || [],
+        riepilogo: {
+          vociTrovate: incrementale.diff?.length || 0,
+        },
+        nonTrovate: (incrementale.nonTrovate || []).filter(
+          (v) => !ignorate.has(v.chiave)
+        ),
+      });
+      resetStato();
+      onClose();
+      return;
+    }
+
     if (!bozza) return;
 
     bozza.lavorazioni?.forEach((lavorazione) => {
@@ -129,6 +183,7 @@ export default function PreventivoExpress({
     });
 
     onApplica({
+      modalita: "bozza",
       lavorazioni: bozza.lavorazioni || [],
       condizioni: {
         sconto: normalizzaNumero(bozza.sconto),
@@ -150,11 +205,12 @@ export default function PreventivoExpress({
     onClose();
   }
 
-  const nonTrovateVisibili = (bozza?.nonTrovate || []).filter(
+  const nonTrovateSorgente = incrementale?.nonTrovate || bozza?.nonTrovate || [];
+  const nonTrovateVisibili = nonTrovateSorgente.filter(
     (v) => !ignorate.has(v.chiave)
   );
   const inElaborazione = fase === FASE.PROCESSING;
-  const inAnteprima = fase === FASE.READY && bozza;
+  const inAnteprima = fase === FASE.READY && (bozza || incrementale);
 
   const etichettaStatoVoce = inAscolto
     ? "Ascolto in corso…"
@@ -163,6 +219,11 @@ export default function PreventivoExpress({
       : voceSupportata
         ? "Tocca il microfono e parla"
         : "Dettatura non supportata: scrivi la richiesta.";
+
+  const confermaDisabilitata =
+    Boolean(incrementale) &&
+    !(incrementale.diff || []).length &&
+    nonTrovateVisibili.length > 0;
 
   return (
     <BottomSheet
@@ -218,7 +279,7 @@ export default function PreventivoExpress({
                   if (fase === FASE.ERROR) setFase(FASE.IDLE);
                 }}
                 rows={4}
-                placeholder="Es: 80 punti luce, 60 prese, quadro nuovo, 30 metri canalina, videocitofono."
+                placeholder="Es: 80 punti luce… oppure «Aggiungi 10 prese»"
                 className="mt-2 input-pro resize-none"
                 disabled={inElaborazione}
                 data-testid="preventivo-vocale-testo"
@@ -260,23 +321,40 @@ export default function PreventivoExpress({
               role="status"
             >
               <p className="text-sm font-semibold text-yellow-100">
-                Bozza dal tuo listino
+                {incrementale
+                  ? incrementale.messaggio
+                  : "Bozza dal tuo listino"}
               </p>
-              <p className="text-xs text-slate-400">
-                {(bozza.riepilogo?.vociTrovate ?? 0)} lavorazioni · totale{" "}
-                {formatEuro(bozza.riepilogo?.totale ?? 0)}
-                {bozza.cliente ? ` · ${bozza.cliente}` : ""}
-              </p>
-              {bozza.avvisi?.length ? (
+              {incrementale?.diff?.length ? (
+                <ul
+                  className="text-xs text-slate-300 space-y-1"
+                  data-testid="preventivo-vocale-diff"
+                >
+                  {incrementale.diff.map((d) => (
+                    <li key={`${d.nome}-${d.da}-${d.a}`}>
+                      {d.nome}: {d.da} → {d.a}
+                      {d.prezzo != null ? ` · ${formatEuro(d.prezzo)}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {!incrementale && bozza ? (
+                <p className="text-xs text-slate-400">
+                  {(bozza.riepilogo?.vociTrovate ?? 0)} lavorazioni · totale{" "}
+                  {formatEuro(bozza.riepilogo?.totale ?? 0)}
+                  {bozza.cliente ? ` · ${bozza.cliente}` : ""}
+                </p>
+              ) : null}
+              {(incrementale?.avvisi || bozza?.avvisi)?.length ? (
                 <ul className="text-xs text-amber-200/90 list-disc pl-4 space-y-0.5">
-                  {bozza.avvisi.map((a) => (
+                  {(incrementale?.avvisi || bozza?.avvisi || []).map((a) => (
                     <li key={a}>{a}</li>
                   ))}
                 </ul>
               ) : null}
             </div>
 
-            {(bozza.lavorazioni || []).length > 0 ? (
+            {!incrementale && bozza && (bozza.lavorazioni || []).length > 0 ? (
               <ul className="space-y-2" data-testid="preventivo-vocale-match">
                 {bozza.lavorazioni.map((lav) => (
                   <li
@@ -294,11 +372,13 @@ export default function PreventivoExpress({
                   </li>
                 ))}
               </ul>
-            ) : (
+            ) : null}
+
+            {!incrementale && bozza && !(bozza.lavorazioni || []).length ? (
               <p className="text-sm text-slate-400">
                 Nessuna voce riconosciuta nel listino.
               </p>
-            )}
+            ) : null}
 
             {nonTrovateVisibili.length > 0 ? (
               <div className="space-y-2" data-testid="preventivo-vocale-non-trovate">
@@ -321,7 +401,7 @@ export default function PreventivoExpress({
                         onClick={chiudi}
                       >
                         <ListPlus size={16} aria-hidden="true" />
-                        Aggiungi al listino
+                        Scegli dal listino
                       </Link>
                       <button
                         type="button"
@@ -359,11 +439,12 @@ export default function PreventivoExpress({
               <button
                 type="button"
                 onClick={confermaBozza}
-                className="flex-[1.4] btn-primary min-h-[48px] font-semibold inline-flex items-center justify-center gap-1.5"
+                disabled={confermaDisabilitata}
+                className="flex-[1.4] btn-primary min-h-[48px] font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                 data-testid="preventivo-vocale-conferma"
               >
                 <Check size={18} aria-hidden="true" />
-                Conferma bozza
+                {incrementale ? "Conferma modifica" : "Conferma bozza"}
               </button>
             </div>
           </>

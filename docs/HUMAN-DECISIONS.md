@@ -80,7 +80,8 @@ Domain logic exists in `src/domain/freemium/freemiumDomain.js` without a storage
 **Problem:** Full-utterance Preventivo vocale is shipped (match + confirm). Incremental commands
 (“Aggiungi 10 prese”, “Elimina due punti luce”, “Fammi vedere il totale”) not yet implemented.
 
-**Status:** 🛑 / P2 product — document in VOICE-QUOTE.md; implement after October baseline.
+**Status:** ✅ Hardening sprint — aggiungi/togli/imposta shipped with preview+confirm (`voiceIncremental.js`).  
+«Fammi vedere il totale» / PDF-by-voice remain FUTURE.
 
 ## 10. October public path: unpaid beta vs IAP
 

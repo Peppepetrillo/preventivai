@@ -4,7 +4,8 @@
 **Display name:** PreventivAI  
 **npm / marketing track:** `1.0.0-rc.3`  
 **Native today:** iOS `MARKETING_VERSION = 1.0` · Android `versionName "1.0"` / `versionCode 1`  
-→ **Align versions** before public submit (human choice: `1.0.0` or keep rc in TestFlight only).
+→ **Mismatch vs npm `1.0.0-rc.3`** — document only in hardening freeze.  
+**Giuseppe:** align to `1.0.0` (or keep `1.0.0-rc.3` in TestFlight only) before public Store submit. Agents must not auto-promote to `1.0.0`.
 
 Agents must **not** touch Apple/Google accounts or signing certificates.
 

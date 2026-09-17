@@ -25,6 +25,7 @@ function oggiLocale() {
 describe("Dashboard Home Oggi UX-8.2", () => {
   beforeEach(() => {
     localStorage.clear();
+    localStorage.setItem("preventivai:onboarding-rapido-v1", "done");
     localStorage.setItem(
       STORAGE_KEYS.datiAzienda,
       JSON.stringify({ nomeOperatore: "Giuseppe Petrillo" })

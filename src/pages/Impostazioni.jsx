@@ -289,7 +289,9 @@ export default function Impostazioni() {
             <div>
               <h2 className="text-2xl font-bold">Cloud Supabase</h2>
               <p className="text-slate-400 mt-1">
-                Account, sincronizzazione e sessione.
+                Sincronizza i dati principali (clienti, preventivi, cantieri,
+                listino, azienda). Distinte, firme, varianti e liste acquisti
+                restano solo su questo dispositivo.
               </p>
             </div>
           </div>

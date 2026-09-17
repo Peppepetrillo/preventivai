@@ -13,6 +13,7 @@ import AssistantCard from "../components/assistant/AssistantCard";
 import { ROUTES } from "../app/routes";
 import HomeDaFareItem from "../features/oggi/components/HomeDaFareItem";
 import HomeLavoroCard from "../features/oggi/components/HomeLavoroCard";
+import OnboardingRapido from "../features/oggi/components/OnboardingRapido";
 import { calcolaOggi } from "../features/oggi/oggiService";
 import { PreventivAISuggestions } from "../features/intelligence";
 import { leggiAttivita } from "../domain/attivita";
@@ -62,6 +63,8 @@ export default function Dashboard() {
             {oggi.frase}
           </p>
         </header>
+
+        <OnboardingRapido />
 
         <section aria-labelledby="home-oggi-title" data-testid="home-sezione-oggi">
           <h2 id="home-oggi-title" className="ds-card-title mb-3 px-0.5">

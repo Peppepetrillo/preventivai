@@ -41,13 +41,14 @@ Prices come **only** from the user’s listino. The AI never invents prices.
 
 ## Incremental voice commands
 
-| Command | Verdict |
-|---------|---------|
-| Aggiungi / togli / modifica quantità su carrello | **IMPLEMENTABILE ORA** (P2 post-baseline) |
-| Fammi vedere il totale | **IMPLEMENTABILE ORA** (UI read-only) |
-| Genera il PDF | **RICHIEDE ARCHITETTURA** (wizard + PDF + confirm) |
+| Command | Status |
+|---------|--------|
+| Aggiungi / togli / porta a / metti N | **SHIPPED** (preview → confirm) — `voiceIncremental.js` |
+| Fammi vedere il totale | FUTURE (read-only) |
+| Genera il PDF | **RICHIEDE ARCHITETTURA** — out of freeze |
 
-Full-utterance → draft + confirm is the **October baseline**. Incremental is not a release blocker.
+Pipeline: comando → interpretazione → **anteprima** → **conferma** → carrello.  
+Prezzi solo listino. Match mancante → messaggio + Modifica / Scegli listino / Ignora.
 
 ## Permissions
 

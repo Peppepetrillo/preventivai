@@ -118,18 +118,29 @@ function StepComponi({
   }, [onImpostaExpressAutoOpen]);
 
   const applicaBozzaExpress = useCallback(
-    ({ lavorazioni: nuoveLavorazioni, condizioni: nuoveCondizioni, cliente: nuovoCliente, avvisi, riepilogo }) => {
+    ({
+      lavorazioni: nuoveLavorazioni,
+      condizioni: nuoveCondizioni,
+      cliente: nuovoCliente,
+      avvisi,
+      riepilogo,
+      modalita,
+    }) => {
       setSnapshotExpress({
         lavorazioni: [...lavorazioni],
         condizioni: { ...condizioni },
         cliente,
       });
 
-      if (nuoveLavorazioni?.length) {
+      if (modalita === "incrementale") {
+        onAggiornaLavorazioni(nuoveLavorazioni || []);
+      } else if (nuoveLavorazioni?.length) {
         onAggiornaLavorazioni(nuoveLavorazioni);
       }
 
-      onAggiornaCondizioni(nuoveCondizioni);
+      if (nuoveCondizioni) {
+        onAggiornaCondizioni(nuoveCondizioni);
+      }
 
       if (nuovoCliente && nuovoCliente !== cliente) {
         onImpostaCliente?.(nuovoCliente);
@@ -138,12 +149,15 @@ function StepComponi({
       onImpostaTipoLavoro?.(TIPO_LAVORO.express);
 
       const messaggioAvvisi = avvisi?.length ? ` ${avvisi.join(" ")}` : "";
-      const messaggioRiepilogo = riepilogo?.vociTrovate
-        ? ` ${riepilogo.vociTrovate} lavorazioni applicate.`
-        : "";
+      const messaggioRiepilogo =
+        modalita === "incrementale"
+          ? " Modifica vocale applicata."
+          : riepilogo?.vociTrovate
+            ? ` ${riepilogo.vociTrovate} lavorazioni applicate.`
+            : "";
 
       setFeedbackExpress(
-        `Bozza Express applicata.${messaggioRiepilogo}${messaggioAvvisi}`.trim()
+        `${modalita === "incrementale" ? "Comando vocale" : "Bozza Express"} applicat${modalita === "incrementale" ? "o" : "a"}.${messaggioRiepilogo}${messaggioAvvisi}`.trim()
       );
     },
     [
@@ -366,6 +380,7 @@ function StepComponi({
         open={expressAperto}
         onClose={chiudiExpress}
         clienteCorrente={cliente}
+        lavorazioniCorrenti={lavorazioni}
         onApplica={applicaBozzaExpress}
       />
 
