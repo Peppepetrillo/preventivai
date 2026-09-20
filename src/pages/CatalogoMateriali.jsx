@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Package,
@@ -17,6 +17,7 @@ import FamigliaMaterialeSheet from "../features/catalogoMateriali/components/Fam
 import VarianteMaterialeSheet from "../features/catalogoMateriali/components/VarianteMaterialeSheet";
 import { useCatalogoMaterialiUi } from "../features/catalogoMateriali/hooks/useCatalogoMaterialiUi";
 import { metaCategoriaMateriale } from "../features/catalogoMateriali/catalogoMaterialiUiMeta";
+import { setGuardiaNavigazioneIndietro } from "../navigation/navigateBack";
 
 /**
  * Catalogo Materiali — UI mobile-first (Sprint 13 Step 4).
@@ -81,6 +82,27 @@ export default function CatalogoMateriali() {
   function apriNuovaVariante() {
     if (famigliaAttiva) setSheetVariante("nuova");
   }
+
+  // Edge swipe / Android back: un livello di drill-down, non uscire dal catalogo.
+  useEffect(() => {
+    const inDrillDown =
+      vista !== "categorie" || Boolean(String(ricerca || "").trim());
+    if (!inDrillDown) {
+      setGuardiaNavigazioneIndietro(null);
+      return undefined;
+    }
+
+    setGuardiaNavigazioneIndietro(() => {
+      if (ricerca.trim() && vista === "famiglie" && !categoriaId) {
+        aggiornaRicerca("");
+        return { blocca: true };
+      }
+      indietro();
+      return { blocca: true };
+    });
+
+    return () => setGuardiaNavigazioneIndietro(null);
+  }, [vista, ricerca, categoriaId, indietro, aggiornaRicerca]);
 
   return (
     <PageWrapper>

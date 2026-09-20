@@ -3,6 +3,7 @@ import {
   CalendarDays,
   ChevronRight,
   FileText,
+  Mic,
   Sparkles,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -12,6 +13,7 @@ import AssistantCard from "../components/assistant/AssistantCard";
 import { ROUTES } from "../app/routes";
 import HomeDaFareItem from "../features/oggi/components/HomeDaFareItem";
 import HomeLavoroCard from "../features/oggi/components/HomeLavoroCard";
+import OnboardingRapido from "../features/oggi/components/OnboardingRapido";
 import { calcolaOggi } from "../features/oggi/oggiService";
 import { PreventivAISuggestions } from "../features/intelligence";
 import { leggiAttivita } from "../domain/attivita";
@@ -62,6 +64,8 @@ export default function Dashboard() {
           </p>
         </header>
 
+        <OnboardingRapido />
+
         <section aria-labelledby="home-oggi-title" data-testid="home-sezione-oggi">
           <h2 id="home-oggi-title" className="ds-card-title mb-3 px-0.5">
             Oggi
@@ -76,14 +80,24 @@ export default function Dashboard() {
               <p className="ds-text-secondary mt-2">
                 Non hai lavori programmati per oggi.
               </p>
-              <Link
-                to={ROUTES.agenda}
-                className="btn-secondary mt-4 min-h-[48px] inline-flex items-center justify-center gap-2 px-4"
-                data-testid="home-apri-agenda-vuoto"
-              >
-                <CalendarDays size={18} aria-hidden="true" />
-                Apri Agenda
-              </Link>
+              {!String(datiAzienda?.nomeDitta || "").trim() ? (
+                <Link
+                  to={ROUTES.datiAzienda}
+                  className="btn-primary mt-4 min-h-[48px] inline-flex items-center justify-center gap-2 px-4"
+                  data-testid="home-setup-dati-azienda"
+                >
+                  Completa i dati azienda
+                </Link>
+              ) : (
+                <Link
+                  to={ROUTES.agenda}
+                  className="btn-secondary mt-4 min-h-[48px] inline-flex items-center justify-center gap-2 px-4"
+                  data-testid="home-apri-agenda-vuoto"
+                >
+                  <CalendarDays size={18} aria-hidden="true" />
+                  Apri Agenda
+                </Link>
+              )}
             </div>
           ) : (
             <ul className="space-y-3">
@@ -125,7 +139,7 @@ export default function Dashboard() {
           </section>
         ) : null}
 
-        <section aria-label="Azione principale">
+        <section aria-label="Azione principale" className="space-y-3">
           <Link
             to={ROUTES.preventiviNuovo}
             className="btn-primary w-full min-h-[52px] flex items-center justify-center gap-2 text-base font-semibold"
@@ -133,6 +147,15 @@ export default function Dashboard() {
           >
             <FileText size={20} aria-hidden="true" />
             Nuovo preventivo
+          </Link>
+          <Link
+            to={`${ROUTES.preventiviNuovo}?express=1`}
+            className="btn-secondary w-full min-h-[48px] flex items-center justify-center gap-2"
+            data-testid="home-preventivo-vocale"
+            aria-label="Preventivo vocale rapido"
+          >
+            <Mic size={18} aria-hidden="true" />
+            Preventivo vocale
           </Link>
         </section>
 

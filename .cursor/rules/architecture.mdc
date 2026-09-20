@@ -1,0 +1,13 @@
+---
+description: PreventivAI real architecture constraints for agents
+alwaysApply: true
+---
+
+# Architecture
+
+- Prefer existing layers: `pages` → `features` / `components` → `hooks` → `services` / `domain` → `repositories` → `utils/storage`.
+- Do not invent a second persistence or sync system.
+- Reuse `STORAGE_KEYS`, repositories, and workflow services already in the tree.
+- Read `docs/ARCHITECTURE.md` before large changes.
+- HashRouter routes live in `src/app/routes.js` — do not invent parallel routers.
+- Preventivo→Cantiere already exists (`creaCantiereDaPreventivo`, workflow convert). Extend tests/UX; do not rebuild.

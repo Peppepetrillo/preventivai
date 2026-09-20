@@ -99,20 +99,22 @@ export default function SpeseSection({
   function gestisciSalva(payload) {
     const daAssistente =
       sheetOrigine === "assistente-economico";
-    if (inModifica?.id) {
-      onAggiorna?.(inModifica.id, payload);
-    } else {
-      onAggiungi?.(payload);
+    const esito = inModifica?.id
+      ? onAggiorna?.(inModifica.id, payload)
+      : onAggiungi?.(payload);
+    if (esito && esito.success === false) {
+      return esito;
     }
     setSheetAperto(false);
     setSheetPrefill(null);
     setSheetOrigine(null);
-    if (daAssistente) return;
+    if (daAssistente) return esito || { success: true };
     requestAnimationFrame(() => {
       document
         .getElementById("sezione-spese")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+    return esito || { success: true };
   }
 
   return (
@@ -168,7 +170,7 @@ export default function SpeseSection({
               key={filtro.id}
               type="button"
               onClick={() => setCategoriaFiltro(filtro.id)}
-              className={`shrink-0 min-h-[40px] px-3 rounded-full border text-sm font-medium ${
+              className={`shrink-0 min-h-[44px] px-3 rounded-full border text-sm font-medium ${
                 categoriaFiltro === filtro.id
                   ? "border-yellow-400/50 bg-yellow-400/15 text-yellow-100"
                   : "border-white/10 bg-white/5 ds-text-primary"

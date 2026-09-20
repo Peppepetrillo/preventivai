@@ -45,6 +45,8 @@ export const STORAGE_KEYS = {
   backupAutomaticoConfig: "preventivai.backupAutomatico.config",
   /** Ultimo snapshot backup automatico (JSON v1, stesso formato creaBackupCompleto) */
   backupAutomaticoUltimo: "preventivai.backupAutomatico.ultimo",
+  /** Anagrafica operai — locale (manodopera 1.0; sync cloud non in questa release) */
+  operai: "preventivai.operai",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -85,6 +87,7 @@ export const STORAGE_FALLBACKS = {
     ultimoErroreIl: null,
   },
   [STORAGE_KEYS.backupAutomaticoUltimo]: null,
+  [STORAGE_KEYS.operai]: [],
 };
 
 export const APP_DATA_KEYS = {
