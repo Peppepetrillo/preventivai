@@ -1,72 +1,23 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Download, Share2, X } from "lucide-react";
+import { Download, Minus, Plus, Share2, X } from "lucide-react";
 
-import { condividiBlob, esportaBlob } from "../utils/nativeExport";
+import {
+  condividiDaBlobUrl,
+  scaricaDaBlobUrl,
+  urlPdfFitWidth,
+} from "./pdfAnteprimaUtils";
 
 const DURATA_MS = 250;
-
-/**
- * URL PDF con hint fit-to-width per viewer che supportano i fragment.
- * @param {string} blobUrl
- * @returns {string}
- */
-export function urlPdfFitWidth(blobUrl) {
-  if (!blobUrl) return "";
-  const base = String(blobUrl).split("#")[0];
-  return `${base}#view=FitH&zoom=page-width`;
-}
-
-/**
- * Scarica/esporta un PDF da blob URL (solo UI, nessuna generazione).
- * Su iOS Capacitor usa Share invece di <a download>.
- * @param {string} blobUrl
- * @param {string} nomeFile
- */
-export async function scaricaDaBlobUrl(blobUrl, nomeFile = "Preventivo.pdf") {
-  const risposta = await fetch(blobUrl);
-  const blob = await risposta.blob();
-  await esportaBlob(blob, nomeFile, { titolo: nomeFile });
-}
-
-/**
- * Condivide un PDF via Share Sheet nativo (non download/export).
- * @param {string} blobUrl
- * @param {string} nomeFile
- * @param {string} titolo
- * @param {Blob=} blobNoto Blob già disponibile (evita fetch su blob: URL in WKWebView)
- * @returns {Promise<{ success: boolean, error?: string, fallback?: string, annullato?: boolean }>}
- */
-export async function condividiDaBlobUrl(
-  blobUrl,
-  nomeFile = "Preventivo.pdf",
-  titolo = "Anteprima PDF",
-  blobNoto = null
-) {
-  let blob = blobNoto;
-  if (!blob && blobUrl) {
-    const risposta = await fetch(blobUrl);
-    blob = await risposta.blob();
-  }
-  if (!blob) {
-    return { success: false, error: "blob_mancante" };
-  }
-
-  const esito = await condividiBlob(blob, nomeFile, { titolo });
-  if (esito.success) {
-    return {
-      success: true,
-      fallback: esito.metodo === "download" ? "download" : undefined,
-    };
-  }
-  if (esito.annullato || esito.error === "annullato") {
-    return { success: false, error: "annullato", annullato: true };
-  }
-  return { success: false, error: esito.error || "share_fallito" };
-}
+const ZOOM_PDF_MIN = 1;
+const ZOOM_PDF_MAX = 3;
+const ZOOM_PDF_STEP = 0.25;
 
 /**
  * Anteprima PDF fullscreen mobile.
  * Solo UI: nessuna generazione PDF / Proposal / Listino.
+ *
+ * Zoom: pinch nativo del viewer PDF (touch-action pinch-zoom) + controlli +/-.
+ * Non impostiamo touchAction:none sul body (bloccherebbe il pinch su iPhone).
  *
  * @param {{
  *   aperto: boolean,
@@ -78,6 +29,7 @@ export async function condividiDaBlobUrl(
  *   onCondividi?: () => void|Promise<void>,
  *   onScarica?: () => void|Promise<void>,
  *   inElaborazione?: boolean,
+ *   abilitaZoom?: boolean,
  * }} props
  */
 export default function PdfAnteprima({
@@ -90,11 +42,13 @@ export default function PdfAnteprima({
   onCondividi,
   onScarica,
   inElaborazione = false,
+  abilitaZoom = false,
 }) {
   const titleId = useId();
   const [montato, setMontato] = useState(false);
   const [apertoVisivo, setApertoVisivo] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [zoomCss, setZoomCss] = useState(ZOOM_PDF_MIN);
   const chiudiTimer = useRef(null);
 
   useEffect(() => {
@@ -123,14 +77,17 @@ export default function PdfAnteprima({
   useEffect(() => {
     if (!montato) return undefined;
     const prevOverflow = document.body.style.overflow;
-    const prevTouch = document.body.style.touchAction;
     document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
+    // Non forzare touchAction:none sul body: su iPhone blocca pinch-zoom
+    // del viewer PDF nativo nell'iframe.
     return () => {
       document.body.style.overflow = prevOverflow;
-      document.body.style.touchAction = prevTouch;
     };
   }, [montato]);
+
+  useEffect(() => {
+    if (!aperto) setZoomCss(ZOOM_PDF_MIN);
+  }, [aperto, blobUrl]);
 
   useEffect(() => {
     if (!montato || typeof onChiudi !== "function") return undefined;
@@ -142,6 +99,14 @@ export default function PdfAnteprima({
   }, [montato, onChiudi]);
 
   if (!montato) return null;
+
+  function zoomIn() {
+    setZoomCss((z) => Math.min(ZOOM_PDF_MAX, Number((z + ZOOM_PDF_STEP).toFixed(2))));
+  }
+
+  function zoomOut() {
+    setZoomCss((z) => Math.max(ZOOM_PDF_MIN, Number((z - ZOOM_PDF_STEP).toFixed(2))));
+  }
 
   async function handleCondividi() {
     if (busy || !blobUrl) return;
@@ -179,6 +144,8 @@ export default function PdfAnteprima({
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      data-zoom-enabled={abilitaZoom ? "true" : "false"}
+      data-testid="pdf-anteprima"
     >
       <div className="pdf-anteprima-shell">
         <header className="pdf-anteprima-header">
@@ -208,13 +175,64 @@ export default function PdfAnteprima({
           </button>
         </header>
 
-        <div className="pdf-anteprima-viewer">
+        {abilitaZoom ? (
+          <div
+            className="pdf-anteprima-zoom-bar"
+            data-testid="pdf-anteprima-zoom-bar"
+          >
+            <button
+              type="button"
+              className="pdf-anteprima-btn pdf-anteprima-btn--ghost"
+              aria-label="Riduci zoom"
+              data-testid="pdf-anteprima-zoom-out"
+              disabled={zoomCss <= ZOOM_PDF_MIN}
+              onClick={zoomOut}
+            >
+              <Minus size={18} aria-hidden="true" />
+            </button>
+            <span
+              className="pdf-anteprima-zoom-label"
+              data-testid="pdf-anteprima-zoom-label"
+            >
+              {Math.round(zoomCss * 100)}%
+            </span>
+            <button
+              type="button"
+              className="pdf-anteprima-btn pdf-anteprima-btn--ghost"
+              aria-label="Aumenta zoom"
+              data-testid="pdf-anteprima-zoom-in"
+              disabled={zoomCss >= ZOOM_PDF_MAX}
+              onClick={zoomIn}
+            >
+              <Plus size={18} aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
+
+        <div
+          className="pdf-anteprima-viewer"
+          data-testid="pdf-anteprima-viewer"
+        >
           {blobUrl ? (
-            <iframe
-              title={titolo}
-              src={viewerSrc}
-              className="pdf-anteprima-frame"
-            />
+            <div
+              className="pdf-anteprima-frame-wrap"
+              style={
+                abilitaZoom
+                  ? {
+                      width: `${zoomCss * 100}%`,
+                      height: `${zoomCss * 100}%`,
+                      minHeight: `${zoomCss * 100}%`,
+                    }
+                  : undefined
+              }
+            >
+              <iframe
+                title={titolo}
+                src={viewerSrc}
+                className="pdf-anteprima-frame"
+                allow="fullscreen"
+              />
+            </div>
           ) : (
             <div className="pdf-anteprima-empty">
               {inElaborazione

@@ -49,6 +49,28 @@ const Agenda = lazy(() => import("./pages/Agenda"));
 const Altro = lazy(() => import("./pages/Altro"));
 const Economia = lazy(() => import("./pages/Economia"));
 const Storico = lazy(() => import("./pages/Storico"));
+const CalcoliElettrici = lazy(() => import("./pages/CalcoliElettrici"));
+const CalcoloOhmPage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloOhmPage")
+);
+const CalcoloPotenzaPage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloPotenzaPage")
+);
+const CalcoloCadutaPage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloCadutaPage")
+);
+const CalcoloSezionePage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloSezionePage")
+);
+const CalcoloConsumoPage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloConsumoPage")
+);
+const CalcoloConversioniPage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloConversioniPage")
+);
+const CalcoloCaricoPage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloCaricoPage")
+);
 
 function LoadingPage() {
   return (
@@ -170,6 +192,36 @@ function AppShell() {
               <Route
                 path={ROUTES.storico}
                 element={<Storico />}
+              />
+
+              <Route
+                path={ROUTES.calcoliElettrici}
+                element={<CalcoliElettrici />}
+              />
+              <Route path={ROUTES.calcoliOhm} element={<CalcoloOhmPage />} />
+              <Route
+                path={ROUTES.calcoliPotenza}
+                element={<CalcoloPotenzaPage />}
+              />
+              <Route
+                path={ROUTES.calcoliCaduta}
+                element={<CalcoloCadutaPage />}
+              />
+              <Route
+                path={ROUTES.calcoliSezione}
+                element={<CalcoloSezionePage />}
+              />
+              <Route
+                path={ROUTES.calcoliConsumo}
+                element={<CalcoloConsumoPage />}
+              />
+              <Route
+                path={ROUTES.calcoliConversioni}
+                element={<CalcoloConversioniPage />}
+              />
+              <Route
+                path={ROUTES.calcoliCarico}
+                element={<CalcoloCaricoPage />}
               />
 
               <Route

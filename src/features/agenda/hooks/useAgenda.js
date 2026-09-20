@@ -138,7 +138,8 @@ export function useAgenda() {
         separatore > 0 ? idStr.slice(0, separatore) : idStr;
       const giornataId = separatore > 0 ? idStr.slice(separatore + 1) : "";
 
-      const aggiornati = cantieri.map((cantiere) => {
+      const elenco = leggiCantieriTutti();
+      const aggiornati = elenco.map((cantiere) => {
         if (String(cantiere.id) !== String(cantiereId)) return cantiere;
         if (giornataId) {
           return aggiornaCantiere(
@@ -155,7 +156,7 @@ export function useAgenda() {
       });
       salvaCantieri(aggiornati);
       setCantieri(aggiornati);
-      const cantiere = cantieri.find((c) => String(c.id) === String(cantiereId));
+      const cantiere = elenco.find((c) => String(c.id) === String(cantiereId));
       if (giornataId) {
         void notificationService.cancelNotificheGiornata(cantiereId, giornataId);
       } else if (cantiere) {
@@ -165,13 +166,14 @@ export function useAgenda() {
       }
       setCompletamentoId(null);
     },
-    [cantieri, setCantieri]
+    [setCantieri]
   );
 
   const creaLavoro = useCallback(
     (form) => {
       const cantiere = creaLavoroPianificato(form);
-      const aggiornati = [...cantieri, cantiere];
+      // Storage SoT: create rapide non devono perdere altri cantieri.
+      const aggiornati = [...leggiCantieriTutti(), cantiere];
       salvaCantieri(aggiornati);
       setCantieri(aggiornati);
 
@@ -198,7 +200,7 @@ export function useAgenda() {
 
       return cantiere;
     },
-    [cantieri, setCantieri]
+    [setCantieri]
   );
 
   const registraGiornataLavorativa = useCallback(
@@ -207,7 +209,7 @@ export function useAgenda() {
       if (!cantiereId) return { success: false, error: "cantiere_obbligatorio" };
 
       let trovato = false;
-      const aggiornati = cantieri.map((cantiere) => {
+      const aggiornati = leggiCantieriTutti().map((cantiere) => {
         if (String(cantiere.id) !== cantiereId) return cantiere;
         trovato = true;
         return aggiornaCantiere(
@@ -236,7 +238,7 @@ export function useAgenda() {
 
       return { success: true };
     },
-    [cantieri, setCantieri]
+    [setCantieri]
   );
 
   const vaiGiornoPrecedente = useCallback(() => {

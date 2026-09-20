@@ -49,6 +49,10 @@ export default function Cantiere() {
     completaLavoro,
     aggiungiFoto,
     eliminaFoto,
+    aggiungiProgettoElettrico,
+    sostituisciProgettoElettrico,
+    eliminaProgettoElettrico,
+    rinominaProgettoElettrico,
     aggiungiNotaDiario,
     aggiungiGiornata,
     aggiornaGiornata,
@@ -139,6 +143,7 @@ export default function Cantiere() {
         ) : null}
 
         <CantiereOverview
+          key={String(cantiereSelezionato.id)}
           cantiere={cantiereSelezionato}
           avanzamento={avanzamento}
           nuovaChecklist={nuovaChecklist}
@@ -155,6 +160,10 @@ export default function Cantiere() {
           onToggleMaterialeAcquistato={toggleMaterialeAcquistato}
           onAggiungiFoto={aggiungiFoto}
           onEliminaFoto={eliminaFoto}
+          onAggiungiProgettoElettrico={aggiungiProgettoElettrico}
+          onSostituisciProgettoElettrico={sostituisciProgettoElettrico}
+          onEliminaProgettoElettrico={eliminaProgettoElettrico}
+          onRinominaProgettoElettrico={rinominaProgettoElettrico}
           onAggiungiNotaDiario={aggiungiNotaDiario}
           onEliminaCantiere={gestisciElimina}
           onIniziaLavoro={iniziaLavoro}

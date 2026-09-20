@@ -65,4 +65,24 @@ describe("CantiereFotoViewer", () => {
     );
     expect(screen.getByRole("alert")).toHaveTextContent(/non disponibile/i);
   });
+
+  it("abilita stage zoom quando richiesto", () => {
+    render(
+      <CantiereFotoViewer
+        open
+        abilitaZoom
+        src="data:image/jpeg;base64,ABC"
+        onClose={vi.fn()}
+      />
+    );
+    expect(screen.getByTestId("cantiere-foto-viewer")).toHaveAttribute(
+      "data-zoom-enabled",
+      "true"
+    );
+    expect(screen.getByTestId("cantiere-foto-viewer-stage")).toBeInTheDocument();
+    expect(screen.getByTestId("cantiere-foto-viewer-img")).toHaveAttribute(
+      "data-zoomed",
+      "false"
+    );
+  });
 });

@@ -18,4 +18,22 @@ describe("messaggioErroreWorkflow", () => {
       "Riprova più tardi."
     );
   });
+
+  it("traduce errori variante/cantiere in italiano", () => {
+    expect(messaggioErroreWorkflow("richiede_approvazione")).toMatch(
+      /approvata/i
+    );
+    expect(messaggioErroreWorkflow("variante_non_trovata")).toMatch(
+      /non trovata/i
+    );
+    expect(messaggioErroreWorkflow("preventivo_non_collegato")).toMatch(
+      /preventivo collegato/i
+    );
+    expect(messaggioErroreWorkflow("pagamento_non_valido")).toMatch(
+      /pagamento/i
+    );
+    expect(messaggioErroreWorkflow("spesa_non_valida")).toMatch(/spesa/i);
+    expect(messaggioErroreWorkflow("nessun_cantiere")).toMatch(/cantiere/i);
+    expect(messaggioErroreWorkflow("titolo_obbligatorio")).toMatch(/titolo/i);
+  });
 });

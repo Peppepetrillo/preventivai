@@ -4,13 +4,17 @@ import PageBackLink from "../../../components/PageBackLink";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import ConfirmDialog from "../../../components/ConfirmDialog";
-import { routeCliente, routePreventivo, sezioneDaLocation } from "../../../app/routes";
+import { ROUTES, routeCliente, routePreventivo, sezioneDaLocation } from "../../../app/routes";
 import { getCantiereAssistant } from "../../../services/assistantService";
 import { ottieniFirma } from "../../../domain/firma";
 import { aggiungiInsight } from "../../../domain/insights";
 import { ottieniVarianti } from "../../../domain/varianti";
+import { isRecordCestinato } from "../../../domain/cestino";
 import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
-import { leggiPreventivi } from "../../../repositories/preventiviRepository";
+import {
+  leggiPreventivi,
+  trovaPreventivo,
+} from "../../../repositories/preventiviRepository";
 import { PreventivAISuggestions } from "../../intelligence";
 import CantiereDiarioSection from "../../diario/components/CantiereDiarioSection";
 import CantiereReportPanel from "../../report/components/CantiereReportPanel";
@@ -27,10 +31,12 @@ import {
   apriWhatsAppConTesto,
   generaTestoRiepilogoLavoroDiretto
 } from "../services/lavoroDirettoTestoService";
+import { creaPreventivoDaCantiereDiretto } from "../services/creaPreventivoDaCantiereDiretto";
 import { risolviSrcFotoCantiere } from "../services/cantieriFotoService";
 import CantiereAssistantPanel from "./CantiereAssistantPanel";
 import CantiereFotoViewer from "./CantiereFotoViewer";
 import CantiereOperativo from "./CantiereOperativo";
+import ProgettoElettricoSection from "./ProgettoElettricoSection";
 import CantiereSegmentBar from "./CantiereSegmentBar";
 import CantiereVarianti from "./CantiereVarianti";
 import DescrizioneInterventoSection from "./DescrizioneInterventoSection";
@@ -100,6 +106,10 @@ export default function CantiereOverview({
   onToggleMaterialeAcquistato,
   onAggiungiFoto,
   onEliminaFoto,
+  onAggiungiProgettoElettrico,
+  onSostituisciProgettoElettrico,
+  onEliminaProgettoElettrico,
+  onRinominaProgettoElettrico,
   onAggiungiNotaDiario,
   onEliminaCantiere,
   onIniziaLavoro,
@@ -152,6 +162,10 @@ export default function CantiereOverview({
   const [origineRegistraIncasso, setOrigineRegistraIncasso] = useState(null);
   const [operazioneRegistrata, setOperazioneRegistrata] = useState(null);
   const [operazioneRegistrataTick, setOperazioneRegistrataTick] = useState(0);
+  const [creaPreventivoInCorso, setCreaPreventivoInCorso] = useState(false);
+  const [messaggioDocumenti, setMessaggioDocumenti] = useState("");
+  const [progettoBusy, setProgettoBusy] = useState(false);
+  const [messaggioProgetto, setMessaggioProgetto] = useState("");
   const [preventivi] = useDatiLocaliSincronizzati(leggiPreventivi);
   const sezioneModifica = useRef(null);
   const sezioneChecklist = useRef(null);
@@ -219,16 +233,22 @@ export default function CantiereOverview({
 
   const gestisciAggiungiSpesa = useCallback(
     (payload) => {
-      onAggiungiSpesa?.(payload);
-      notificaOperazioneEconomica("spesa", payload);
+      const esito = onAggiungiSpesa?.(payload);
+      if (!esito || esito.success !== false) {
+        notificaOperazioneEconomica("spesa", payload);
+      }
+      return esito || { success: true };
     },
     [onAggiungiSpesa, notificaOperazioneEconomica]
   );
 
   const gestisciAggiungiPagamento = useCallback(
     (payload) => {
-      onAggiungiPagamento?.(payload);
-      notificaOperazioneEconomica("incasso", payload);
+      const esito = onAggiungiPagamento?.(payload);
+      if (!esito || esito.success !== false) {
+        notificaOperazioneEconomica("incasso", payload);
+      }
+      return esito || { success: true };
     },
     [onAggiungiPagamento, notificaOperazioneEconomica]
   );
@@ -244,12 +264,17 @@ export default function CantiereOverview({
         ...(materialeId ? { materialeId } : {}),
         ...(listaSpesaId ? { listaSpesaId } : {}),
       };
+      let esito;
       if (spesaMaterialeSheet.spesa?.id) {
-        onAggiornaSpesa?.(spesaMaterialeSheet.spesa.id, dati);
+        esito = onAggiornaSpesa?.(spesaMaterialeSheet.spesa.id, dati);
       } else {
-        gestisciAggiungiSpesa(dati);
+        esito = gestisciAggiungiSpesa(dati);
+      }
+      if (esito && esito.success === false) {
+        return esito;
       }
       chiudiSpesaMaterialeSheet();
+      return esito || { success: true };
     },
     [
       spesaMaterialeSheet,
@@ -299,6 +324,78 @@ export default function CantiereOverview({
       });
     }
   }, []);
+
+  const gestisciAggiungiProgetto = useCallback(
+    async (file, opzioni = {}) => {
+      if (progettoBusy) return;
+      setProgettoBusy(true);
+      setMessaggioProgetto("");
+      try {
+        const esito = await onAggiungiProgettoElettrico?.(file, opzioni);
+        if (esito && esito.ok === false) {
+          setMessaggioProgetto(esito.errore || "Operazione non riuscita.");
+        }
+        return esito;
+      } finally {
+        setProgettoBusy(false);
+      }
+    },
+    [onAggiungiProgettoElettrico, progettoBusy]
+  );
+
+  const gestisciSostituisciProgetto = useCallback(
+    async (file, opzioni = {}) => {
+      if (progettoBusy) return;
+      setProgettoBusy(true);
+      setMessaggioProgetto("");
+      try {
+        const esito = await onSostituisciProgettoElettrico?.(file, opzioni);
+        if (esito && esito.ok === false) {
+          setMessaggioProgetto(esito.errore || "Operazione non riuscita.");
+        }
+        return esito;
+      } finally {
+        setProgettoBusy(false);
+      }
+    },
+    [onSostituisciProgettoElettrico, progettoBusy]
+  );
+
+  const gestisciEliminaProgetto = useCallback(
+    async (progettoId) => {
+      if (progettoBusy) return;
+      setProgettoBusy(true);
+      setMessaggioProgetto("");
+      try {
+        const esito = await onEliminaProgettoElettrico?.(progettoId);
+        if (esito && esito.ok === false) {
+          setMessaggioProgetto(esito.errore || "Operazione non riuscita.");
+        }
+        return esito;
+      } finally {
+        setProgettoBusy(false);
+      }
+    },
+    [onEliminaProgettoElettrico, progettoBusy]
+  );
+
+  const gestisciRinominaProgetto = useCallback(
+    async (progettoId, nome) => {
+      if (progettoBusy) return;
+      setProgettoBusy(true);
+      setMessaggioProgetto("");
+      try {
+        const esito = await onRinominaProgettoElettrico?.(progettoId, nome);
+        if (esito && esito.ok === false) {
+          setMessaggioProgetto(esito.errore || "Operazione non riuscita.");
+        }
+        return esito;
+      } finally {
+        setProgettoBusy(false);
+      }
+    },
+    [onRinominaProgettoElettrico, progettoBusy]
+  );
 
   const attivaTabEScorri = useCallback((tab, callback) => {
     setTabAttivo(tab);
@@ -601,6 +698,23 @@ export default function CantiereOverview({
     };
   }, [cantiere.preventivoId]);
 
+  const preventivoCollegatoLive = useMemo(() => {
+    const id = String(cantiere.preventivoId || "").trim();
+    if (!id) return null;
+    return (
+      (preventivi || []).find((p) => String(p.id) === id) || null
+    );
+  }, [cantiere.preventivoId, preventivi]);
+
+  const preventivoCollegatoCestinato = useMemo(() => {
+    if (preventivoCollegatoLive) return null;
+    const id = String(cantiere.preventivoId || "").trim();
+    if (!id) return null;
+    const trovato = trovaPreventivo(id, { includiCestinati: true });
+    if (!trovato || !isRecordCestinato(trovato)) return null;
+    return trovato;
+  }, [cantiere.preventivoId, preventivoCollegatoLive, preventivi]);
+
   function toggleMaterialeAcquistato(materialeId) {
     if (typeof onToggleMaterialeAcquistato === "function") {
       onToggleMaterialeAcquistato(materialeId);
@@ -846,6 +960,7 @@ export default function CantiereOverview({
               </p>
             ) : null}
             <DescrizioneInterventoSection
+              key={String(cantiere.id)}
               descrizione={
                 cantiere.descrizioneIntervento || cantiere.descrizione || ""
               }
@@ -858,6 +973,17 @@ export default function CantiereOverview({
             />
           </div>
         ) : null}
+
+        <ProgettoElettricoSection
+          cantiereId={cantiere.id}
+          cantiere={cantiere}
+          busy={progettoBusy}
+          messaggio={messaggioProgetto}
+          onAggiungi={gestisciAggiungiProgetto}
+          onSostituisci={gestisciSostituisciProgetto}
+          onElimina={gestisciEliminaProgetto}
+          onRinomina={gestisciRinominaProgetto}
+        />
 
         <CantiereOperativo
           cantiere={cantiere}
@@ -997,20 +1123,98 @@ export default function CantiereOverview({
             Report e preventivo
           </h2>
           <div className="space-y-2">
-            {cantiere.preventivoId ? (
+            {preventivoCollegatoLive ? (
               <Link
-                to={routePreventivo(cantiere.preventivoId)}
+                to={routePreventivo(preventivoCollegatoLive.id)}
                 className="flex items-center justify-between gap-3 min-h-[52px] rounded-[14px] border border-white/10 bg-black/[0.14] px-4 py-3 font-bold text-white"
                 data-testid="cantiere-link-preventivo"
               >
-                <span>Preventivo {cantiere.preventivoNumero || ""}</span>
+                <span>
+                  Preventivo{" "}
+                  {cantiere.preventivoNumero ||
+                    preventivoCollegatoLive.numero ||
+                    ""}
+                </span>
                 <span className="text-slate-400 text-sm">Apri</span>
               </Link>
+            ) : preventivoCollegatoCestinato ? (
+              <div
+                className="rounded-[14px] border border-amber-400/25 bg-amber-400/10 px-4 py-3"
+                data-testid="cantiere-preventivo-cestinato"
+              >
+                <p className="ds-text-secondary text-sm">
+                  Preventivo{" "}
+                  {cantiere.preventivoNumero ||
+                    preventivoCollegatoCestinato.numero ||
+                    ""}{" "}
+                  è nel Cestino. I pagamenti restano su questo cantiere.
+                </p>
+                <Link
+                  to={ROUTES.cestino}
+                  className="inline-flex items-center min-h-[44px] mt-1 text-sm font-bold text-yellow-200"
+                  data-testid="cantiere-preventivo-apri-cestino"
+                >
+                  Apri Cestino
+                </Link>
+              </div>
+            ) : cantiere.preventivoId ? (
+              <p
+                className="ds-text-secondary text-sm py-2"
+                data-testid="cantiere-preventivo-mancante"
+              >
+                Preventivo collegato non trovato (eliminato). I pagamenti
+                restano su questo cantiere.
+              </p>
+            ) : diretto ? (
+              <div
+                className="ds-empty rounded-[14px] border border-white/10 bg-black/[0.14] px-4 py-5 text-center"
+                data-testid="cantiere-crea-preventivo-empty"
+              >
+                <p className="ds-card-title">Nessun preventivo</p>
+                <p className="ds-text-secondary mt-2">
+                  Lavoro diretto: i pagamenti stanno qui. Puoi creare un
+                  preventivo collegato a questo stesso cantiere (niente
+                  duplicati).
+                </p>
+                <button
+                  type="button"
+                  className="btn-primary mt-4 inline-flex min-h-[48px] items-center justify-center px-5 font-bold"
+                  data-testid="cantiere-crea-preventivo"
+                  disabled={creaPreventivoInCorso}
+                  onClick={() => {
+                    if (creaPreventivoInCorso) return;
+                    setCreaPreventivoInCorso(true);
+                    setMessaggioDocumenti("");
+                    const esito = creaPreventivoDaCantiereDiretto(cantiere.id);
+                    setCreaPreventivoInCorso(false);
+                    if (!esito.ok) {
+                      setMessaggioDocumenti(
+                        esito.errore === "cantiere_cestinato"
+                          ? "Ripristina il cantiere dal Cestino prima di creare il preventivo."
+                          : esito.errore === "preventivo_cestinato"
+                            ? "Il preventivo collegato è nel Cestino. Ripristinalo da lì."
+                          : "Non riesco a creare il preventivo. Riprova."
+                      );
+                      return;
+                    }
+                    onAggiornaCampo?.({
+                      preventivoId: esito.cantiere.preventivoId,
+                      preventivoNumero: esito.cantiere.preventivoNumero,
+                    });
+                    navigate(routePreventivo(esito.preventivo.id));
+                  }}
+                >
+                  {creaPreventivoInCorso ? "Creazione…" : "Crea preventivo"}
+                </button>
+                {messaggioDocumenti ? (
+                  <p className="ds-text-secondary mt-3 text-sm text-rose-200">
+                    {messaggioDocumenti}
+                  </p>
+                ) : null}
+              </div>
             ) : (
               <p className="text-sm text-slate-400 py-2">
-                {diretto
-                  ? "Lavoro diretto — nessun preventivo collegato."
-                  : "Nessun preventivo collegato."}
+                Nessun preventivo collegato.
               </p>
             )}
             {!diretto ? (
@@ -1079,7 +1283,10 @@ export default function CantiereOverview({
 
       {(mostraAzioniDaIniziare || mostraAzioniInCorso) && (
         <div
-          className="fixed bottom-[88px] left-0 right-0 z-40 px-4 safe-bottom"
+          className="fixed left-0 right-0 z-40 px-4"
+          style={{
+            bottom: "calc(88px + env(safe-area-inset-bottom, 0px))",
+          }}
           data-testid="cantiere-cta-fissa"
         >
           <div className="max-w-[1120px] mx-auto pro-panel-strong p-3">

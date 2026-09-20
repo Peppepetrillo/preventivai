@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
@@ -70,12 +70,15 @@ function FamigliaForm({
   const [form, setForm] = useState(() => formDaFamiglia(famiglia, categoriaDefault));
   const [errore, setErrore] = useState("");
   const [confermaElimina, setConfermaElimina] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const salvataggioInCorso = useRef(false);
 
   function aggiorna(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
   }
 
   function gestisciSalva() {
+    if (salvataggioInCorso.current) return;
     const nome = String(form.nome || "").trim();
     if (!nome) {
       setErrore("Inserisci il nome del materiale.");
@@ -91,8 +94,15 @@ function FamigliaForm({
       accessoriSuggeriti: form.accessoriSuggeriti || [],
     };
 
+    salvataggioInCorso.current = true;
+    setSalvando(true);
     const ok = isNuova ? onCrea?.(payload) : onSalva?.(famiglia.id, payload);
-    if (ok !== false && ok != null) onClose?.();
+    if (ok === false || ok == null) {
+      salvataggioInCorso.current = false;
+      setSalvando(false);
+      return;
+    }
+    onClose?.();
   }
 
   function confermaEliminazione() {
@@ -195,9 +205,14 @@ function FamigliaForm({
       <button
         type="button"
         onClick={gestisciSalva}
-        className="btn-primary w-full min-h-[52px] font-black"
+        disabled={salvando}
+        className="btn-primary w-full min-h-[52px] font-black disabled:opacity-40"
       >
-        {isNuova ? "Salva materiale" : "Salva modifiche"}
+        {salvando
+          ? "Salvataggio…"
+          : isNuova
+            ? "Salva materiale"
+            : "Salva modifiche"}
       </button>
 
       {!isNuova && famiglia?.personalizzata ? (

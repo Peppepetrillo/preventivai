@@ -68,7 +68,8 @@ describe("DescrizioneInterventoSection", () => {
     miglioraDescrizioneIntervento.mockResolvedValue({
       ok: false,
       nonConfigurato: true,
-      errore: "Assistente IA non configurato.",
+      errore:
+        "Assistente IA non disponibile su questo dispositivo. Puoi continuare a scrivere la descrizione a mano.",
     });
     render(
       <DescrizioneInterventoSection descrizione="test" onSalva={vi.fn()} />
@@ -76,8 +77,32 @@ describe("DescrizioneInterventoSection", () => {
     fireEvent.click(screen.getByTestId("migliora-descrizione-ia"));
     await waitFor(() => {
       expect(screen.getByTestId("migliora-descrizione-errore")).toHaveTextContent(
-        /non configurato/i
+        /non disponibile/i
       );
     });
+  });
+
+  it("rimonta con nuova descrizione iniziale via key (niente sync effect)", () => {
+    const { rerender } = render(
+      <DescrizioneInterventoSection
+        key="c1"
+        descrizione="Prima"
+        onSalva={vi.fn()}
+      />
+    );
+    expect(screen.getByTestId("descrizione-intervento-input")).toHaveValue(
+      "Prima"
+    );
+
+    rerender(
+      <DescrizioneInterventoSection
+        key="c2"
+        descrizione="Seconda"
+        onSalva={vi.fn()}
+      />
+    );
+    expect(screen.getByTestId("descrizione-intervento-input")).toHaveValue(
+      "Seconda"
+    );
   });
 });
