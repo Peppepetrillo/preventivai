@@ -1,43 +1,63 @@
-# Progetto elettrico del cantiere
+# Progetti elettrici del cantiere
 
-Feature mirata (freeze exception): allegare **un** PDF o **un’immagine** (anche scattata in app) del progetto/schema elettrico a un cantiere, consultabile offline in campo.
+Feature mirata: allegare **0→N** PDF o immagini (anche scattate in app) del progetto/schema elettrico a un cantiere, consultabili offline in campo, con zoom su apertura.
 
-Entry: **Cantiere → tab Lavoro → Progetto elettrico**.
+Entry: **Cantiere → tab Lavoro → Progetti elettrici**.
 
 ---
 
 ## UX
 
 ### Stato vuoto
-- Copy: *Tieni qui lo schema del cantiere, sempre a portata di mano.*
+- Titolo: **Progetti elettrici**
+- Copy: *Gli schemi e i progetti di questo lavoro, sempre a portata di mano.*
 - CTA: **＋ Aggiungi progetto** (min-height 52px)
 
+### Con progetti
+- Titolo + CTA **＋ Aggiungi progetto** in alto
+- Lista card (una per progetto): icona · nome · `PDF · 2,4 MB` / `Immagine · …`
+- **Apri progetto** + **•••** (Rinomina / Sostituisci / Elimina)
+
 ### Aggiungi / Sostituisci (BottomSheet)
-1. **Scegli PDF** — schema/documento tecnico  
-2. **Scegli immagine** — dalla libreria  
-3. **Scatta foto** — `input capture="environment"` (stesso pattern delle foto cantiere)
+1. **Scegli PDF**
+2. **Scegli immagine**
+3. **Scatta foto** — `input capture="environment"`
+
+Ogni **Aggiungi** crea un **nuovo** progetto (non sostituisce gli esistenti).  
+**Sostituisci** aggiorna solo il progetto selezionato (nuovo blob prima, cleanup del vecchio dopo).
 
 ### Nome documento (BottomSheet, opzionale)
-Dopo selezione/scatto: campo nome precompilato, **Salva**.  
-Se vuoto → fallback (`Schema_unifilare` dal filename, oppure *Progetto elettrico* / *Schema fotografato*).
+Dopo selezione/scatto: campo nome precompilato, **Salva**.
 
-### Card salvata
-- Icona + nome + `PDF · 2,4 MB` / `Immagine · …`
-- CTA primaria: **Apri progetto**
-- **•••** → Sostituisci / Elimina (ConfirmDialog)
+### Viewer
+- **Immagine**: `CantiereFotoViewer` fullscreen — pinch-to-zoom, pan se zoomato, doppio tap
+- **PDF**: `PdfAnteprima` — scroll pagine, pinch nativo del viewer (touch-action), controlli +/- zoom CSS
 
 ---
 
 ## Modello dati
 
 ```js
-cantiere.progettoElettrico = {
-  id, tipo: "pdf"|"image", nome, mimeType, size,
-  blobId, cantiereId, createdAt, updatedAt
-}
+cantiere.progettiElettrici = [
+  {
+    id, tipo: "pdf"|"image", nome, mimeType, size,
+    blobId, cantiereId, createdAt, updatedAt
+  },
+  // …
+]
 ```
 
 **Mai** Base64 / `data:` nel LocalStorage.
+
+### Migrazione (idempotente)
+
+```
+cantiere.progettoElettrico  →  cantiere.progettiElettrici = [quel progetto]
+```
+
+- Non duplica se già migrato
+- Conserva lo stesso `blobId` (nessuna copia del binario)
+- `elencaProgettiElettrici(cantiere)` legge array o legacy senza mutare
 
 ---
 
@@ -45,27 +65,31 @@ cantiere.progettoElettrico = {
 
 | Layer | Contenuto |
 |-------|-----------|
-| LocalStorage cantieri | Solo metadata |
+| LocalStorage cantieri | Solo metadata (array) |
 | IndexedDB `preventivai-progetto-elettrico` | Blob (`cantiereId::blobId`) |
 
 Limiti: PDF ≤ 20 MB, immagini ≤ 12 MB.  
-Hard-delete cantiere → cleanup blob.
+Lista = solo metadata (blob caricati on-demand all’apertura).  
+Hard-delete cantiere → cleanup di tutti i blob del cantiere.  
+Elimina singolo → solo quel blob.
 
 ---
 
 ## Offline / cloud
 
-- Add / open / replace / delete: **offline** (IndexedDB).
+- Add / open / replace / delete / rename: **offline** (IndexedDB).
 - Sync binario cloud: **non in 1.0**.
 - Meta può viaggiare con `cantieri`; su altro device senza blob → “File non disponibile…”.
+- Non dichiarare sincronizzato un file non uploadato.
 
 ---
 
-## Sicurezza route
+## Sicurezza route / cambio cantiere
 
 - `CantiereOverview` remounta con `key={cantiere.id}`.
 - La sezione resetta sheet/viewer/bozze su cambio `cantiereId`.
 - Salvataggio ignora risultato se l’ID è cambiato a metà operazione.
+- Progetti del cantiere A non compaiono nel B.
 
 ---
 
@@ -73,23 +97,27 @@ Hard-delete cantiere → cleanup blob.
 
 ```
 progettoElettricoBlobStore.js
-progettoElettricoService.js
+progettoElettricoService.js   (lista, migrazione, CRUD)
+pinchZoomPan.js / usePinchZoomPan.js
 ProgettoElettricoSection.jsx
-useCantieri (add/replace/delete)
-eliminaCantiereService (cleanup)
-cloudMediaPayload (sanitize meta)
+CantiereFotoViewer.jsx (zoom)
+PdfAnteprima.jsx (zoom)
+useCantieri (add/replace/delete/rename)
+eliminaCantiereService (cleanup multi)
+cloudMediaPayload (sanitize array + legacy)
 ```
 
 ---
 
 ## Test
 
-Unit: validazione, nome, dimensioni, PDF/immagine, replace, delete, sanitizzazione.  
-UI: empty, card+Apri, sheet 3 opzioni+camera, menu •••, ConfirmDialog, reset cambio cantiere.
+Unit: empty/1/2/3+, PDF/immagine, replace target, delete leave others, migrazione + idempotenza, cambio cantiere, blob distinti, cleanup, offline open, no Base64, pinchZoomPan.  
+UI: empty, lista multi, sheet 3 opzioni+camera, menu ••• Rinomina/Sostituisci/Elimina, ConfirmDialog con id, reset cambio cantiere, open viewer zoom.
 
 ---
 
 ## Limiti 1.0 / 2.0
 
-Un solo progetto; no sync multi-device del file; no OCR/AI/annotazioni.  
+Multi-progetto locale sì; sync multi-device del binario no; no OCR/AI/annotazioni.  
+Zoom reale pinch da verificare su iPhone (Human QA).  
 Vedi `docs/PREVENTIVAI-2.0-BACKLOG.md`.

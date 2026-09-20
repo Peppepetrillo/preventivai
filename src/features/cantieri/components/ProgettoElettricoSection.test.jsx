@@ -13,30 +13,55 @@ vi.mock("../../../components/BottomSheet", () => ({
 }));
 
 vi.mock("../../../components/PdfAnteprima", () => ({
-  default: () => null,
+  default: ({ aperto, abilitaZoom }) =>
+    aperto ? (
+      <div data-testid="pdf-anteprima-mock" data-zoom={String(!!abilitaZoom)} />
+    ) : null,
 }));
 
 vi.mock("./CantiereFotoViewer", () => ({
-  default: () => null,
+  default: ({ open, abilitaZoom }) =>
+    open ? (
+      <div data-testid="foto-viewer-mock" data-zoom={String(!!abilitaZoom)} />
+    ) : null,
 }));
 
 vi.mock("../services/progettoElettricoService", async () => {
   const actual = await vi.importActual("../services/progettoElettricoService");
   return {
     ...actual,
-    risolviUrlProgettoElettrico: vi.fn(async () => ({
-      ok: false,
-      errore: "File non disponibile sul dispositivo.",
+    risolviUrlProgettoElettrico: vi.fn(async (progetto) => ({
+      ok: true,
+      url: `blob:mock-${progetto.id}`,
+      revoke: vi.fn(),
     })),
   };
 });
+
+const progettoA = {
+  id: "p1",
+  tipo: "pdf",
+  nome: "Schema unifilare",
+  blobId: "b1",
+  cantiereId: "c1",
+  size: 2.4 * 1024 * 1024,
+};
+
+const progettoB = {
+  id: "p2",
+  tipo: "image",
+  nome: "Planimetria piano terra",
+  blobId: "b2",
+  cantiereId: "c1",
+  size: 3.1 * 1024 * 1024,
+};
 
 describe("ProgettoElettricoSection UI", () => {
   it("mostra stato vuoto e CTA", () => {
     render(
       <ProgettoElettricoSection
         cantiereId="c1"
-        progetto={null}
+        progetti={[]}
         onAggiungi={vi.fn()}
         onSostituisci={vi.fn()}
         onElimina={vi.fn()}
@@ -44,45 +69,60 @@ describe("ProgettoElettricoSection UI", () => {
     );
     expect(screen.getByTestId("progetto-elettrico-vuoto")).toBeInTheDocument();
     expect(
-      screen.getByText(/Tieni qui lo schema del cantiere/i)
+      screen.getByText(/Gli schemi e i progetti di questo lavoro/i)
     ).toBeInTheDocument();
     expect(screen.getByTestId("progetto-elettrico-aggiungi")).toBeInTheDocument();
+    expect(screen.getByText("Progetti elettrici")).toBeInTheDocument();
   });
 
-  it("mostra card con Apri progetto e menu •••", () => {
+  it("mostra un progetto con Apri e menu", () => {
     render(
       <ProgettoElettricoSection
         cantiereId="c1"
-        progetto={{
-          id: "p1",
-          tipo: "pdf",
-          nome: "Schema quadro generale",
-          blobId: "b1",
-          cantiereId: "c1",
-          size: 2.4 * 1024 * 1024,
-        }}
+        progetti={[progettoA]}
         onAggiungi={vi.fn()}
         onSostituisci={vi.fn()}
         onElimina={vi.fn()}
       />
     );
-    expect(screen.getByTestId("progetto-elettrico-card")).toBeInTheDocument();
-    expect(screen.getByText("Schema quadro generale")).toBeInTheDocument();
+    expect(screen.getByTestId("progetto-elettrico-lista")).toBeInTheDocument();
+    expect(screen.getAllByTestId("progetto-elettrico-card")).toHaveLength(1);
+    expect(screen.getByText("Schema unifilare")).toBeInTheDocument();
     expect(screen.getByTestId("progetto-elettrico-apri")).toHaveTextContent(
       /Apri progetto/i
     );
     expect(screen.getByTestId("progetto-elettrico-menu")).toBeInTheDocument();
-    expect(screen.queryByTestId("progetto-elettrico-sostituisci")).not.toBeInTheDocument();
+  });
+
+  it("mostra due e tre progetti", () => {
+    const { rerender } = render(
+      <ProgettoElettricoSection
+        cantiereId="c1"
+        progetti={[progettoA, progettoB]}
+        onAggiungi={vi.fn()}
+      />
+    );
+    expect(screen.getAllByTestId("progetto-elettrico-card")).toHaveLength(2);
+    rerender(
+      <ProgettoElettricoSection
+        cantiereId="c1"
+        progetti={[
+          progettoA,
+          progettoB,
+          { ...progettoA, id: "p3", nome: "Quadro", blobId: "b3" },
+        ]}
+        onAggiungi={vi.fn()}
+      />
+    );
+    expect(screen.getAllByTestId("progetto-elettrico-card")).toHaveLength(3);
   });
 
   it("sheet scelta include PDF, immagine e scatta foto", () => {
     render(
       <ProgettoElettricoSection
         cantiereId="c1"
-        progetto={null}
+        progetti={[]}
         onAggiungi={vi.fn()}
-        onSostituisci={vi.fn()}
-        onElimina={vi.fn()}
       />
     );
     fireEvent.click(screen.getByTestId("progetto-elettrico-aggiungi"));
@@ -97,54 +137,63 @@ describe("ProgettoElettricoSection UI", () => {
     );
   });
 
-  it("menu ••• espone Sostituisci ed Elimina", () => {
+  it("menu ••• espone Rinomina, Sostituisci ed Elimina", () => {
     render(
       <ProgettoElettricoSection
         cantiereId="c1"
-        progetto={{
-          id: "p1",
-          tipo: "image",
-          nome: "schema.jpg",
-          blobId: "b1",
-          cantiereId: "c1",
-        }}
+        progetti={[progettoB]}
         onElimina={vi.fn()}
+        onRinomina={vi.fn()}
       />
     );
     fireEvent.click(screen.getByTestId("progetto-elettrico-menu"));
+    expect(screen.getByTestId("progetto-elettrico-rinomina")).toBeInTheDocument();
     expect(screen.getByTestId("progetto-elettrico-sostituisci")).toBeInTheDocument();
     expect(screen.getByTestId("progetto-elettrico-elimina")).toBeInTheDocument();
   });
 
-  it("conferma eliminazione dal menu", async () => {
+  it("apre il progetto corretto", async () => {
+    render(
+      <ProgettoElettricoSection
+        cantiereId="c1"
+        progetti={[progettoA, progettoB]}
+        onAggiungi={vi.fn()}
+      />
+    );
+    const bottoni = screen.getAllByTestId("progetto-elettrico-apri");
+    fireEvent.click(bottoni[1]);
+    await waitFor(() => {
+      expect(screen.getByTestId("foto-viewer-mock")).toHaveAttribute(
+        "data-zoom",
+        "true"
+      );
+    });
+  });
+
+  it("conferma eliminazione passa l'id del progetto", async () => {
     const onElimina = vi.fn();
     render(
       <ProgettoElettricoSection
         cantiereId="c1"
-        progetto={{
-          id: "p1",
-          tipo: "image",
-          nome: "schema.jpg",
-          blobId: "b1",
-          cantiereId: "c1",
-        }}
+        progetti={[progettoA, progettoB]}
         onElimina={onElimina}
       />
     );
-    fireEvent.click(screen.getByTestId("progetto-elettrico-menu"));
+    const menus = screen.getAllByTestId("progetto-elettrico-menu");
+    fireEvent.click(menus[1]);
     fireEvent.click(screen.getByTestId("progetto-elettrico-elimina"));
     expect(
       screen.getByTestId("conferma-elimina-progetto-elettrico")
     ).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("conferma-elimina-progetto-elettrico-confirm"));
-    await waitFor(() => expect(onElimina).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onElimina).toHaveBeenCalledWith("p2"));
   });
 
   it("cambio cantiere resetta sheet aperti", () => {
     const { rerender } = render(
       <ProgettoElettricoSection
         cantiereId="c1"
-        progetto={null}
+        progetti={[]}
         onAggiungi={vi.fn()}
       />
     );
@@ -154,7 +203,7 @@ describe("ProgettoElettricoSection UI", () => {
     rerender(
       <ProgettoElettricoSection
         cantiereId="c2"
-        progetto={null}
+        progetti={[]}
         onAggiungi={vi.fn()}
       />
     );
@@ -163,5 +212,19 @@ describe("ProgettoElettricoSection UI", () => {
       "data-cantiere-id",
       "c2"
     );
+  });
+
+  it("legge progetti da cantiere legacy via elenca", () => {
+    render(
+      <ProgettoElettricoSection
+        cantiereId="c1"
+        cantiere={{
+          id: "c1",
+          progettoElettrico: progettoA,
+        }}
+        onAggiungi={vi.fn()}
+      />
+    );
+    expect(screen.getByText("Schema unifilare")).toBeInTheDocument();
   });
 });

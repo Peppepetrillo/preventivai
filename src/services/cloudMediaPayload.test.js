@@ -90,4 +90,42 @@ describe("cloudMediaPayload", () => {
     expect(sanitizzati[0].progettoElettrico.blobId).toBe("b1");
     expect(sanitizzati[0].progettoElettrico.nome).toBe("schema.pdf");
   });
+
+  it("sanitizza progettiElettrici[] metadata-only (no Base64)", () => {
+    const cantieri = [
+      {
+        id: "c1",
+        progettiElettrici: [
+          {
+            id: "pe1",
+            tipo: "pdf",
+            nome: "unifilare.pdf",
+            mimeType: "application/pdf",
+            size: 12,
+            blobId: "b1",
+            cantiereId: "c1",
+            src: "data:application/pdf;base64,AAA",
+            contenuto: "NOPE",
+          },
+          {
+            id: "pe2",
+            tipo: "image",
+            nome: "planimetria",
+            mimeType: "image/jpeg",
+            size: 8,
+            blobId: "b2",
+            cantiereId: "c1",
+            dataUrl: "data:image/jpeg;base64,BBB",
+          },
+        ],
+      },
+    ];
+    const sanitizzati = sanitizzaCantieriPerAppRecords(cantieri);
+    expect(sanitizzati[0].progettiElettrici).toHaveLength(2);
+    expect(sanitizzati[0].progettiElettrici[0].src).toBeUndefined();
+    expect(sanitizzati[0].progettiElettrici[0].contenuto).toBeUndefined();
+    expect(sanitizzati[0].progettiElettrici[1].dataUrl).toBeUndefined();
+    expect(sanitizzati[0].progettiElettrici[1].blobId).toBe("b2");
+  });
+
 });

@@ -1,7 +1,8 @@
 /**
  * Progetto elettrico del cantiere — logica di dominio (offline-first).
  *
- * Metadata su `cantiere.progettoElettrico` (sincronizzabile via APP_DATA_KEYS).
+ * Metadata su `cantiere.progettiElettrici` (array).
+ * Retrocompat: `cantiere.progettoElettrico` (singolo) → migrato a lista.
  * Binario in IndexedDB (mai Base64 in LocalStorage).
  *
  * Cloud sync del binario: NON in 1.0 (vedi docs/PROGETTO-ELETTRICO.md).
@@ -248,24 +249,6 @@ export async function eliminaProgettoElettricoStorage(progetto) {
 }
 
 /**
- * Hard delete cantiere: pulisce tutti i blob del cantiere.
- * @param {string|number} cantiereId
- * @param {object|null} [progetto]
- */
-export async function pulisciProgettoElettricoCantiere(cantiereId, progetto) {
-  try {
-    if (progetto?.blobId) {
-      await eliminaBlobProgetto(cantiereId, progetto.blobId);
-    }
-    await eliminaBlobProgettoPerCantiere(cantiereId);
-    return { ok: true };
-  } catch (errore) {
-    console.error("progetto elettrico: cleanup cantiere", errore?.name);
-    return { ok: false };
-  }
-}
-
-/**
  * @param {object|null} progetto
  * @returns {Promise<{ ok: true, url: string, blob: Blob, revoke: () => void }|{ ok: false, errore: string }>}
  */
@@ -333,4 +316,141 @@ export function sanitizzaMetaProgettoElettrico(progetto) {
     createdAt,
     updatedAt,
   };
+}
+
+/**
+ * Elenco progetti del cantiere (legge nuovo array o migra il singolo legacy).
+ * Idempotente, non muta l'input.
+ * @param {object|null} cantiere
+ * @returns {object[]}
+ */
+export function elencaProgettiElettrici(cantiere) {
+  if (!cantiere || typeof cantiere !== "object") return [];
+
+  if (Array.isArray(cantiere.progettiElettrici)) {
+    return cantiere.progettiElettrici
+      .map((voce) => sanitizzaMetaProgettoElettrico(voce))
+      .filter(Boolean);
+  }
+
+  if (
+    cantiere.progettoElettrico &&
+    typeof cantiere.progettoElettrico === "object"
+  ) {
+    const uno = sanitizzaMetaProgettoElettrico(cantiere.progettoElettrico);
+    return uno ? [uno] : [];
+  }
+
+  return [];
+}
+
+/**
+ * Migrazione: singolo `progettoElettrico` → `progettiElettrici[]`.
+ * Idempotente: se già array e senza legacy, restituisce lo stesso riferimento.
+ * @param {object} cantiere
+ */
+export function migraCantiereProgettiElettrici(cantiere) {
+  if (!cantiere || typeof cantiere !== "object") return cantiere;
+
+  const haLegacy =
+    cantiere.progettoElettrico != null &&
+    typeof cantiere.progettoElettrico === "object";
+  const haArray = Array.isArray(cantiere.progettiElettrici);
+
+  if (haArray && !haLegacy) {
+    return cantiere;
+  }
+
+  const lista = elencaProgettiElettrici(cantiere);
+  const prossimo = { ...cantiere, progettiElettrici: lista };
+  delete prossimo.progettoElettrico;
+  return prossimo;
+}
+
+/**
+ * @param {object[]} lista
+ * @param {object} progetto
+ */
+export function aggiungiProgettoInLista(lista, progetto) {
+  const meta = sanitizzaMetaProgettoElettrico(progetto);
+  if (!meta) return Array.isArray(lista) ? [...lista] : [];
+  const base = Array.isArray(lista) ? lista : [];
+  if (base.some((voce) => String(voce.id) === String(meta.id))) {
+    return base.map((voce) =>
+      String(voce.id) === String(meta.id) ? meta : voce
+    );
+  }
+  return [...base, meta];
+}
+
+/**
+ * @param {object[]} lista
+ * @param {string|number} progettoId
+ * @param {object} progettoNuovo
+ */
+export function sostituisciProgettoInLista(lista, progettoId, progettoNuovo) {
+  const meta = sanitizzaMetaProgettoElettrico(progettoNuovo);
+  const base = Array.isArray(lista) ? lista : [];
+  if (!meta) return base;
+  let trovato = false;
+  const prossimo = base.map((voce) => {
+    if (String(voce.id) !== String(progettoId)) return voce;
+    trovato = true;
+    return {
+      ...meta,
+      id: voce.id,
+      createdAt: voce.createdAt || meta.createdAt,
+    };
+  });
+  return trovato ? prossimo : [...base, meta];
+}
+
+/**
+ * @param {object[]} lista
+ * @param {string|number} progettoId
+ */
+export function rimuoviProgettoDaLista(lista, progettoId) {
+  const base = Array.isArray(lista) ? lista : [];
+  return base.filter((voce) => String(voce.id) !== String(progettoId));
+}
+
+/**
+ * @param {object[]} lista
+ * @param {string|number} progettoId
+ * @param {string} nome
+ */
+export function rinominaProgettoInLista(lista, progettoId, nome) {
+  const base = Array.isArray(lista) ? lista : [];
+  const pulito = String(nome || "").trim().slice(0, 80);
+  if (!pulito) return base;
+  return base.map((voce) =>
+    String(voce.id) === String(progettoId)
+      ? { ...voce, nome: pulito, updatedAt: new Date().toISOString() }
+      : voce
+  );
+}
+
+/**
+ * Hard delete cantiere: pulisce tutti i blob del cantiere.
+ * @param {string|number} cantiereId
+ * @param {object|object[]|null} [progetti]
+ */
+export async function pulisciProgettoElettricoCantiere(cantiereId, progetti) {
+  try {
+    const lista = Array.isArray(progetti)
+      ? progetti
+      : progetti
+        ? [progetti]
+        : [];
+    for (const progetto of lista) {
+      if (progetto?.blobId) {
+        await eliminaBlobProgetto(cantiereId, progetto.blobId);
+      }
+    }
+    await eliminaBlobProgettoPerCantiere(cantiereId);
+    return { ok: true };
+  } catch (errore) {
+    console.error("progetto elettrico: cleanup cantiere", errore?.name);
+    return { ok: false };
+  }
 }

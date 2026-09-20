@@ -52,6 +52,7 @@ export default function Cantiere() {
     aggiungiProgettoElettrico,
     sostituisciProgettoElettrico,
     eliminaProgettoElettrico,
+    rinominaProgettoElettrico,
     aggiungiNotaDiario,
     aggiungiGiornata,
     aggiornaGiornata,
@@ -162,6 +163,7 @@ export default function Cantiere() {
           onAggiungiProgettoElettrico={aggiungiProgettoElettrico}
           onSostituisciProgettoElettrico={sostituisciProgettoElettrico}
           onEliminaProgettoElettrico={eliminaProgettoElettrico}
+          onRinominaProgettoElettrico={rinominaProgettoElettrico}
           onAggiungiNotaDiario={aggiungiNotaDiario}
           onEliminaCantiere={gestisciElimina}
           onIniziaLavoro={iniziaLavoro}

@@ -62,7 +62,9 @@ export function eliminaCantiereConPulizia(cantiere) {
   eliminaStorageFotoCantieri(cantiere.foto || []);
   void pulisciProgettoElettricoCantiere(
     cantiereId,
-    cantiere.progettoElettrico || null
+    Array.isArray(cantiere.progettiElettrici)
+      ? cantiere.progettiElettrici
+      : cantiere.progettoElettrico || null
   );
 
   const cantieri = leggiCantieriTutti().filter(

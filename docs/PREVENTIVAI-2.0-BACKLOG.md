@@ -120,11 +120,10 @@ Baseline 1.0 (freeze exception): Ohm, potenza/corrente, caduta indicativa, stima
 
 ## Progetto elettrico — evoluzioni 2.0
 
-Baseline 1.0: un PDF/immagine per cantiere, IndexedDB locale, Apri/Sostituisci/Elimina. Nessun sync binario cloud.
+Baseline 1.0 (aggiornata): **0→N** PDF/immagini per cantiere (`progettiElettrici[]`), IndexedDB locale, Apri/Rinomina/Sostituisci/Elimina, zoom viewer. Nessun sync binario cloud. Migrazione da `progettoElettrico` singolo.
 
 **Non implementare in 1.0:**
 
-- Più progetti per cantiere (unifilare, planimetria, quadro, documenti tecnici)
 - Annotazioni / markup sul PDF
 - OCR / AI lettura schema
 - Riconoscimento simboli

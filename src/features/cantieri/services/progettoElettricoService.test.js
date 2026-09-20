@@ -2,14 +2,20 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { _resetMemoriaProgettoElettricoPerTest } from "./progettoElettricoBlobStore";
 import {
+  aggiungiProgettoInLista,
   creaMetaProgettoElettrico,
   eliminaProgettoElettricoStorage,
+  elencaProgettiElettrici,
   formatDimensioniProgetto,
+  migraCantiereProgettiElettrici,
   preparaProgettoElettrico,
+  rimuoviProgettoDaLista,
+  rinominaProgettoInLista,
   risolviNomeProgetto,
   risolviUrlProgettoElettrico,
   sanitizzaMetaProgettoElettrico,
   sostituisciProgettoElettrico,
+  sostituisciProgettoInLista,
   suggerisciNomeProgetto,
   TIPI_PROGETTO,
   validaFileProgetto,
@@ -24,9 +30,10 @@ describe("progettoElettricoService", () => {
     _resetMemoriaProgettoElettricoPerTest();
   });
 
-  it("stato vuoto: sanitizza null", () => {
-    expect(sanitizzaMetaProgettoElettrico(null)).toBeNull();
-    expect(sanitizzaMetaProgettoElettrico({})).toBeNull();
+  it("nessun progetto: elenca vuoto", () => {
+    expect(elencaProgettiElettrici(null)).toEqual([]);
+    expect(elencaProgettiElettrici({})).toEqual([]);
+    expect(elencaProgettiElettrici({ progettiElettrici: [] })).toEqual([]);
   });
 
   it("valida PDF e immagine, rifiuta altri", () => {
@@ -96,6 +103,196 @@ describe("progettoElettricoService", () => {
     expect(esito.progetto.nome).toBe("schema_quadro");
   });
 
+  it("un progetto in lista", () => {
+    const uno = creaMetaProgettoElettrico({
+      id: "p1",
+      tipo: "pdf",
+      nome: "A",
+      mimeType: "application/pdf",
+      size: 1,
+      blobId: "b1",
+      cantiereId: "c1",
+    });
+    expect(elencaProgettiElettrici({ progettiElettrici: [uno] })).toHaveLength(1);
+  });
+
+  it("due e tre progetti in lista", () => {
+    const base = {
+      id: "p",
+      tipo: "pdf",
+      mimeType: "application/pdf",
+      size: 1,
+      blobId: "b",
+      cantiereId: "c1",
+    };
+    const due = [
+      creaMetaProgettoElettrico({ ...base, id: "p1", nome: "A", blobId: "b1" }),
+      creaMetaProgettoElettrico({ ...base, id: "p2", nome: "B", blobId: "b2" }),
+    ];
+    expect(elencaProgettiElettrici({ progettiElettrici: due })).toHaveLength(2);
+    const tre = [
+      ...due,
+      creaMetaProgettoElettrico({ ...base, id: "p3", nome: "C", blobId: "b3" }),
+    ];
+    expect(elencaProgettiElettrici({ progettiElettrici: tre })).toHaveLength(3);
+  });
+
+  it("aggiunta non sostituisce: append in lista", () => {
+    const a = creaMetaProgettoElettrico({
+      id: "p1",
+      tipo: "pdf",
+      nome: "A",
+      mimeType: "application/pdf",
+      size: 1,
+      blobId: "b1",
+      cantiereId: "c1",
+    });
+    const b = creaMetaProgettoElettrico({
+      id: "p2",
+      tipo: "image",
+      nome: "B",
+      mimeType: "image/jpeg",
+      size: 2,
+      blobId: "b2",
+      cantiereId: "c1",
+    });
+    const lista = aggiungiProgettoInLista(aggiungiProgettoInLista([], a), b);
+    expect(lista).toHaveLength(2);
+    expect(lista.map((v) => v.id)).toEqual(["p1", "p2"]);
+  });
+
+  it("elimina un progetto mantenendo gli altri", () => {
+    const lista = [
+      { id: "p1", tipo: "pdf", nome: "A", blobId: "b1", mimeType: "application/pdf", size: 1, cantiereId: "c1" },
+      { id: "p2", tipo: "pdf", nome: "B", blobId: "b2", mimeType: "application/pdf", size: 1, cantiereId: "c1" },
+      { id: "p3", tipo: "image", nome: "C", blobId: "b3", mimeType: "image/jpeg", size: 1, cantiereId: "c1" },
+    ];
+    const next = rimuoviProgettoDaLista(lista, "p2");
+    expect(next.map((v) => v.id)).toEqual(["p1", "p3"]);
+  });
+
+  it("sostituisce solo il progetto selezionato", () => {
+    const lista = [
+      { id: "p1", tipo: "pdf", nome: "A", blobId: "b1", mimeType: "application/pdf", size: 1, cantiereId: "c1", createdAt: "t0" },
+      { id: "p2", tipo: "pdf", nome: "B", blobId: "b2", mimeType: "application/pdf", size: 1, cantiereId: "c1", createdAt: "t1" },
+    ];
+    const nuovo = {
+      id: "nuovo",
+      tipo: "pdf",
+      nome: "B2",
+      blobId: "b9",
+      mimeType: "application/pdf",
+      size: 9,
+      cantiereId: "c1",
+      createdAt: "t9",
+      updatedAt: "t9",
+    };
+    const next = sostituisciProgettoInLista(lista, "p2", nuovo);
+    expect(next).toHaveLength(2);
+    expect(next[0].blobId).toBe("b1");
+    expect(next[1].id).toBe("p2");
+    expect(next[1].blobId).toBe("b9");
+    expect(next[1].nome).toBe("B2");
+    expect(next[1].createdAt).toBe("t1");
+  });
+
+  it("rinomina progetto in lista", () => {
+    const lista = [
+      { id: "p1", tipo: "pdf", nome: "Vecchio", blobId: "b1", mimeType: "application/pdf", size: 1, cantiereId: "c1" },
+    ];
+    const next = rinominaProgettoInLista(lista, "p1", "Schema unifilare");
+    expect(next[0].nome).toBe("Schema unifilare");
+  });
+
+  it("migra progetto singolo legacy → lista", () => {
+    const legacy = {
+      id: "c1",
+      progettoElettrico: {
+        id: "pe1",
+        tipo: "pdf",
+        nome: "Schema",
+        mimeType: "application/pdf",
+        size: 10,
+        blobId: "blob-legacy",
+        cantiereId: "c1",
+        createdAt: "a",
+        updatedAt: "b",
+      },
+    };
+    const migrato = migraCantiereProgettiElettrici(legacy);
+    expect(migrato.progettiElettrici).toHaveLength(1);
+    expect(migrato.progettiElettrici[0].blobId).toBe("blob-legacy");
+    expect(migrato.progettoElettrico).toBeUndefined();
+  });
+
+  it("migrazione idempotente: non duplica", () => {
+    const gia = {
+      id: "c1",
+      progettiElettrici: [
+        {
+          id: "pe1",
+          tipo: "pdf",
+          nome: "Schema",
+          mimeType: "application/pdf",
+          size: 10,
+          blobId: "b1",
+          cantiereId: "c1",
+        },
+      ],
+    };
+    const prima = migraCantiereProgettiElettrici(gia);
+    const seconda = migraCantiereProgettiElettrici(prima);
+    expect(seconda).toBe(prima);
+    expect(seconda.progettiElettrici).toHaveLength(1);
+  });
+
+  it("elenca legge legacy senza mutare", () => {
+    const cantiere = {
+      progettoElettrico: {
+        id: "pe1",
+        tipo: "image",
+        nome: "Foto",
+        mimeType: "image/jpeg",
+        size: 3,
+        blobId: "b1",
+        cantiereId: "c1",
+      },
+    };
+    expect(elencaProgettiElettrici(cantiere)).toHaveLength(1);
+    expect(cantiere.progettoElettrico).toBeTruthy();
+    expect(cantiere.progettiElettrici).toBeUndefined();
+  });
+
+  it("cambio cantiere: liste separate", () => {
+    const a = {
+      id: "a",
+      progettiElettrici: [
+        { id: "p1", tipo: "pdf", nome: "A", blobId: "ba", mimeType: "application/pdf", size: 1, cantiereId: "a" },
+      ],
+    };
+    const b = {
+      id: "b",
+      progettiElettrici: [
+        { id: "p2", tipo: "pdf", nome: "B", blobId: "bb", mimeType: "application/pdf", size: 1, cantiereId: "b" },
+      ],
+    };
+    expect(elencaProgettiElettrici(a)[0].nome).toBe("A");
+    expect(elencaProgettiElettrici(b)[0].nome).toBe("B");
+    expect(elencaProgettiElettrici(a)[0].cantiereId).toBe("a");
+  });
+
+  it("blob non duplicati su doppia preparazione", async () => {
+    const a = await preparaProgettoElettrico(
+      "c3",
+      creaFile("1.pdf", "application/pdf", "a")
+    );
+    const b = await preparaProgettoElettrico(
+      "c3",
+      creaFile("2.pdf", "application/pdf", "b")
+    );
+    expect(a.progetto.blobId).not.toBe(b.progetto.blobId);
+  });
+
   it("sostituisce senza lasciare il vecchio blob leggibile", async () => {
     const primo = await preparaProgettoElettrico(
       "c1",
@@ -124,7 +321,7 @@ describe("progettoElettricoService", () => {
     nuovo.revoke();
   });
 
-  it("elimina progetto e rende il blob irrecuperabile", async () => {
+  it("elimina progetto e rende il blob irrecuperabile (cleanup)", async () => {
     const creato = await preparaProgettoElettrico(
       "c2",
       creaFile("x.pdf", "application/pdf", "pdf")
@@ -134,27 +331,18 @@ describe("progettoElettricoService", () => {
     expect(aperto.ok).toBe(false);
   });
 
-  it("doppia preparazione crea due blob distinti (no merge silenzioso)", async () => {
-    const a = await preparaProgettoElettrico(
-      "c3",
-      creaFile("1.pdf", "application/pdf", "a")
+  it("offline open: apre blob presente localmente", async () => {
+    const creato = await preparaProgettoElettrico(
+      "c-off",
+      creaFile("off.pdf", "application/pdf", "%PDF")
     );
-    const b = await preparaProgettoElettrico(
-      "c3",
-      creaFile("2.pdf", "application/pdf", "b")
-    );
-    expect(a.progetto.blobId).not.toBe(b.progetto.blobId);
+    const aperto = await risolviUrlProgettoElettrico(creato.progetto);
+    expect(aperto.ok).toBe(true);
+    expect(aperto.url).toMatch(/^blob:/);
+    aperto.revoke();
   });
 
-  it("errore storage: cantiere id mancante", async () => {
-    const esito = await preparaProgettoElettrico(
-      "",
-      creaFile("a.pdf", "application/pdf")
-    );
-    expect(esito.ok).toBe(false);
-  });
-
-  it("risolve URL e crea meta senza campi binari", () => {
+  it("metadata senza Base64", () => {
     const meta = creaMetaProgettoElettrico({
       tipo: "pdf",
       nome: "p.pdf",
@@ -171,6 +359,15 @@ describe("progettoElettricoService", () => {
     expect(pulito.src).toBeUndefined();
     expect(pulito.contenuto).toBeUndefined();
     expect(pulito.blobId).toBe("b1");
+    expect(JSON.stringify(pulito)).not.toMatch(/base64|data:/i);
+  });
+
+  it("errore storage: cantiere id mancante", async () => {
+    const esito = await preparaProgettoElettrico(
+      "",
+      creaFile("a.pdf", "application/pdf")
+    );
+    expect(esito.ok).toBe(false);
   });
 
   it("risolviUrl fallisce se riferimento mancante", async () => {

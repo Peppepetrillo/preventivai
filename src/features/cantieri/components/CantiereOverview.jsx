@@ -109,6 +109,7 @@ export default function CantiereOverview({
   onAggiungiProgettoElettrico,
   onSostituisciProgettoElettrico,
   onEliminaProgettoElettrico,
+  onRinominaProgettoElettrico,
   onAggiungiNotaDiario,
   onEliminaCantiere,
   onIniziaLavoro,
@@ -360,19 +361,41 @@ export default function CantiereOverview({
     [onSostituisciProgettoElettrico, progettoBusy]
   );
 
-  const gestisciEliminaProgetto = useCallback(async () => {
-    if (progettoBusy) return;
-    setProgettoBusy(true);
-    setMessaggioProgetto("");
-    try {
-      const esito = await onEliminaProgettoElettrico?.();
-      if (esito && esito.ok === false) {
-        setMessaggioProgetto(esito.errore || "Operazione non riuscita.");
+  const gestisciEliminaProgetto = useCallback(
+    async (progettoId) => {
+      if (progettoBusy) return;
+      setProgettoBusy(true);
+      setMessaggioProgetto("");
+      try {
+        const esito = await onEliminaProgettoElettrico?.(progettoId);
+        if (esito && esito.ok === false) {
+          setMessaggioProgetto(esito.errore || "Operazione non riuscita.");
+        }
+        return esito;
+      } finally {
+        setProgettoBusy(false);
       }
-    } finally {
-      setProgettoBusy(false);
-    }
-  }, [onEliminaProgettoElettrico, progettoBusy]);
+    },
+    [onEliminaProgettoElettrico, progettoBusy]
+  );
+
+  const gestisciRinominaProgetto = useCallback(
+    async (progettoId, nome) => {
+      if (progettoBusy) return;
+      setProgettoBusy(true);
+      setMessaggioProgetto("");
+      try {
+        const esito = await onRinominaProgettoElettrico?.(progettoId, nome);
+        if (esito && esito.ok === false) {
+          setMessaggioProgetto(esito.errore || "Operazione non riuscita.");
+        }
+        return esito;
+      } finally {
+        setProgettoBusy(false);
+      }
+    },
+    [onRinominaProgettoElettrico, progettoBusy]
+  );
 
   const attivaTabEScorri = useCallback((tab, callback) => {
     setTabAttivo(tab);
@@ -953,12 +976,13 @@ export default function CantiereOverview({
 
         <ProgettoElettricoSection
           cantiereId={cantiere.id}
-          progetto={cantiere.progettoElettrico || null}
+          cantiere={cantiere}
           busy={progettoBusy}
           messaggio={messaggioProgetto}
           onAggiungi={gestisciAggiungiProgetto}
           onSostituisci={gestisciSostituisciProgetto}
           onElimina={gestisciEliminaProgetto}
+          onRinomina={gestisciRinominaProgetto}
         />
 
         <CantiereOperativo

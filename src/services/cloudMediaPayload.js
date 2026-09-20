@@ -43,6 +43,27 @@ export function sanitizzaCantieriPerAppRecords(cantieri) {
       };
     }
 
+    if (Array.isArray(prossimo.progettiElettrici)) {
+      prossimo = {
+        ...prossimo,
+        progettiElettrici: prossimo.progettiElettrici.map((voce) => {
+          if (!voce || typeof voce !== "object") return voce;
+          return {
+            id: voce.id,
+            tipo: voce.tipo,
+            nome: voce.nome,
+            mimeType: voce.mimeType,
+            size: voce.size,
+            blobId: voce.blobId,
+            cantiereId: voce.cantiereId,
+            createdAt: voce.createdAt,
+            updatedAt: voce.updatedAt,
+          };
+        }),
+      };
+    }
+
+    // Retrocompat: singolo legacy ancora presente su alcuni device.
     if (prossimo.progettoElettrico && typeof prossimo.progettoElettrico === "object") {
       const pe = prossimo.progettoElettrico;
       prossimo = {
