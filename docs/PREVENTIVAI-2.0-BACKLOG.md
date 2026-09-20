@@ -115,3 +115,20 @@ Baseline 1.0 (freeze exception): Ohm, potenza/corrente, caduta indicativa, stima
 - Collegamento calcoli a un cantiere
 - Esportazione PDF dei risultati
 - Claim normativi o “sezione a norma” automatica
+
+---
+
+## Progetto elettrico — evoluzioni 2.0
+
+Baseline 1.0: un PDF/immagine per cantiere, IndexedDB locale, Apri/Sostituisci/Elimina. Nessun sync binario cloud.
+
+**Non implementare in 1.0:**
+
+- Più progetti per cantiere (unifilare, planimetria, quadro, documenti tecnici)
+- Annotazioni / markup sul PDF
+- OCR / AI lettura schema
+- Riconoscimento simboli
+- Collegamento progetto → materiali / preventivo
+- Sync multi-device del file (bucket dedicato + coda offline)
+- Firma digitale sul progetto
+- Condivisione avanzata

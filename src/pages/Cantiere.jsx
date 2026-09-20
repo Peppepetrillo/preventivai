@@ -49,6 +49,9 @@ export default function Cantiere() {
     completaLavoro,
     aggiungiFoto,
     eliminaFoto,
+    aggiungiProgettoElettrico,
+    sostituisciProgettoElettrico,
+    eliminaProgettoElettrico,
     aggiungiNotaDiario,
     aggiungiGiornata,
     aggiornaGiornata,
@@ -156,6 +159,9 @@ export default function Cantiere() {
           onToggleMaterialeAcquistato={toggleMaterialeAcquistato}
           onAggiungiFoto={aggiungiFoto}
           onEliminaFoto={eliminaFoto}
+          onAggiungiProgettoElettrico={aggiungiProgettoElettrico}
+          onSostituisciProgettoElettrico={sostituisciProgettoElettrico}
+          onEliminaProgettoElettrico={eliminaProgettoElettrico}
           onAggiungiNotaDiario={aggiungiNotaDiario}
           onEliminaCantiere={gestisciElimina}
           onIniziaLavoro={iniziaLavoro}

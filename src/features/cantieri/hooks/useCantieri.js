@@ -23,6 +23,12 @@ import {
   preparaFotoCantiere,
   risolviSrcFotoCantiere,
 } from "../services/cantieriFotoService";
+import {
+  eliminaProgettoElettricoStorage,
+  preparaProgettoElettrico,
+  sanitizzaMetaProgettoElettrico,
+  sostituisciProgettoElettrico,
+} from "../services/progettoElettricoService";
 import { registraEsperienzaCompletamento } from "../../../services/experienceService";
 import { sincronizzaListaSpesaDaCantiere } from "../../../domain/listaSpesa";
 import {
@@ -740,6 +746,75 @@ export function useCantieri({
     return risolviSrcFotoCantiere(foto);
   }
 
+  async function aggiungiProgettoElettrico(file) {
+    const idTarget = cantiereSelezionato?.id;
+    if (!file || idTarget == null || idTarget === "") {
+      return { ok: false, errore: "Cantiere non valido." };
+    }
+    if (cantiereSelezionato.progettoElettrico?.blobId) {
+      return sostituisciProgettoElettricoFile(file);
+    }
+
+    const esito = await preparaProgettoElettrico(idTarget, file);
+    if (!esito.ok) {
+      setMessaggio(esito.errore || "Impossibile salvare il progetto.");
+      return esito;
+    }
+
+    const meta = sanitizzaMetaProgettoElettrico(esito.progetto);
+    const aggiornato = aggiornaSelezionato({ progettoElettrico: meta });
+    if (!aggiornato) {
+      await eliminaProgettoElettricoStorage(esito.progetto);
+      setMessaggio("Impossibile salvare il progetto.");
+      return { ok: false, errore: "salvataggio_non_riuscito" };
+    }
+    setMessaggio("Progetto elettrico aggiunto.");
+    return { ok: true, progetto: meta };
+  }
+
+  async function sostituisciProgettoElettricoFile(file) {
+    const idTarget = cantiereSelezionato?.id;
+    if (!file || idTarget == null || idTarget === "") {
+      return { ok: false, errore: "Cantiere non valido." };
+    }
+
+    const precedente = cantiereSelezionato.progettoElettrico || null;
+    const esito = await sostituisciProgettoElettrico(
+      idTarget,
+      file,
+      precedente
+    );
+    if (!esito.ok) {
+      setMessaggio(esito.errore || "Impossibile sostituire il progetto.");
+      return esito;
+    }
+
+    const meta = sanitizzaMetaProgettoElettrico(esito.progetto);
+    const aggiornato = aggiornaSelezionato({ progettoElettrico: meta });
+    if (!aggiornato) {
+      await eliminaProgettoElettricoStorage(esito.progetto);
+      setMessaggio("Impossibile salvare il progetto.");
+      return { ok: false, errore: "salvataggio_non_riuscito" };
+    }
+    setMessaggio("Progetto elettrico sostituito.");
+    return { ok: true, progetto: meta };
+  }
+
+  async function eliminaProgettoElettrico() {
+    if (!cantiereSelezionato) {
+      return { ok: false, errore: "Cantiere non valido." };
+    }
+    const precedente = cantiereSelezionato.progettoElettrico || null;
+    const aggiornato = aggiornaSelezionato({ progettoElettrico: null });
+    if (!aggiornato) {
+      setMessaggio("Impossibile eliminare il progetto.");
+      return { ok: false, errore: "salvataggio_non_riuscito" };
+    }
+    await eliminaProgettoElettricoStorage(precedente);
+    setMessaggio("Progetto elettrico eliminato.");
+    return { ok: true };
+  }
+
   function aggiungiNotaDiario(testo) {
     if (!cantiereSelezionato) return null;
     const evento = creaEventoNotaAggiunta(testo, { manuale: true });
@@ -1037,6 +1112,9 @@ export function useCantieri({
     aggiungiFoto,
     eliminaFoto,
     apriFoto,
+    aggiungiProgettoElettrico,
+    sostituisciProgettoElettrico: sostituisciProgettoElettricoFile,
+    eliminaProgettoElettrico,
     aggiungiNotaDiario,
     aggiungiGiornata,
     aggiornaGiornata,

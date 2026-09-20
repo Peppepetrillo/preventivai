@@ -36,6 +36,7 @@ import { risolviSrcFotoCantiere } from "../services/cantieriFotoService";
 import CantiereAssistantPanel from "./CantiereAssistantPanel";
 import CantiereFotoViewer from "./CantiereFotoViewer";
 import CantiereOperativo from "./CantiereOperativo";
+import ProgettoElettricoSection from "./ProgettoElettricoSection";
 import CantiereSegmentBar from "./CantiereSegmentBar";
 import CantiereVarianti from "./CantiereVarianti";
 import DescrizioneInterventoSection from "./DescrizioneInterventoSection";
@@ -105,6 +106,9 @@ export default function CantiereOverview({
   onToggleMaterialeAcquistato,
   onAggiungiFoto,
   onEliminaFoto,
+  onAggiungiProgettoElettrico,
+  onSostituisciProgettoElettrico,
+  onEliminaProgettoElettrico,
   onAggiungiNotaDiario,
   onEliminaCantiere,
   onIniziaLavoro,
@@ -159,6 +163,8 @@ export default function CantiereOverview({
   const [operazioneRegistrataTick, setOperazioneRegistrataTick] = useState(0);
   const [creaPreventivoInCorso, setCreaPreventivoInCorso] = useState(false);
   const [messaggioDocumenti, setMessaggioDocumenti] = useState("");
+  const [progettoBusy, setProgettoBusy] = useState(false);
+  const [messaggioProgetto, setMessaggioProgetto] = useState("");
   const [preventivi] = useDatiLocaliSincronizzati(leggiPreventivi);
   const sezioneModifica = useRef(null);
   const sezioneChecklist = useRef(null);
@@ -317,6 +323,54 @@ export default function CantiereOverview({
       });
     }
   }, []);
+
+  const gestisciAggiungiProgetto = useCallback(
+    async (file) => {
+      if (progettoBusy) return;
+      setProgettoBusy(true);
+      setMessaggioProgetto("");
+      try {
+        const esito = await onAggiungiProgettoElettrico?.(file);
+        if (esito && esito.ok === false) {
+          setMessaggioProgetto(esito.errore || "Operazione non riuscita.");
+        }
+      } finally {
+        setProgettoBusy(false);
+      }
+    },
+    [onAggiungiProgettoElettrico, progettoBusy]
+  );
+
+  const gestisciSostituisciProgetto = useCallback(
+    async (file) => {
+      if (progettoBusy) return;
+      setProgettoBusy(true);
+      setMessaggioProgetto("");
+      try {
+        const esito = await onSostituisciProgettoElettrico?.(file);
+        if (esito && esito.ok === false) {
+          setMessaggioProgetto(esito.errore || "Operazione non riuscita.");
+        }
+      } finally {
+        setProgettoBusy(false);
+      }
+    },
+    [onSostituisciProgettoElettrico, progettoBusy]
+  );
+
+  const gestisciEliminaProgetto = useCallback(async () => {
+    if (progettoBusy) return;
+    setProgettoBusy(true);
+    setMessaggioProgetto("");
+    try {
+      const esito = await onEliminaProgettoElettrico?.();
+      if (esito && esito.ok === false) {
+        setMessaggioProgetto(esito.errore || "Operazione non riuscita.");
+      }
+    } finally {
+      setProgettoBusy(false);
+    }
+  }, [onEliminaProgettoElettrico, progettoBusy]);
 
   const attivaTabEScorri = useCallback((tab, callback) => {
     setTabAttivo(tab);
@@ -894,6 +948,16 @@ export default function CantiereOverview({
             />
           </div>
         ) : null}
+
+        <ProgettoElettricoSection
+          cantiereId={cantiere.id}
+          progetto={cantiere.progettoElettrico || null}
+          busy={progettoBusy}
+          messaggio={messaggioProgetto}
+          onAggiungi={gestisciAggiungiProgetto}
+          onSostituisci={gestisciSostituisciProgetto}
+          onElimina={gestisciEliminaProgetto}
+        />
 
         <CantiereOperativo
           cantiere={cantiere}

@@ -64,4 +64,30 @@ describe("cloudMediaPayload", () => {
       )
     ).toBe(false);
   });
+
+  it("sanitizza progettoElettrico lasciando solo metadata (no binari)", () => {
+    const cantieri = [
+      {
+        id: "c1",
+        progettoElettrico: {
+          id: "pe1",
+          tipo: "pdf",
+          nome: "schema.pdf",
+          mimeType: "application/pdf",
+          size: 12,
+          blobId: "b1",
+          cantiereId: "c1",
+          createdAt: "2026-01-01",
+          updatedAt: "2026-01-01",
+          src: "data:application/pdf;base64,AAA",
+          contenuto: "NOPE",
+        },
+      },
+    ];
+    const sanitizzati = sanitizzaCantieriPerAppRecords(cantieri);
+    expect(sanitizzati[0].progettoElettrico.src).toBeUndefined();
+    expect(sanitizzati[0].progettoElettrico.contenuto).toBeUndefined();
+    expect(sanitizzati[0].progettoElettrico.blobId).toBe("b1");
+    expect(sanitizzati[0].progettoElettrico.nome).toBe("schema.pdf");
+  });
 });
