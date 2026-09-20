@@ -49,17 +49,18 @@ export function validaFileProgetto(file) {
   const mime = String(file.type || "").toLowerCase();
   const nome = String(file.name || "").toLowerCase();
 
-  let tipo = null;
-  if (MIME_PDF.has(mime) || nome.endsWith(".pdf")) {
-    tipo = TIPI_PROGETTO.pdf;
-  } else if (MIME_IMAGE.has(mime) || /\.(jpe?g|png|webp|gif)$/i.test(nome)) {
-    tipo = TIPI_PROGETTO.image;
-  } else {
+  const isPdf = MIME_PDF.has(mime) || nome.endsWith(".pdf");
+  const isImage =
+    MIME_IMAGE.has(mime) || /\.(jpe?g|png|webp|gif)$/i.test(nome);
+
+  if (!isPdf && !isImage) {
     return {
       ok: false,
       errore: "Formato non supportato. Usa un PDF o un'immagine.",
     };
   }
+
+  const tipo = isPdf ? TIPI_PROGETTO.pdf : TIPI_PROGETTO.image;
 
   const max =
     tipo === TIPI_PROGETTO.pdf

@@ -20,7 +20,7 @@ import {
  * Sezione Progetto elettrico — un documento per cantiere (v1).
  */
 export default function ProgettoElettricoSection({
-  cantiereId,
+  cantiereId: _cantiereId,
   progetto,
   busy = false,
   messaggio = "",
@@ -28,6 +28,7 @@ export default function ProgettoElettricoSection({
   onSostituisci,
   onElimina,
 }) {
+  void _cantiereId;
   const [sheetAperto, setSheetAperto] = useState(false);
   const [modoFile, setModoFile] = useState("aggiungi");
   const [confermaElimina, setConfermaElimina] = useState(false);
