@@ -746,16 +746,16 @@ export function useCantieri({
     return risolviSrcFotoCantiere(foto);
   }
 
-  async function aggiungiProgettoElettrico(file) {
+  async function aggiungiProgettoElettrico(file, opzioni = {}) {
     const idTarget = cantiereSelezionato?.id;
     if (!file || idTarget == null || idTarget === "") {
       return { ok: false, errore: "Cantiere non valido." };
     }
     if (cantiereSelezionato.progettoElettrico?.blobId) {
-      return sostituisciProgettoElettricoFile(file);
+      return sostituisciProgettoElettricoFile(file, opzioni);
     }
 
-    const esito = await preparaProgettoElettrico(idTarget, file);
+    const esito = await preparaProgettoElettrico(idTarget, file, opzioni);
     if (!esito.ok) {
       setMessaggio(esito.errore || "Impossibile salvare il progetto.");
       return esito;
@@ -772,7 +772,7 @@ export function useCantieri({
     return { ok: true, progetto: meta };
   }
 
-  async function sostituisciProgettoElettricoFile(file) {
+  async function sostituisciProgettoElettricoFile(file, opzioni = {}) {
     const idTarget = cantiereSelezionato?.id;
     if (!file || idTarget == null || idTarget === "") {
       return { ok: false, errore: "Cantiere non valido." };
@@ -782,7 +782,8 @@ export function useCantieri({
     const esito = await sostituisciProgettoElettrico(
       idTarget,
       file,
-      precedente
+      precedente,
+      opzioni
     );
     if (!esito.ok) {
       setMessaggio(esito.errore || "Impossibile sostituire il progetto.");

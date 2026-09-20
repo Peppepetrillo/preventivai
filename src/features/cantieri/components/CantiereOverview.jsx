@@ -325,15 +325,16 @@ export default function CantiereOverview({
   }, []);
 
   const gestisciAggiungiProgetto = useCallback(
-    async (file) => {
+    async (file, opzioni = {}) => {
       if (progettoBusy) return;
       setProgettoBusy(true);
       setMessaggioProgetto("");
       try {
-        const esito = await onAggiungiProgettoElettrico?.(file);
+        const esito = await onAggiungiProgettoElettrico?.(file, opzioni);
         if (esito && esito.ok === false) {
           setMessaggioProgetto(esito.errore || "Operazione non riuscita.");
         }
+        return esito;
       } finally {
         setProgettoBusy(false);
       }
@@ -342,15 +343,16 @@ export default function CantiereOverview({
   );
 
   const gestisciSostituisciProgetto = useCallback(
-    async (file) => {
+    async (file, opzioni = {}) => {
       if (progettoBusy) return;
       setProgettoBusy(true);
       setMessaggioProgetto("");
       try {
-        const esito = await onSostituisciProgettoElettrico?.(file);
+        const esito = await onSostituisciProgettoElettrico?.(file, opzioni);
         if (esito && esito.ok === false) {
           setMessaggioProgetto(esito.errore || "Operazione non riuscita.");
         }
+        return esito;
       } finally {
         setProgettoBusy(false);
       }

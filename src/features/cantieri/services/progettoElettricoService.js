@@ -38,6 +38,54 @@ function nuovoId() {
 }
 
 /**
+ * Nome visualizzato: custom opzionale, altrimenti da file, altrimenti fallback.
+ * @param {File|Blob|null} file
+ * @param {'pdf'|'image'} tipo
+ * @param {string|null|undefined} nomeInserito
+ */
+export function risolviNomeProgetto(file, tipo, nomeInserito) {
+  const custom = String(nomeInserito || "").trim();
+  if (custom) return custom.slice(0, 80);
+
+  const grezzo = String(file?.name || "").trim();
+  if (grezzo) {
+    const senzaExt = grezzo.replace(/\.[^.]+$/, "").trim();
+    if (senzaExt && !/^(image|img|photo|foto|scan|documento|document)$/i.test(senzaExt)) {
+      return senzaExt.slice(0, 80);
+    }
+  }
+
+  return tipo === TIPI_PROGETTO.pdf
+    ? "Progetto elettrico"
+    : "Schema fotografato";
+}
+
+/**
+ * Format dimensione in italiano (es. 2,4 MB).
+ * @param {number} bytes
+ */
+export function formatDimensioniProgetto(bytes) {
+  const n = Number(bytes);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) {
+    const kb = n / 1024;
+    return `${kb.toLocaleString("it-IT", { maximumFractionDigits: kb >= 10 ? 0 : 1 })} KB`;
+  }
+  const mb = n / (1024 * 1024);
+  return `${mb.toLocaleString("it-IT", { maximumFractionDigits: 1 })} MB`;
+}
+
+/**
+ * Prefill campo nome dopo selezione file.
+ * @param {File|null} file
+ * @param {'pdf'|'image'} tipo
+ */
+export function suggerisciNomeProgetto(file, tipo) {
+  return risolviNomeProgetto(file, tipo, null);
+}
+
+/**
  * @param {File|Blob|null} file
  * @returns {{ ok: true, tipo: 'pdf'|'image', mimeType: string }|{ ok: false, errore: string }}
  */
@@ -121,9 +169,10 @@ export function creaMetaProgettoElettrico(input) {
  *
  * @param {string|number} cantiereId
  * @param {File} file
+ * @param {{ nome?: string }=} opzioni
  * @returns {Promise<{ ok: true, progetto: object }|{ ok: false, errore: string }>}
  */
-export async function preparaProgettoElettrico(cantiereId, file) {
+export async function preparaProgettoElettrico(cantiereId, file, opzioni = {}) {
   if (cantiereId == null || cantiereId === "") {
     return { ok: false, errore: "Cantiere non valido." };
   }
@@ -144,7 +193,7 @@ export async function preparaProgettoElettrico(cantiereId, file) {
 
   const progetto = creaMetaProgettoElettrico({
     tipo: validazione.tipo,
-    nome: file.name || (validazione.tipo === "pdf" ? "progetto.pdf" : "schema.jpg"),
+    nome: risolviNomeProgetto(file, validazione.tipo, opzioni.nome),
     mimeType: validazione.mimeType,
     size: file.size,
     blobId,
@@ -159,13 +208,15 @@ export async function preparaProgettoElettrico(cantiereId, file) {
  * @param {string|number} cantiereId
  * @param {File} file
  * @param {object|null} progettoPrecedente
+ * @param {{ nome?: string }=} opzioni
  */
 export async function sostituisciProgettoElettrico(
   cantiereId,
   file,
-  progettoPrecedente
+  progettoPrecedente,
+  opzioni = {}
 ) {
-  const nuovo = await preparaProgettoElettrico(cantiereId, file);
+  const nuovo = await preparaProgettoElettrico(cantiereId, file, opzioni);
   if (!nuovo.ok) return nuovo;
 
   if (

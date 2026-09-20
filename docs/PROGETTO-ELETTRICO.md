@@ -1,44 +1,43 @@
 # Progetto elettrico del cantiere
 
-Feature mirata (freeze exception): allegare **un** PDF o **un’immagine** del progetto/schema elettrico a un cantiere, consultabile offline in campo.
+Feature mirata (freeze exception): allegare **un** PDF o **un’immagine** (anche scattata in app) del progetto/schema elettrico a un cantiere, consultabile offline in campo.
 
-Entry: **Cantiere → tab Lavoro → Progetto elettrico** (sopra checklist/materiali/foto).
+Entry: **Cantiere → tab Lavoro → Progetto elettrico**.
 
 ---
 
-## Cosa fa (1.0)
+## UX
 
-| Azione | Comportamento |
-|--------|----------------|
-| Aggiungi PDF | File picker `application/pdf` |
-| Aggiungi immagine | jpeg/png/webp/gif |
-| Apri | PDF → `PdfAnteprima`; immagine → `CantiereFotoViewer` |
-| Sostituisci | Nuovo file salvato **prima**, poi cleanup del blob precedente |
-| Elimina | ConfirmDialog → rimuove meta + blob |
+### Stato vuoto
+- Copy: *Tieni qui lo schema del cantiere, sempre a portata di mano.*
+- CTA: **＋ Aggiungi progetto** (min-height 52px)
 
-Nessun OCR, AI, annotazioni, multi-documento.
+### Aggiungi / Sostituisci (BottomSheet)
+1. **Scegli PDF** — schema/documento tecnico  
+2. **Scegli immagine** — dalla libreria  
+3. **Scatta foto** — `input capture="environment"` (stesso pattern delle foto cantiere)
+
+### Nome documento (BottomSheet, opzionale)
+Dopo selezione/scatto: campo nome precompilato, **Salva**.  
+Se vuoto → fallback (`Schema_unifilare` dal filename, oppure *Progetto elettrico* / *Schema fotografato*).
+
+### Card salvata
+- Icona + nome + `PDF · 2,4 MB` / `Immagine · …`
+- CTA primaria: **Apri progetto**
+- **•••** → Sostituisci / Elimina (ConfirmDialog)
 
 ---
 
 ## Modello dati
 
-Campo sul cantiere (APP_DATA_KEYS / sync metadata):
-
 ```js
 cantiere.progettoElettrico = {
-  id,
-  tipo: "pdf" | "image",
-  nome,
-  mimeType,
-  size,
-  blobId,       // chiave IndexedDB
-  cantiereId,
-  createdAt,    // ISO
-  updatedAt,
+  id, tipo: "pdf"|"image", nome, mimeType, size,
+  blobId, cantiereId, createdAt, updatedAt
 }
 ```
 
-**Mai** Base64 / `data:` URL nel LocalStorage o nel record cantiere.
+**Mai** Base64 / `data:` nel LocalStorage.
 
 ---
 
@@ -46,52 +45,51 @@ cantiere.progettoElettrico = {
 
 | Layer | Contenuto |
 |-------|-----------|
-| LocalStorage / Preferences | Solo metadata `progettoElettrico` |
-| IndexedDB `preventivai-progetto-elettrico` | Blob binario (`cantiereId::blobId`) |
+| LocalStorage cantieri | Solo metadata |
+| IndexedDB `preventivai-progetto-elettrico` | Blob (`cantiereId::blobId`) |
 
-Limiti file: PDF ≤ 20 MB, immagini ≤ 12 MB.
-
-Hard delete cantiere (`eliminaCantiereConPulizia`) elimina anche i blob IndexedDB del cantiere.
+Limiti: PDF ≤ 20 MB, immagini ≤ 12 MB.  
+Hard-delete cantiere → cleanup blob.
 
 ---
 
 ## Offline / cloud
 
-- Aggiunta, apertura, sostituzione, eliminazione: **offline** (IndexedDB locale).
-- Sync cloud del **binario**: **non implementato in 1.0** (niente nuovo bucket / coda parallela).
-- Il metadata può viaggiare con `cantieri` via sync esistente; `sanitizzaCantieriPerAppRecords` mantiene solo campi meta (no payload binario).
-- Su un altro device il meta può esserci senza file locale → messaggio “File non disponibile sul dispositivo.”
+- Add / open / replace / delete: **offline** (IndexedDB).
+- Sync binario cloud: **non in 1.0**.
+- Meta può viaggiare con `cantieri`; su altro device senza blob → “File non disponibile…”.
+
+---
+
+## Sicurezza route
+
+- `CantiereOverview` remounta con `key={cantiere.id}`.
+- La sezione resetta sheet/viewer/bozze su cambio `cantiereId`.
+- Salvataggio ignora risultato se l’ID è cambiato a metà operazione.
 
 ---
 
 ## File codice
 
 ```
-src/features/cantieri/services/progettoElettricoBlobStore.js
-src/features/cantieri/services/progettoElettricoService.js
-src/features/cantieri/components/ProgettoElettricoSection.jsx
+progettoElettricoBlobStore.js
+progettoElettricoService.js
+ProgettoElettricoSection.jsx
+useCantieri (add/replace/delete)
+eliminaCantiereService (cleanup)
+cloudMediaPayload (sanitize meta)
 ```
-
-Hook: `useCantieri` → `aggiungiProgettoElettrico` / `sostituisciProgettoElettrico` / `eliminaProgettoElettrico`.
 
 ---
 
 ## Test
 
-- Unit: validazione, add PDF/immagine, associazione cantiere, replace, delete, sanitizzazione, errori.
-- UI: empty state, card, sheet scelta, ConfirmDialog.
+Unit: validazione, nome, dimensioni, PDF/immagine, replace, delete, sanitizzazione.  
+UI: empty, card+Apri, sheet 3 opzioni+camera, menu •••, ConfirmDialog, reset cambio cantiere.
 
 ---
 
-## Limiti 1.0
+## Limiti 1.0 / 2.0
 
-- Un solo progetto per cantiere (sostituisci per cambiare).
-- Nessun sync multi-device del file.
-- Nessun plugin Capacitor Filesystem aggiuntivo.
-- Viewer PDF = componente già usato per preventivi (iframe/fit-width), non editor.
-
----
-
-## 2.0 (backlog)
-
-Vedi `docs/PREVENTIVAI-2.0-BACKLOG.md` — sezione Progetto elettrico.
+Un solo progetto; no sync multi-device del file; no OCR/AI/annotazioni.  
+Vedi `docs/PREVENTIVAI-2.0-BACKLOG.md`.

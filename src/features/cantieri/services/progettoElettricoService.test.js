@@ -4,10 +4,13 @@ import { _resetMemoriaProgettoElettricoPerTest } from "./progettoElettricoBlobSt
 import {
   creaMetaProgettoElettrico,
   eliminaProgettoElettricoStorage,
+  formatDimensioniProgetto,
   preparaProgettoElettrico,
+  risolviNomeProgetto,
   risolviUrlProgettoElettrico,
   sanitizzaMetaProgettoElettrico,
   sostituisciProgettoElettrico,
+  suggerisciNomeProgetto,
   TIPI_PROGETTO,
   validaFileProgetto,
 } from "./progettoElettricoService";
@@ -47,13 +50,39 @@ describe("progettoElettricoService", () => {
     expect(validaFileProgetto(grosso).errore).toMatch(/troppo grande/i);
   });
 
-  it("aggiunge PDF associato al cantiere corretto", async () => {
+  it("risolve nome custom e fallback", () => {
+    expect(
+      risolviNomeProgetto(
+        creaFile("x.pdf", "application/pdf"),
+        "pdf",
+        "Schema quadro generale"
+      )
+    ).toBe("Schema quadro generale");
+    expect(
+      risolviNomeProgetto(creaFile("Schema_unifilare.pdf", "application/pdf"), "pdf")
+    ).toBe("Schema_unifilare");
+    expect(
+      risolviNomeProgetto(creaFile("image.jpg", "image/jpeg"), "image")
+    ).toBe("Schema fotografato");
+    expect(suggerisciNomeProgetto(creaFile("Planimetria.pdf", "application/pdf"), "pdf")).toBe(
+      "Planimetria"
+    );
+  });
+
+  it("formatta dimensioni in italiano", () => {
+    expect(formatDimensioniProgetto(2400 * 1024)).toMatch(/MB/);
+    expect(formatDimensioniProgetto(512)).toBe("512 B");
+  });
+
+  it("aggiunge PDF associato al cantiere corretto con nome", async () => {
     const file = creaFile("Schema_unifilare.pdf", "application/pdf", "%PDF-1.4");
-    const esito = await preparaProgettoElettrico("c-100", file);
+    const esito = await preparaProgettoElettrico("c-100", file, {
+      nome: "Schema quadro generale",
+    });
     expect(esito.ok).toBe(true);
     expect(esito.progetto.cantiereId).toBe("c-100");
     expect(esito.progetto.tipo).toBe("pdf");
-    expect(esito.progetto.nome).toBe("Schema_unifilare.pdf");
+    expect(esito.progetto.nome).toBe("Schema quadro generale");
     expect(esito.progetto.blobId).toBeTruthy();
     expect(JSON.stringify(esito.progetto)).not.toMatch(/base64|data:/i);
   });
@@ -64,18 +93,24 @@ describe("progettoElettricoService", () => {
     expect(esito.ok).toBe(true);
     expect(esito.progetto.tipo).toBe("image");
     expect(esito.progetto.cantiereId).toBe(42);
+    expect(esito.progetto.nome).toBe("schema_quadro");
   });
 
   it("sostituisce senza lasciare il vecchio blob leggibile", async () => {
-    const primo = await preparaProgettoElettrico("c1", creaFile("a.pdf", "application/pdf", "v1"));
+    const primo = await preparaProgettoElettrico(
+      "c1",
+      creaFile("a.pdf", "application/pdf", "v1")
+    );
     const vecchioBlobId = primo.progetto.blobId;
 
     const secondo = await sostituisciProgettoElettrico(
       "c1",
       creaFile("b.pdf", "application/pdf", "v2"),
-      primo.progetto
+      primo.progetto,
+      { nome: "Nuovo schema" }
     );
     expect(secondo.ok).toBe(true);
+    expect(secondo.progetto.nome).toBe("Nuovo schema");
     expect(secondo.progetto.blobId).not.toBe(vecchioBlobId);
 
     const vecchio = await risolviUrlProgettoElettrico({
@@ -100,13 +135,22 @@ describe("progettoElettricoService", () => {
   });
 
   it("doppia preparazione crea due blob distinti (no merge silenzioso)", async () => {
-    const a = await preparaProgettoElettrico("c3", creaFile("1.pdf", "application/pdf", "a"));
-    const b = await preparaProgettoElettrico("c3", creaFile("2.pdf", "application/pdf", "b"));
+    const a = await preparaProgettoElettrico(
+      "c3",
+      creaFile("1.pdf", "application/pdf", "a")
+    );
+    const b = await preparaProgettoElettrico(
+      "c3",
+      creaFile("2.pdf", "application/pdf", "b")
+    );
     expect(a.progetto.blobId).not.toBe(b.progetto.blobId);
   });
 
   it("errore storage: cantiere id mancante", async () => {
-    const esito = await preparaProgettoElettrico("", creaFile("a.pdf", "application/pdf"));
+    const esito = await preparaProgettoElettrico(
+      "",
+      creaFile("a.pdf", "application/pdf")
+    );
     expect(esito.ok).toBe(false);
   });
 

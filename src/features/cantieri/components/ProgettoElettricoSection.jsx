@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import {
+  Camera,
   FileImage,
   FileText,
+  MoreHorizontal,
   Plus,
   Replace,
   Trash2,
@@ -12,15 +14,19 @@ import ConfirmDialog from "../../../components/ConfirmDialog";
 import PdfAnteprima from "../../../components/PdfAnteprima";
 import CantiereFotoViewer from "./CantiereFotoViewer";
 import {
+  formatDimensioniProgetto,
   risolviUrlProgettoElettrico,
+  suggerisciNomeProgetto,
   TIPI_PROGETTO,
+  validaFileProgetto,
 } from "../services/progettoElettricoService";
 
 /**
  * Sezione Progetto elettrico — un documento per cantiere (v1).
+ * Camera via input capture=environment (stesso pattern foto cantiere).
  */
 export default function ProgettoElettricoSection({
-  cantiereId: _cantiereId,
+  cantiereId,
   progetto,
   busy = false,
   messaggio = "",
@@ -28,17 +34,47 @@ export default function ProgettoElettricoSection({
   onSostituisci,
   onElimina,
 }) {
-  void _cantiereId;
-  const [sheetAperto, setSheetAperto] = useState(false);
+  const [sheetScelta, setSheetScelta] = useState(false);
+  const [sheetMenu, setSheetMenu] = useState(false);
+  const [sheetNome, setSheetNome] = useState(false);
   const [modoFile, setModoFile] = useState("aggiungi");
+  const [fileInAttesa, setFileInAttesa] = useState(null);
+  const [tipoInAttesa, setTipoInAttesa] = useState(null);
+  const [nomeBozza, setNomeBozza] = useState("");
   const [confermaElimina, setConfermaElimina] = useState(false);
   const [viewerImg, setViewerImg] = useState(null);
   const [viewerPdf, setViewerPdf] = useState(null);
-  const [erroreApertura, setErroreApertura] = useState("");
+  const [erroreLocale, setErroreLocale] = useState("");
+  const [salvataggioInCorso, setSalvataggioInCorso] = useState(false);
   const inputPdf = useRef(null);
   const inputImg = useRef(null);
+  const inputCamera = useRef(null);
   const titleId = useId();
   const revokeRef = useRef(null);
+  const cantiereIdRef = useRef(cantiereId);
+
+  useEffect(() => {
+    cantiereIdRef.current = cantiereId;
+  }, [cantiereId]);
+
+  // Cambio cantiere: chiudi overlay e annulla bozze (niente leak A→B).
+  useEffect(() => {
+    setSheetScelta(false);
+    setSheetMenu(false);
+    setSheetNome(false);
+    setFileInAttesa(null);
+    setTipoInAttesa(null);
+    setNomeBozza("");
+    setConfermaElimina(false);
+    setErroreLocale("");
+    setSalvataggioInCorso(false);
+    if (revokeRef.current) {
+      revokeRef.current();
+      revokeRef.current = null;
+    }
+    setViewerImg(null);
+    setViewerPdf(null);
+  }, [cantiereId]);
 
   useEffect(() => {
     return () => {
@@ -59,37 +95,85 @@ export default function ProgettoElettricoSection({
   }
 
   function apriScelta(modo) {
-    if (busy) return;
+    if (busy || salvataggioInCorso) return;
     setModoFile(modo);
-    setSheetAperto(true);
-    setErroreApertura("");
+    setErroreLocale("");
+    setSheetMenu(false);
+    setSheetScelta(true);
   }
 
   function scegliPdf() {
-    setSheetAperto(false);
+    setSheetScelta(false);
     requestAnimationFrame(() => inputPdf.current?.click());
   }
 
   function scegliImg() {
-    setSheetAperto(false);
+    setSheetScelta(false);
     requestAnimationFrame(() => inputImg.current?.click());
   }
 
-  async function onFileChange(event) {
+  function scattaFoto() {
+    setSheetScelta(false);
+    requestAnimationFrame(() => inputCamera.current?.click());
+  }
+
+  function onFileChange(event) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    const handler = modoFile === "sostituisci" ? onSostituisci : onAggiungi;
-    await handler?.(file);
+
+    const validazione = validaFileProgetto(file);
+    if (!validazione.ok) {
+      setErroreLocale(validazione.errore);
+      return;
+    }
+
+    setErroreLocale("");
+    setFileInAttesa(file);
+    setTipoInAttesa(validazione.tipo);
+    setNomeBozza(suggerisciNomeProgetto(file, validazione.tipo));
+    setSheetNome(true);
+  }
+
+  async function confermaNome() {
+    if (!fileInAttesa || salvataggioInCorso || busy) return;
+    const idAlClick = cantiereIdRef.current;
+    setSalvataggioInCorso(true);
+    setErroreLocale("");
+    try {
+      const handler = modoFile === "sostituisci" ? onSostituisci : onAggiungi;
+      const esito = await handler?.(fileInAttesa, { nome: nomeBozza });
+      if (String(cantiereIdRef.current) !== String(idAlClick)) {
+        return;
+      }
+      if (esito && esito.ok === false) {
+        setErroreLocale(esito.errore || "Operazione non riuscita.");
+        return;
+      }
+      setSheetNome(false);
+      setFileInAttesa(null);
+      setTipoInAttesa(null);
+      setNomeBozza("");
+    } finally {
+      setSalvataggioInCorso(false);
+    }
+  }
+
+  function annullaNome() {
+    if (salvataggioInCorso) return;
+    setSheetNome(false);
+    setFileInAttesa(null);
+    setTipoInAttesa(null);
+    setNomeBozza("");
   }
 
   async function apriProgetto() {
-    if (busy || !progetto) return;
-    setErroreApertura("");
+    if (busy || salvataggioInCorso || !progetto) return;
+    setErroreLocale("");
     pulisciViewer();
     const esito = await risolviUrlProgettoElettrico(progetto);
     if (!esito.ok) {
-      setErroreApertura(esito.errore || "Impossibile aprire il progetto.");
+      setErroreLocale(esito.errore || "Impossibile aprire il progetto.");
       return;
     }
     revokeRef.current = esito.revoke;
@@ -101,6 +185,12 @@ export default function ProgettoElettricoSection({
   }
 
   const haProgetto = Boolean(progetto?.blobId);
+  const bloccato = busy || salvataggioInCorso;
+  const metaTipo =
+    progetto?.tipo === TIPI_PROGETTO.pdf ? "PDF" : "Immagine";
+  const metaSize = formatDimensioniProgetto(progetto?.size);
+  const titoloSheetScelta =
+    modoFile === "sostituisci" ? "Sostituisci progetto" : "Aggiungi progetto";
 
   return (
     <section
@@ -108,6 +198,7 @@ export default function ProgettoElettricoSection({
       className="pro-panel p-5 mb-5 scroll-mt-24"
       aria-labelledby={titleId}
       data-testid="progetto-elettrico-section"
+      data-cantiere-id={String(cantiereId ?? "")}
     >
       <h2 id={titleId} className="ds-card-title">
         Progetto elettrico
@@ -129,20 +220,29 @@ export default function ProgettoElettricoSection({
         data-testid="progetto-elettrico-input-immagine"
         onChange={onFileChange}
       />
+      <input
+        ref={inputCamera}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        data-testid="progetto-elettrico-input-camera"
+        onChange={onFileChange}
+      />
 
       {!haProgetto ? (
-        <div className="ds-empty mt-4 text-center" data-testid="progetto-elettrico-vuoto">
-          <p className="ds-text-primary font-medium">
-            Il progetto elettrico di questo lavoro
-          </p>
-          <p className="ds-text-secondary mt-2 text-sm">
-            Allega lo schema o il progetto da tenere sempre a portata di mano.
+        <div
+          className="ds-empty mt-4 text-center"
+          data-testid="progetto-elettrico-vuoto"
+        >
+          <p className="ds-text-secondary text-sm leading-relaxed">
+            Tieni qui lo schema del cantiere, sempre a portata di mano.
           </p>
           <button
             type="button"
             className="btn-primary mt-4 inline-flex min-h-[52px] items-center justify-center gap-2 px-5 font-semibold disabled:opacity-50"
             data-testid="progetto-elettrico-aggiungi"
-            disabled={busy}
+            disabled={bloccato}
             onClick={() => apriScelta("aggiungi")}
           >
             <Plus size={20} aria-hidden="true" />
@@ -160,47 +260,38 @@ export default function ProgettoElettricoSection({
               )}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="ds-text-primary font-medium truncate">{progetto.nome}</p>
+              <p className="ds-text-primary font-medium truncate">
+                {progetto.nome}
+              </p>
               <p className="ds-text-secondary text-sm mt-1">
-                {progetto.tipo === TIPI_PROGETTO.pdf ? "PDF" : "Immagine"}
-                {progetto.size
-                  ? ` · ${Math.max(1, Math.round(progetto.size / 1024))} KB`
-                  : ""}
+                {metaTipo}
+                {metaSize ? ` · ${metaSize}` : ""}
               </p>
             </div>
+            <button
+              type="button"
+              className="btn-secondary min-h-[44px] min-w-[44px] px-2 inline-flex items-center justify-center shrink-0 disabled:opacity-50"
+              aria-label="Altre azioni progetto"
+              data-testid="progetto-elettrico-menu"
+              disabled={bloccato}
+              onClick={() => {
+                setErroreLocale("");
+                setSheetMenu(true);
+              }}
+            >
+              <MoreHorizontal size={22} aria-hidden="true" />
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-2">
-            <button
-              type="button"
-              className="btn-primary w-full min-h-[52px] font-semibold disabled:opacity-50"
-              data-testid="progetto-elettrico-apri"
-              disabled={busy}
-              onClick={apriProgetto}
-            >
-              Apri
-            </button>
-            <button
-              type="button"
-              className="btn-secondary w-full min-h-[48px] inline-flex items-center justify-center gap-2 font-semibold disabled:opacity-50"
-              data-testid="progetto-elettrico-sostituisci"
-              disabled={busy}
-              onClick={() => apriScelta("sostituisci")}
-            >
-              <Replace size={18} aria-hidden="true" />
-              Sostituisci
-            </button>
-            <button
-              type="button"
-              className="btn-danger w-full min-h-[48px] inline-flex items-center justify-center gap-2 font-semibold disabled:opacity-50"
-              data-testid="progetto-elettrico-elimina"
-              disabled={busy}
-              onClick={() => setConfermaElimina(true)}
-            >
-              <Trash2 size={18} aria-hidden="true" />
-              Elimina
-            </button>
-          </div>
+          <button
+            type="button"
+            className="btn-primary w-full min-h-[52px] font-semibold disabled:opacity-50"
+            data-testid="progetto-elettrico-apri"
+            disabled={bloccato}
+            onClick={apriProgetto}
+          >
+            Apri progetto
+          </button>
         </div>
       )}
 
@@ -213,16 +304,20 @@ export default function ProgettoElettricoSection({
           {messaggio}
         </p>
       ) : null}
-      {erroreApertura ? (
-        <p className="mt-3 text-sm text-rose-200" role="alert">
-          {erroreApertura}
+      {erroreLocale ? (
+        <p
+          className="mt-3 text-sm text-rose-200"
+          role="alert"
+          data-testid="progetto-elettrico-errore"
+        >
+          {erroreLocale}
         </p>
       ) : null}
 
       <BottomSheet
-        open={sheetAperto}
-        onClose={() => setSheetAperto(false)}
-        title="Aggiungi progetto"
+        open={sheetScelta}
+        onClose={() => setSheetScelta(false)}
+        title={titoloSheetScelta}
       >
         <div className="flex flex-col gap-3 p-1">
           <button
@@ -231,10 +326,16 @@ export default function ProgettoElettricoSection({
             data-testid="progetto-elettrico-scegli-pdf"
             onClick={scegliPdf}
           >
-            <FileText className="text-yellow-300 shrink-0" size={22} aria-hidden="true" />
+            <FileText
+              className="text-yellow-300 shrink-0"
+              size={22}
+              aria-hidden="true"
+            />
             <span>
-              <span className="ds-card-title block">Aggiungi PDF</span>
-              <span className="ds-text-secondary text-sm">Schema o progetto</span>
+              <span className="ds-card-title block">Scegli PDF</span>
+              <span className="ds-text-secondary text-sm">
+                Schema, progetto o documento tecnico
+              </span>
             </span>
           </button>
           <button
@@ -243,11 +344,118 @@ export default function ProgettoElettricoSection({
             data-testid="progetto-elettrico-scegli-immagine"
             onClick={scegliImg}
           >
-            <FileImage className="text-yellow-300 shrink-0" size={22} aria-hidden="true" />
+            <FileImage
+              className="text-yellow-300 shrink-0"
+              size={22}
+              aria-hidden="true"
+            />
             <span>
-              <span className="ds-card-title block">Aggiungi immagine</span>
-              <span className="ds-text-secondary text-sm">Foto dello schema</span>
+              <span className="ds-card-title block">Scegli immagine</span>
+              <span className="ds-text-secondary text-sm">
+                Foto o immagine dello schema
+              </span>
             </span>
+          </button>
+          <button
+            type="button"
+            className="pro-panel p-4 flex items-center gap-4 min-h-[64px] text-left"
+            data-testid="progetto-elettrico-scatta-foto"
+            onClick={scattaFoto}
+          >
+            <Camera
+              className="text-yellow-300 shrink-0"
+              size={22}
+              aria-hidden="true"
+            />
+            <span>
+              <span className="ds-card-title block">Scatta foto</span>
+              <span className="ds-text-secondary text-sm">
+                Fotografa direttamente lo schema in cantiere
+              </span>
+            </span>
+          </button>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={sheetMenu}
+        onClose={() => setSheetMenu(false)}
+        title="Progetto elettrico"
+      >
+        <div className="flex flex-col gap-3 p-1">
+          <button
+            type="button"
+            className="pro-panel p-4 flex items-center gap-4 min-h-[56px] text-left"
+            data-testid="progetto-elettrico-sostituisci"
+            onClick={() => {
+              setSheetMenu(false);
+              apriScelta("sostituisci");
+            }}
+          >
+            <Replace
+              className="text-yellow-300 shrink-0"
+              size={20}
+              aria-hidden="true"
+            />
+            <span className="ds-card-title">Sostituisci</span>
+          </button>
+          <button
+            type="button"
+            className="pro-panel p-4 flex items-center gap-4 min-h-[56px] text-left text-rose-200"
+            data-testid="progetto-elettrico-elimina"
+            onClick={() => {
+              setSheetMenu(false);
+              setConfermaElimina(true);
+            }}
+          >
+            <Trash2 className="shrink-0" size={20} aria-hidden="true" />
+            <span className="ds-card-title">Elimina</span>
+          </button>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={sheetNome}
+        onClose={annullaNome}
+        title="Nome documento"
+        descrizione="Opzionale — puoi lasciare il nome suggerito."
+      >
+        <div className="space-y-4 p-1">
+          <label className="block" htmlFor="progetto-elettrico-nome">
+            <span className="ds-text-secondary text-sm font-medium">
+              Nome
+            </span>
+            <input
+              id="progetto-elettrico-nome"
+              type="text"
+              className="input-pro mt-2 min-h-[52px] text-base"
+              value={nomeBozza}
+              maxLength={80}
+              placeholder={
+                tipoInAttesa === TIPI_PROGETTO.pdf
+                  ? "Es. Schema unifilare"
+                  : "Es. Schema quadro generale"
+              }
+              data-testid="progetto-elettrico-input-nome"
+              onChange={(e) => setNomeBozza(e.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            className="btn-primary w-full min-h-[52px] font-semibold disabled:opacity-50"
+            data-testid="progetto-elettrico-salva"
+            disabled={bloccato || !fileInAttesa}
+            onClick={confermaNome}
+          >
+            {salvataggioInCorso ? "Salvataggio…" : "Salva"}
+          </button>
+          <button
+            type="button"
+            className="btn-secondary w-full min-h-[48px] font-semibold disabled:opacity-50"
+            disabled={salvataggioInCorso}
+            onClick={annullaNome}
+          >
+            Annulla
           </button>
         </div>
       </BottomSheet>
