@@ -1,9 +1,9 @@
 import ProgrammazioneSection from "./ProgrammazioneSection";
 import RegistroLavoriSection from "./RegistroLavoriSection";
+import ManodoperaCantiereSection from "../../manodopera/components/ManodoperaCantiereSection";
 
 /**
- * Tab Giornate: Previsto (programmazione) + Fatto (registro consuntivo).
- * UX-8.3/8.5 — solo UI; programmazione[] e registroGiornate[] invariati.
+ * Tab Giornate: Manodopera (costo/pagato) + Previsto + Fatto.
  */
 export default function GiornateSection({
   cantiere,
@@ -13,9 +13,21 @@ export default function GiornateSection({
   onAggiungiGiornataRegistro,
   onAggiornaGiornataRegistro,
   onEliminaGiornataRegistro,
+  onAggiungiGiornataManodopera,
+  onAggiornaGiornataManodopera,
+  onEliminaGiornataManodopera,
+  onImpostaPagatoManodopera,
 }) {
   return (
     <div className="space-y-6">
+      <ManodoperaCantiereSection
+        cantiere={cantiere}
+        onAggiungi={onAggiungiGiornataManodopera}
+        onAggiorna={onAggiornaGiornataManodopera}
+        onElimina={onEliminaGiornataManodopera}
+        onImpostaPagato={onImpostaPagatoManodopera}
+      />
+
       <p className="ds-text-secondary">
         Confronta i giorni previsti con il lavoro fatto su questo cantiere.
         L&apos;Agenda mostra invece tutta la giornata.

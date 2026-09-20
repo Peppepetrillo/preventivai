@@ -125,6 +125,10 @@ export default function CantiereOverview({
   onAggiungiGiornataRegistro,
   onAggiornaGiornataRegistro,
   onEliminaGiornataRegistro,
+  onAggiungiGiornataManodopera,
+  onAggiornaGiornataManodopera,
+  onEliminaGiornataManodopera,
+  onImpostaPagatoManodopera,
   onAggiungiPagamento,
   onAggiornaPagamento,
   onEliminaPagamento,
@@ -1029,6 +1033,10 @@ export default function CantiereOverview({
           onAggiungiGiornataRegistro={onAggiungiGiornataRegistro}
           onAggiornaGiornataRegistro={onAggiornaGiornataRegistro}
           onEliminaGiornataRegistro={onEliminaGiornataRegistro}
+          onAggiungiGiornataManodopera={onAggiungiGiornataManodopera}
+          onAggiornaGiornataManodopera={onAggiornaGiornataManodopera}
+          onEliminaGiornataManodopera={onEliminaGiornataManodopera}
+          onImpostaPagatoManodopera={onImpostaPagatoManodopera}
         />
       </div>
 

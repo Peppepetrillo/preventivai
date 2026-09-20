@@ -51,6 +51,8 @@ export const ROUTE_PARENTS = Object.freeze({
   [ROUTES.calcoliConsumo]: ROUTES.calcoliElettrici,
   [ROUTES.calcoliConversioni]: ROUTES.calcoliElettrici,
   [ROUTES.calcoliCarico]: ROUTES.calcoliElettrici,
+  [ROUTES.operai]: ROUTES.altro,
+  [ROUTES.manodopera]: ROUTES.altro,
   [ROUTES.datiAzienda]: ROUTES.impostazioni,
   [ROUTES.cestino]: ROUTES.impostazioni,
   [ROUTES.incassi]: ROUTES.preventivi,

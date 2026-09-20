@@ -32,6 +32,8 @@ export const ROUTES = {
   calcoliConsumo: "/calcoli-elettrici/consumo",
   calcoliConversioni: "/calcoli-elettrici/conversioni",
   calcoliCarico: "/calcoli-elettrici/carico",
+  operai: "/operai",
+  manodopera: "/manodopera",
   dettaglioPreventivo: "/preventivo/:id",
   dettaglioCliente: "/cliente/:id",
 };

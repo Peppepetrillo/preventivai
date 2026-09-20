@@ -118,7 +118,17 @@ Baseline 1.0 (freeze exception): Ohm, potenza/corrente, caduta indicativa, stima
 
 ---
 
-## Progetto elettrico — evoluzioni 2.0
+## Manodopera — evoluzioni 2.0
+
+Baseline 1.0: anagrafica operai locale, `cantiere.giornateManodopera[]`, riepilogo settimanale globale, pagato/da pagare. **Non** integrata in Spese/Economia (anti-doppio conteggio).
+
+**Non implementare in 1.0:**
+
+- Sync cloud anagrafica operai
+- Generazione automatica spesa da giornate
+- Buste / contributi / INPS / INAIL
+- Widget Home dedicato
+- Report PDF manodopera
 
 Baseline 1.0 (aggiornata): **0→N** PDF/immagini per cantiere (`progettiElettrici[]`), IndexedDB locale, Apri/Rinomina/Sostituisci/Elimina, zoom viewer. Nessun sync binario cloud. Migrazione da `progettoElettrico` singolo.
 

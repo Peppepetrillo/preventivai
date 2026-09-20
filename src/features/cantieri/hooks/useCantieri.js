@@ -78,6 +78,12 @@ import {
   eliminaGiornataLavorativa,
 } from "../services/registroGiornateService";
 import {
+  aggiungiGiornataManodopera,
+  aggiornaGiornataManodopera,
+  eliminaGiornataManodopera,
+  impostaPagatoGiornataManodopera,
+} from "../../manodopera/giornateManodoperaService";
+import {
   aggiungiPagamento as aggiungiPagamentoDomain,
   aggiornaPagamento as aggiornaPagamentoDomain,
   creaIdPagamento,
@@ -1004,6 +1010,52 @@ export function useCantieri({
     return esitoMutazione(aggiornato);
   }
 
+  function aggiungiGiornataManodoperaCantiere(giornata) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    const aggiornato = aggiornaCantiereConEventi(
+      cantiereSelezionato.id,
+      (precedente) =>
+        aggiornaCantiere(aggiungiGiornataManodopera(precedente, giornata), {})
+    );
+    return esitoMutazione(aggiornato);
+  }
+
+  function aggiornaGiornataManodoperaCantiere(giornataId, patch) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    const aggiornato = aggiornaCantiereConEventi(
+      cantiereSelezionato.id,
+      (precedente) =>
+        aggiornaCantiere(
+          aggiornaGiornataManodopera(precedente, giornataId, patch),
+          {}
+        )
+    );
+    return esitoMutazione(aggiornato);
+  }
+
+  function eliminaGiornataManodoperaCantiere(giornataId) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    const aggiornato = aggiornaCantiereConEventi(
+      cantiereSelezionato.id,
+      (precedente) =>
+        aggiornaCantiere(eliminaGiornataManodopera(precedente, giornataId), {})
+    );
+    return esitoMutazione(aggiornato);
+  }
+
+  function impostaPagatoManodoperaCantiere(giornataId, pagato) {
+    if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
+    const aggiornato = aggiornaCantiereConEventi(
+      cantiereSelezionato.id,
+      (precedente) =>
+        aggiornaCantiere(
+          impostaPagatoGiornataManodopera(precedente, giornataId, pagato),
+          {}
+        )
+    );
+    return esitoMutazione(aggiornato);
+  }
+
   function aggiungiPagamento(input) {
     if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
     try {
@@ -1193,6 +1245,10 @@ export function useCantieri({
     aggiungiGiornataRegistro,
     aggiornaGiornataRegistro,
     eliminaGiornataRegistro,
+    aggiungiGiornataManodopera: aggiungiGiornataManodoperaCantiere,
+    aggiornaGiornataManodopera: aggiornaGiornataManodoperaCantiere,
+    eliminaGiornataManodopera: eliminaGiornataManodoperaCantiere,
+    impostaPagatoManodopera: impostaPagatoManodoperaCantiere,
     aggiungiPagamento,
     aggiornaPagamento,
     eliminaPagamento,

@@ -71,6 +71,8 @@ const CalcoloConversioniPage = lazy(() =>
 const CalcoloCaricoPage = lazy(() =>
   import("./features/calcoliElettrici/pages/CalcoloCaricoPage")
 );
+const Operai = lazy(() => import("./pages/Operai"));
+const Manodopera = lazy(() => import("./pages/Manodopera"));
 
 function LoadingPage() {
   return (
@@ -223,6 +225,9 @@ function AppShell() {
                 path={ROUTES.calcoliCarico}
                 element={<CalcoloCaricoPage />}
               />
+
+              <Route path={ROUTES.operai} element={<Operai />} />
+              <Route path={ROUTES.manodopera} element={<Manodopera />} />
 
               <Route
                 path={ROUTES.impostazioni}
