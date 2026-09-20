@@ -25,20 +25,43 @@ export function sanitizzaCantieriPerAppRecords(cantieri) {
 
   return cantieri.map((cantiere) => {
     if (!cantiere || typeof cantiere !== "object") return cantiere;
-    if (!Array.isArray(cantiere.foto)) return cantiere;
 
-    return {
-      ...cantiere,
-      foto: cantiere.foto.map((foto) => {
-        if (!foto || typeof foto !== "object") return foto;
-        const src = String(foto.src || "");
-        if (!src.startsWith("data:")) return foto;
-        return {
-          ...foto,
-          src: "",
-        };
-      }),
-    };
+    let prossimo = cantiere;
+
+    if (Array.isArray(cantiere.foto)) {
+      prossimo = {
+        ...prossimo,
+        foto: cantiere.foto.map((foto) => {
+          if (!foto || typeof foto !== "object") return foto;
+          const src = String(foto.src || "");
+          if (!src.startsWith("data:")) return foto;
+          return {
+            ...foto,
+            src: "",
+          };
+        }),
+      };
+    }
+
+    if (prossimo.progettoElettrico && typeof prossimo.progettoElettrico === "object") {
+      const pe = prossimo.progettoElettrico;
+      prossimo = {
+        ...prossimo,
+        progettoElettrico: {
+          id: pe.id,
+          tipo: pe.tipo,
+          nome: pe.nome,
+          mimeType: pe.mimeType,
+          size: pe.size,
+          blobId: pe.blobId,
+          cantiereId: pe.cantiereId,
+          createdAt: pe.createdAt,
+          updatedAt: pe.updatedAt,
+        },
+      };
+    }
+
+    return prossimo;
   });
 }
 

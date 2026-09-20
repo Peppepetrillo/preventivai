@@ -13,6 +13,17 @@ import {
 let backOverridePath = null;
 
 /**
+ * Guardia opzionale (es. wizard con bozza sporca).
+ * Se restituisce false / { blocca: true }, non naviga.
+ * @type {null|((ctx: {
+ *   navigate: import('react-router-dom').NavigateFunction,
+ *   pathname: string,
+ *   opzioni: object,
+ * }) => boolean|{blocca?: boolean})}
+ */
+let guardiaNavigazioneIndietro = null;
+
+/**
  * @param {string|null} path
  */
 export function setNavigazioneIndietroOverride(path) {
@@ -27,15 +38,46 @@ export function getNavigazioneIndietroOverride() {
 }
 
 /**
+ * Registra una guardia per Back / edge swipe / Android back.
+ * Una sola alla volta (ultima pagina montata vince). Passare null per rimuovere.
+ * @param {typeof guardiaNavigazioneIndietro} fn
+ */
+export function setGuardiaNavigazioneIndietro(fn) {
+  guardiaNavigazioneIndietro = typeof fn === "function" ? fn : null;
+}
+
+/**
+ * @returns {typeof guardiaNavigazioneIndietro}
+ */
+export function getGuardiaNavigazioneIndietro() {
+  return guardiaNavigazioneIndietro;
+}
+
+/**
  * Esegue il ritorno.
  * Preferisce override pagina → history in-app → parent della gerarchia.
+ * Se una guardia blocca (bozza sporca), non naviga.
  *
  * @param {import('react-router-dom').NavigateFunction} navigate
  * @param {string} pathname
  * @param {{ forceParent?: boolean }=} opzioni
- * @returns {{ metodo: 'override'|'history'|'parent'|'home', destinazione: string|null }}
+ * @returns {{ metodo: 'override'|'history'|'parent'|'home'|'bloccato', destinazione: string|null }}
  */
 export function eseguiNavigazioneIndietro(navigate, pathname, opzioni = {}) {
+  if (guardiaNavigazioneIndietro) {
+    const esitoGuardia = guardiaNavigazioneIndietro({
+      navigate,
+      pathname,
+      opzioni,
+    });
+    const blocca =
+      esitoGuardia === false ||
+      (esitoGuardia && typeof esitoGuardia === "object" && esitoGuardia.blocca);
+    if (blocca) {
+      return { metodo: "bloccato", destinazione: null };
+    }
+  }
+
   const override = getNavigazioneIndietroOverride();
   if (override) {
     navigate(override);
@@ -56,6 +98,34 @@ export function eseguiNavigazioneIndietro(navigate, pathname, opzioni = {}) {
     metodo: parent ? "parent" : "home",
     destinazione,
   };
+}
+
+/**
+ * Prova a navigare verso un path (es. BottomNav).
+ * Se una guardia blocca (wizard sporco), non naviga e apre il dialog.
+ *
+ * @param {import('react-router-dom').NavigateFunction} navigate
+ * @param {string} path
+ * @returns {boolean} true se la navigazione è partita
+ */
+export function provaNavigazioneGuidata(navigate, path) {
+  const destinazione = String(path || "").trim();
+  if (!destinazione) return false;
+
+  if (guardiaNavigazioneIndietro) {
+    const esitoGuardia = guardiaNavigazioneIndietro({
+      navigate,
+      pathname: destinazione,
+      opzioni: { destinazioneEsplicita: destinazione },
+    });
+    const blocca =
+      esitoGuardia === false ||
+      (esitoGuardia && typeof esitoGuardia === "object" && esitoGuardia.blocca);
+    if (blocca) return false;
+  }
+
+  navigate(destinazione);
+  return true;
 }
 
 /**

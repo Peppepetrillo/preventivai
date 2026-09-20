@@ -30,4 +30,27 @@ describe("GiornataProgrammataSheet — conferma eliminazione", () => {
     expect(screen.getByTestId("conferma-elimina-giornata-cancel")).toBeVisible();
     expect(screen.getByTestId("conferma-elimina-giornata-confirm")).toBeVisible();
   });
+
+  it("non chiude lo sheet se il salvataggio fallisce", () => {
+    const onClose = vi.fn();
+    const onSalva = vi.fn(() => ({
+      success: false,
+      error: { code: "validazione", message: "Data non valida" },
+    }));
+
+    render(
+      <GiornataProgrammataSheet
+        open
+        onClose={onClose}
+        onSalva={onSalva}
+        onElimina={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId("giornata-salva"));
+
+    expect(onSalva).toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByTestId("giornata-programmata-sheet")).toBeInTheDocument();
+  });
 });

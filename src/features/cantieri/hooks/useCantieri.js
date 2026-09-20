@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   calcolaAvanzamentoChecklist,
   creaCantiere,
@@ -6,6 +6,7 @@ import {
   creaVoceChecklist,
   aggiornaCantiere,
 } from "../cantieriDomain";
+import { messaggioErroreWorkflow } from "../../preventivi/utils/messaggioErroreWorkflow";
 import { useDatiLocaliSincronizzati } from "../../../hooks/useDatiLocaliSincronizzati";
 import {
   leggiCantieriTutti,
@@ -22,6 +23,12 @@ import {
   preparaFotoCantiere,
   risolviSrcFotoCantiere,
 } from "../services/cantieriFotoService";
+import {
+  eliminaProgettoElettricoStorage,
+  preparaProgettoElettrico,
+  sanitizzaMetaProgettoElettrico,
+  sostituisciProgettoElettrico,
+} from "../services/progettoElettricoService";
 import { registraEsperienzaCompletamento } from "../../../services/experienceService";
 import { sincronizzaListaSpesaDaCantiere } from "../../../domain/listaSpesa";
 import {
@@ -136,6 +143,15 @@ export function useCantieri({
   const [messaggio, setMessaggio] = useState("");
   const [variantiTick, setVariantiTick] = useState(0);
 
+  // Reset draft UI when the URL cantiere changes (no remount of the hook).
+  useEffect(() => {
+    if (!idEsterno) return undefined;
+    setNuovaChecklist("");
+    setNuovoMateriale(FORM_MATERIALE_INIZIALE);
+    setMessaggio("");
+    return undefined;
+  }, [idEsterno]);
+
   // Con id URL/esterno la selezione è derivata; altrimenti stato locale (lista/test).
   const cantiereSelezionatoId = idEsterno || cantiereSelezionatoIdInterno;
 
@@ -156,21 +172,30 @@ export function useCantieri({
     : 0;
 
   function salvaListaCantieri(cantieriAggiornati) {
+    const esito = salvaCantieri(cantieriAggiornati);
+    if (esito?.ok === false) {
+      // Non aggiornare React con dati non persistiti.
+      return esito;
+    }
     setCantieri(cantieriAggiornati);
-    salvaCantieri(cantieriAggiornati);
+    return esito;
   }
 
   function aggiornaCantiereConEventi(idTarget, aggiornatore) {
     let aggiornato = null;
     let precedente = null;
-    salvaListaCantieri(
-      cantieri.map((cantiere) => {
-        if (String(cantiere.id) !== String(idTarget)) return cantiere;
-        precedente = cantiere;
-        aggiornato = aggiornatore(cantiere);
-        return aggiornato;
-      })
-    );
+    // Leggi sempre da storage: evita race su snapshot React stale (doppio tap).
+    const elencoAttuale = leggiCantieriTutti();
+    const prossimo = elencoAttuale.map((cantiere) => {
+      if (String(cantiere.id) !== String(idTarget)) return cantiere;
+      precedente = cantiere;
+      aggiornato = aggiornatore(cantiere);
+      return aggiornato;
+    });
+    const esito = salvaListaCantieri(prossimo);
+    if (esito?.ok === false) {
+      return null;
+    }
 
     if (aggiornato && precedente) {
       const completato =
@@ -187,6 +212,13 @@ export function useCantieri({
     }
 
     return aggiornato;
+  }
+
+  function esitoMutazione(aggiornato, extra = {}) {
+    if (!aggiornato) {
+      return { success: false, error: "salvataggio_non_riuscito" };
+    }
+    return { success: true, cantiere: aggiornato, ...extra };
   }
 
   function creaEventiAutomatici(prev, next, opzioni = {}) {
@@ -231,7 +263,8 @@ export function useCantieri({
     }
 
     const cantiere = creaCantiere(nuovoCantiere);
-    const cantieriAggiornati = [cantiere, ...cantieri];
+    // Storage come SoT: due create rapide non devono sovrascrivere la prima.
+    const cantieriAggiornati = [cantiere, ...leggiCantieriTutti()];
 
     salvaListaCantieri(cantieriAggiornati);
     setCantiereSelezionatoId(cantiere.id);
@@ -245,10 +278,14 @@ export function useCantieri({
     return aggiornaSelezionatoConOpzioni(modifiche);
   }
 
-  function aggiornaSelezionatoConOpzioni(modifiche, opzioni = {}) {
+  function aggiornaSelezionatoConOpzioni(modificheOFn, opzioni = {}) {
     if (!cantiereSelezionato) return null;
     const idTarget = cantiereSelezionato.id;
     return aggiornaCantiereConEventi(idTarget, (precedente) => {
+      const modifiche =
+        typeof modificheOFn === "function"
+          ? modificheOFn(precedente)
+          : modificheOFn;
       let prossimo = aggiornaCantiere(precedente, modifiche);
       prossimo = appendDiarioEvents(
         prossimo,
@@ -291,76 +328,94 @@ export function useCantieri({
     if (!cantiereSelezionato || !nuovaChecklist.trim()) return;
     const nuovaVoce = creaVoceChecklist(nuovaChecklist);
 
-    aggiornaSelezionatoConOpzioni({
-      checklist: [
-        ...(cantiereSelezionato.checklist || []),
-        nuovaVoce,
-      ],
-    }, {
-      skipNoteEvent: true,
-      eventi: [
-        creaEventoChecklistAggiornata({
-          azione: "aggiunta",
-          testo: nuovaVoce.testo,
-        }),
-      ],
-    });
+    aggiornaSelezionatoConOpzioni(
+      (precedente) => ({
+        checklist: [...(precedente.checklist || []), nuovaVoce],
+      }),
+      {
+        skipNoteEvent: true,
+        eventi: [
+          creaEventoChecklistAggiornata({
+            azione: "aggiunta",
+            testo: nuovaVoce.testo,
+          }),
+        ],
+      }
+    );
     setNuovaChecklist("");
   }
 
   function aggiornaChecklist(voceId, modifiche) {
     if (!cantiereSelezionato) return;
-    const precedente = (cantiereSelezionato.checklist || []).find(
-      (voce) => String(voce.id) === String(voceId)
-    );
-    if (!precedente) return;
-    const prossimo = { ...precedente, ...modifiche };
-    let evento = null;
-    if (precedente.completata !== prossimo.completata) {
-      evento = creaEventoChecklistAggiornata({
-        azione: prossimo.completata ? "completata" : "riaperta",
-        testo: prossimo.testo,
-        completata: prossimo.completata,
-      });
-    } else if (precedente.testo !== prossimo.testo) {
-      evento = creaEventoChecklistAggiornata({
-        azione: "aggiornata",
-        testo: prossimo.testo,
-      });
-    }
 
-    aggiornaSelezionatoConOpzioni({
-      checklist: (cantiereSelezionato.checklist || []).map((voce) =>
-        String(voce.id) === String(voceId)
-          ? {
-              ...voce,
-              ...modifiche,
-            }
-          : voce
-      ),
-    }, { eventi: evento ? [evento] : [] });
+    aggiornaSelezionatoConOpzioni(
+      (cantiereCorrente) => {
+        const precedente = (cantiereCorrente.checklist || []).find(
+          (voce) => String(voce.id) === String(voceId)
+        );
+        if (!precedente) return {};
+        return {
+          checklist: (cantiereCorrente.checklist || []).map((voce) =>
+            String(voce.id) === String(voceId)
+              ? { ...voce, ...modifiche }
+              : voce
+          ),
+        };
+      },
+      {
+        eventi: (() => {
+          // Evento da snapshot UI: sufficiente per diario; il map usa storage.
+          const precedente = (cantiereSelezionato.checklist || []).find(
+            (voce) => String(voce.id) === String(voceId)
+          );
+          if (!precedente) return [];
+          const prossimo = { ...precedente, ...modifiche };
+          if (precedente.completata !== prossimo.completata) {
+            return [
+              creaEventoChecklistAggiornata({
+                azione: prossimo.completata ? "completata" : "riaperta",
+                testo: prossimo.testo,
+                completata: prossimo.completata,
+              }),
+            ];
+          }
+          if (precedente.testo !== prossimo.testo) {
+            return [
+              creaEventoChecklistAggiornata({
+                azione: "aggiornata",
+                testo: prossimo.testo,
+              }),
+            ];
+          }
+          return [];
+        })(),
+      }
+    );
   }
 
   function eliminaChecklist(voceId) {
     if (!cantiereSelezionato) return;
-    const precedente = (cantiereSelezionato.checklist || []).find(
+    const voceUi = (cantiereSelezionato.checklist || []).find(
       (voce) => String(voce.id) === String(voceId)
     );
 
-    aggiornaSelezionatoConOpzioni({
-      checklist: (cantiereSelezionato.checklist || []).filter(
-        (voce) => String(voce.id) !== String(voceId)
-      ),
-    }, {
-      eventi: precedente
-        ? [
-            creaEventoChecklistAggiornata({
-              azione: "rimossa",
-              testo: precedente.testo,
-            }),
-          ]
-        : [],
-    });
+    aggiornaSelezionatoConOpzioni(
+      (precedente) => ({
+        checklist: (precedente.checklist || []).filter(
+          (voce) => String(voce.id) !== String(voceId)
+        ),
+      }),
+      {
+        eventi: voceUi
+          ? [
+              creaEventoChecklistAggiornata({
+                azione: "rimossa",
+                testo: voceUi.testo,
+              }),
+            ]
+          : [],
+      }
+    );
   }
 
   function aggiornaCampoMateriale(campo, valore) {
@@ -390,20 +445,19 @@ export function useCantieri({
         (input.famigliaId || input.varianteId ? "catalogo" : "manuale"),
     });
 
-    const materiali = [
-      ...(cantiereSelezionato.materiali || []),
-      materiale,
-    ];
-
-    aggiornaSelezionatoConOpzioni(
-      { materiali },
+    const cantiereAggiornato = aggiornaSelezionatoConOpzioni(
+      (precedente) => ({
+        materiali: [...(precedente.materiali || []), materiale],
+      }),
       { eventi: [creaEventoMaterialeAggiunto(materiale)] }
     );
 
-    sincronizzaListaSpesaDaCantiere({
-      ...cantiereSelezionato,
-      materiali,
-    });
+    sincronizzaListaSpesaDaCantiere(
+      cantiereAggiornato || {
+        ...cantiereSelezionato,
+        materiali: [...(cantiereSelezionato.materiali || []), materiale],
+      }
+    );
     setNuovoMateriale(FORM_MATERIALE_INIZIALE);
     return materiale;
   }
@@ -420,38 +474,38 @@ export function useCantieri({
 
   function eliminaMateriale(materialeId) {
     if (!cantiereSelezionato) return;
-    const materialeEliminato = (cantiereSelezionato.materiali || []).find(
-      (materiale) => String(materiale.id) === String(materialeId)
-    );
-    const materiali = (cantiereSelezionato.materiali || []).filter(
-      (materiale) => String(materiale.id) !== String(materialeId)
-    );
-
-    aggiornaSelezionato({ materiali });
-
-    if (materialeEliminato) {
-      sincronizzaEliminazioneMaterialeSuLista(
-        { ...cantiereSelezionato, materiali },
-        materialeEliminato
+    let materialeEliminato = null;
+    const aggiornato = aggiornaSelezionatoConOpzioni((precedente) => {
+      materialeEliminato = (precedente.materiali || []).find(
+        (materiale) => String(materiale.id) === String(materialeId)
       );
+      return {
+        materiali: (precedente.materiali || []).filter(
+          (materiale) => String(materiale.id) !== String(materialeId)
+        ),
+      };
+    });
+
+    if (materialeEliminato && aggiornato) {
+      sincronizzaEliminazioneMaterialeSuLista(aggiornato, materialeEliminato);
     }
   }
 
   function toggleMaterialeAcquistato(materialeId) {
     if (!cantiereSelezionato) return;
     let materialeAggiornato = null;
-    const materiali = (cantiereSelezionato.materiali || []).map((item) => {
-      if (String(item.id) !== String(materialeId)) return item;
-      materialeAggiornato = { ...item, acquistato: !item.acquistato };
-      return materialeAggiornato;
+    const aggiornato = aggiornaSelezionatoConOpzioni((precedente) => {
+      const materiali = (precedente.materiali || []).map((item) => {
+        if (String(item.id) !== String(materialeId)) return item;
+        materialeAggiornato = { ...item, acquistato: !item.acquistato };
+        return materialeAggiornato;
+      });
+      if (!materialeAggiornato) return {};
+      return { materiali };
     });
-    if (!materialeAggiornato) return;
+    if (!materialeAggiornato || !aggiornato) return;
 
-    aggiornaSelezionato({ materiali });
-    sincronizzaAcquistatoMaterialeSuLista(
-      { ...cantiereSelezionato, materiali },
-      materialeAggiornato
-    );
+    sincronizzaAcquistatoMaterialeSuLista(aggiornato, materialeAggiornato);
   }
 
   function sincronizzaVariantePreventivo(variante) {
@@ -465,7 +519,12 @@ export function useCantieri({
     if (risultato.success) {
       setMessaggio("Preventivo aggiornato con la variante.");
     } else {
-      setMessaggio(risultato.error || "Aggiornamento preventivo non riuscito.");
+      setMessaggio(
+        messaggioErroreWorkflow(
+          risultato.error,
+          "Aggiornamento preventivo non riuscito."
+        )
+      );
     }
     return risultato;
   }
@@ -506,7 +565,12 @@ export function useCantieri({
             : "Variante proposta registrata."
       );
     } else {
-      setMessaggio(risultato.error || "Impossibile creare la variante.");
+      setMessaggio(
+        messaggioErroreWorkflow(
+          risultato.error,
+          "Impossibile creare la variante."
+        )
+      );
     }
     return risultato;
   }
@@ -525,7 +589,9 @@ export function useCantieri({
       setVariantiTick((n) => n + 1);
       setMessaggio("Variante approvata.");
     } else {
-      setMessaggio(risultato.error || "Approvazione non riuscita.");
+      setMessaggio(
+        messaggioErroreWorkflow(risultato.error, "Approvazione non riuscita.")
+      );
     }
     return risultato;
   }
@@ -544,7 +610,9 @@ export function useCantieri({
       setVariantiTick((n) => n + 1);
       setMessaggio("Variante eseguita.");
     } else {
-      setMessaggio(risultato.error || "Esecuzione non riuscita.");
+      setMessaggio(
+        messaggioErroreWorkflow(risultato.error, "Esecuzione non riuscita.")
+      );
     }
     return risultato;
   }
@@ -563,7 +631,9 @@ export function useCantieri({
       setVariantiTick((n) => n + 1);
       setMessaggio("Variante annullata.");
     } else {
-      setMessaggio(risultato.error || "Annullamento non riuscito.");
+      setMessaggio(
+        messaggioErroreWorkflow(risultato.error, "Annullamento non riuscito.")
+      );
     }
     return risultato;
   }
@@ -597,7 +667,7 @@ export function useCantieri({
     ]);
 
     salvaListaCantieri(
-      cantieri.map((cantiere) =>
+      leggiCantieriTutti().map((cantiere) =>
         String(cantiere.id) === String(cantiereSelezionato.id)
           ? cantiereCompletato
           : cantiere
@@ -611,7 +681,9 @@ export function useCantieri({
     }
 
     registraEsperienzaCompletamento(cantiereCompletato);
-    setMessaggio("Lavoro finito.");
+    setMessaggio(
+      "Lavoro finito. Lo trovi in Cantieri → Completati e in Storico."
+    );
     return { success: true, cantiere: cantiereCompletato };
   }
 
@@ -674,6 +746,76 @@ export function useCantieri({
     return risolviSrcFotoCantiere(foto);
   }
 
+  async function aggiungiProgettoElettrico(file, opzioni = {}) {
+    const idTarget = cantiereSelezionato?.id;
+    if (!file || idTarget == null || idTarget === "") {
+      return { ok: false, errore: "Cantiere non valido." };
+    }
+    if (cantiereSelezionato.progettoElettrico?.blobId) {
+      return sostituisciProgettoElettricoFile(file, opzioni);
+    }
+
+    const esito = await preparaProgettoElettrico(idTarget, file, opzioni);
+    if (!esito.ok) {
+      setMessaggio(esito.errore || "Impossibile salvare il progetto.");
+      return esito;
+    }
+
+    const meta = sanitizzaMetaProgettoElettrico(esito.progetto);
+    const aggiornato = aggiornaSelezionato({ progettoElettrico: meta });
+    if (!aggiornato) {
+      await eliminaProgettoElettricoStorage(esito.progetto);
+      setMessaggio("Impossibile salvare il progetto.");
+      return { ok: false, errore: "salvataggio_non_riuscito" };
+    }
+    setMessaggio("Progetto elettrico aggiunto.");
+    return { ok: true, progetto: meta };
+  }
+
+  async function sostituisciProgettoElettricoFile(file, opzioni = {}) {
+    const idTarget = cantiereSelezionato?.id;
+    if (!file || idTarget == null || idTarget === "") {
+      return { ok: false, errore: "Cantiere non valido." };
+    }
+
+    const precedente = cantiereSelezionato.progettoElettrico || null;
+    const esito = await sostituisciProgettoElettrico(
+      idTarget,
+      file,
+      precedente,
+      opzioni
+    );
+    if (!esito.ok) {
+      setMessaggio(esito.errore || "Impossibile sostituire il progetto.");
+      return esito;
+    }
+
+    const meta = sanitizzaMetaProgettoElettrico(esito.progetto);
+    const aggiornato = aggiornaSelezionato({ progettoElettrico: meta });
+    if (!aggiornato) {
+      await eliminaProgettoElettricoStorage(esito.progetto);
+      setMessaggio("Impossibile salvare il progetto.");
+      return { ok: false, errore: "salvataggio_non_riuscito" };
+    }
+    setMessaggio("Progetto elettrico sostituito.");
+    return { ok: true, progetto: meta };
+  }
+
+  async function eliminaProgettoElettrico() {
+    if (!cantiereSelezionato) {
+      return { ok: false, errore: "Cantiere non valido." };
+    }
+    const precedente = cantiereSelezionato.progettoElettrico || null;
+    const aggiornato = aggiornaSelezionato({ progettoElettrico: null });
+    if (!aggiornato) {
+      setMessaggio("Impossibile eliminare il progetto.");
+      return { ok: false, errore: "salvataggio_non_riuscito" };
+    }
+    await eliminaProgettoElettricoStorage(precedente);
+    setMessaggio("Progetto elettrico eliminato.");
+    return { ok: true };
+  }
+
   function aggiungiNotaDiario(testo) {
     if (!cantiereSelezionato) return null;
     const evento = creaEventoNotaAggiunta(testo, { manuale: true });
@@ -708,7 +850,7 @@ export function useCantieri({
           }
         }
       }
-      return { success: true, cantiere: aggiornato };
+      return esitoMutazione(aggiornato);
     } catch (errore) {
       return { success: false, error: errore?.message || "giornata_non_valida" };
     }
@@ -739,7 +881,7 @@ export function useCantieri({
     ) {
       void notificationService.resyncNotificheGiornata(aggiornato, nuova);
     }
-    return { success: true, cantiere: aggiornato };
+    return esitoMutazione(aggiornato);
   }
 
   function eliminaGiornata(giornataId) {
@@ -753,7 +895,7 @@ export function useCantieri({
       (precedente) =>
         aggiornaCantiere(eliminaGiornataProgrammata(precedente, giornataId), {})
     );
-    return { success: true, cantiere: aggiornato };
+    return esitoMutazione(aggiornato);
   }
 
   function aggiungiGiornataRegistro(input) {
@@ -764,7 +906,7 @@ export function useCantieri({
         (precedente) =>
           aggiornaCantiere(aggiungiGiornataLavorativa(precedente, input), {})
       );
-      return { success: true, cantiere: aggiornato };
+      return esitoMutazione(aggiornato);
     } catch (errore) {
       return { success: false, error: errore?.message || "giornata_non_valida" };
     }
@@ -780,7 +922,7 @@ export function useCantieri({
           {}
         )
     );
-    return { success: true, cantiere: aggiornato };
+    return esitoMutazione(aggiornato);
   }
 
   function eliminaGiornataRegistro(giornataId) {
@@ -790,7 +932,7 @@ export function useCantieri({
       (precedente) =>
         aggiornaCantiere(eliminaGiornataLavorativa(precedente, giornataId), {})
     );
-    return { success: true, cantiere: aggiornato };
+    return esitoMutazione(aggiornato);
   }
 
   function aggiungiPagamento(input) {
@@ -821,6 +963,9 @@ export function useCantieri({
           return appendDiarioEvents(aggiornaCantiere(next, {}), [evento]);
         }
       );
+      if (!aggiornato) {
+        return { success: false, error: "salvataggio_non_riuscito" };
+      }
       return { success: true, cantiere: aggiornato, pagamento: pagamentoSalvato };
     } catch (errore) {
       return { success: false, error: errore?.message || "pagamento_non_valido" };
@@ -852,6 +997,9 @@ export function useCantieri({
           return appendDiarioEvents(aggiornaCantiere(next, {}), [evento]);
         }
       );
+      if (!aggiornato) {
+        return { success: false, error: "salvataggio_non_riuscito" };
+      }
       return { success: true, cantiere: aggiornato, pagamento: pagamentoSalvato };
     } catch (errore) {
       return { success: false, error: errore?.message || "pagamento_non_valido" };
@@ -865,6 +1013,9 @@ export function useCantieri({
       (precedente) =>
         aggiornaCantiere(eliminaPagamentoDomain(precedente, pagamentoId), {})
     );
+    if (!aggiornato) {
+      return { success: false, error: "salvataggio_non_riuscito" };
+    }
     return { success: true, cantiere: aggiornato };
   }
 
@@ -885,6 +1036,9 @@ export function useCantieri({
           return aggiornaCantiere(next, {});
         }
       );
+      if (!aggiornato) {
+        return { success: false, error: "salvataggio_non_riuscito" };
+      }
       return { success: true, cantiere: aggiornato, spesa: spesaSalvata };
     } catch (errore) {
       return { success: false, error: errore?.message || "spesa_non_valida" };
@@ -904,6 +1058,9 @@ export function useCantieri({
           return aggiornaCantiere(next, {});
         }
       );
+      if (!aggiornato) {
+        return { success: false, error: "salvataggio_non_riuscito" };
+      }
       return { success: true, cantiere: aggiornato, spesa: spesaSalvata };
     } catch (errore) {
       return { success: false, error: errore?.message || "spesa_non_valida" };
@@ -917,7 +1074,7 @@ export function useCantieri({
       (precedente) =>
         aggiornaCantiere(rimuoviSpesaDomain(precedente, spesaId), {})
     );
-    return { success: true, cantiere: aggiornato };
+    return esitoMutazione(aggiornato);
   }
 
   return {
@@ -956,6 +1113,9 @@ export function useCantieri({
     aggiungiFoto,
     eliminaFoto,
     apriFoto,
+    aggiungiProgettoElettrico,
+    sostituisciProgettoElettrico: sostituisciProgettoElettricoFile,
+    eliminaProgettoElettrico,
     aggiungiNotaDiario,
     aggiungiGiornata,
     aggiornaGiornata,

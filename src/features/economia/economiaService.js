@@ -201,6 +201,37 @@ export function aggregaEconomiaAttivita(cantieri = [], opzioni = {}) {
     return String(b.id || "").localeCompare(String(a.id || ""));
   });
 
+  /** @type {Record<string, number>} */
+  const uscitePerCategoria = {};
+  /** @type {Record<string, number>} */
+  const entratePerCategoria = {};
+  for (const m of nelPeriodo) {
+    const cat = String(m.categoria || "altro");
+    if (m.tipo === TIPO_MOVIMENTO_ECONOMIA.uscita) {
+      uscitePerCategoria[cat] = (uscitePerCategoria[cat] || 0) + m.importo;
+    } else if (m.tipo === TIPO_MOVIMENTO_ECONOMIA.entrata) {
+      entratePerCategoria[cat] = (entratePerCategoria[cat] || 0) + m.importo;
+    }
+  }
+
+  const dettaglioUscite = Object.entries(uscitePerCategoria)
+    .map(([categoria, importo]) => ({
+      categoria,
+      etichetta: ETICHETTE_CATEGORIA_SPESA[categoria] || categoria,
+      importo,
+    }))
+    .filter((r) => r.importo > 0)
+    .sort((a, b) => b.importo - a.importo);
+
+  const dettaglioEntrate = Object.entries(entratePerCategoria)
+    .map(([categoria, importo]) => ({
+      categoria,
+      etichetta: ETICHETTE_TIPO_PAGAMENTO[categoria] || categoria,
+      importo,
+    }))
+    .filter((r) => r.importo > 0)
+    .sort((a, b) => b.importo - a.importo);
+
   return {
     periodo,
     periodoEtichetta:
@@ -214,6 +245,8 @@ export function aggregaEconomiaAttivita(cantieri = [], opzioni = {}) {
     movimentiTotaliNelPeriodo: ordinati.length,
     esclusiSenzaData,
     cantieriAnalizzati: lista.length,
+    dettaglioUscite,
+    dettaglioEntrate,
   };
 }
 

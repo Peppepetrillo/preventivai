@@ -68,7 +68,9 @@ describe("DistintaMaterialiEditor UI", () => {
       target: { value: "Mario" },
     });
     fireEvent.click(screen.getByTestId("distinta-salva"));
-    expect(screen.getByText(/Distinta creata|Salvata/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Distinta creata|Collega un cantiere/i)
+    ).toBeInTheDocument();
     const stored = JSON.parse(
       localStorage.getItem(STORAGE_KEYS.distinteMateriali) || "[]"
     );

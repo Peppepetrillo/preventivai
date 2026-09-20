@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ROUTES } from "../app/routes";
@@ -9,13 +9,23 @@ vi.mock("../services/cloudSyncService", () => ({
   salvaDatoCloud: vi.fn(),
 }));
 
+function CantieriCapture() {
+  const location = useLocation();
+  return (
+    <div data-testid="cantieri-dest">
+      {location.pathname}
+      {location.search}
+    </div>
+  );
+}
+
 describe("DettaglioCliente UX-12", () => {
   beforeEach(() => {
     localStorage.clear();
     localStorage.setItem(
       STORAGE_KEYS.clienti,
       JSON.stringify([
-        { id: 1, nome: "Mario Rossi", telefono: "111" },
+        { id: 1, nome: "Mario Rossi", telefono: "111", indirizzo: "Via Roma 1" },
         { id: 2, nome: "Mario Rossi", telefono: "222" },
       ])
     );
@@ -78,7 +88,6 @@ describe("DettaglioCliente UX-12", () => {
       <MemoryRouter initialEntries={["/cliente/1"]}>
         <Routes>
           <Route path="/cliente/:id" element={<DettaglioCliente />} />
-          <Route path="/cantiere/:id" element={<div>Cantiere</div>} />
         </Routes>
       </MemoryRouter>
     );
@@ -102,5 +111,51 @@ describe("DettaglioCliente UX-12", () => {
       "href",
       `${ROUTES.preventiviNuovo}?clienteId=1`
     );
+  });
+
+  it("cambio id remounta e non lascia i campi del cliente precedente", async () => {
+    const { default: DettaglioCliente } = await import("./DettaglioCliente");
+
+    function Harness({ id }) {
+      return (
+        <MemoryRouter key={id} initialEntries={[`/cliente/${id}`]}>
+          <Routes>
+            <Route path="/cliente/:id" element={<DettaglioCliente />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    }
+
+    const { rerender } = render(<Harness id="1" />);
+
+    expect(screen.getByDisplayValue("111")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("222")).not.toBeInTheDocument();
+
+    rerender(<Harness id="2" />);
+
+    expect(screen.getByDisplayValue("222")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("111")).not.toBeInTheDocument();
+  });
+
+  it("Nuovo cantiere naviga con clienteId/cliente/indirizzo in query", async () => {
+    const { default: DettaglioCliente } = await import("./DettaglioCliente");
+
+    render(
+      <MemoryRouter initialEntries={["/cliente/1"]}>
+        <Routes>
+          <Route path="/cliente/:id" element={<DettaglioCliente />} />
+          <Route path={ROUTES.cantieri} element={<CantieriCapture />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Nuovo cantiere/i }));
+
+    const dest = screen.getByTestId("cantieri-dest");
+    expect(dest).toHaveTextContent("/cantieri");
+    expect(dest.textContent).toContain("nuovoCantiere=1");
+    expect(dest.textContent).toContain("clienteId=1");
+    expect(dest.textContent).toContain("cliente=Mario");
+    expect(dest.textContent).toContain("indirizzo=Via");
   });
 });

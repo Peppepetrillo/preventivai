@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
@@ -56,12 +56,15 @@ function VoceCatalogoForm({
   const [form, setForm] = useState(() => formDaVoce(voce, categorie));
   const [errore, setErrore] = useState("");
   const [confermaElimina, setConfermaElimina] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const salvataggioInCorso = useRef(false);
 
   function aggiorna(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
   }
 
   function gestisciSalva() {
+    if (salvataggioInCorso.current) return;
     const nome = String(form.nome || "").trim();
     if (!nome) {
       setErrore("Inserisci il nome della lavorazione.");
@@ -77,8 +80,15 @@ function VoceCatalogoForm({
       preferita: Boolean(form.preferita),
     };
 
+    salvataggioInCorso.current = true;
+    setSalvando(true);
     const ok = isNuova ? onCrea?.(payload) : onSalva?.(voce.id, payload);
-    if (ok !== false) onClose?.();
+    if (ok === false) {
+      salvataggioInCorso.current = false;
+      setSalvando(false);
+      return;
+    }
+    onClose?.();
   }
 
   function confermaEliminazione() {
@@ -211,9 +221,10 @@ function VoceCatalogoForm({
         <button
           type="button"
           onClick={gestisciSalva}
-          className="flex-1 btn-primary min-h-[48px] text-[14px] font-semibold"
+          disabled={salvando}
+          className="flex-1 btn-primary min-h-[48px] text-[14px] font-semibold disabled:opacity-40"
         >
-          Salva
+          {salvando ? "Salvataggio…" : "Salva"}
         </button>
       </div>
 

@@ -70,6 +70,21 @@ describe("PreventivoManuale", () => {
     expect(String(preventivi[0].clienteId)).toBe("77");
   });
 
+  it("ignora un secondo tap su Crea preventivo (no duplicati)", () => {
+    renderPage("?clienteId=77");
+
+    fireEvent.change(screen.getByPlaceholderText(/Descrizione lavorazione/i), {
+      target: { value: "Installazione presa" },
+    });
+
+    const btn = screen.getByText(/Crea preventivo/i);
+    fireEvent.click(btn);
+    fireEvent.click(btn);
+
+    const preventivi = JSON.parse(localStorage.getItem(STORAGE_KEYS.preventivi) || "[]");
+    expect(preventivi.length).toBe(1);
+  });
+
   it("salva senza clienteId se il nome non corrisponde al cliente in rubrica", () => {
     renderPage();
 

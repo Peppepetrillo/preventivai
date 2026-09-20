@@ -14,7 +14,7 @@ export const TIPI_CONDIVISIONE_LABEL = Object.freeze({
   [TIPI_CONDIVISIONE.EMAIL]: "Email",
   [TIPI_CONDIVISIONE.WHATSAPP]: "WhatsApp",
   [TIPI_CONDIVISIONE.SHARE]: "Condivisione",
-  [TIPI_CONDIVISIONE.DOWNLOAD]: "Download",
+  [TIPI_CONDIVISIONE.DOWNLOAD]: "Scarica",
 });
 
 export const STATI_CONDIVISIONE = Object.freeze({
