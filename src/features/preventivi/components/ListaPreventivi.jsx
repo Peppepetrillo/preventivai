@@ -142,7 +142,7 @@ export default function ListaPreventivi() {
           })}
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3 ds-card-grid">
           {preventiviFiltrati.length === 0 && (
             <div className="pro-panel p-8 text-center ds-empty">
               <p className="ds-card-title">

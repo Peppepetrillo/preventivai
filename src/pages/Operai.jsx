@@ -137,7 +137,7 @@ export default function Operai() {
             </button>
           </div>
         ) : (
-          <ul className="space-y-3 list-none p-0 m-0" data-testid="operai-lista">
+          <ul className="space-y-3 list-none p-0 m-0 ds-card-grid" data-testid="operai-lista">
             {lista.map((operaio) => {
               const attivo = operaio.attivo !== false;
               return (

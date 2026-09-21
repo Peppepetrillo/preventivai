@@ -142,7 +142,7 @@ export default function Storico() {
           aria-label="Riepilogo storico"
           data-testid="storico-riepilogo"
         >
-          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 ds-kpi-grid">
             <div>
               <p className="section-label">Giornate</p>
               <p

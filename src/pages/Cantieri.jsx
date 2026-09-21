@@ -318,7 +318,7 @@ export default function Cantieri() {
           ) : null}
 
           {!listaVuota && !ricercaOFiltroVuoto ? (
-            <div className="grid gap-2.5">
+            <div className="grid gap-2.5 ds-card-grid">
               {cantieriVisibili.map(({ cantiere, progresso, economico }) => {
                 const titolo =
                   cantiere.cliente || cantiere.nome || "Cliente non indicato";

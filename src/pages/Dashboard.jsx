@@ -139,7 +139,7 @@ export default function Dashboard() {
           </section>
         ) : null}
 
-        <section aria-label="Azione principale" className="space-y-3">
+        <section aria-label="Azione principale" className="space-y-3 ds-cta-row">
           <Link
             to={ROUTES.preventiviNuovo}
             className="btn-primary w-full min-h-[52px] flex items-center justify-center gap-2 text-base font-semibold"
@@ -150,7 +150,7 @@ export default function Dashboard() {
           </Link>
           <Link
             to={`${ROUTES.preventiviNuovo}?express=1`}
-            className="btn-secondary w-full min-h-[48px] flex items-center justify-center gap-2"
+            className="btn-secondary w-full min-h-[52px] flex items-center justify-center gap-2"
             data-testid="home-preventivo-vocale"
             aria-label="Preventivo vocale rapido"
           >

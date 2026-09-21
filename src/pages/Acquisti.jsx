@@ -247,7 +247,7 @@ export default function Acquisti() {
           </div>
         ) : (
           <ul
-            className="space-y-3"
+            className="space-y-3 ds-card-grid"
             role="list"
             data-testid="acquisti-vista-tutto-list"
           >

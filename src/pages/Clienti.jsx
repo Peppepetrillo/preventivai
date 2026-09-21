@@ -252,7 +252,7 @@ export default function Clienti() {
           ) : null}
 
           {!listaVuota && !ricercaSenzaRisultati ? (
-            <div className="grid gap-2.5">
+            <div className="grid gap-2.5 ds-card-grid">
               {clientiVisibili.map((cliente) => (
                 <Link
                   key={cliente.id}

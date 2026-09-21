@@ -39,7 +39,7 @@ export default function CalcoliElettrici() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 ds-hub-grid ds-hub-grid-lg-3">
           {CALCOLATORI.map((voce) => {
             const Icon = ICONS[voce.icon] || Zap;
             const path = ROUTES[voce.pathKey];

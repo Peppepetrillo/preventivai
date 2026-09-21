@@ -127,7 +127,7 @@ export default function Altro() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 ds-hub-grid">
           {VOCI_HUB.map((voce) => {
             const Icon = voce.icon;
             return (

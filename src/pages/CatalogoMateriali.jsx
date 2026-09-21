@@ -250,7 +250,7 @@ export default function CatalogoMateriali() {
                 </p>
               </div>
             ) : (
-              <ul className="space-y-2" role="list">
+              <ul className="space-y-2 ds-card-grid" role="list">
                 {famiglieVisibili.map((famiglia) => (
                   <li key={famiglia.id}>
                     <CatalogoMaterialiFamigliaCard
@@ -287,7 +287,7 @@ export default function CatalogoMateriali() {
                 </button>
               </div>
             ) : (
-              <ul className="space-y-2" role="list">
+              <ul className="space-y-2 ds-card-grid" role="list">
                 {famigliaAttiva.varianti.map((variante) => (
                   <li key={variante.id}>
                     <CatalogoMaterialiVarianteRow

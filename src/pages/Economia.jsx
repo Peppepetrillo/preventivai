@@ -124,7 +124,7 @@ export default function Economia() {
         </div>
 
         <section
-          className="grid grid-cols-2 gap-3 mb-6"
+          className="grid grid-cols-2 gap-3 mb-6 ds-kpi-grid"
           aria-label="Riepilogo economico"
         >
           <MetricaCard

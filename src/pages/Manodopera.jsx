@@ -188,7 +188,7 @@ export default function Manodopera() {
             Nessuna giornata in questa settimana.
           </p>
         ) : (
-          <ul className="space-y-3 list-none p-0 m-0 mb-8" data-testid="manodopera-per-operaio">
+          <ul className="space-y-3 list-none p-0 m-0 mb-8 ds-card-grid" data-testid="manodopera-per-operaio">
             {riepilogo.perOperaio.map((riga) => (
               <li key={riga.operaioId} className="pro-panel p-4">
                 <p className="ds-text-primary font-medium">{riga.nome}</p>
@@ -217,7 +217,7 @@ export default function Manodopera() {
         {riepilogo.perCantiere.length === 0 ? (
           <p className="ds-text-secondary text-sm">Nessun cantiere nel periodo.</p>
         ) : (
-          <ul className="space-y-3 list-none p-0 m-0" data-testid="manodopera-per-cantiere">
+          <ul className="space-y-3 list-none p-0 m-0 ds-card-grid" data-testid="manodopera-per-cantiere">
             {riepilogo.perCantiere.map((riga) => (
               <li key={riga.cantiereId}>
                 <Link

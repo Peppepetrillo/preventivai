@@ -132,7 +132,7 @@ export default function DistinteMateriali() {
             </button>
           </div>
         ) : (
-          <ul className="space-y-3" role="list" data-testid="distinte-list">
+          <ul className="space-y-3 ds-card-grid" role="list" data-testid="distinte-list">
             {items.map((d) => (
               <li key={d.id}>
                 <DistintaCard

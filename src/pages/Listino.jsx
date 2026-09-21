@@ -157,7 +157,7 @@ export default function Listino() {
                 Preferiti
               </h2>
             </div>
-            <ul className="space-y-1.5" role="list">
+            <ul className="space-y-1.5 ds-card-grid" role="list">
               {preferitiVisibili.map((voce) => (
                 <li key={`pref-${voce.id}`}>
                   <RigaVoceCatalogo
@@ -259,7 +259,7 @@ export default function Listino() {
           {!listaVuota &&
           !ricercaSenzaRisultati &&
           lavorazioniSenzaPreferiti.length > 0 ? (
-            <ul className="space-y-1.5" role="list">
+            <ul className="space-y-1.5 ds-card-grid" role="list">
               {lavorazioniSenzaPreferiti.map((voce) => (
                 <li key={voce.id}>
                   <RigaVoceCatalogo
