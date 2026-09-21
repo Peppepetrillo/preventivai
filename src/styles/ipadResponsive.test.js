@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 /**
  * Guardie CSS iPad: le classi DS tablet devono restare definite
  * senza toccare business logic.
  */
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
+
 describe("iPad responsive CSS tokens", () => {
-  const css = readFileSync(join(process.cwd(), "src/index.css"), "utf8");
+  const css = readFileSync(join(ROOT, "src/index.css"), "utf8");
 
   it("definisce breakpoint tablet 768 e large 1024", () => {
     expect(css).toMatch(/@media \(min-width: 768px\)/);
@@ -38,7 +41,7 @@ describe("iPad responsive CSS tokens", () => {
 
   it("BottomSheet monta la classe ds-bottom-sheet", () => {
     const jsx = readFileSync(
-      join(process.cwd(), "src/components/BottomSheet.jsx"),
+      join(ROOT, "src/components/BottomSheet.jsx"),
       "utf8"
     );
     expect(jsx).toContain("ds-bottom-sheet");
