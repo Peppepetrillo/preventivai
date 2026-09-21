@@ -192,7 +192,8 @@ describe("cestinoService UX-7.1", () => {
     spostaNelCestino(TIPI_CESTINO.preventivo, "p1");
     eliminaDefinitivamente(TIPI_CESTINO.preventivo, "p1");
     expect(leggiPreventiviTutti()).toHaveLength(0);
-    expect(leggiCantieri()[0].preventivoId).toBe("p1");
+    expect(leggiCantieri()[0].preventivoId).toBeUndefined();
+    expect(leggiCantieri()[0].preventivoNumero).toBeUndefined();
   });
 
   it("backup conserva deletedAt dopo restore", async () => {

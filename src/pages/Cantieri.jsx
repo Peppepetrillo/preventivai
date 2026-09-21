@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronRight,
   HardHat,
@@ -87,18 +87,33 @@ export default function Cantieri() {
   const [ricerca, setRicerca] = useState("");
   const [filtro, setFiltro] = useState("attivi");
   const [formAperto, setFormAperto] = useState(false);
+  const [creandoCantiere, setCreandoCantiere] = useState(false);
+  const creazioneInCorso = useRef(false);
 
   useEffect(() => {
     const apriNuovo =
       searchParams.get("nuovo") === "1" ||
       searchParams.get("nuovoCantiere") === "1";
     if (!apriNuovo) return;
+
+    const clienteId = searchParams.get("clienteId");
+    const clienteNome = searchParams.get("cliente");
+    const indirizzoPrefill = searchParams.get("indirizzo");
+    if (clienteId) aggiornaCampoNuovoCantiere("clienteId", clienteId);
+    if (clienteNome) aggiornaCampoNuovoCantiere("cliente", clienteNome);
+    if (indirizzoPrefill) {
+      aggiornaCampoNuovoCantiere("indirizzo", indirizzoPrefill);
+    }
+
     setFormAperto(true);
     const prossimo = new URLSearchParams(searchParams);
     prossimo.delete("nuovo");
     prossimo.delete("nuovoCantiere");
+    prossimo.delete("clienteId");
+    prossimo.delete("cliente");
+    prossimo.delete("indirizzo");
     setSearchParams(prossimo, { replace: true });
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, aggiornaCampoNuovoCantiere]);
 
   const cantieriPreparati = useMemo(() => {
     let elenco = filtraCantieriLocali(cantieri, ricerca);
@@ -132,11 +147,17 @@ export default function Cantieri() {
   );
 
   function gestisciCreaCantiere() {
+    if (creazioneInCorso.current) return;
+    creazioneInCorso.current = true;
+    setCreandoCantiere(true);
     const creato = aggiungiCantiere();
     if (creato?.id) {
       setFormAperto(false);
       navigate(routeCantiere(creato.id));
+      return;
     }
+    creazioneInCorso.current = false;
+    setCreandoCantiere(false);
   }
 
   function aggiornaRicerca(event) {
@@ -226,6 +247,7 @@ export default function Cantieri() {
                     cantiere={nuovoCantiere}
                     onAggiornaCampo={aggiornaCampoNuovoCantiere}
                     onCreaCantiere={gestisciCreaCantiere}
+                    salvando={creandoCantiere}
                   />
                 </div>
               ) : (
@@ -266,6 +288,7 @@ export default function Cantieri() {
                   cantiere={nuovoCantiere}
                   onAggiornaCampo={aggiornaCampoNuovoCantiere}
                   onCreaCantiere={gestisciCreaCantiere}
+                  salvando={creandoCantiere}
                 />
               </div>
             </div>
@@ -295,7 +318,7 @@ export default function Cantieri() {
           ) : null}
 
           {!listaVuota && !ricercaOFiltroVuoto ? (
-            <div className="grid gap-2.5">
+            <div className="grid gap-2.5 ds-card-grid">
               {cantieriVisibili.map(({ cantiere, progresso, economico }) => {
                 const titolo =
                   cantiere.cliente || cantiere.nome || "Cliente non indicato";

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronRight,
   Mail,
@@ -65,6 +65,8 @@ export default function Clienti() {
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
   const [formAperto, setFormAperto] = useState(false);
+  const [salvandoCliente, setSalvandoCliente] = useState(false);
+  const salvataggioClienteInCorso = useRef(false);
 
   useEffect(() => {
     if (searchParams.get("nuovo") !== "1") return;
@@ -94,11 +96,15 @@ export default function Clienti() {
   }
 
   function aggiungiCliente() {
-    if (!nome) return;
+    const nomeTrim = String(nome || "").trim();
+    if (!nomeTrim || salvataggioClienteInCorso.current) return;
+
+    salvataggioClienteInCorso.current = true;
+    setSalvandoCliente(true);
 
     const nuovoCliente = {
-      id: new Date().getTime(),
-      nome,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      nome: nomeTrim,
       telefono,
       email,
     };
@@ -108,6 +114,8 @@ export default function Clienti() {
     setTelefono("");
     setEmail("");
     setFormAperto(false);
+    salvataggioClienteInCorso.current = false;
+    setSalvandoCliente(false);
   }
 
   function aggiornaRicerca(event) {
@@ -169,6 +177,7 @@ export default function Clienti() {
                   onTelefono={setTelefono}
                   onEmail={setEmail}
                   onSalva={aggiungiCliente}
+                  salvando={salvandoCliente}
                 />
               </div>
             ) : (
@@ -214,6 +223,7 @@ export default function Clienti() {
                   onTelefono={setTelefono}
                   onEmail={setEmail}
                   onSalva={aggiungiCliente}
+                  salvando={salvandoCliente}
                 />
               </div>
             </div>
@@ -242,7 +252,7 @@ export default function Clienti() {
           ) : null}
 
           {!listaVuota && !ricercaSenzaRisultati ? (
-            <div className="grid gap-2.5">
+            <div className="grid gap-2.5 ds-card-grid">
               {clientiVisibili.map((cliente) => (
                 <Link
                   key={cliente.id}
@@ -316,6 +326,7 @@ function FormNuovoCliente({
   onTelefono,
   onEmail,
   onSalva,
+  salvando = false,
 }) {
   return (
     <div className="space-y-3">
@@ -366,11 +377,11 @@ function FormNuovoCliente({
       <button
         type="button"
         onClick={onSalva}
-        disabled={!nome.trim()}
+        disabled={!nome.trim() || salvando}
         className="w-full btn-primary min-h-[48px] px-4 py-3 text-sm font-black flex items-center justify-center gap-2 disabled:opacity-40"
       >
         <Plus size={18} aria-hidden="true" />
-        Aggiungi cliente
+        {salvando ? "Salvataggio…" : "Aggiungi cliente"}
       </button>
     </div>
   );

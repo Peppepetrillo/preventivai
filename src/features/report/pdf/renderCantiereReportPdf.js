@@ -72,8 +72,21 @@ function disegnaCopertina(doc, document) {
 
   setText(doc, settings.coloreTesto);
   applicaFont(doc, settings, "normal", settings.fontSizeBase + 1);
-  y = testo(doc, settings, `Cliente: ${riga(document.copertina.cliente)}`, area.x, y, area.width);
-  y = testo(doc, settings, `Indirizzo: ${riga(document.copertina.indirizzo)}`, area.x, y, area.width);
+  const clienteCopertina = String(document.copertina.cliente || "").trim();
+  const indirizzoCopertina = String(document.copertina.indirizzo || "").trim();
+  if (clienteCopertina) {
+    y = testo(doc, settings, `Cliente: ${clienteCopertina}`, area.x, y, area.width);
+  }
+  if (indirizzoCopertina) {
+    y = testo(
+      doc,
+      settings,
+      `Indirizzo: ${indirizzoCopertina}`,
+      area.x,
+      y,
+      area.width
+    );
+  }
   if (document.lavoroDiretto && document.copertina.tipoIntervento) {
     y = testo(
       doc,
@@ -94,14 +107,16 @@ function disegnaCopertina(doc, document) {
     y,
     area.width
   );
-  y = testo(
-    doc,
-    settings,
-    `Data apertura: ${riga(document.copertina.dataApertura)}`,
-    area.x,
-    y,
-    area.width
-  );
+  if (String(document.copertina.dataApertura || "").trim()) {
+    y = testo(
+      doc,
+      settings,
+      `Data apertura: ${String(document.copertina.dataApertura).trim()}`,
+      area.x,
+      y,
+      area.width
+    );
+  }
   y = testo(
     doc,
     settings,
@@ -152,14 +167,16 @@ function disegnaRiepilogo(doc, document, y) {
     return y + 4;
   }
 
-  y = testo(
-    doc,
-    settings,
-    `Preventivo di origine: ${riga(document.riepilogo.preventivoOrigine.numero)} · ${document.riepilogo.preventivoOrigine.totaleLabel}`,
-    area.x,
-    y,
-    area.width
-  );
+  if (String(document.riepilogo?.preventivoOrigine?.numero || "").trim()) {
+    y = testo(
+      doc,
+      settings,
+      `Preventivo di origine: ${String(document.riepilogo.preventivoOrigine.numero).trim()} · ${document.riepilogo.preventivoOrigine.totaleLabel}`,
+      area.x,
+      y,
+      area.width
+    );
+  }
   y = testo(
     doc,
     settings,
@@ -508,20 +525,20 @@ function disegnaIntestazioneTabellaSpese(doc, settings, y, mostraGiornata) {
   return y + 5;
 }
 
-function formattaRigaSpesa(spesa, mostraGiornata) {
-  const fornitore = riga(spesa.fornitore, "—");
-  const metodo = riga(spesa.metodoLabel, "—");
+export function formattaRigaSpesa(spesa, mostraGiornata) {
   const parti = [
-    riga(spesa.data),
-    riga(spesa.descrizione),
-    riga(spesa.categoriaLabel),
-    fornitore,
-    metodo,
-  ];
+    String(spesa.data || "").trim(),
+    String(spesa.descrizione || "").trim(),
+    String(spesa.categoriaLabel || "").trim(),
+    String(spesa.fornitore || "").trim(),
+    String(spesa.metodoLabel || "").trim(),
+  ].filter(Boolean);
   if (mostraGiornata) {
-    parti.push(riga(spesa.giornataLabel, "Generale"));
+    const giornata = String(spesa.giornataLabel || "").trim() || "Generale";
+    parti.push(giornata);
   }
-  parti.push(riga(spesa.importoLabel));
+  const importo = String(spesa.importoLabel || "").trim();
+  if (importo) parti.push(importo);
   return parti.join(" · ");
 }
 
@@ -624,7 +641,23 @@ function disegnaNote(doc, document, y) {
   return y + 2;
 }
 
+function haFirmeReportDaStampare(firme) {
+  if (!firme || typeof firme !== "object") return false;
+  return Boolean(
+    firme.tecnicoImmagine ||
+      firme.clienteImmagine ||
+      String(firme.firmatario || "").trim() ||
+      String(firme.dataFirma || "").trim()
+  );
+}
+
 function disegnaFirme(doc, document, y) {
+  const firme = document.firme;
+  // Niente linee/placeholder vuoti: solo se esistono dati firma reali.
+  if (!haFirmeReportDaStampare(firme)) {
+    return y;
+  }
+
   const settings = document.settings;
   const area = areaUtile(settings);
   y = titoloSezione(doc, settings, "Firme", y);
@@ -639,13 +672,45 @@ function disegnaFirme(doc, document, y) {
 
   setText(doc, settings.coloreTesto);
   applicaFont(doc, settings, "bold", settings.fontSizeBase);
-  doc.text(document.firme.tecnicoLabel, area.x, y + 8);
-  doc.text(document.firme.clienteLabel, area.x + meta + 8, y + 8);
+  doc.text(firme.tecnicoLabel || "Firma Tecnico", area.x, y + 8);
+  doc.text(firme.clienteLabel || "Firma Cliente", area.x + meta + 8, y + 8);
+
+  if (firme.tecnicoImmagine) {
+    try {
+      const formato = String(firme.tecnicoImmagine).includes("image/jpeg")
+        ? "JPEG"
+        : "PNG";
+      doc.addImage(firme.tecnicoImmagine, formato, area.x, y, Math.min(meta, 55), 16);
+    } catch {
+      // linea già disegnata
+    }
+  }
+  if (firme.clienteImmagine) {
+    try {
+      const formato = String(firme.clienteImmagine).includes("image/jpeg")
+        ? "JPEG"
+        : "PNG";
+      doc.addImage(
+        firme.clienteImmagine,
+        formato,
+        area.x + meta + 8,
+        y,
+        Math.min(meta, 55),
+        16
+      );
+    } catch {
+      // linea già disegnata
+    }
+  }
 
   setText(doc, settings.coloreTenue);
   applicaFont(doc, settings, "normal", settings.fontSizePiccolo);
-  doc.text("________________", area.x, lineY + 6);
-  doc.text("________________", area.x + meta + 8, lineY + 6);
+  if (firme.firmatario) {
+    doc.text(String(firme.firmatario), area.x, lineY + 6);
+  }
+  if (firme.dataFirma) {
+    doc.text(`Data: ${firme.dataFirma}`, area.x + meta + 8, lineY + 6);
+  }
 
   return lineY + 14;
 }

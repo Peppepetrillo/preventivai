@@ -1,11 +1,12 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 
-import PdfAnteprima, {
+import PdfAnteprima from "./PdfAnteprima";
+import {
   condividiDaBlobUrl,
   scaricaDaBlobUrl,
-  urlPdfFitWidth
-} from "./PdfAnteprima";
+  urlPdfFitWidth,
+} from "./pdfAnteprimaUtils";
 
 const condividiBlob = vi.fn();
 const esportaBlob = vi.fn();
@@ -157,6 +158,41 @@ describe("PdfAnteprima UX-001", () => {
       await Promise.resolve();
     });
     expect(document.body.style.overflow).toBe("hidden");
+    // Non bloccare pinch: body.touchAction non deve essere "none"
+    expect(document.body.style.touchAction).not.toBe("none");
+  });
+
+  it("con abilitaZoom mostra controlli +/- e aggiorna percentuale", async () => {
+    render(
+      <PdfAnteprima
+        aperto
+        abilitaZoom
+        blobUrl="blob:test-pdf"
+        onChiudi={() => {}}
+      />
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId("pdf-anteprima")).toHaveAttribute(
+      "data-zoom-enabled",
+      "true"
+    );
+    expect(screen.getByTestId("pdf-anteprima-zoom-bar")).toBeInTheDocument();
+    expect(screen.getByTestId("pdf-anteprima-zoom-label")).toHaveTextContent(
+      "100%"
+    );
+
+    fireEvent.click(screen.getByTestId("pdf-anteprima-zoom-in"));
+    expect(screen.getByTestId("pdf-anteprima-zoom-label")).toHaveTextContent(
+      "125%"
+    );
+
+    fireEvent.click(screen.getByTestId("pdf-anteprima-zoom-out"));
+    expect(screen.getByTestId("pdf-anteprima-zoom-label")).toHaveTextContent(
+      "100%"
+    );
   });
 });
 

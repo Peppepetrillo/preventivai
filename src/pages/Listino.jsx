@@ -157,7 +157,7 @@ export default function Listino() {
                 Preferiti
               </h2>
             </div>
-            <ul className="space-y-1.5" role="list">
+            <ul className="space-y-1.5 ds-card-grid" role="list">
               {preferitiVisibili.map((voce) => (
                 <li key={`pref-${voce.id}`}>
                   <RigaVoceCatalogo
@@ -226,6 +226,18 @@ export default function Listino() {
               <p className="ds-text-secondary mt-2 max-w-sm mx-auto">
                 Aggiungi la prima lavorazione: la ritroverai nei preventivi.
               </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setVoceInModifica(null);
+                  setSheetNuova(true);
+                }}
+                className="btn-primary mt-4 min-h-[48px] px-5 inline-flex items-center justify-center gap-2"
+                data-testid="listino-empty-cta"
+              >
+                <Plus size={18} aria-hidden="true" />
+                Nuova lavorazione
+              </button>
             </div>
           ) : null}
 
@@ -247,7 +259,7 @@ export default function Listino() {
           {!listaVuota &&
           !ricercaSenzaRisultati &&
           lavorazioniSenzaPreferiti.length > 0 ? (
-            <ul className="space-y-1.5" role="list">
+            <ul className="space-y-1.5 ds-card-grid" role="list">
               {lavorazioniSenzaPreferiti.map((voce) => (
                 <li key={voce.id}>
                   <RigaVoceCatalogo
