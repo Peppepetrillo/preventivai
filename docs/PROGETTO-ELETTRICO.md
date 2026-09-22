@@ -31,7 +31,7 @@ Dopo selezione/scatto: campo nome precompilato, **Salva**.
 
 ### Viewer
 - **Immagine**: `CantiereFotoViewer` fullscreen — pinch-to-zoom, pan se zoomato, doppio tap
-- **PDF**: `PdfAnteprima` — scroll pagine, pinch nativo del viewer (touch-action), controlli +/- zoom CSS
+- **PDF**: `PdfAnteprima` con `abilitaZoom` → canvas same-document (`PdfZoomStage` + pdf.js) e pinch/pan/double-tap condivisi con foto (`usePinchZoomPan`). Senza zoom resta iframe FitH.
 
 ---
 
@@ -119,5 +119,5 @@ UI: empty, lista multi, sheet 3 opzioni+camera, menu ••• Rinomina/Sostitui
 ## Limiti 1.0 / 2.0
 
 Multi-progetto locale sì; sync multi-device del binario no; no OCR/AI/annotazioni.  
-Zoom reale pinch da verificare su iPhone (Human QA).  
+Zoom reale pinch: implementato via canvas+pdf.js; **validare su iPhone/iPad fisico** (Human QA).  
 Vedi `docs/PREVENTIVAI-2.0-BACKLOG.md`.
