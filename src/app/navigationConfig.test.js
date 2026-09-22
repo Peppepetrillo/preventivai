@@ -44,9 +44,9 @@ describe("navigationConfig — gerarchia parent", () => {
     );
   });
 
-  it("profondità Impostazioni", () => {
+  it("profondità Impostazioni / Cestino", () => {
     expect(risolviParentPath(ROUTES.datiAzienda)).toBe(ROUTES.impostazioni);
-    expect(risolviParentPath(ROUTES.cestino)).toBe(ROUTES.impostazioni);
+    expect(risolviParentPath(ROUTES.cestino)).toBe(ROUTES.altro);
   });
 
   it("cluster Preventivi / Cantieri / Clienti", () => {

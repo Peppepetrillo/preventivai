@@ -29,7 +29,7 @@ export const BOTTOM_NAV_ROOTS = Object.freeze([
  * Parent espliciti per path statiche.
  * Ambiguities risolte dall'architettura hub:
  * - Acquisti/Listino/Distinte/Catalogo → Altro (entry hub, non Impostazioni stale)
- * - Cestino → Impostazioni (anche linkato da Altro; Back attuale e Impostazioni)
+ * - Cestino → Altro (entry hub primaria; anche linkato da Impostazioni)
  * - Agenda/Clienti/Impostazioni → Altro
  * - Preventivo intelligente → Preventivi (cluster nav, non Home)
  */
@@ -54,7 +54,8 @@ export const ROUTE_PARENTS = Object.freeze({
   [ROUTES.operai]: ROUTES.altro,
   [ROUTES.manodopera]: ROUTES.altro,
   [ROUTES.datiAzienda]: ROUTES.impostazioni,
-  [ROUTES.cestino]: ROUTES.impostazioni,
+  // Hub Altro è l'entry primaria (anche linkato da Impostazioni).
+  [ROUTES.cestino]: ROUTES.altro,
   [ROUTES.incassi]: ROUTES.preventivi,
   [ROUTES.preventivoIntelligente]: ROUTES.preventivi,
   [ROUTES.preventivoManuale]: ROUTES.nuovoPreventivo,

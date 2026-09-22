@@ -96,6 +96,7 @@ export default function CantiereFotoViewer({
 
         {!loading && !errore && src ? (
           <img
+            ref={abilitaZoom ? zoom.contentRef : undefined}
             src={src}
             alt={titolo}
             className="max-h-full max-w-full object-contain select-none"

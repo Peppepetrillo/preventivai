@@ -58,6 +58,12 @@ export default function WizardPreventivo() {
   /** @type {React.MutableRefObject<{ tipo: 'path'|'indietro', path?: string }|null>} */
   const pendingUscitaRef = useRef(null);
   const bozzaSporca = !esitoSuccesso && wizardHaBozzaConDati(stato);
+  const puoAndareIndietroRef = useRef(puoAndareIndietro);
+  const indietroRef = useRef(indietro);
+  const bozzaSporcaRef = useRef(bozzaSporca);
+  puoAndareIndietroRef.current = puoAndareIndietro;
+  indietroRef.current = indietro;
+  bozzaSporcaRef.current = bozzaSporca;
 
   useEffect(() => {
     attivaWizard(stato.stepId);
@@ -105,12 +111,15 @@ export default function WizardPreventivo() {
   }, [stato.stepId, salvataggio]);
 
   useEffect(() => {
-    if (!bozzaSporca) {
-      setGuardiaNavigazioneIndietro(null);
-      return undefined;
-    }
-
     setGuardiaNavigazioneIndietro(({ opzioni } = {}) => {
+      // Edge/Android: allinea al pulsante header — step indietro prima di uscire.
+      if (puoAndareIndietroRef.current) {
+        indietroRef.current();
+        return { blocca: true };
+      }
+      if (!bozzaSporcaRef.current) {
+        return undefined;
+      }
       pendingUscitaRef.current = opzioni?.destinazioneEsplicita
         ? { tipo: "path", path: String(opzioni.destinazioneEsplicita) }
         : { tipo: "indietro" };
@@ -119,7 +128,7 @@ export default function WizardPreventivo() {
     });
 
     return () => setGuardiaNavigazioneIndietro(null);
-  }, [bozzaSporca]);
+  }, [stato.stepId, bozzaSporca]);
 
   function esciDalWizard(destinazione = ROUTES.preventivi) {
     setConfermaUscitaAperta(false);

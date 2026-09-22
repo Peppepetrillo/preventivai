@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Download, Minus, Plus, Share2, X } from "lucide-react";
 
 import {
@@ -6,18 +6,17 @@ import {
   scaricaDaBlobUrl,
   urlPdfFitWidth,
 } from "./pdfAnteprimaUtils";
+import PdfZoomStage from "./PdfZoomStage";
 
 const DURATA_MS = 250;
-const ZOOM_PDF_MIN = 1;
-const ZOOM_PDF_MAX = 3;
-const ZOOM_PDF_STEP = 0.25;
 
 /**
  * Anteprima PDF fullscreen mobile.
  * Solo UI: nessuna generazione PDF / Proposal / Listino.
  *
- * Zoom: pinch nativo del viewer PDF (touch-action pinch-zoom) + controlli +/-.
- * Non impostiamo touchAction:none sul body (bloccherebbe il pinch su iPhone).
+ * Zoom (abilitaZoom): canvas same-document + pinch/pan/double-tap condiviso
+ * con CantiereFotoViewer (non iframe nativo — inaffidabile in WKWebView).
+ * Senza zoom: iframe FitH per anteprima/condivisione rapida.
  *
  * @param {{
  *   aperto: boolean,
@@ -48,8 +47,18 @@ export default function PdfAnteprima({
   const [montato, setMontato] = useState(false);
   const [apertoVisivo, setApertoVisivo] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [zoomCss, setZoomCss] = useState(ZOOM_PDF_MIN);
+  const [zoomLabel, setZoomLabel] = useState(100);
+  const [canZoomIn, setCanZoomIn] = useState(true);
+  const [canZoomOut, setCanZoomOut] = useState(false);
   const chiudiTimer = useRef(null);
+  const zoomApiRef = useRef(null);
+
+  const onScaleChange = useCallback((info) => {
+    if (!info) return;
+    setZoomLabel(Math.round((info.scale || 1) * 100));
+    setCanZoomIn(Boolean(info.canZoomIn));
+    setCanZoomOut(Boolean(info.canZoomOut));
+  }, []);
 
   useEffect(() => {
     if (aperto) {
@@ -67,7 +76,6 @@ export default function PdfAnteprima({
     setApertoVisivo(false);
     chiudiTimer.current = setTimeout(() => {
       setMontato(false);
-      chiudiTimer.current = null;
     }, DURATA_MS);
     return () => {
       if (chiudiTimer.current) clearTimeout(chiudiTimer.current);
@@ -78,15 +86,18 @@ export default function PdfAnteprima({
     if (!montato) return undefined;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    // Non forzare touchAction:none sul body: su iPhone blocca pinch-zoom
-    // del viewer PDF nativo nell'iframe.
     return () => {
       document.body.style.overflow = prevOverflow;
     };
   }, [montato]);
 
   useEffect(() => {
-    if (!aperto) setZoomCss(ZOOM_PDF_MIN);
+    if (!aperto) {
+      setZoomLabel(100);
+      setCanZoomIn(true);
+      setCanZoomOut(false);
+      zoomApiRef.current?.reset?.();
+    }
   }, [aperto, blobUrl]);
 
   useEffect(() => {
@@ -101,11 +112,11 @@ export default function PdfAnteprima({
   if (!montato) return null;
 
   function zoomIn() {
-    setZoomCss((z) => Math.min(ZOOM_PDF_MAX, Number((z + ZOOM_PDF_STEP).toFixed(2))));
+    zoomApiRef.current?.zoomIn?.();
   }
 
   function zoomOut() {
-    setZoomCss((z) => Math.max(ZOOM_PDF_MIN, Number((z - ZOOM_PDF_STEP).toFixed(2))));
+    zoomApiRef.current?.zoomOut?.();
   }
 
   async function handleCondividi() {
@@ -185,7 +196,7 @@ export default function PdfAnteprima({
               className="pdf-anteprima-btn pdf-anteprima-btn--ghost"
               aria-label="Riduci zoom"
               data-testid="pdf-anteprima-zoom-out"
-              disabled={zoomCss <= ZOOM_PDF_MIN}
+              disabled={!canZoomOut}
               onClick={zoomOut}
             >
               <Minus size={18} aria-hidden="true" />
@@ -194,14 +205,14 @@ export default function PdfAnteprima({
               className="pdf-anteprima-zoom-label"
               data-testid="pdf-anteprima-zoom-label"
             >
-              {Math.round(zoomCss * 100)}%
+              {zoomLabel}%
             </span>
             <button
               type="button"
               className="pdf-anteprima-btn pdf-anteprima-btn--ghost"
               aria-label="Aumenta zoom"
               data-testid="pdf-anteprima-zoom-in"
-              disabled={zoomCss >= ZOOM_PDF_MAX}
+              disabled={!canZoomIn}
               onClick={zoomIn}
             >
               <Plus size={18} aria-hidden="true" />
@@ -212,20 +223,19 @@ export default function PdfAnteprima({
         <div
           className="pdf-anteprima-viewer"
           data-testid="pdf-anteprima-viewer"
+          data-mode={abilitaZoom ? "canvas-zoom" : "iframe"}
         >
-          {blobUrl ? (
-            <div
-              className="pdf-anteprima-frame-wrap"
-              style={
-                abilitaZoom
-                  ? {
-                      width: `${zoomCss * 100}%`,
-                      height: `${zoomCss * 100}%`,
-                      minHeight: `${zoomCss * 100}%`,
-                    }
-                  : undefined
-              }
-            >
+          {blobUrl && abilitaZoom ? (
+            <PdfZoomStage
+              blobUrl={blobUrl}
+              titolo={titolo}
+              zoomApiRef={zoomApiRef}
+              onScaleChange={onScaleChange}
+            />
+          ) : null}
+
+          {blobUrl && !abilitaZoom ? (
+            <div className="pdf-anteprima-frame-wrap">
               <iframe
                 title={titolo}
                 src={viewerSrc}
@@ -233,13 +243,15 @@ export default function PdfAnteprima({
                 allow="fullscreen"
               />
             </div>
-          ) : (
+          ) : null}
+
+          {!blobUrl ? (
             <div className="pdf-anteprima-empty">
               {inElaborazione
                 ? "Generazione anteprima…"
                 : "Anteprima non disponibile."}
             </div>
-          )}
+          ) : null}
         </div>
 
         {typeof onRigenera === "function" ? (
