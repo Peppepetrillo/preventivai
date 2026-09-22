@@ -57,13 +57,13 @@ describe("preventivoHeroCta", () => {
     ).toEqual({ id: HERO_CTA.CONDIVIDI, label: "Condividi preventivo" });
   });
 
-  it("Inviato → Cliente ha accettato come CTA primaria", () => {
+  it("Inviato → Segna accettato come CTA primaria", () => {
     expect(
       risolviHeroCta({
         stato: STATI_PREVENTIVO.INVIATO,
         azioniDisponibili: [AZIONI_PREVENTIVO.ACCETTA],
       })
-    ).toEqual({ id: HERO_CTA.ACCETTA, label: "Cliente ha accettato" });
+    ).toEqual({ id: HERO_CTA.ACCETTA, label: "Segna accettato" });
   });
 
   it("Accettato → Inizia cantiere", () => {

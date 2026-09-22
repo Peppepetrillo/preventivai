@@ -1,72 +1,22 @@
-import { useEffect, useId, useRef, useState } from "react";
-import { Download, Share2, X } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { Download, Minus, Plus, Share2, X } from "lucide-react";
 
-import { condividiBlob, esportaBlob } from "../utils/nativeExport";
+import {
+  condividiDaBlobUrl,
+  scaricaDaBlobUrl,
+  urlPdfFitWidth,
+} from "./pdfAnteprimaUtils";
+import PdfZoomStage from "./PdfZoomStage";
 
 const DURATA_MS = 250;
 
 /**
- * URL PDF con hint fit-to-width per viewer che supportano i fragment.
- * @param {string} blobUrl
- * @returns {string}
- */
-export function urlPdfFitWidth(blobUrl) {
-  if (!blobUrl) return "";
-  const base = String(blobUrl).split("#")[0];
-  return `${base}#view=FitH&zoom=page-width`;
-}
-
-/**
- * Scarica/esporta un PDF da blob URL (solo UI, nessuna generazione).
- * Su iOS Capacitor usa Share invece di <a download>.
- * @param {string} blobUrl
- * @param {string} nomeFile
- */
-export async function scaricaDaBlobUrl(blobUrl, nomeFile = "Preventivo.pdf") {
-  const risposta = await fetch(blobUrl);
-  const blob = await risposta.blob();
-  await esportaBlob(blob, nomeFile, { titolo: nomeFile });
-}
-
-/**
- * Condivide un PDF via Share Sheet nativo (non download/export).
- * @param {string} blobUrl
- * @param {string} nomeFile
- * @param {string} titolo
- * @param {Blob=} blobNoto Blob già disponibile (evita fetch su blob: URL in WKWebView)
- * @returns {Promise<{ success: boolean, error?: string, fallback?: string, annullato?: boolean }>}
- */
-export async function condividiDaBlobUrl(
-  blobUrl,
-  nomeFile = "Preventivo.pdf",
-  titolo = "Anteprima PDF",
-  blobNoto = null
-) {
-  let blob = blobNoto;
-  if (!blob && blobUrl) {
-    const risposta = await fetch(blobUrl);
-    blob = await risposta.blob();
-  }
-  if (!blob) {
-    return { success: false, error: "blob_mancante" };
-  }
-
-  const esito = await condividiBlob(blob, nomeFile, { titolo });
-  if (esito.success) {
-    return {
-      success: true,
-      fallback: esito.metodo === "download" ? "download" : undefined,
-    };
-  }
-  if (esito.annullato || esito.error === "annullato") {
-    return { success: false, error: "annullato", annullato: true };
-  }
-  return { success: false, error: esito.error || "share_fallito" };
-}
-
-/**
  * Anteprima PDF fullscreen mobile.
  * Solo UI: nessuna generazione PDF / Proposal / Listino.
+ *
+ * Zoom (abilitaZoom): canvas same-document + pinch/pan/double-tap condiviso
+ * con CantiereFotoViewer (non iframe nativo — inaffidabile in WKWebView).
+ * Senza zoom: iframe FitH per anteprima/condivisione rapida.
  *
  * @param {{
  *   aperto: boolean,
@@ -78,6 +28,7 @@ export async function condividiDaBlobUrl(
  *   onCondividi?: () => void|Promise<void>,
  *   onScarica?: () => void|Promise<void>,
  *   inElaborazione?: boolean,
+ *   abilitaZoom?: boolean,
  * }} props
  */
 export default function PdfAnteprima({
@@ -90,12 +41,24 @@ export default function PdfAnteprima({
   onCondividi,
   onScarica,
   inElaborazione = false,
+  abilitaZoom = false,
 }) {
   const titleId = useId();
   const [montato, setMontato] = useState(false);
   const [apertoVisivo, setApertoVisivo] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [zoomLabel, setZoomLabel] = useState(100);
+  const [canZoomIn, setCanZoomIn] = useState(true);
+  const [canZoomOut, setCanZoomOut] = useState(false);
   const chiudiTimer = useRef(null);
+  const zoomApiRef = useRef(null);
+
+  const onScaleChange = useCallback((info) => {
+    if (!info) return;
+    setZoomLabel(Math.round((info.scale || 1) * 100));
+    setCanZoomIn(Boolean(info.canZoomIn));
+    setCanZoomOut(Boolean(info.canZoomOut));
+  }, []);
 
   useEffect(() => {
     if (aperto) {
@@ -113,7 +76,6 @@ export default function PdfAnteprima({
     setApertoVisivo(false);
     chiudiTimer.current = setTimeout(() => {
       setMontato(false);
-      chiudiTimer.current = null;
     }, DURATA_MS);
     return () => {
       if (chiudiTimer.current) clearTimeout(chiudiTimer.current);
@@ -123,14 +85,20 @@ export default function PdfAnteprima({
   useEffect(() => {
     if (!montato) return undefined;
     const prevOverflow = document.body.style.overflow;
-    const prevTouch = document.body.style.touchAction;
     document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
     return () => {
       document.body.style.overflow = prevOverflow;
-      document.body.style.touchAction = prevTouch;
     };
   }, [montato]);
+
+  useEffect(() => {
+    if (!aperto) {
+      setZoomLabel(100);
+      setCanZoomIn(true);
+      setCanZoomOut(false);
+      zoomApiRef.current?.reset?.();
+    }
+  }, [aperto, blobUrl]);
 
   useEffect(() => {
     if (!montato || typeof onChiudi !== "function") return undefined;
@@ -142,6 +110,14 @@ export default function PdfAnteprima({
   }, [montato, onChiudi]);
 
   if (!montato) return null;
+
+  function zoomIn() {
+    zoomApiRef.current?.zoomIn?.();
+  }
+
+  function zoomOut() {
+    zoomApiRef.current?.zoomOut?.();
+  }
 
   async function handleCondividi() {
     if (busy || !blobUrl) return;
@@ -179,6 +155,8 @@ export default function PdfAnteprima({
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      data-zoom-enabled={abilitaZoom ? "true" : "false"}
+      data-testid="pdf-anteprima"
     >
       <div className="pdf-anteprima-shell">
         <header className="pdf-anteprima-header">
@@ -208,20 +186,72 @@ export default function PdfAnteprima({
           </button>
         </header>
 
-        <div className="pdf-anteprima-viewer">
-          {blobUrl ? (
-            <iframe
-              title={titolo}
-              src={viewerSrc}
-              className="pdf-anteprima-frame"
+        {abilitaZoom ? (
+          <div
+            className="pdf-anteprima-zoom-bar"
+            data-testid="pdf-anteprima-zoom-bar"
+          >
+            <button
+              type="button"
+              className="pdf-anteprima-btn pdf-anteprima-btn--ghost"
+              aria-label="Riduci zoom"
+              data-testid="pdf-anteprima-zoom-out"
+              disabled={!canZoomOut}
+              onClick={zoomOut}
+            >
+              <Minus size={18} aria-hidden="true" />
+            </button>
+            <span
+              className="pdf-anteprima-zoom-label"
+              data-testid="pdf-anteprima-zoom-label"
+            >
+              {zoomLabel}%
+            </span>
+            <button
+              type="button"
+              className="pdf-anteprima-btn pdf-anteprima-btn--ghost"
+              aria-label="Aumenta zoom"
+              data-testid="pdf-anteprima-zoom-in"
+              disabled={!canZoomIn}
+              onClick={zoomIn}
+            >
+              <Plus size={18} aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
+
+        <div
+          className="pdf-anteprima-viewer"
+          data-testid="pdf-anteprima-viewer"
+          data-mode={abilitaZoom ? "canvas-zoom" : "iframe"}
+        >
+          {blobUrl && abilitaZoom ? (
+            <PdfZoomStage
+              blobUrl={blobUrl}
+              titolo={titolo}
+              zoomApiRef={zoomApiRef}
+              onScaleChange={onScaleChange}
             />
-          ) : (
+          ) : null}
+
+          {blobUrl && !abilitaZoom ? (
+            <div className="pdf-anteprima-frame-wrap">
+              <iframe
+                title={titolo}
+                src={viewerSrc}
+                className="pdf-anteprima-frame"
+                allow="fullscreen"
+              />
+            </div>
+          ) : null}
+
+          {!blobUrl ? (
             <div className="pdf-anteprima-empty">
               {inElaborazione
                 ? "Generazione anteprima…"
                 : "Anteprima non disponibile."}
             </div>
-          )}
+          ) : null}
         </div>
 
         {typeof onRigenera === "function" ? (

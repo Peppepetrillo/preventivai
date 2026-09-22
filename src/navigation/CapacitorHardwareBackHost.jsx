@@ -3,17 +3,18 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { App as CapApp } from "@capacitor/app";
 
 import {
+  canUseHistoryBack,
   isBottomNavRoot,
-  richiedeNavigazioneIndietro
+  richiedeNavigazioneIndietro,
 } from "../app/navigationConfig";
 import {
   eseguiNavigazioneIndietro,
-  provaChiudereOverlayNavigazione
+  provaChiudereOverlayNavigazione,
 } from "./navigateBack";
 
 /**
  * Hardware back Android → stesso comportamento di PageBackLink / edge swipe.
- * Su root BottomNav senza history: exitApp.
+ * Su root BottomNav: history indietro se disponibile, altrimenti exitApp.
  */
 export default function CapacitorHardwareBackHost() {
   const location = useLocation();
@@ -33,9 +34,11 @@ export default function CapacitorHardwareBackHost() {
             return;
           }
           if (isBottomNavRoot(location.pathname)) {
-            if (!canGoBack) {
-              CapApp.exitApp();
+            if (canUseHistoryBack() || canGoBack) {
+              navigate(-1);
+              return;
             }
+            CapApp.exitApp();
             return;
           }
           eseguiNavigazioneIndietro(navigate, location.pathname);

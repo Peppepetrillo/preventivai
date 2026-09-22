@@ -74,17 +74,20 @@ export default function ProgrammazioneSection({
   }
 
   function gestisciSalva(payload) {
-    if (giornataInModifica?.id) {
-      onAggiornaGiornata?.(giornataInModifica.id, payload);
-    } else {
-      onAggiungiGiornata?.(payload);
-    }
+    const esito = giornataInModifica?.id
+      ? onAggiornaGiornata?.(giornataInModifica.id, payload)
+      : onAggiungiGiornata?.(payload);
+    return esito || { success: true };
   }
 
   function gestisciSalvaConsuntivo(payload) {
-    onRegistraConsuntivo?.(payload);
+    const esito = onRegistraConsuntivo?.(payload);
+    if (esito && esito.success === false) {
+      return esito;
+    }
     setConsuntivoSheetAperto(false);
     setPrefillConsuntivo(null);
+    return esito || { success: true };
   }
 
   return (

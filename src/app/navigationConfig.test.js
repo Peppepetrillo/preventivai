@@ -31,11 +31,22 @@ describe("navigationConfig — gerarchia parent", () => {
     expect(risolviParentPath(ROUTES.catalogoMateriali)).toBe(ROUTES.altro);
     expect(risolviParentPath(ROUTES.distinteMateriali)).toBe(ROUTES.altro);
     expect(risolviParentPath(ROUTES.impostazioni)).toBe(ROUTES.altro);
+    expect(risolviParentPath(ROUTES.calcoliElettrici)).toBe(ROUTES.altro);
   });
 
-  it("profondità Impostazioni", () => {
+  it("profondità Calcoli elettrici", () => {
+    expect(risolviParentPath(ROUTES.calcoliOhm)).toBe(ROUTES.calcoliElettrici);
+    expect(risolviParentPath(ROUTES.calcoliPotenza)).toBe(
+      ROUTES.calcoliElettrici
+    );
+    expect(risolviParentPath("/calcoli-elettrici/consumo")).toBe(
+      ROUTES.calcoliElettrici
+    );
+  });
+
+  it("profondità Impostazioni / Cestino", () => {
     expect(risolviParentPath(ROUTES.datiAzienda)).toBe(ROUTES.impostazioni);
-    expect(risolviParentPath(ROUTES.cestino)).toBe(ROUTES.impostazioni);
+    expect(risolviParentPath(ROUTES.cestino)).toBe(ROUTES.altro);
   });
 
   it("cluster Preventivi / Cantieri / Clienti", () => {

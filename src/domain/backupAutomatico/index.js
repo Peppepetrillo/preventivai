@@ -3,6 +3,7 @@ export {
   STATI_BACKUP_AUTO,
   ETICHETTE_FREQUENZA,
   ETICHETTE_STATO,
+  ETICHETTE_ERRORE_BACKUP,
   NOTIFICA_BACKUP_AUTO_ID,
   creaConfigBackupAutomaticoDefault,
   normalizzaConfigBackupAutomatico,
@@ -10,6 +11,7 @@ export {
   backupAutomaticoScaduto,
   calcolaStatoBackupAutomatico,
   formattaDataOraBackup,
+  etichettaErroreBackupAutomatico,
 } from "./backupAutomaticoTypes";
 
 export {
