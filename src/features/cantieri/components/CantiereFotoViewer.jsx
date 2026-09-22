@@ -73,11 +73,11 @@ export default function CantiereFotoViewer({
         className="flex-1 min-h-0 flex items-center justify-center px-3 pb-4"
         {...(abilitaZoom
           ? {
-              ref: zoom.bindProps.ref,
-              onTouchStart: zoom.bindProps.onTouchStart,
-              onTouchMove: zoom.bindProps.onTouchMove,
-              onTouchEnd: zoom.bindProps.onTouchEnd,
-              style: zoom.bindProps.style,
+              ref: zoom.containerRef,
+              onTouchStart: zoom.onTouchStart,
+              onTouchMove: zoom.onTouchMove,
+              onTouchEnd: zoom.onTouchEnd,
+              style: zoom.stageStyle,
             }
           : {})}
         data-testid="cantiere-foto-viewer-stage"

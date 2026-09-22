@@ -61,9 +61,12 @@ export default function WizardPreventivo() {
   const puoAndareIndietroRef = useRef(puoAndareIndietro);
   const indietroRef = useRef(indietro);
   const bozzaSporcaRef = useRef(bozzaSporca);
-  puoAndareIndietroRef.current = puoAndareIndietro;
-  indietroRef.current = indietro;
-  bozzaSporcaRef.current = bozzaSporca;
+
+  useEffect(() => {
+    puoAndareIndietroRef.current = puoAndareIndietro;
+    indietroRef.current = indietro;
+    bozzaSporcaRef.current = bozzaSporca;
+  }, [puoAndareIndietro, indietro, bozzaSporca]);
 
   useEffect(() => {
     attivaWizard(stato.stepId);

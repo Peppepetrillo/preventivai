@@ -81,8 +81,14 @@ export function usePinchZoomPan({ enabled = true } = {}) {
   }, [commitStato]);
 
   useEffect(() => {
-    if (!enabled) reset();
-  }, [enabled, reset]);
+    if (!enabled) {
+      pinchRef.current = null;
+      panRef.current = null;
+      statoRef.current = { scale: ZOOM_MIN, x: 0, y: 0 };
+      applicaStileContenuto({ scale: ZOOM_MIN, x: 0, y: 0 });
+      setStato({ scale: ZOOM_MIN, x: 0, y: 0 });
+    }
+  }, [enabled, applicaStileContenuto]);
 
   useEffect(
     () => () => {
@@ -98,7 +104,11 @@ export function usePinchZoomPan({ enabled = true } = {}) {
       cy: (containerRef.current?.clientHeight || 0) / 2,
     };
     commitStato(
-      applicaZoomAt(attuale, (attuale.scale + ZOOM_STEP) / attuale.scale, centro)
+      applicaZoomAt(
+        attuale,
+        (attuale.scale + ZOOM_STEP) / Math.max(attuale.scale, 0.01),
+        centro
+      )
     );
   }, [commitStato]);
 
@@ -194,14 +204,6 @@ export function usePinchZoomPan({ enabled = true } = {}) {
     [enabled, commitStato]
   );
 
-  const bindProps = {
-    ref: containerRef,
-    onTouchStart,
-    onTouchMove,
-    onTouchEnd,
-    style: { touchAction: "none", overflow: "hidden" },
-  };
-
   return {
     stato,
     reset,
@@ -209,8 +211,12 @@ export function usePinchZoomPan({ enabled = true } = {}) {
     zoomOut,
     canZoomIn: stato.scale < ZOOM_MAX - 0.001,
     canZoomOut: stato.scale > ZOOM_MIN + 0.001,
-    bindProps,
+    containerRef,
     contentRef,
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+    stageStyle: { touchAction: "none", overflow: "hidden" },
     contentStyle: stileTransformZoom(stato),
     isZoomed: stato.scale > ZOOM_MIN + 0.01,
   };

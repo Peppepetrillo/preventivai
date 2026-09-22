@@ -20,10 +20,13 @@ export default function PdfZoomStage({
   const [stato, setStato] = useState("caricamento");
   const [errore, setErrore] = useState("");
   const [pagine, setPagine] = useState(0);
+  const attivo = Boolean(blobUrl);
 
   const zoom = usePinchZoomPan({
-    enabled: Boolean(blobUrl),
+    enabled: attivo,
   });
+
+  const resetZoom = zoom.reset;
 
   useEffect(() => {
     if (zoomApiRef) {
@@ -61,7 +64,7 @@ export default function PdfZoomStage({
       setStato("caricamento");
       setErrore("");
       setPagine(0);
-      zoom.reset();
+      resetZoom();
 
       try {
         documento = await caricaDocumentoPdf(blobUrl);
@@ -91,8 +94,7 @@ export default function PdfZoomStage({
       annullato = true;
       documento?.destroy?.();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo blobUrl
-  }, [blobUrl]);
+  }, [blobUrl, resetZoom]);
 
   return (
     <div
@@ -100,11 +102,15 @@ export default function PdfZoomStage({
       data-testid="pdf-zoom-stage"
       data-stato={stato}
       aria-label={titolo}
-      ref={zoom.bindProps.ref}
-      onTouchStart={zoom.bindProps.onTouchStart}
-      onTouchMove={zoom.bindProps.onTouchMove}
-      onTouchEnd={zoom.bindProps.onTouchEnd}
-      style={zoom.bindProps.style}
+      {...(attivo
+        ? {
+            ref: zoom.containerRef,
+            onTouchStart: zoom.onTouchStart,
+            onTouchMove: zoom.onTouchMove,
+            onTouchEnd: zoom.onTouchEnd,
+            style: zoom.stageStyle,
+          }
+        : {})}
     >
       {stato === "caricamento" ? (
         <p className="pdf-anteprima-empty" role="status">
@@ -119,12 +125,12 @@ export default function PdfZoomStage({
       ) : null}
 
       <div
-        ref={zoom.contentRef}
         className="pdf-zoom-stage-content"
-        style={zoom.contentStyle}
+        style={attivo ? zoom.contentStyle : undefined}
         data-testid="pdf-zoom-stage-content"
         data-zoomed={zoom.isZoomed ? "true" : "false"}
         data-pagine={pagine}
+        {...(attivo ? { ref: zoom.contentRef } : {})}
       >
         <div ref={pagesRef} className="pdf-zoom-stage-pages" />
       </div>
