@@ -94,7 +94,7 @@ export default function ManodoperaCantiereSection({
         <div>
           <h2 className="ds-card-title">Manodopera</h2>
           <p className="ds-text-secondary text-sm mt-1">
-            Giornate, costi e pagamenti operai su questo cantiere.
+            Giornate e ore su questo lavoro.
           </p>
         </div>
         <button

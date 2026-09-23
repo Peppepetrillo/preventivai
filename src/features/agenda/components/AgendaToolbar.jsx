@@ -63,7 +63,7 @@ export default function AgendaToolbar({
             data-testid="agenda-nuovo-cantiere"
           >
             <HardHat size={22} />
-            Cantiere
+            Lavoro
           </button>
           <button
             type="button"

@@ -48,7 +48,7 @@ export default function CollegaCantiereSheet({
 
         {cantieri.length === 0 ? (
           <p className="ds-text-secondary text-sm text-center py-6">
-            Nessun cantiere disponibile. Creane uno dalla sezione Cantieri.
+            Nessun lavoro disponibile. Creane uno dalla sezione Lavori.
           </p>
         ) : (
           <ul className="space-y-2" role="list">

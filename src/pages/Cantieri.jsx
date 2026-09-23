@@ -172,14 +172,14 @@ export default function Cantieri() {
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="section-label">Operatività</p>
-              <h1 className="ds-page-title mt-1">Cantieri</h1>
+              <h1 className="ds-page-title mt-1">Lavori</h1>
               <p className="ds-text-secondary mt-2">
-                I tuoi cantieri aperti.
+                I tuoi lavori aperti.
               </p>
             </div>
             <span
               className="ds-badge-count shrink-0"
-              aria-label={`${conteggioAttivi} cantieri attivi`}
+              aria-label={`${conteggioAttivi} lavori attivi`}
             >
               {conteggioAttivi}
             </span>
@@ -196,8 +196,8 @@ export default function Cantieri() {
           <>
             <SearchInput
               className="mb-3"
-              label="Cerca cantiere"
-              placeholder="Cliente, cantiere o indirizzo"
+              label="Cerca lavoro"
+              placeholder="Cliente, lavoro o indirizzo"
               value={ricerca}
               onChange={aggiornaRicerca}
             />
@@ -205,7 +205,7 @@ export default function Cantieri() {
             <div
               className="flex gap-2 mb-3 overflow-x-auto pb-0.5"
               role="tablist"
-              aria-label="Filtra cantieri"
+              aria-label="Filtra lavori"
             >
               {FILTRI.map((voce) => {
                 const attivo = filtro === voce.id;
@@ -233,7 +233,7 @@ export default function Cantieri() {
               {mostraForm ? (
                 <div className="pro-panel px-3.5 py-3.5">
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <p className="text-sm font-bold text-slate-200">Nuovo cantiere</p>
+                    <p className="text-sm font-bold text-slate-200">Nuovo lavoro</p>
                     <button
                       type="button"
                       onClick={() => setFormAperto(false)}
@@ -257,7 +257,7 @@ export default function Cantieri() {
                   className="w-full btn-secondary min-h-[48px] px-4 py-3 flex items-center justify-center gap-2 text-sm font-bold"
                 >
                   <Plus size={18} aria-hidden="true" />
-                  Nuovo cantiere
+                  Nuovo lavoro
                 </button>
               )}
             </div>
@@ -277,9 +277,9 @@ export default function Cantieri() {
               <div className="ds-empty-icon" aria-hidden="true">
                 <HardHat size={28} />
               </div>
-              <p className="ds-card-title">Nessun cantiere ancora</p>
+              <p className="ds-card-title">Nessun lavoro ancora</p>
               <p className="ds-text-secondary mt-2 max-w-sm mx-auto">
-                Crea il primo cantiere, oppure apri un preventivo accettato e
+                Crea il primo lavoro, oppure apri un preventivo accettato e
                 tocca Inizia cantiere. Lo ritrovi qui ogni giorno.
               </p>
               <div className="mt-6 text-left max-w-lg mx-auto">
@@ -312,7 +312,7 @@ export default function Cantieri() {
                   setLimite(PAGINA_LISTA_DEFAULT);
                 }}
               >
-                Mostra cantieri attivi
+                Mostra lavori attivi
               </button>
             </div>
           ) : null}
@@ -332,7 +332,7 @@ export default function Cantieri() {
                     key={cantiere.id}
                     to={routeCantiere(cantiere.id)}
                     className="pro-panel ds-card-link px-4 py-3"
-                    aria-label={`Apri cantiere ${titolo}`}
+                    aria-label={`Apri lavoro ${titolo}`}
                   >
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">

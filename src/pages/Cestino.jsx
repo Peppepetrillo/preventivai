@@ -25,7 +25,7 @@ import { ROUTES } from "../app/routes";
 const FILTRI_UI = [
   { id: FILTRI_CESTINO.tutti, label: "Tutti" },
   { id: FILTRI_CESTINO.clienti, label: "Clienti" },
-  { id: FILTRI_CESTINO.cantieri, label: "Cantieri" },
+  { id: FILTRI_CESTINO.cantieri, label: "Lavori" },
   { id: FILTRI_CESTINO.preventivi, label: "Preventivi" },
 ];
 

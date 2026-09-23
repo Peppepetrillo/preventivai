@@ -41,8 +41,8 @@ export default function NuovoLavoroSheet({
   onChiudi,
   onSalva,
   dataDefault = "",
-  title = "Nuovo cantiere",
-  descrizione = "Crea un nuovo cantiere o intervento.",
+  title = "Nuovo lavoro",
+  descrizione = "Crea un nuovo lavoro. Scegli il tipo.",
 }) {
   return (
     <BottomSheet

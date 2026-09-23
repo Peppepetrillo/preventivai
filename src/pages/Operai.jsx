@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   MoreHorizontal,
   Plus,
@@ -11,6 +12,7 @@ import {
 import PageWrapper from "../components/PageWrapper";
 import PageBackLink from "../components/PageBackLink";
 import BottomSheet from "../components/BottomSheet";
+import { ROUTES } from "../app/routes";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import {
   leggiOperaiTutti,
@@ -89,11 +91,18 @@ export default function Operai() {
         <PageBackLink />
         <div className="flex items-start justify-between gap-3 mb-6">
           <div>
-            <p className="section-label">Manodopera</p>
+            <p className="section-label">Personale</p>
             <h1 className="ds-page-title mt-1">Operai</h1>
             <p className="ds-text-secondary mt-2">
-              Anagrafica semplice per giornate e costi. Niente buste paga.
+              Persone della squadra. Costi per giornata o ora.
             </p>
+            <Link
+              to={ROUTES.manodopera}
+              className="inline-flex items-center min-h-[44px] text-sm text-yellow-300 font-medium mt-1"
+              data-testid="operai-link-manodopera"
+            >
+              Vedi giornate e ore
+            </Link>
           </div>
           <button
             type="button"

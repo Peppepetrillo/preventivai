@@ -214,7 +214,7 @@ export default function Agenda() {
         onChiudi={() => setLavoroSheetAperto(false)}
         onSalva={creaLavoro}
         dataDefault={dataDefaultAttivita}
-        title="Nuovo cantiere"
+        title="Nuovo lavoro"
         descrizione="Pianifica senza uscire dall'agenda."
       />
 

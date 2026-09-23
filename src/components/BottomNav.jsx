@@ -32,7 +32,7 @@ const MENU_COMPLETO = [
     tipo: "create",
   },
   {
-    nome: "Cantieri",
+    nome: "Lavori",
     path: ROUTES.cantieri,
     icon: HardHat,
   },

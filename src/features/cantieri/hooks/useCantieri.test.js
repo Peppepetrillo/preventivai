@@ -108,7 +108,7 @@ describe("useCantieri", () => {
 
     expect(result.current.cantiereSelezionato.stato).toBe("Completato");
     expect(result.current.messaggio).toBe(
-      "Lavoro finito. Lo trovi in Cantieri → Completati e in Storico."
+      "Lavoro finito. Lo trovi in Lavori → Completati e in Storico."
     );
   });
 

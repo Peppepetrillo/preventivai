@@ -56,10 +56,10 @@ export default function Manodopera() {
         <PageBackLink />
 
         <div className="mb-6">
-          <p className="section-label">Controllo</p>
+          <p className="section-label">Personale</p>
           <h1 className="ds-page-title mt-1">Manodopera</h1>
           <p className="ds-text-secondary mt-2">
-            Riepilogo settimanale senza aprire ogni cantiere.
+            Giornate e ore registrate sui lavori.
           </p>
         </div>
 
@@ -113,7 +113,7 @@ export default function Manodopera() {
             </select>
           </label>
           <label className="block">
-            <span className="ds-text-secondary text-xs">Cantiere</span>
+            <span className="ds-text-secondary text-xs">Lavoro</span>
             <select
               className="input-pro mt-1 min-h-[48px] w-full text-sm"
               value={filtroCantiereId}
@@ -139,7 +139,7 @@ export default function Manodopera() {
             <span className="ds-text-primary">{t.operai}</span>
           </div>
           <div className="flex justify-between gap-3">
-            <span className="ds-text-secondary">Cantieri</span>
+            <span className="ds-text-secondary">Lavori</span>
             <span className="ds-text-primary">{t.cantieri}</span>
           </div>
           <div className="flex justify-between gap-3">
@@ -179,7 +179,7 @@ export default function Manodopera() {
             to={ROUTES.operai}
             className="text-sm text-yellow-300 font-medium min-h-[44px] inline-flex items-center"
           >
-            Operai
+            Gestisci operai
           </Link>
         </div>
 
@@ -211,11 +211,11 @@ export default function Manodopera() {
 
         <h2 className="ds-card-title flex items-center gap-2 mb-3">
           <HardHat size={18} className="text-yellow-300" />
-          Per cantiere
+          Per lavoro
         </h2>
 
         {riepilogo.perCantiere.length === 0 ? (
-          <p className="ds-text-secondary text-sm">Nessun cantiere nel periodo.</p>
+          <p className="ds-text-secondary text-sm">Nessun lavoro nel periodo.</p>
         ) : (
           <ul className="space-y-3 list-none p-0 m-0 ds-card-grid" data-testid="manodopera-per-cantiere">
             {riepilogo.perCantiere.map((riga) => (

@@ -258,7 +258,7 @@ function DettaglioClienteContenuto() {
             className="btn-secondary py-4 flex items-center justify-center gap-2 text-sm font-black"
           >
             <HardHat size={18} />
-            Nuovo Cantiere
+            Nuovo lavoro
           </button>
 
           {telLink ? (
@@ -305,7 +305,7 @@ function DettaglioClienteContenuto() {
           <p className="text-2xl font-black mt-0.5">{preventiviCliente.length}</p>
         </div>
         <div className="ml-4 text-right">
-          <p className="text-slate-400 text-sm">Cantieri diretti</p>
+          <p className="text-slate-400 text-sm">Lavori diretti</p>
           <p className="text-2xl font-black mt-0.5">{cantieriDiretti.length}</p>
         </div>
       </div>
@@ -433,10 +433,10 @@ function DettaglioClienteContenuto() {
         </div>
       </div>
 
-      {/* Cantieri diretti (senza preventivo) */}
+      {/* Lavori diretti (senza preventivo) */}
       {cantieriDiretti.length > 0 && (
         <div className="mb-5">
-          <h2 className="text-lg font-black mb-4">Cantieri diretti</h2>
+          <h2 className="text-lg font-black mb-4">Lavori diretti</h2>
           <div className="space-y-3">
             {cantieriDiretti.map((cantiere) => (
               <Link

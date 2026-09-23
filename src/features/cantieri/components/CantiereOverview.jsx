@@ -164,8 +164,6 @@ export default function CantiereOverview({
   const [origineRegistraSpesa, setOrigineRegistraSpesa] = useState(null);
   const [importoRegistraIncasso, setImportoRegistraIncasso] = useState(null);
   const [origineRegistraIncasso, setOrigineRegistraIncasso] = useState(null);
-  const [operazioneRegistrata, setOperazioneRegistrata] = useState(null);
-  const [operazioneRegistrataTick, setOperazioneRegistrataTick] = useState(0);
   const [creaPreventivoInCorso, setCreaPreventivoInCorso] = useState(false);
   const [messaggioDocumenti, setMessaggioDocumenti] = useState("");
   const [progettoBusy, setProgettoBusy] = useState(false);
@@ -226,35 +224,20 @@ export default function CantiereOverview({
     });
   }, []);
 
-  const notificaOperazioneEconomica = useCallback((tipo, payload = {}) => {
-    setOperazioneRegistrata({
-      tipo,
-      importo: payload?.importo,
-      at: Date.now(),
-    });
-    setOperazioneRegistrataTick((n) => n + 1);
-  }, []);
-
   const gestisciAggiungiSpesa = useCallback(
     (payload) => {
       const esito = onAggiungiSpesa?.(payload);
-      if (!esito || esito.success !== false) {
-        notificaOperazioneEconomica("spesa", payload);
-      }
       return esito || { success: true };
     },
-    [onAggiungiSpesa, notificaOperazioneEconomica]
+    [onAggiungiSpesa]
   );
 
   const gestisciAggiungiPagamento = useCallback(
     (payload) => {
       const esito = onAggiungiPagamento?.(payload);
-      if (!esito || esito.success !== false) {
-        notificaOperazioneEconomica("incasso", payload);
-      }
       return esito || { success: true };
     },
-    [onAggiungiPagamento, notificaOperazioneEconomica]
+    [onAggiungiPagamento]
   );
 
   const gestisciSalvaSpesaMateriale = useCallback(
@@ -1049,8 +1032,6 @@ export default function CantiereOverview({
         <RiepilogoEconomicoSection
           cantiere={cantiere}
           onAzioneGestionale={gestisciAzioneGestionale}
-          operazioneRegistrata={operazioneRegistrata}
-          operazioneRegistrataTick={operazioneRegistrataTick}
         />
 
         <section className="pro-panel p-5 mb-5">

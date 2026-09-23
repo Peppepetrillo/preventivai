@@ -137,7 +137,7 @@ describe("DettaglioCliente UX-12", () => {
     expect(screen.queryByDisplayValue("111")).not.toBeInTheDocument();
   });
 
-  it("Nuovo cantiere naviga con clienteId/cliente/indirizzo in query", async () => {
+  it("Nuovo lavoro naviga con clienteId/cliente/indirizzo in query", async () => {
     const { default: DettaglioCliente } = await import("./DettaglioCliente");
 
     render(
@@ -149,7 +149,7 @@ describe("DettaglioCliente UX-12", () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Nuovo cantiere/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Nuovo lavoro/i }));
 
     const dest = screen.getByTestId("cantieri-dest");
     expect(dest).toHaveTextContent("/cantieri");

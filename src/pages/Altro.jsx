@@ -106,14 +106,14 @@ const SEZIONI_HUB = [
     voci: [
       {
         titolo: "Operai",
-        sottotitolo: "Squadra e costi",
+        sottotitolo: "Persone della squadra",
         path: ROUTES.operai,
         icon: UserRound,
         testId: "altro-link-operai",
       },
       {
         titolo: "Manodopera",
-        sottotitolo: "Ore e pagamenti settimana",
+        sottotitolo: "Giornate e ore",
         path: ROUTES.manodopera,
         icon: HardHat,
         testId: "altro-link-manodopera",
