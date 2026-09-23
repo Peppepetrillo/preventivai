@@ -45,7 +45,7 @@ export const STORAGE_KEYS = {
   backupAutomaticoConfig: "preventivai.backupAutomatico.config",
   /** Ultimo snapshot backup automatico (JSON v1, stesso formato creaBackupCompleto) */
   backupAutomaticoUltimo: "preventivai.backupAutomatico.ultimo",
-  /** Anagrafica operai — locale (manodopera 1.0; sync cloud non in questa release) */
+  /** Anagrafica operai — locale; backup via BACKUP_DATA_KEYS; sync cloud non in questa release */
   operai: "preventivai.operai",
 };
 
@@ -98,6 +98,16 @@ export const APP_DATA_KEYS = {
   [STORAGE_KEYS.listino]: STORAGE_FALLBACKS[STORAGE_KEYS.listino],
   // RC-2A: knowledge Experience Engine — sync + backup/restore con il resto del dataset
   [STORAGE_KEYS.esperienze]: STORAGE_FALLBACKS[STORAGE_KEYS.esperienze],
+};
+
+/**
+ * Dataset incluso in creaBackupCompleto / ripristinaBackupCompleto.
+ * = APP_DATA_KEYS + operai (locale backup; NON sync cloud in 1.0).
+ * Backup senza chiave operai restano validi (fallback []).
+ */
+export const BACKUP_DATA_KEYS = {
+  ...APP_DATA_KEYS,
+  [STORAGE_KEYS.operai]: STORAGE_FALLBACKS[STORAGE_KEYS.operai],
 };
 
 /** Meta sync cloud — devono sopravvivere al wipe WKWebView via Preferences. */

@@ -18,7 +18,7 @@ Gestione semplice di **operai → giornate/ore → costo → pagato/da pagare �
 
 ## Modello operaio
 
-Storage: `preventivai.operai` (LocalStorage, **fuori** `APP_DATA_KEYS` in 1.0 — sync cloud non incluso).
+Storage: `preventivai.operai` (LocalStorage; **incluso nel backup locale** via `BACKUP_DATA_KEYS`; **fuori** `APP_DATA_KEYS` — sync cloud non incluso in 1.0).
 
 ```js
 {

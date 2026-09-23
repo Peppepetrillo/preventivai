@@ -4,9 +4,18 @@ import {
   STORAGE_FALLBACKS,
   STORAGE_KEYS,
   APP_DATA_KEYS,
+  BACKUP_DATA_KEYS,
   NATIVE_STORAGE_KEYS,
   CLOUD_SYNC_STORAGE_KEYS,
 } from "./storageKeys";
+
+describe("storageKeys — backup Operai P1", () => {
+  it("operai in BACKUP_DATA_KEYS ma fuori APP_DATA_KEYS", () => {
+    expect(STORAGE_KEYS.operai in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.operai in BACKUP_DATA_KEYS).toBe(true);
+    expect(BACKUP_DATA_KEYS[STORAGE_KEYS.operai]).toEqual([]);
+  });
+});
 
 describe("storageKeys — sync cloud APP_DATA", () => {
   it("include preventivai:esperienze in APP_DATA_KEYS per sync multi-device", () => {

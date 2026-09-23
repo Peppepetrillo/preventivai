@@ -17,17 +17,19 @@ Included in `APP_DATA_KEYS` / `creaBackupCompleto()`:
 | `datiAzienda` | Azienda / operatore |
 | `listinoLocale` | Listino |
 | `preventivai:esperienze` | Experience engine |
+| `preventivai.operai` | Operai (backup locale via `BACKUP_DATA_KEYS`; **not** cloud sync) |
 
-**Changing phone + restore/sync:** these come back (within LWW collection limits).
+**Changing phone + restore/sync:** CORE keys come back via cloud; operai come back via **file backup** restore (not cloud in 1.0).
 
 ---
 
 ## SATELLITE (device-local today)
 
-Present in `STORAGE_KEYS` / Preferences but **outside** `APP_DATA_KEYS`:
+Present in `STORAGE_KEYS` / Preferences but **outside** `APP_DATA_KEYS` (and mostly outside backup unless listed in `BACKUP_DATA_KEYS`):
 
 | Area | Key(s) | Lost on new device? |
 |------|--------|---------------------|
+| Operai | `preventivai.operai` | **No** if restore from file backup (`BACKUP_DATA_KEYS`); **Yes** if cloud-only |
 | Distinte materiali | `preventivai.distinteMateriali` | **Yes** (unless export) |
 | Lista spesa / acquisti | `preventivai.listaSpesa` | **Yes** |
 | Firme | `preventivai.firme` | **Yes** |

@@ -32,8 +32,21 @@ vi.mock("./pdfCanvasRenderer", () => ({
     const canvas = document.createElement("canvas");
     canvas.setAttribute("data-pdf-page", "1");
     contenitore.appendChild(canvas);
-    return { pagine: 1 };
+    return { pagine: 1, zoomRender: 1 };
   }),
+  deveRirenderizzarePerZoom: vi.fn(() => false),
+  leggiDevicePixelRatio: vi.fn(() => 2),
+  calcolaDimensioniCanvasPdf: vi.fn(() => ({
+    canvasWidth: 800,
+    canvasHeight: 1120,
+    cssWidth: 400,
+    cssHeight: 560,
+    viewportScale: 4,
+    scalaFit: 2,
+    zoomRender: 1,
+    zoomRenderEffettivo: 1,
+    dpr: 2,
+  })),
 }));
 
 describe("PdfAnteprima UX-001", () => {
