@@ -26,8 +26,12 @@ describe("pinSecurity RC-3", () => {
     await impostaPinSicuro("1234");
 
     const grezzo = leggiStorage(STORAGE_KEYS.pinAccesso, "");
-    expect(String(JSON.stringify(grezzo))).not.toContain("1234");
+    // Non confrontare substring sull'hash hex (può contenere "1234" per caso).
+    expect(grezzo).not.toBe("1234");
     expect(interpretaPinSalvato(grezzo).tipo).toBe("hash");
+    expect(typeof grezzo).toBe("object");
+    expect(grezzo?.hash).toBeTruthy();
+    expect(String(grezzo?.hash)).not.toBe("1234");
     expect(pinEAttivo()).toBe(true);
     expect(await verificaPinSicuro("1234")).toBe(true);
     expect(await verificaPinSicuro("9999")).toBe(false);

@@ -30,12 +30,16 @@ export function leggiStorage(chiave, fallback = []) {
 /**
  * Salva su localStorage (+ Preferences su native).
  * Rifiuta `undefined` (evita stringa "undefined" e wipe silenziosi).
- * @returns {Promise<{ ok: boolean, error?: string }>}
+ *
+ * Restituisce un thenable con `.ok` sincrono: i caller sync possono leggere
+ * `esito.ok` subito dopo localStorage; `await esito` resta valido.
+ *
+ * @returns {Promise<{ ok: boolean, error?: string }> & { ok: boolean, error?: string }}
  */
 export function salvaStorage(chiave, valore) {
   if (valore === undefined) {
     console.error("salvaStorage: valore undefined rifiutato", chiave);
-    return Promise.resolve({ ok: false, error: "undefined" });
+    return creaEsitoSalvataggio(false, "undefined");
   }
 
   try {
@@ -43,22 +47,42 @@ export function salvaStorage(chiave, valore) {
     localStorage.setItem(chiave, dato);
 
     if (usaStorageNativo()) {
-      return Preferences.set({ key: chiave, value: dato })
+      const preferenze = Preferences.set({ key: chiave, value: dato })
         .then(() => ({ ok: true }))
         .catch((errore) => {
           console.error("Errore storage nativo:", errore);
           return { ok: false, error: errore?.message || "preferences_failed" };
         });
+      // LS già ok: esito sync positivo; Preferences fallisce non annulla LS.
+      return Object.assign(preferenze, { ok: true });
     }
 
-    return Promise.resolve({ ok: true });
+    return creaEsitoSalvataggio(true);
   } catch (errore) {
     console.error("Errore salvataggio:", errore);
-    return Promise.resolve({
-      ok: false,
-      error: errore?.name || errore?.message || "save_failed",
-    });
+    return creaEsitoSalvataggio(
+      false,
+      errore?.name || errore?.message || "save_failed"
+    );
   }
+}
+
+/**
+ * @param {boolean} ok
+ * @param {string=} error
+ */
+function creaEsitoSalvataggio(ok, error) {
+  const payload = ok ? { ok: true } : { ok: false, error: String(error || "save_failed") };
+  return Object.assign(Promise.resolve(payload), payload);
+}
+
+/**
+ * True se il risultato di salvaStorage/salvaDatoLocale indica successo.
+ * Accetta sia esito sync (`.ok`) sia Promise già risolta.
+ * @param {{ ok?: boolean }|null|undefined} esito
+ */
+export function salvataggioRiuscito(esito) {
+  return Boolean(esito && esito.ok === true);
 }
 
 /**

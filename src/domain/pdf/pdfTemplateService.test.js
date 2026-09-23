@@ -5,6 +5,7 @@ const getNumberOfPages = vi.fn(() => 1);
 const save = vi.fn();
 const setPage = vi.fn();
 const output = vi.fn(() => new Blob(["%PDF"], { type: "application/pdf" }));
+const testiPdf = [];
 
 vi.mock("jspdf", () => ({
   default: class {
@@ -19,7 +20,9 @@ vi.mock("jspdf", () => ({
     setFontSize() {}
     setFont() {}
     setLineWidth() {}
-    text() {}
+    text(valore) {
+      testiPdf.push(String(valore ?? ""));
+    }
     rect() {}
     roundedRect() {}
     line() {}
@@ -89,17 +92,19 @@ describe("pdfTemplateService", () => {
     save.mockClear();
     setPage.mockClear();
     getNumberOfPages.mockReturnValue(1);
+    testiPdf.length = 0;
     globalThis.URL.createObjectURL = vi.fn(() => "blob:mock-pdf");
     globalThis.URL.revokeObjectURL = vi.fn();
   });
 
   it("buildPreventivoPdfDocument gestisce dati mancanti", () => {
     const doc = buildPreventivoPdfDocument({});
-    expect(doc.azienda.nome).toBe("PreventivAI");
+    expect(doc.azienda.nome).toBe("");
     expect(doc.lavorazioni).toEqual([]);
     expect(doc.cliente.nome).toBe("");
     expect(doc.riepilogo.totale).toBe(0);
     expect(doc.firme.clienteLabel).toContain("Cliente");
+    expect(doc.firme.installatorePlaceholder).toBe(false);
   });
 
   it("buildPreventivoPdfDocument mappa sezioni complete", () => {
@@ -311,7 +316,7 @@ describe("pdfTemplateService", () => {
       { salva: false }
     );
     expect(senza.pagine).toBeGreaterThanOrEqual(1);
-    expect(senza.document.azienda.nome).toBe("PreventivAI");
+    expect(senza.document.azienda.nome).toBe("");
 
     const conIban = await generaPreventivoPdfDaInput(
       {
@@ -335,5 +340,112 @@ describe("pdfTemplateService", () => {
     );
     expect(conIban.document.azienda.iban).toContain("IT60");
     expect(conIban.pagine).toBeGreaterThanOrEqual(1);
+  });
+
+  it("omite Data/Validità/Oggetto vuoti (niente — nel blocco documento)", async () => {
+    await generaPreventivoPdfDaInput(
+      {
+        datiAzienda: { nomeDitta: "Demo" },
+        cliente: { nome: "Rossi" },
+        preventivo: { numero: "PREV-EMPTY-META", data: "", validita: "" },
+        oggetto: "",
+        lavorazioni: [{ nome: "A", quantita: 1, prezzo: 10, unita: "cad" }],
+        totali: {
+          subtotale: 10,
+          importoSconto: 0,
+          imponibile: 10,
+          importoIva: 2.2,
+          totale: 12.2,
+        },
+      },
+      { salva: false }
+    );
+    const testo = testiPdf.join("\n");
+    expect(testo).not.toMatch(/Data:\s*—/);
+    expect(testo).not.toMatch(/Validità:\s*—/);
+    expect(testo).not.toMatch(/Oggetto:\s*—/);
+    expect(testo).toContain("PREV-EMPTY-META");
+  });
+
+  it("omite blocco ACCONTO e Firme quando assenti (acconto 0)", async () => {
+    await generaPreventivoPdfDaInput(
+      {
+        datiAzienda: { nomeDitta: "Demo" },
+        cliente: { nome: "Rossi" },
+        preventivo: { numero: "PREV-NO-ACC", data: "01/01/2026" },
+        lavorazioni: [{ nome: "A", quantita: 1, prezzo: 10, unita: "cad" }],
+        totali: {
+          subtotale: 10,
+          importoSconto: 0,
+          imponibile: 10,
+          importoIva: 2.2,
+          totale: 12.2,
+        },
+        acconto: 0,
+      },
+      { salva: false }
+    );
+    const testo = testiPdf.join("\n");
+    expect(testo).toContain("Riepilogo");
+    expect(testo).toContain("Totale");
+    expect(testo).not.toContain("ACCONTO");
+    expect(testo).not.toContain("Richiesto:");
+    expect(testo).not.toContain("Residuo:");
+    expect(testo).not.toContain("Firme");
+    expect(testo).not.toContain("Firma Cliente");
+    expect(testo).not.toContain("(da firmare)");
+  });
+
+  it("stampa ACCONTO e residuo solo se acconto > 0", async () => {
+    await generaPreventivoPdfDaInput(
+      {
+        datiAzienda: { nomeDitta: "Demo" },
+        cliente: { nome: "Rossi" },
+        preventivo: { numero: "PREV-ACC", data: "01/01/2026" },
+        lavorazioni: [{ nome: "A", quantita: 1, prezzo: 100, unita: "cad" }],
+        totali: {
+          subtotale: 100,
+          importoSconto: 0,
+          imponibile: 100,
+          importoIva: 22,
+          totale: 122,
+        },
+        acconto: 50,
+      },
+      { salva: false }
+    );
+    const testo = testiPdf.join("\n");
+    expect(testo).toContain("ACCONTO");
+    expect(testo).toMatch(/Richiesto:/);
+    expect(testo).toMatch(/Residuo:/);
+  });
+
+  it("stampa sezione Firme solo con dati firma reali", async () => {
+    await generaPreventivoPdfDaInput(
+      {
+        datiAzienda: { nomeDitta: "Demo" },
+        cliente: { nome: "Rossi" },
+        preventivo: { numero: "PREV-FIRMA", data: "01/01/2026" },
+        lavorazioni: [{ nome: "A", quantita: 1, prezzo: 10, unita: "cad" }],
+        totali: {
+          subtotale: 10,
+          importoSconto: 0,
+          imponibile: 10,
+          importoIva: 2.2,
+          totale: 12.2,
+        },
+        firme: {
+          clienteImmagine: "data:image/png;base64,qq",
+          firmatario: "Mario Rossi",
+          dataFirma: "16/09/2026",
+        },
+      },
+      { salva: false }
+    );
+    const testo = testiPdf.join("\n");
+    expect(testo).toContain("Firme");
+    expect(testo).toContain("Firma Cliente");
+    expect(testo).toContain("Mario Rossi");
+    expect(testo).toContain("Data firma: 16/09/2026");
   });
 });

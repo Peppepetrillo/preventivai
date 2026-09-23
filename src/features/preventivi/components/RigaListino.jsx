@@ -19,7 +19,7 @@ function RigaListino({ voce, quantita = 0, onAggiungi, compatto = false }) {
     <button
       type="button"
       onClick={() => onAggiungi(voce)}
-      className={`w-full flex items-center gap-3 text-left active:scale-[0.99] transition ${
+      className={`w-full flex items-center gap-3 text-left active:scale-[0.99] transition min-h-[44px] ${
         compatto ? "py-2.5 px-1" : "pro-panel px-3 py-3"
       } ${haQuantita && compatto ? "bg-yellow-400/8 rounded-[12px]" : ""}`}
       aria-label={etichettaAzione(voce, quantita)}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   FileText,
   HardHat,
@@ -19,11 +20,12 @@ import {
 } from "../domain/cestino";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import { APP_EVENTS } from "../app/events";
+import { ROUTES } from "../app/routes";
 
 const FILTRI_UI = [
   { id: FILTRI_CESTINO.tutti, label: "Tutti" },
   { id: FILTRI_CESTINO.clienti, label: "Clienti" },
-  { id: FILTRI_CESTINO.cantieri, label: "Cantieri" },
+  { id: FILTRI_CESTINO.cantieri, label: "Lavori" },
   { id: FILTRI_CESTINO.preventivi, label: "Preventivi" },
 ];
 
@@ -155,11 +157,18 @@ export default function Cestino() {
         </div>
 
         {elementiFiltrati.length === 0 ? (
-          <div className="ds-empty pro-panel p-8 text-center">
+          <div className="ds-empty pro-panel p-8 text-center" data-testid="cestino-vuoto">
             <p className="ds-card-title">Cestino vuoto</p>
             <p className="ds-text-secondary mt-2">
               Gli elementi eliminati compariranno qui e potrai ripristinarli.
             </p>
+            <Link
+              to={ROUTES.cantieri}
+              className="btn-primary inline-flex items-center justify-center min-h-[48px] mt-6 px-5 font-bold"
+              data-testid="cestino-vuoto-cta-cantieri"
+            >
+              Torna ai cantieri
+            </Link>
           </div>
         ) : (
           <div className="space-y-3">

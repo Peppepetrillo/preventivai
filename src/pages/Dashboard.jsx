@@ -3,6 +3,7 @@ import {
   CalendarDays,
   ChevronRight,
   FileText,
+  Mic,
   Sparkles,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -12,6 +13,7 @@ import AssistantCard from "../components/assistant/AssistantCard";
 import { ROUTES } from "../app/routes";
 import HomeDaFareItem from "../features/oggi/components/HomeDaFareItem";
 import HomeLavoroCard from "../features/oggi/components/HomeLavoroCard";
+import OnboardingRapido from "../features/oggi/components/OnboardingRapido";
 import { calcolaOggi } from "../features/oggi/oggiService";
 import { PreventivAISuggestions } from "../features/intelligence";
 import { leggiAttivita } from "../domain/attivita";
@@ -22,7 +24,7 @@ import { leggiDatiAzienda } from "../repositories/impostazioniRepository";
 import { leggiPreventivi } from "../repositories/preventiviRepository";
 
 /**
- * Home Oggi — punto di partenza operativo (UX-8.2).
+ * Home Oggi — azione prima, dettaglio dopo (UX simplify).
  */
 export default function Dashboard() {
   const [datiAzienda] = useDatiLocaliSincronizzati(leggiDatiAzienda);
@@ -44,6 +46,7 @@ export default function Dashboard() {
   );
 
   const lavoriOggi = oggi.giornata?.lavori || [];
+  const haDaFare = oggi.daFare.length > 0;
   const riepilogoVisibile = oggi.riepilogo.filter((voce) => voce.conteggio > 0);
   const haSuggerimenti =
     oggi.assistantCards.length > 0 || cantieri.length > 0 || preventivi.length > 0;
@@ -62,6 +65,28 @@ export default function Dashboard() {
           </p>
         </header>
 
+        <OnboardingRapido />
+
+        <section aria-label="Azione principale" className="space-y-3">
+          <Link
+            to={ROUTES.preventiviNuovo}
+            className="btn-primary w-full min-h-[52px] flex items-center justify-center gap-2 text-base font-semibold"
+            data-testid="home-nuovo-preventivo"
+          >
+            <FileText size={20} aria-hidden="true" />
+            Nuovo preventivo
+          </Link>
+          <Link
+            to={`${ROUTES.preventiviNuovo}?express=1`}
+            className="w-full min-h-[44px] flex items-center justify-center gap-2 text-sm font-medium text-slate-300 hover:text-yellow-200 transition-colors"
+            data-testid="home-preventivo-vocale"
+            aria-label="Preventivo vocale rapido"
+          >
+            <Mic size={16} aria-hidden="true" />
+            Oppure preventivo vocale
+          </Link>
+        </section>
+
         <section aria-labelledby="home-oggi-title" data-testid="home-sezione-oggi">
           <h2 id="home-oggi-title" className="ds-card-title mb-3 px-0.5">
             Oggi
@@ -74,16 +99,26 @@ export default function Dashboard() {
             >
               <p className="ds-card-title">Giornata libera</p>
               <p className="ds-text-secondary mt-2">
-                Non hai lavori programmati per oggi.
+                Nessun lavoro in agenda per oggi.
               </p>
-              <Link
-                to={ROUTES.agenda}
-                className="btn-secondary mt-4 min-h-[48px] inline-flex items-center justify-center gap-2 px-4"
-                data-testid="home-apri-agenda-vuoto"
-              >
-                <CalendarDays size={18} aria-hidden="true" />
-                Apri Agenda
-              </Link>
+              {!String(datiAzienda?.nomeDitta || "").trim() ? (
+                <Link
+                  to={ROUTES.datiAzienda}
+                  className="btn-primary mt-4 min-h-[48px] inline-flex items-center justify-center gap-2 px-4"
+                  data-testid="home-setup-dati-azienda"
+                >
+                  Completa i dati azienda
+                </Link>
+              ) : (
+                <Link
+                  to={ROUTES.agenda}
+                  className="btn-secondary mt-4 min-h-[48px] inline-flex items-center justify-center gap-2 px-4"
+                  data-testid="home-apri-agenda-vuoto"
+                >
+                  <CalendarDays size={18} aria-hidden="true" />
+                  Apri Agenda
+                </Link>
+              )}
             </div>
           ) : (
             <ul className="space-y-3">
@@ -107,7 +142,7 @@ export default function Dashboard() {
           ) : null}
         </section>
 
-        {oggi.daFare.length > 0 ? (
+        {haDaFare ? (
           <section
             aria-labelledby="home-da-fare-title"
             data-testid="home-sezione-da-fare"
@@ -125,17 +160,6 @@ export default function Dashboard() {
           </section>
         ) : null}
 
-        <section aria-label="Azione principale">
-          <Link
-            to={ROUTES.preventiviNuovo}
-            className="btn-primary w-full min-h-[52px] flex items-center justify-center gap-2 text-base font-semibold"
-            data-testid="home-nuovo-preventivo"
-          >
-            <FileText size={20} aria-hidden="true" />
-            Nuovo preventivo
-          </Link>
-        </section>
-
         {oggi.continua ? (
           <section
             className="pro-panel p-5"
@@ -144,7 +168,7 @@ export default function Dashboard() {
           >
             <p className="section-label">Continua</p>
             <h2 id="home-continua-title" className="ds-card-title mt-1">
-              Continua da dove hai lasciato
+              Continua
             </h2>
             <Link
               to={oggi.continua.link}

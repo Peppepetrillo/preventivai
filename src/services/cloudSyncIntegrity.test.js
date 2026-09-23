@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   deveApplicareAggiornamentoCloud,
-  deveRispingereLocaleVersoCloud,
+  deveProteggereLocaleDaWipeCloud,
+  normalizzaPayloadCloud,
   tempoDaIso,
 } from "./cloudSyncIntegrity";
 
@@ -72,36 +73,65 @@ describe("cloudSyncIntegrity", () => {
     });
   });
 
-  describe("deveRispingereLocaleVersoCloud", () => {
-    it("rispinge se locale più recente e non in coda", () => {
+  describe("deveProteggereLocaleDaWipeCloud", () => {
+    it("protegge array locale non vuoto da payload cloud vuoto/null", () => {
       expect(
-        deveRispingereLocaleVersoCloud({
-          chiaveInCoda: false,
-          updatedAtCloud: "2026-07-22T10:00:00.000Z",
-          updatedAtLocale: "2026-07-22T12:00:00.000Z",
+        deveProteggereLocaleDaWipeCloud({
           haValoreLocale: true,
+          payloadCloud: [],
+          fallback: [],
         })
       ).toBe(true);
+      expect(
+        deveProteggereLocaleDaWipeCloud({
+          haValoreLocale: true,
+          payloadCloud: null,
+          fallback: [],
+        })
+      ).toBe(true);
+      expect(
+        deveProteggereLocaleDaWipeCloud({
+          haValoreLocale: true,
+          payloadCloud: [{ id: 1 }],
+          fallback: [],
+        })
+      ).toBe(false);
+      expect(
+        deveProteggereLocaleDaWipeCloud({
+          haValoreLocale: false,
+          payloadCloud: [],
+          fallback: [],
+        })
+      ).toBe(false);
     });
 
-    it("non rispinge se in coda o senza valore locale", () => {
+    it("protegge oggetto locale non vuoto da cloud {}", () => {
       expect(
-        deveRispingereLocaleVersoCloud({
-          chiaveInCoda: true,
-          updatedAtCloud: "2026-07-22T10:00:00.000Z",
-          updatedAtLocale: "2026-07-22T12:00:00.000Z",
+        deveProteggereLocaleDaWipeCloud({
           haValoreLocale: true,
+          payloadCloud: {},
+          fallback: {},
         })
-      ).toBe(false);
-
+      ).toBe(true);
       expect(
-        deveRispingereLocaleVersoCloud({
-          chiaveInCoda: false,
-          updatedAtCloud: "2026-07-22T10:00:00.000Z",
-          updatedAtLocale: "2026-07-22T12:00:00.000Z",
-          haValoreLocale: false,
+        deveProteggereLocaleDaWipeCloud({
+          haValoreLocale: true,
+          payloadCloud: { ragioneSociale: "X" },
+          fallback: {},
         })
       ).toBe(false);
+    });
+  });
+
+  describe("normalizzaPayloadCloud", () => {
+    it("sostituisce payload di forma errata con il fallback", () => {
+      expect(normalizzaPayloadCloud({}, [])).toEqual([]);
+      expect(normalizzaPayloadCloud(null, [])).toEqual([]);
+      expect(normalizzaPayloadCloud([{ id: 1 }], [])).toEqual([{ id: 1 }]);
+      expect(normalizzaPayloadCloud([], { a: 1 })).toEqual({ a: 1 });
+      expect(normalizzaPayloadCloud({ ragioneSociale: "X" }, {})).toEqual({
+        ragioneSociale: "X",
+      });
     });
   });
 });

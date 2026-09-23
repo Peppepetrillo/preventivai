@@ -29,7 +29,7 @@ export const BOTTOM_NAV_ROOTS = Object.freeze([
  * Parent espliciti per path statiche.
  * Ambiguities risolte dall'architettura hub:
  * - Acquisti/Listino/Distinte/Catalogo → Altro (entry hub, non Impostazioni stale)
- * - Cestino → Impostazioni (anche linkato da Altro; Back attuale e Impostazioni)
+ * - Cestino → Altro (entry hub primaria; anche linkato da Impostazioni)
  * - Agenda/Clienti/Impostazioni → Altro
  * - Preventivo intelligente → Preventivi (cluster nav, non Home)
  */
@@ -43,8 +43,19 @@ export const ROUTE_PARENTS = Object.freeze({
   [ROUTES.catalogoMateriali]: ROUTES.altro,
   [ROUTES.distinteMateriali]: ROUTES.altro,
   [ROUTES.impostazioni]: ROUTES.altro,
+  [ROUTES.calcoliElettrici]: ROUTES.altro,
+  [ROUTES.calcoliOhm]: ROUTES.calcoliElettrici,
+  [ROUTES.calcoliPotenza]: ROUTES.calcoliElettrici,
+  [ROUTES.calcoliCaduta]: ROUTES.calcoliElettrici,
+  [ROUTES.calcoliSezione]: ROUTES.calcoliElettrici,
+  [ROUTES.calcoliConsumo]: ROUTES.calcoliElettrici,
+  [ROUTES.calcoliConversioni]: ROUTES.calcoliElettrici,
+  [ROUTES.calcoliCarico]: ROUTES.calcoliElettrici,
+  [ROUTES.operai]: ROUTES.altro,
+  [ROUTES.manodopera]: ROUTES.altro,
   [ROUTES.datiAzienda]: ROUTES.impostazioni,
-  [ROUTES.cestino]: ROUTES.impostazioni,
+  // Hub Altro è l'entry primaria (anche linkato da Impostazioni).
+  [ROUTES.cestino]: ROUTES.altro,
   [ROUTES.incassi]: ROUTES.preventivi,
   [ROUTES.preventivoIntelligente]: ROUTES.preventivi,
   [ROUTES.preventivoManuale]: ROUTES.nuovoPreventivo,
@@ -90,6 +101,12 @@ export function risolviParentPath(pathname = "") {
   if (path.startsWith("/cliente/")) return ROUTES.clienti;
   if (path.startsWith(`${ROUTES.distinteMateriali}/`)) {
     return ROUTES.distinteMateriali;
+  }
+  if (
+    path.startsWith(`${ROUTES.calcoliElettrici}/`) &&
+    path !== ROUTES.calcoliElettrici
+  ) {
+    return ROUTES.calcoliElettrici;
   }
 
   return null;
