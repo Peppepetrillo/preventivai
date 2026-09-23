@@ -90,13 +90,7 @@ export default function Economia() {
             Economia
           </h1>
           <p className="ds-text-secondary mt-2">
-            Entrate = incassi dai cantieri. Uscite = materiali, manodopera,
-            carburante e altre spese di cantiere. Non è contabilità.
-          </p>
-          <p className="ds-text-secondary mt-2 text-sm">
-            Per registrare un movimento apri un cantiere → Pagamenti o Spese.
-            I movimenti generali senza cantiere arriveranno in un prossimo
-            aggiornamento.
+            Incassi e spese dai cantieri. Non è contabilità.
           </p>
         </header>
 

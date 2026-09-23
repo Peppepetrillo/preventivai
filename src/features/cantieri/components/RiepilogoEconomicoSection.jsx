@@ -121,6 +121,13 @@ export default function RiepilogoEconomicoSection({
   const [importoScenario, setImportoScenario] = useState("");
   const [registrazioneInCorso, setRegistrazioneInCorso] = useState(false);
   const [verifica, setVerifica] = useState(null);
+  const simulaDetailsRef = useRef(null);
+
+  useEffect(() => {
+    if ((tipoScenario || registrazioneInCorso) && simulaDetailsRef.current) {
+      simulaDetailsRef.current.open = true;
+    }
+  }, [tipoScenario, registrazioneInCorso]);
   const attesaRegistrazioneRef = useRef(null);
   const ultimoTickVerificaRef = useRef(0);
   const registrazioneLockRef = useRef(false);
@@ -497,17 +504,26 @@ export default function RiepilogoEconomicoSection({
         </div>
       </div>
 
-      {/* Simula operazione — Decisione → Azione (v14/v15) */}
-      <div
+      {/* Simula — NON CORE 1.0: compressa dietro details (logica servizio invariata) */}
+      <details
+        ref={simulaDetailsRef}
         className="rounded-[14px] border border-white/10 bg-black/[0.12] p-4 mb-4"
         data-testid="assistente-simula-blocco"
-        aria-labelledby="assistente-simula-title"
       >
-        <h3 id="assistente-simula-title" className="ds-card-title text-base mb-3">
-          Simula un&apos;operazione
-        </h3>
+        <summary
+          className="cursor-pointer list-none min-h-[44px] flex flex-col justify-center"
+          data-testid="assistente-simula-toggle"
+          id="assistente-simula-title"
+        >
+          <span className="ds-card-title text-base">Strumenti avanzati</span>
+          <span className="text-xs ds-text-secondary mt-1">
+            Simula un importo. Non salva niente — tocca per aprire.
+          </span>
+        </summary>
+
+        <div className="mt-3 pt-3 border-t border-white/10">
         <p className="text-xs ds-text-secondary mb-3">
-          Scenario simulato — i dati reali del cantiere non cambiano.
+          Prova un&apos;operazione. I dati reali del cantiere non cambiano.
         </p>
 
         {registrazioneInCorso ? (
@@ -739,7 +755,8 @@ export default function RiepilogoEconomicoSection({
             ) : null}
           </div>
         )}
-      </div>
+        </div>
+      </details>
 
       {/* 3. Cosa è cambiato */}
       <div

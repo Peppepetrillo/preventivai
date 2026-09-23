@@ -1982,7 +1982,8 @@ describe("RiepilogoEconomicoSection UX-Assistente scenari v14", () => {
 
   it("1. blocco simulazione presente", () => {
     render(<RiepilogoEconomicoSection cantiere={cantiereSim} />);
-    expect(screen.getByTestId("assistente-simula-blocco")).toBeVisible();
+    expect(screen.getByTestId("assistente-simula-blocco")).toBeInTheDocument();
+    expect(screen.getByTestId("assistente-simula-toggle")).toBeVisible();
   });
 
   it("2. selezione spesa", () => {

@@ -189,7 +189,6 @@ export default function Agenda() {
       )}
 
       <AgendaToolbar
-        cantieriAttivi={cantieriAttivi}
         onNuovoLavoro={() => setLavoroSheetAperto(true)}
         onNuovaAttivita={apriNuovaAttivita}
         onRegistraGiornata={() => {

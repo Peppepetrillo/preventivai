@@ -71,7 +71,7 @@ describe("Dashboard Home Oggi UX-8.2", () => {
     expect(screen.getByTestId("home-oggi-vuoto")).toBeInTheDocument();
     expect(screen.getByText("Giornata libera")).toBeInTheDocument();
     expect(
-      screen.getByText("Non hai lavori programmati per oggi.")
+      screen.getByText("Nessun lavoro in agenda per oggi.")
     ).toBeInTheDocument();
     // Senza nomeDitta: guida first-5-minutes verso dati azienda
     expect(screen.getByTestId("home-setup-dati-azienda")).toHaveAttribute(

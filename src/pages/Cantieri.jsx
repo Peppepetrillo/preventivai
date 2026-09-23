@@ -174,7 +174,7 @@ export default function Cantieri() {
               <p className="section-label">Operatività</p>
               <h1 className="ds-page-title mt-1">Cantieri</h1>
               <p className="ds-text-secondary mt-2">
-                Trova il cantiere, leggi lo stato, apri con un tocco.
+                I tuoi cantieri aperti.
               </p>
             </div>
             <span
