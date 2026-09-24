@@ -3,7 +3,7 @@
  * Nessun salvataggio senza conferma utente.
  */
 
-import { useCallback, useId, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { Mic, MicOff, Sparkles, Check, Pencil } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
@@ -33,6 +33,7 @@ export default function DescriviLavoroSheet({
   const [voci, setVoci] = useState([]);
   const [errore, setErrore] = useState("");
   const testoId = useId();
+  const busyRef = useRef(false);
 
   const onTestoVoce = useCallback((t) => {
     setTesto(t);
@@ -52,6 +53,7 @@ export default function DescriviLavoroSheet({
   } = useRiconoscimentoVocale({ onTesto: onTestoVoce });
 
   function reset() {
+    busyRef.current = false;
     setTesto("");
     setFase(FASE.IDLE);
     setPreview(null);
@@ -67,12 +69,14 @@ export default function DescriviLavoroSheet({
   }
 
   async function genera() {
+    if (busyRef.current) return;
     if (!testo.trim()) {
       setErrore("Scrivi o detta cosa devi realizzare.");
       setFase(FASE.ERROR);
       return;
     }
     if (inAscolto) ferma();
+    busyRef.current = true;
     setFase(FASE.PROCESSING);
     setErrore("");
     try {
@@ -99,18 +103,34 @@ export default function DescriviLavoroSheet({
     } catch {
       setErrore("Non riesco a elaborare il contenuto.");
       setFase(FASE.ERROR);
+    } finally {
+      busyRef.current = false;
     }
   }
 
   function conferma() {
+    if (busyRef.current) return;
     const payload = payloadLavorazioniDaConferma(voci);
     if (!payload.length) {
       setErrore("Seleziona almeno una lavorazione con listino abbinato.");
       return;
     }
-    onConferma?.(payload, { testoOriginale: testo, preview });
-    chiudi();
+    busyRef.current = true;
+    try {
+      onConferma?.(payload, { testoOriginale: testo, preview });
+      chiudi();
+    } finally {
+      busyRef.current = false;
+    }
   }
+
+  const vociAttive = voci.filter((v) => !v.escluso);
+  const nAmbigue = vociAttive.filter(
+    (v) => !v.matchScelto && v.match?.stato === "ambigui"
+  ).length;
+  const nMancanti = vociAttive.filter(
+    (v) => !v.matchScelto && v.match?.stato !== "ambigui"
+  ).length;
 
   return (
     <BottomSheet
@@ -176,11 +196,23 @@ export default function DescriviLavoroSheet({
           </>
         ) : (
           <>
-            <p className="ds-text-secondary">
-              {preview?.confidenceEtichetta || "Controlla prima di aggiungere."}
-            </p>
+            <div data-testid="descrivi-lavoro-riepilogo">
+              <p className="ds-card-title">
+                Ho capito — {vociAttive.length} element
+                {vociAttive.length === 1 ? "o" : "i"}
+              </p>
+              <p className="ds-text-secondary mt-1">
+                {preview?.confidenceEtichetta || "Controlla prima di aggiungere."}
+              </p>
+              {nAmbigue + nMancanti > 0 ? (
+                <p className="text-sm text-[var(--warning)] mt-2 font-medium">
+                  ⚠️ {nAmbigue + nMancanti} elemento
+                  {nAmbigue + nMancanti === 1 ? "" : "i"} da verificare
+                </p>
+              ) : null}
+            </div>
             {preview?.avvisoAi ? (
-              <p className="text-xs text-amber-700 dark:text-amber-300">
+              <p className="text-xs text-[var(--warning)]">
                 {preview.avvisoAi}
               </p>
             ) : null}
@@ -195,31 +227,32 @@ export default function DescriviLavoroSheet({
                 return (
                   <li
                     key={`${v.descrizione}-${idx}`}
-                    className="pro-panel p-3 space-y-2"
+                    className={`pro-panel p-3 space-y-2 ${v.escluso ? "opacity-50" : ""}`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="ds-text-primary font-semibold">
-                          {v.quantita} × {v.descrizione}
+                          {v.quantita} ×{" "}
+                          {v.descrizioneNormalizzata || v.descrizione}
                         </p>
                         {stato === "ok" ? (
-                          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                          <p className="text-xs text-[var(--success)] mt-1">
                             Listino: {v.matchScelto.nome} ·{" "}
                             {v.matchScelto.prezzo} €
                           </p>
                         ) : stato === "ambigui" ? (
-                          <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                          <p className="text-xs text-[var(--warning)] mt-1">
                             Possibili corrispondenze
                           </p>
                         ) : (
-                          <p className="text-xs text-slate-500 mt-1">
-                            Non ho trovato questa lavorazione nel listino.
+                          <p className="text-xs text-[var(--text-secondary)] mt-1">
+                            Non trovato nel listino
                           </p>
                         )}
                       </div>
                       <button
                         type="button"
-                        className="text-xs font-semibold text-slate-500 min-h-[44px] px-2"
+                        className="text-xs font-semibold text-[var(--text-secondary)] min-h-[48px] px-2"
                         onClick={() =>
                           setVoci((prev) =>
                             prev.map((x, i) =>
@@ -237,7 +270,7 @@ export default function DescriviLavoroSheet({
                           <button
                             key={c.id || c.listinoId}
                             type="button"
-                            className="btn-secondary min-h-[44px] text-left text-sm px-3"
+                            className="btn-secondary min-h-[48px] text-left text-sm px-3"
                             onClick={() =>
                               setVoci((prev) =>
                                 prev.map((x, i) =>
@@ -274,9 +307,14 @@ export default function DescriviLavoroSheet({
                 onClick={conferma}
               >
                 <Check size={18} />
-                Conferma lavorazioni
+                Conferma e aggiungi
               </button>
             </div>
+            {errore ? (
+              <p className="text-sm text-[var(--danger)]" role="alert">
+                {errore}
+              </p>
+            ) : null}
           </>
         )}
       </div>

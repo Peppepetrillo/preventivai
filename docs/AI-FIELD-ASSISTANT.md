@@ -111,6 +111,8 @@ Lookup famiglie/varianti. Nessun prezzo inventato. `prezzoIndicativo` solo se gi
 
 - PII scrub (`scrubTestoLiberoAi`) prima di POST
 - Nessun cliente/indirizzo/telefono nel payload Field
+- **Match listino/catalogo locale PRIMA** di eventuali chiamate AI
+- AI cloud solo se estrazione/match locale insufficiente
 - Nessuna API key nel client (`OPENAI_*` solo server Edge)
 - Audio: Web Speech OS — niente upload file audio in 1.0
 - Trascrizione conservata solo se l'utente conferma il memo

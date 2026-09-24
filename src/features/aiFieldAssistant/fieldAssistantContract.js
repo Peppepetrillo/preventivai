@@ -81,11 +81,21 @@ export function normalizzaUnitaField(raw) {
  */
 export function normalizzaElementoLavorazione(raw) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const descrizione = troncaFieldStringa(raw.descrizione || raw.nome, 160);
+  const descrizioneOriginale = troncaFieldStringa(
+    raw.descrizioneOriginale || raw.descrizione || raw.nome,
+    160
+  );
+  const descrizioneNormalizzata = troncaFieldStringa(
+    raw.descrizioneNormalizzata || raw.descrizione || raw.nome,
+    160
+  );
+  const descrizione = descrizioneNormalizzata || descrizioneOriginale;
   if (!descrizione) return null;
   const quantita = normalizzaQuantitaField(raw.quantita);
   return {
     descrizione,
+    descrizioneOriginale: descrizioneOriginale || descrizione,
+    descrizioneNormalizzata: descrizioneNormalizzata || descrizione,
     quantita: quantita ?? 1,
     unita: normalizzaUnitaField(raw.unita),
     note: troncaFieldStringa(raw.note, 200),
@@ -99,7 +109,15 @@ export function normalizzaElementoLavorazione(raw) {
  */
 export function normalizzaElementoMateriale(raw) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const descrizione = troncaFieldStringa(raw.descrizione || raw.nome, 160);
+  const descrizioneOriginale = troncaFieldStringa(
+    raw.descrizioneOriginale || raw.descrizione || raw.nome,
+    160
+  );
+  const descrizioneNormalizzata = troncaFieldStringa(
+    raw.descrizioneNormalizzata || raw.descrizione || raw.nome,
+    160
+  );
+  const descrizione = descrizioneNormalizzata || descrizioneOriginale;
   if (!descrizione) return null;
   const quantita = normalizzaQuantitaField(raw.quantita);
   const specifiche = Array.isArray(raw.specifiche)
@@ -110,6 +128,8 @@ export function normalizzaElementoMateriale(raw) {
     : [];
   return {
     descrizione,
+    descrizioneOriginale: descrizioneOriginale || descrizione,
+    descrizioneNormalizzata: descrizioneNormalizzata || descrizione,
     quantita: quantita ?? 1,
     unita: normalizzaUnitaField(raw.unita),
     specifiche,

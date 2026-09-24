@@ -77,11 +77,24 @@ const PATTERN_LAVORAZIONI = Object.freeze([
 ]);
 
 function pushUnico(lista, el) {
-  const chiave = `${el.descrizione}|${el.quantita}|${el.unita}|${el.note || ""}`;
-  if (lista.some((x) => `${x.descrizione}|${x.quantita}|${x.unita}|${x.note || ""}` === chiave)) {
+  const desc = el.descrizioneNormalizzata || el.descrizione;
+  const chiave = `${desc}|${el.quantita}|${el.unita}|${el.note || ""}`;
+  if (
+    lista.some(
+      (x) =>
+        `${x.descrizioneNormalizzata || x.descrizione}|${x.quantita}|${x.unita}|${x.note || ""}` ===
+        chiave
+    )
+  ) {
     return;
   }
-  lista.push(el);
+  const descrizione = desc;
+  lista.push({
+    ...el,
+    descrizione,
+    descrizioneOriginale: el.descrizioneOriginale || descrizione,
+    descrizioneNormalizzata: el.descrizioneNormalizzata || descrizione,
+  });
 }
 
 function estraiMq(testoNorm) {

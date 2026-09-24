@@ -245,3 +245,81 @@ describe("Field Assistant — contract e conferma", () => {
     expect(r.trascrizione).toBeTruthy();
   });
 });
+
+describe("Field Assistant — fixture realistiche checklist", () => {
+  it("25 punti luce → quantità 25", () => {
+    const r = estraiLavorazioniLocale(FIXTURE_LAVORAZIONI.venticinqueLuci);
+    expect(r.ok).toBe(true);
+    const luce = r.data.elementi.find((e) => /luce/i.test(e.descrizione));
+    expect(luce?.quantita).toBe(25);
+  });
+
+  it("10 prese e 4 punti luce → due elementi", () => {
+    const r = estraiLavorazioniLocale(FIXTURE_LAVORAZIONI.dieciEQuattro);
+    expect(r.ok).toBe(true);
+    expect(r.data.elementi.length).toBeGreaterThanOrEqual(2);
+    expect(
+      r.data.elementi.some((e) => /presa/i.test(e.descrizione) && e.quantita === 10)
+    ).toBe(true);
+    expect(
+      r.data.elementi.some((e) => /luce/i.test(e.descrizione) && e.quantita === 4)
+    ).toBe(true);
+  });
+
+  it("50 metri FG16 3x2.5 → 50 m", () => {
+    const r = estraiMaterialiLocale(FIXTURE_MATERIALI.cinquantaFg16);
+    expect(r.ok).toBe(true);
+    const cavo = r.data.elementi.find((e) => /fg16|cavo/i.test(e.descrizione));
+    expect(cavo?.quantita).toBe(50);
+    expect(cavo?.unita).toBe("m");
+  });
+
+  it("2 scatole 503 → 2 pz", () => {
+    const r = estraiMaterialiLocale(FIXTURE_MATERIALI.dueScatole);
+    expect(r.ok).toBe(true);
+    const s = r.data.elementi.find((e) => /503/i.test(e.descrizione));
+    expect(s?.quantita).toBe(2);
+    expect(s?.unita).toBe("pz");
+  });
+
+  it("match id esatto listino", () => {
+    const m = matchLavorazioneConListino(
+      { descrizione: "qualsiasi", listinoId: "punto-luce", quantita: 1 },
+      LISTINO
+    );
+    expect(m.stato).toBe("match");
+    expect(m.id).toBe("punto-luce");
+    expect(m.candidato.prezzo).toBe(45);
+  });
+
+  it("match nested ha confidence e max 3 candidati", () => {
+    const listinoDoppio = [
+      ...LISTINO,
+      { id: "pl2", nome: "Punto luce LED", prezzo: 50, unita: "cad" },
+      { id: "pl3", nome: "Punto luce emergenza", prezzo: 60, unita: "cad" },
+      { id: "pl4", nome: "Punto luce esterno", prezzo: 70, unita: "cad" },
+    ];
+    const m = matchLavorazioneConListino(
+      { descrizione: "punto luce", quantita: 1 },
+      listinoDoppio
+    );
+    expect(m.candidati.length).toBeLessThanOrEqual(3);
+    expect(typeof m.confidence).toBe("number");
+  });
+
+  it("locale-first: con elementi locali non richiede AI per ok", async () => {
+    const r = await elaboraLavorazioniDaTesto("80 punti luce", {
+      listino: LISTINO,
+      usaProvider: true,
+      providerOpzioni: {
+        fetchImpl: async () => {
+          throw new Error("non deve essere chiamato se locale forte");
+        },
+      },
+    });
+    // Senza endpoint reale usaProvider + getAiAssistantEndpoint tipicamente false in test
+    expect(r.ok).toBe(true);
+    expect(r.persistito).toBe(false);
+    expect(r.fonte).toBe("locale");
+  });
+});

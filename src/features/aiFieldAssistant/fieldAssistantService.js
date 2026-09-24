@@ -1,7 +1,7 @@
 /**
  * Orchestrazione Field Assistant:
- * testo → estrazione (locale, opzionale AI) → match listino/catalogo → preview.
- * Nessun salvataggio qui.
+ * testo → estrazione locale → match listino/catalogo → (AI solo se locale debole) → preview.
+ * Nessun salvataggio qui. Matching locale PRIMA di qualsiasi chiamata AI.
  */
 
 import { selezionaVociAttive } from "../listino/listinoCatalogDomain";
@@ -19,6 +19,18 @@ import { estraiConProviderAi } from "./fieldAssistantProvider";
 import { getAiAssistantEndpoint } from "../ai/aiProvider";
 
 /**
+ * Locale "forte" = almeno un elemento e confidence non bassa.
+ * @param {object|null} estrazione
+ */
+function estrazioneLocaleSufficiente(estrazione) {
+  if (!estrazione) return false;
+  const n = (estrazione.elementi || []).length;
+  if (n === 0) return false;
+  if (estrazione.confidence === "bassa" && n < 2) return false;
+  return true;
+}
+
+/**
  * @param {string} testo
  * @param {{
  *   listino?: object[],
@@ -27,45 +39,73 @@ import { getAiAssistantEndpoint } from "../ai/aiProvider";
  * }=} opzioni
  */
 export async function elaboraLavorazioniDaTesto(testo, opzioni = {}) {
+  // 1) Locale sempre
   const locale = estraiLavorazioniLocale(testo);
   let estrazione = locale.ok ? locale.data : null;
   let fonte = "locale";
   let avvisoAi = "";
 
-  if (opzioni.usaProvider && getAiAssistantEndpoint()) {
+  const listino =
+    opzioni.listino || selezionaVociAttive(leggiListino()) || [];
+
+  // 2) Match locale PRIMA di qualsiasi AI (privacy + costi)
+  let abbinate = abbinaLavorazioniAlListino(
+    estrazione?.elementi || [],
+    listino
+  );
+  let ambigueEstratte = abbinaLavorazioniAlListino(
+    estrazione?.elementiAmbigui || [],
+    listino
+  );
+
+  const localeOk = estrazioneLocaleSufficiente(estrazione);
+  const matchDebole =
+    abbinate.length === 0 ||
+    abbinate.every((v) => v.match?.stato === "non_trovato");
+
+  // 3) AI solo se richiesto E locale insufficiente
+  const vuoleAi = Boolean(opzioni.usaProvider);
+  const endpointOk = Boolean(getAiAssistantEndpoint());
+
+  if (vuoleAi && endpointOk && (!localeOk || matchDebole)) {
     const remoto = await estraiConProviderAi(
       FIELD_TIPI.lavorazioni,
       testo,
       opzioni.providerOpzioni
     );
-    if (remoto.ok) {
+    if (remoto.ok && remoto.data?.elementi?.length) {
       estrazione = remoto.data;
       fonte = "provider";
-    } else if (!estrazione || estrazione.elementi.length === 0) {
+      abbinate = abbinaLavorazioniAlListino(estrazione.elementi, listino);
+      ambigueEstratte = abbinaLavorazioniAlListino(
+        estrazione.elementiAmbigui || [],
+        listino
+      );
+    } else {
       avvisoAi =
-        remoto.messaggio || "Assistente AI non disponibile offline.";
+        remoto.messaggio ||
+        "Assistente AI non disponibile. Uso interpretazione locale.";
     }
-  } else if (opzioni.usaProvider && !getAiAssistantEndpoint()) {
+  } else if (vuoleAi && !endpointOk) {
     avvisoAi = "Assistente AI non disponibile offline.";
+  } else if (vuoleAi && localeOk && !matchDebole) {
+    // Locale sufficiente: nessuna chiamata AI (privacy/costi)
+    avvisoAi = "";
   }
 
-  if (!estrazione) {
+  if (!estrazione || !(estrazione.elementi || []).length) {
     return {
       ok: false,
       codice: locale.codice || "estrazione_fallita",
       messaggio: "Non riesco a elaborare il contenuto.",
       testoOriginale: String(testo || ""),
-      avvisoAi,
+      avvisoAi:
+        avvisoAi ||
+        (vuoleAi && !endpointOk
+          ? "Assistente AI non disponibile offline."
+          : ""),
     };
   }
-
-  const listino =
-    opzioni.listino || selezionaVociAttive(leggiListino()) || [];
-  const abbinate = abbinaLavorazioniAlListino(estrazione.elementi, listino);
-  const ambigueEstratte = abbinaLavorazioniAlListino(
-    estrazione.elementiAmbigui || [],
-    listino
-  );
 
   return {
     ok: true,
@@ -82,7 +122,6 @@ export async function elaboraLavorazioniDaTesto(testo, opzioni = {}) {
     voci: abbinate,
     vociAmbigue: ambigueEstratte,
     avvisoAi,
-    // Nessun salvataggio — solo preview
     persistito: false,
   };
 }
@@ -101,20 +140,52 @@ export async function elaboraMaterialiDaTesto(testo, opzioni = {}) {
   let fonte = "locale";
   let avvisoAi = "";
 
-  if (opzioni.usaProvider && getAiAssistantEndpoint()) {
+  let catalogo = opzioni.catalogo;
+  if (!catalogo) {
+    try {
+      catalogo = caricaCatalogoMateriali();
+    } catch {
+      catalogo = undefined;
+    }
+  }
+
+  let materiali = abbinaMaterialiAlCatalogo(
+    estrazione?.elementi || [],
+    catalogo
+  );
+  let materialiAmbigui = abbinaMaterialiAlCatalogo(
+    estrazione?.elementiAmbigui || [],
+    catalogo
+  );
+
+  const localeOk = estrazioneLocaleSufficiente(estrazione);
+  const matchDebole =
+    materiali.length === 0 ||
+    materiali.every((m) => m.match?.stato === "non_trovato");
+
+  const vuoleAi = Boolean(opzioni.usaProvider);
+  const endpointOk = Boolean(getAiAssistantEndpoint());
+
+  if (vuoleAi && endpointOk && (!localeOk || matchDebole)) {
     const remoto = await estraiConProviderAi(
       FIELD_TIPI.materiali,
       testo,
       opzioni.providerOpzioni
     );
-    if (remoto.ok) {
+    if (remoto.ok && remoto.data?.elementi?.length) {
       estrazione = remoto.data;
       fonte = "provider";
-    } else if (!estrazione || estrazione.elementi.length === 0) {
+      materiali = abbinaMaterialiAlCatalogo(estrazione.elementi, catalogo);
+      materialiAmbigui = abbinaMaterialiAlCatalogo(
+        estrazione.elementiAmbigui || [],
+        catalogo
+      );
+    } else {
       avvisoAi =
-        remoto.messaggio || "Assistente AI non disponibile offline.";
+        remoto.messaggio ||
+        "Assistente AI non disponibile. Uso interpretazione locale.";
     }
-  } else if (opzioni.usaProvider && !getAiAssistantEndpoint()) {
+  } else if (vuoleAi && !endpointOk) {
     avvisoAi = "Assistente AI non disponibile offline.";
   }
 
@@ -128,21 +199,6 @@ export async function elaboraMaterialiDaTesto(testo, opzioni = {}) {
       avvisoAi,
     };
   }
-
-  let catalogo = opzioni.catalogo;
-  if (!catalogo) {
-    try {
-      catalogo = caricaCatalogoMateriali();
-    } catch {
-      catalogo = undefined;
-    }
-  }
-
-  const materiali = abbinaMaterialiAlCatalogo(estrazione.elementi, catalogo);
-  const materialiAmbigui = abbinaMaterialiAlCatalogo(
-    estrazione.elementiAmbigui || [],
-    catalogo
-  );
 
   return {
     ok: true,
@@ -172,7 +228,11 @@ export function payloadMaterialiDaConferma(materialiConfermati = []) {
     .map((m) => {
       const candidato = m.matchScelto || m.match?.candidato || null;
       return {
-        nome: candidato?.nome || m.descrizione,
+        nome:
+          candidato?.nome ||
+          m.descrizioneNormalizzata ||
+          m.descrizione ||
+          m.descrizioneOriginale,
         quantita: Number(m.quantita) || 1,
         unita: candidato?.unita || m.unita || "pz",
         famigliaId: candidato?.famigliaId || undefined,

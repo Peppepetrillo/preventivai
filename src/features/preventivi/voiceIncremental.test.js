@@ -43,6 +43,20 @@ describe("rilevaComandoIncrementale", () => {
     });
   });
 
+  it("riconosce «Porta a N …» e «aggiungi altri N»", () => {
+    expect(rilevaComandoIncrementale("Porta a 60 i punti luce")).toMatchObject({
+      azione: AZIONE_INCREMENTALE.IMPOSTA,
+      quantita: 60,
+      targetFrase: expect.stringMatching(/punt/i),
+    });
+    expect(
+      rilevaComandoIncrementale("aggiungi altri 20 metri di corrugato da 25")
+    ).toMatchObject({
+      azione: AZIONE_INCREMENTALE.AGGIUNGI,
+      quantita: 20,
+    });
+  });
+
   it("ignora frasi non incremental", () => {
     expect(
       rilevaComandoIncrementale("80 punti luce e 60 prese quadro nuovo")

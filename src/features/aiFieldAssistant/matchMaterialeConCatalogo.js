@@ -63,29 +63,80 @@ function scoreVariante(descrizioneNorm, famiglia, variante) {
 }
 
 /**
- * @param {{ descrizione: string, quantita?: number, unita?: string, specifiche?: string[] }} elemento
+ * @param {{ descrizione?: string, descrizioneNormalizzata?: string, descrizioneOriginale?: string, quantita?: number, unita?: string, specifiche?: string[] }} elemento
  * @param {Array=} catalogo
  */
 export function matchMaterialeConCatalogo(
   elemento,
   catalogo = CATALOGO_MATERIALI_SEED
 ) {
-  const descrizione = String(elemento?.descrizione || "").trim();
+  const descrizioneOriginale = String(
+    elemento?.descrizioneOriginale || elemento?.descrizione || ""
+  ).trim();
+  const descrizioneNormalizzata = String(
+    elemento?.descrizioneNormalizzata ||
+      elemento?.descrizione ||
+      descrizioneOriginale
+  ).trim();
   const descrizioneNorm = normalizzaTestoField(
-    [descrizione, ...(elemento?.specifiche || [])].join(" ")
+    [descrizioneNormalizzata, ...(elemento?.specifiche || [])].join(" ")
   );
   const elenco = Array.isArray(catalogo) ? catalogo : CATALOGO_MATERIALI_SEED;
+  const baseEl = {
+    ...elemento,
+    descrizione: descrizioneNormalizzata || descrizioneOriginale,
+    descrizioneOriginale: descrizioneOriginale || descrizioneNormalizzata,
+    descrizioneNormalizzata: descrizioneNormalizzata || descrizioneOriginale,
+  };
 
   if (!descrizioneNorm) {
     return {
       stato: "non_trovato",
-      messaggio: "Materiale non trovato nel catalogo",
+      id: null,
       candidati: [],
-      elemento,
+      confidence: 0,
+      messaggio: "Materiale non trovato nel catalogo",
+      candidato: null,
+      elemento: baseEl,
     };
   }
 
-  // Ricerca famiglia grezza poi score varianti
+  // ID variante esatto
+  const varianteIdReq = String(elemento?.varianteId || "").trim();
+  if (varianteIdReq) {
+    for (const famiglia of elenco) {
+      const variante = (famiglia.varianti || []).find(
+        (v) => v.id === varianteIdReq
+      );
+      if (variante) {
+        const c = {
+          id: variante.id,
+          famigliaId: famiglia.id,
+          varianteId: variante.id,
+          nome: `${famiglia.nome} — ${variante.etichetta}`,
+          unita: variante.unita || famiglia.unitaDefault || elemento.unita || "pz",
+          prezzoIndicativo:
+            variante.prezzoIndicativo != null
+              ? Number(variante.prezzoIndicativo)
+              : null,
+          prezzoDalCatalogo: variante.prezzoIndicativo != null,
+          punteggio: 100,
+          confidence: 0.99,
+          metodo: "id",
+        };
+        return {
+          stato: "match",
+          id: c.varianteId,
+          candidati: [c],
+          confidence: 0.99,
+          messaggio: "",
+          candidato: c,
+          elemento: baseEl,
+        };
+      }
+    }
+  }
+
   const queryTokens = tokenizzaField(descrizioneNorm).filter((t) => t.length > 2);
   let famiglie = elenco;
   if (queryTokens.length) {
@@ -114,11 +165,11 @@ export function matchMaterialeConCatalogo(
   const top = ranked.slice(0, FIELD_AI_LIMITI.maxCandidateMatch);
 
   const candidati = top.map(({ famiglia, variante, punteggio }) => ({
+    id: variante.id,
     famigliaId: famiglia.id,
     varianteId: variante.id,
     nome: `${famiglia.nome} — ${variante.etichetta}`,
     unita: variante.unita || famiglia.unitaDefault || elemento.unita || "pz",
-    // prezzo solo se già in catalogo (indicativo) — non inventato
     prezzoIndicativo:
       variante.prezzoIndicativo != null &&
       Number.isFinite(Number(variante.prezzoIndicativo))
@@ -126,14 +177,19 @@ export function matchMaterialeConCatalogo(
         : null,
     prezzoDalCatalogo: variante.prezzoIndicativo != null,
     punteggio,
+    confidence: Math.min(0.99, Math.max(0.4, punteggio / 50)),
+    metodo: "fuzzy",
   }));
 
   if (candidati.length === 0) {
     return {
       stato: "non_trovato",
-      messaggio: "Materiale non trovato nel catalogo",
+      id: null,
       candidati: [],
-      elemento,
+      confidence: 0,
+      messaggio: "Materiale non trovato nel catalogo",
+      candidato: null,
+      elemento: baseEl,
     };
   }
 
@@ -147,18 +203,23 @@ export function matchMaterialeConCatalogo(
   if (chiaro) {
     return {
       stato: "match",
+      id: candidati[0].varianteId,
+      candidati: candidati.slice(0, 1),
+      confidence: candidati[0].confidence,
       messaggio: "",
       candidato: candidati[0],
-      candidati: candidati.slice(0, 1),
-      elemento,
+      elemento: baseEl,
     };
   }
 
   return {
     stato: "ambigui",
-    messaggio: "Possibili corrispondenze — scegli tu.",
+    id: null,
     candidati,
-    elemento,
+    confidence: 0.5,
+    messaggio: "Possibili corrispondenze — scegli tu.",
+    candidato: null,
+    elemento: baseEl,
   };
 }
 
@@ -169,6 +230,10 @@ export function matchMaterialeConCatalogo(
 export function abbinaMaterialiAlCatalogo(elementi = [], catalogo) {
   return (Array.isArray(elementi) ? elementi : []).map((el) => ({
     ...el,
+    descrizione:
+      el.descrizioneNormalizzata || el.descrizione || el.descrizioneOriginale,
+    descrizioneOriginale: el.descrizioneOriginale || el.descrizione || "",
+    descrizioneNormalizzata: el.descrizioneNormalizzata || el.descrizione || "",
     match: matchMaterialeConCatalogo(el, catalogo),
     quantita: el.quantita ?? 1,
   }));

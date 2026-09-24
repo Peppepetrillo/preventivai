@@ -3,7 +3,7 @@
  * Nessun salvataggio senza conferma. Nessun prezzo inventato.
  */
 
-import { useCallback, useId, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { Mic, MicOff, Check, Pencil, Package } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
@@ -31,6 +31,7 @@ export default function MemoMaterialiSheet({
   const [righe, setRighe] = useState([]);
   const [errore, setErrore] = useState("");
   const testoId = useId();
+  const busyRef = useRef(false);
 
   const onTestoVoce = useCallback((t) => {
     setTesto(t);
@@ -50,6 +51,7 @@ export default function MemoMaterialiSheet({
   } = useRiconoscimentoVocale({ onTesto: onTestoVoce });
 
   function reset() {
+    busyRef.current = false;
     setTesto("");
     setFase(FASE.IDLE);
     setPreview(null);
@@ -65,12 +67,14 @@ export default function MemoMaterialiSheet({
   }
 
   async function elabora() {
+    if (busyRef.current) return;
     if (!testo.trim()) {
       setErrore("Detta o scrivi i materiali da aggiungere.");
       setFase(FASE.ERROR);
       return;
     }
     if (inAscolto) ferma();
+    busyRef.current = true;
     setFase(FASE.PROCESSING);
     setErrore("");
     try {
@@ -99,22 +103,39 @@ export default function MemoMaterialiSheet({
     } catch {
       setErrore("Non riesco a elaborare il contenuto.");
       setFase(FASE.ERROR);
+    } finally {
+      busyRef.current = false;
     }
   }
 
   function conferma() {
+    if (busyRef.current) return;
     const daSalvare = righe.filter((r) => !r.escluso);
     if (!daSalvare.length) {
       setErrore("Nessun materiale da aggiungere.");
       return;
     }
-    const payload = payloadMaterialiDaConferma(daSalvare);
-    onConferma?.(payload, {
-      trascrizione: preview?.trascrizione || testo,
-      preview,
-    });
-    chiudi();
+    busyRef.current = true;
+    try {
+      const payload = payloadMaterialiDaConferma(daSalvare);
+      onConferma?.(payload, {
+        trascrizione: preview?.trascrizione || testo,
+        preview,
+      });
+      chiudi();
+    } finally {
+      busyRef.current = false;
+    }
   }
+
+  const attive = righe.filter((r) => !r.escluso);
+  const nDaVerificare = attive.filter(
+    (r) =>
+      !r.matchScelto ||
+      r.match?.stato === "ambigui" ||
+      r.ambiguo ||
+      r.match?.stato === "non_trovato"
+  ).length;
 
   return (
     <BottomSheet
@@ -190,13 +211,23 @@ export default function MemoMaterialiSheet({
                 {preview?.trascrizione || testo}
               </p>
             </div>
-            <p className="ds-text-secondary">
-              {preview?.confidenceEtichetta || "Controlla prima di aggiungere."}
-            </p>
-            {preview?.avvisoAi ? (
-              <p className="text-xs text-amber-700 dark:text-amber-300">
-                {preview.avvisoAi}
+            <div data-testid="memo-materiali-riepilogo">
+              <p className="ds-card-title">
+                Ho capito — {attive.length} element
+                {attive.length === 1 ? "o" : "i"}
               </p>
+              <p className="ds-text-secondary mt-1">
+                {preview?.confidenceEtichetta || "Controlla prima di aggiungere."}
+              </p>
+              {nDaVerificare > 0 ? (
+                <p className="text-sm text-[var(--warning)] mt-2 font-medium">
+                  ⚠️ {nDaVerificare} elemento
+                  {nDaVerificare === 1 ? "" : "i"} da verificare
+                </p>
+              ) : null}
+            </div>
+            {preview?.avvisoAi ? (
+              <p className="text-xs text-[var(--warning)]">{preview.avvisoAi}</p>
             ) : null}
             <p className="section-label">Materiali riconosciuti</p>
             <ul className="space-y-2" data-testid="memo-materiali-preview">
@@ -216,29 +247,30 @@ export default function MemoMaterialiSheet({
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="ds-text-primary font-semibold">
-                          {r.quantita} {r.unita} — {r.descrizione}
+                          {r.quantita} {r.unita} —{" "}
+                          {r.descrizioneNormalizzata || r.descrizione}
                         </p>
                         {stato === "ok" ? (
-                          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                          <p className="text-xs text-[var(--success)] mt-1">
                             Catalogo: {r.matchScelto.nome}
                           </p>
                         ) : stato === "ambigui" ? (
-                          <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                          <p className="text-xs text-[var(--warning)] mt-1">
                             Possibili corrispondenze
                           </p>
                         ) : stato === "ambiguo" ? (
-                          <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                          <p className="text-xs text-[var(--warning)] mt-1">
                             {r.note || "Mi manca un'informazione"}
                           </p>
                         ) : (
-                          <p className="text-xs text-slate-500 mt-1">
+                          <p className="text-xs text-[var(--text-secondary)] mt-1">
                             Materiale non trovato nel catalogo
                           </p>
                         )}
                       </div>
                       <button
                         type="button"
-                        className="text-xs font-semibold text-slate-500 min-h-[44px] px-2"
+                        className="text-xs font-semibold text-[var(--text-secondary)] min-h-[48px] px-2"
                         onClick={() =>
                           setRighe((prev) =>
                             prev.map((x, i) =>
@@ -256,7 +288,7 @@ export default function MemoMaterialiSheet({
                           <button
                             key={c.varianteId || c.nome}
                             type="button"
-                            className="btn-secondary min-h-[44px] text-left text-sm px-3"
+                            className="btn-secondary min-h-[48px] text-left text-sm px-3"
                             onClick={() =>
                               setRighe((prev) =>
                                 prev.map((x, i) =>
@@ -270,7 +302,7 @@ export default function MemoMaterialiSheet({
                         ))}
                         <button
                           type="button"
-                          className="text-xs font-semibold text-slate-500 min-h-[44px]"
+                          className="text-xs font-semibold text-[var(--text-secondary)] min-h-[48px]"
                           onClick={() =>
                             setRighe((prev) =>
                               prev.map((x, i) =>
@@ -293,7 +325,7 @@ export default function MemoMaterialiSheet({
                     ) : stato === "manca" || stato === "ambiguo" ? (
                       <button
                         type="button"
-                        className="text-xs font-semibold text-[var(--primary)] min-h-[44px]"
+                        className="text-xs font-semibold text-[var(--primary)] min-h-[48px]"
                         onClick={() =>
                           setRighe((prev) =>
                             prev.map((x, i) =>
@@ -336,11 +368,11 @@ export default function MemoMaterialiSheet({
                 onClick={conferma}
               >
                 <Check size={18} />
-                Aggiungi al lavoro
+                Conferma e aggiungi
               </button>
             </div>
             {errore ? (
-              <p className="text-sm text-red-600" role="alert">
+              <p className="text-sm text-[var(--danger)]" role="alert">
                 {errore}
               </p>
             ) : null}

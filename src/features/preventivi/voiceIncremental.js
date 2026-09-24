@@ -167,6 +167,13 @@ export function rilevaComandoIncrementale(testo) {
       ),
     },
     {
+      // "porta a 60 i punti luce" / "imposta a 60 punti luce"
+      azione: AZIONE_INCREMENTALE.IMPOSTA,
+      re: new RegExp(
+        `^(?:porta|imposta|modifica)\\s+a\\s+${qty}\\s+(?:le\\s+|i\\s+|l[''])?(.+)$`
+      ),
+    },
+    {
       azione: AZIONE_INCREMENTALE.IMPOSTA,
       re: new RegExp(
         `^(?:porta|imposta|modifica)\\s+(?:le\\s+|i\\s+|l[''])?(.+?)\\s+a\\s+${qty}$`
@@ -179,9 +186,10 @@ export function rilevaComandoIncrementale(testo) {
       re: new RegExp(`^metti\\s+${qty}\\s+(.+)$`),
     },
     {
+      // "aggiungi altri 20 metri di corrugato"
       azione: AZIONE_INCREMENTALE.AGGIUNGI,
       re: new RegExp(
-        `^(?:aggiungi|inserisci)\\s+${qty}\\s+(.+)$`
+        `^(?:aggiungi|inserisci)\\s+(?:altri\\s+|altre\\s+|ancora\\s+)?${qty}\\s+(.+)$`
       ),
     },
   ];
