@@ -1,10 +1,8 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import DatePickerField, {
-  dataItToIso,
-  isoToDataIt,
-} from "./DatePickerField";
+import DatePickerField from "./DatePickerField";
+import { dataItToIso, isoToDataIt } from "./datePickerUtils";
 
 describe("DatePickerField", () => {
   const oggi = new Date(2026, 6, 29);

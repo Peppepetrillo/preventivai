@@ -1,8 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import './theme/bootstrapTheme.js'
 import './index.css'
 import App from './App.jsx'
 import CloudAuthProvider from './components/CloudAuthProvider.jsx'
+import { ThemeProvider } from './theme/ThemeProvider.jsx'
 import { richiediPersistenzaLocale } from './utils/persistenzaLocale.js'
 import { inizializzaStorageNativo } from './utils/storage.js'
 import { ricaricaCodeCloudDaDisco } from './services/cloudSyncService.js'
@@ -23,7 +25,9 @@ void inizializzaNotifiche()
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <CloudAuthProvider>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </CloudAuthProvider>
   </StrictMode>,
 )

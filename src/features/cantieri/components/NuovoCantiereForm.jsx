@@ -7,13 +7,14 @@ export default function NuovoCantiereForm({
   onAggiornaCampo,
   onCreaCantiere,
   compatto = false,
+  salvando = false,
 }) {
   return (
     <section className={compatto ? "space-y-3" : "pro-panel p-5 mb-5"}>
       {!compatto ? (
         <div className="flex items-center gap-3 mb-4">
           <HardHat size={24} className="text-yellow-300" aria-hidden="true" />
-          <h2 className="text-xl font-black">Nuovo cantiere</h2>
+          <h2 className="text-xl font-black">Nuovo lavoro</h2>
         </div>
       ) : null}
 
@@ -80,11 +81,12 @@ export default function NuovoCantiereForm({
         <button
           type="button"
           onClick={onCreaCantiere}
-          className="btn-primary min-h-[48px] px-5 py-3 flex items-center justify-center gap-2 text-sm font-black sm:col-span-2"
+          disabled={salvando}
+          className="btn-primary min-h-[48px] px-5 py-3 flex items-center justify-center gap-2 text-sm font-black sm:col-span-2 disabled:opacity-40"
           data-testid="nuovo-cantiere-crea"
         >
           <Plus size={18} aria-hidden="true" />
-          Crea lavoro
+          {salvando ? "Creazione…" : "Crea lavoro"}
         </button>
       </div>
     </section>

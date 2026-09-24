@@ -25,20 +25,64 @@ export function sanitizzaCantieriPerAppRecords(cantieri) {
 
   return cantieri.map((cantiere) => {
     if (!cantiere || typeof cantiere !== "object") return cantiere;
-    if (!Array.isArray(cantiere.foto)) return cantiere;
 
-    return {
-      ...cantiere,
-      foto: cantiere.foto.map((foto) => {
-        if (!foto || typeof foto !== "object") return foto;
-        const src = String(foto.src || "");
-        if (!src.startsWith("data:")) return foto;
-        return {
-          ...foto,
-          src: "",
-        };
-      }),
-    };
+    let prossimo = cantiere;
+
+    if (Array.isArray(cantiere.foto)) {
+      prossimo = {
+        ...prossimo,
+        foto: cantiere.foto.map((foto) => {
+          if (!foto || typeof foto !== "object") return foto;
+          const src = String(foto.src || "");
+          if (!src.startsWith("data:")) return foto;
+          return {
+            ...foto,
+            src: "",
+          };
+        }),
+      };
+    }
+
+    if (Array.isArray(prossimo.progettiElettrici)) {
+      prossimo = {
+        ...prossimo,
+        progettiElettrici: prossimo.progettiElettrici.map((voce) => {
+          if (!voce || typeof voce !== "object") return voce;
+          return {
+            id: voce.id,
+            tipo: voce.tipo,
+            nome: voce.nome,
+            mimeType: voce.mimeType,
+            size: voce.size,
+            blobId: voce.blobId,
+            cantiereId: voce.cantiereId,
+            createdAt: voce.createdAt,
+            updatedAt: voce.updatedAt,
+          };
+        }),
+      };
+    }
+
+    // Retrocompat: singolo legacy ancora presente su alcuni device.
+    if (prossimo.progettoElettrico && typeof prossimo.progettoElettrico === "object") {
+      const pe = prossimo.progettoElettrico;
+      prossimo = {
+        ...prossimo,
+        progettoElettrico: {
+          id: pe.id,
+          tipo: pe.tipo,
+          nome: pe.nome,
+          mimeType: pe.mimeType,
+          size: pe.size,
+          blobId: pe.blobId,
+          cantiereId: pe.cantiereId,
+          createdAt: pe.createdAt,
+          updatedAt: pe.updatedAt,
+        },
+      };
+    }
+
+    return prossimo;
   });
 }
 

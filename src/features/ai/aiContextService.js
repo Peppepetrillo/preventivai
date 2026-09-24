@@ -11,6 +11,7 @@ import {
 } from "./aiStatistiche";
 import { trovaLavoriSimili } from "./trovaLavoriSimili";
 import { ETICHETTE_CATEGORIA_LAVORO } from "./aiTypes";
+import { scrubTestoLiberoAi } from "./scrubTestoLiberoAi";
 
 /**
  * Normalizza input nuovo lavoro dal wizard / form.
@@ -19,7 +20,7 @@ import { ETICHETTE_CATEGORIA_LAVORO } from "./aiTypes";
 export function normalizzaNuovoLavoroAi(grezzo = {}) {
   const lavorazioni = Array.isArray(grezzo.lavorazioni)
     ? grezzo.lavorazioni.map((v) => ({
-        nome: String(v?.nome || "").trim(),
+        nome: scrubTestoLiberoAi(v?.nome || ""),
         categoria: String(v?.categoria || "").trim(),
       })).filter((v) => v.nome)
     : [];
@@ -27,15 +28,15 @@ export function normalizzaNuovoLavoroAi(grezzo = {}) {
   const materiali = Array.isArray(grezzo.materiali)
     ? grezzo.materiali
         .map((m) => (typeof m === "string" ? m : m?.nome || ""))
-        .map((n) => String(n).trim())
+        .map((n) => scrubTestoLiberoAi(n))
         .filter(Boolean)
     : lavorazioni
         .filter((v) => /material/i.test(v.categoria || ""))
         .map((v) => v.nome);
 
   return {
-    titolo: String(grezzo.titolo || grezzo.nome || "").trim(),
-    descrizione: String(grezzo.descrizione || "").trim(),
+    titolo: scrubTestoLiberoAi(grezzo.titolo || grezzo.nome || ""),
+    descrizione: scrubTestoLiberoAi(grezzo.descrizione || ""),
     tipoLavoro: String(grezzo.tipoLavoro || "").trim(),
     tipologiaImpianto: String(grezzo.tipologiaImpianto || "").trim(),
     lavorazioni,

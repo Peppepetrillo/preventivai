@@ -44,7 +44,7 @@ describe("Navigazione cantieri RC-1B", () => {
     );
 
     const link = screen.getByRole("link", {
-      name: /Apri cantiere Bianchi SRL/i,
+      name: /Apri lavoro Bianchi SRL/i,
     });
     expect(link).toHaveAttribute("href", routeCantiere("c-100"));
     expect(screen.getByText("Quadro ufficio")).toBeInTheDocument();

@@ -1,0 +1,37 @@
+---
+description: PreventivAI data, storage, sync, and security safety rules
+alwaysApply: true
+---
+
+# PreventivAI Data Safety
+
+PreventivAI manages business data for electricians. Treat local data, sync data, PDFs, photos, signatures, and customer records as sensitive.
+
+## Protected areas
+
+Ask for human approval before changing:
+
+- Storage keys or `APP_DATA_KEYS`.
+- Repository serialization formats.
+- Sync conflict behavior.
+- Backup/restore behavior.
+- Supabase table/function contracts.
+- PDF content that changes legal/business meaning.
+- Authentication, PIN, lock, or security flows.
+
+## Required behavior
+
+- Preserve offline-first workflows.
+- Never delete user data as a side effect of cleanup or refactor work.
+- Keep `.env` and secrets out of Git.
+- Use `.env.example` only for names and placeholders.
+- Avoid real customer data in tests and fixtures.
+
+## Tests
+
+When touching storage, sync, backup, restore, security, or PDF generation, add focused tests for:
+
+- Existing data remains readable.
+- Missing/old fields are handled safely.
+- Invalid input fails gracefully.
+- Offline and no-secret modes still behave predictably.

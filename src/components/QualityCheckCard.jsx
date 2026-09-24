@@ -2,7 +2,8 @@ import { useId, useState } from "react";
 import { ClipboardCheck, ChevronDown } from "lucide-react";
 
 import QualityCheckItem from "./QualityCheckItem";
-import QualityScoreBadge, { fasciaScoreQualita } from "./QualityScoreBadge";
+import QualityScoreBadge from "./QualityScoreBadge";
+import { fasciaScoreQualita } from "./qualityScore";
 
 const DURATA_MS = 220;
 
