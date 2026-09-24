@@ -13,10 +13,16 @@
 
 import {
   AI_LIMITI,
+  AI_AZIONE,
+  FIELD_AI_AZIONI,
   costruisciSystemPrompt,
   costruisciUserPrompt,
+  costruisciSystemPromptField,
+  costruisciUserPromptField,
   validaRichiestaAnalisi,
+  validaRichiestaField,
   validaRispostaInsight,
+  validaRispostaField,
 } from "./contract.js";
 
 /** Origini tipiche Capacitor / Vite (senza aprire a tutto il web). */
@@ -222,6 +228,61 @@ Deno.serve(async (req) => {
       ok: false,
       codice: "payload_invalido",
       errore: "JSON non valido.",
+    });
+  }
+
+  const azione = String(body?.azione || "").trim();
+  const isField =
+    azione === FIELD_AI_AZIONI.estraiLavorazioni ||
+    azione === FIELD_AI_AZIONI.estraiMateriali;
+
+  if (isField) {
+    const validField = validaRichiestaField(body);
+    if (!validField.ok) {
+      return json(req, 400, {
+        ok: false,
+        codice: validField.codice,
+        errore: validField.messaggio,
+      });
+    }
+    const system = costruisciSystemPromptField(validField.tipo);
+    const user = costruisciUserPromptField(
+      validField.data.testo,
+      validField.tipo
+    );
+    const esitoModel = await chiamaOpenAI({
+      system,
+      user,
+      apiKey,
+      model,
+    });
+    if (!esitoModel.ok) {
+      const status = esitoModel.codice === "timeout" ? 504 : 502;
+      return json(req, status, {
+        ok: false,
+        codice: esitoModel.codice,
+        errore: "Non riesco a elaborare il contenuto.",
+      });
+    }
+    const validOut = validaRispostaField(esitoModel.parsed, validField.tipo);
+    if (!validOut.ok) {
+      return json(req, 502, {
+        ok: false,
+        codice: validOut.codice,
+        errore: "Risposta AI non valida.",
+      });
+    }
+    return json(req, 200, {
+      ok: true,
+      data: validOut.data,
+    });
+  }
+
+  if (azione && azione !== AI_AZIONE) {
+    return json(req, 400, {
+      ok: false,
+      codice: "azione_non_supportata",
+      errore: "Azione non supportata.",
     });
   }
 

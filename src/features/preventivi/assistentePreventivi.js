@@ -1,4 +1,6 @@
 import { calcolaSaldo, calcolaTotali, normalizzaNumero } from "../../utils/preventivi";
+import { estraiLavorazioniLocale } from "../aiFieldAssistant/estraiLavorazioniLocale";
+import { matchLavorazioneConListino } from "../aiFieldAssistant/matchLavorazioneConListino";
 
 const NUMERI_TESTUALI = {
   un: 1,
@@ -257,16 +259,108 @@ function estraiPagamento(testoNormalizzato, fallback = "Bonifico bancario") {
 }
 
 /**
+ * Field Assistant → listino: prezzi solo da match deterministico.
+ * @param {string} testo
+ * @param {object[]} listino
+ */
+function lavorazioniDaFieldAssistant(testo, listino) {
+  const estratto = estraiLavorazioniLocale(testo);
+  if (!estratto.ok || !estratto.data?.elementi?.length) {
+    return { lavorazioni: [], nonTrovate: [], informazioniExtra: [], confidence: null };
+  }
+
+  const lavorazioni = [];
+  const nonTrovate = [];
+  const ambigue = [];
+
+  for (const el of estratto.data.elementi) {
+    const match = matchLavorazioneConListino(el, listino);
+    if (match.stato === "match" && match.candidato) {
+      lavorazioni.push({
+        id: `field-${match.candidato.listinoId || match.candidato.nome}-${lavorazioni.length}`,
+        listinoId: match.candidato.listinoId,
+        nome: match.candidato.nome,
+        categoria: match.candidato.categoria || "Lavorazioni",
+        prezzo: normalizzaNumero(match.candidato.prezzo),
+        quantita: el.quantita ?? 1,
+        unita: match.candidato.unita || el.unita || "cad",
+        prezzoDalListino: true,
+        punteggio: match.candidato.punteggio,
+        candidatiAlternativi: [],
+      });
+    } else if (match.stato === "ambigui") {
+      ambigue.push({
+        ...el,
+        candidati: match.candidati,
+        messaggio: match.messaggio,
+      });
+      nonTrovate.push({
+        chiave: `ambigua|${el.descrizione}|${el.quantita}`,
+        nome: el.descrizione,
+        quantita: el.quantita ?? 1,
+        messaggio: match.messaggio || `Possibili corrispondenze per «${el.descrizione}».`,
+        candidati: match.candidati,
+      });
+    } else {
+      nonTrovate.push({
+        chiave: `${el.quantita}|${el.descrizione}`,
+        nome: el.descrizione,
+        quantita: el.quantita ?? 1,
+        messaggio: match.messaggio || `Non ho trovato «${el.descrizione}» nel listino.`,
+      });
+    }
+  }
+
+  for (const el of estratto.data.elementiAmbigui || []) {
+    nonTrovate.push({
+      chiave: `info|${el.descrizione}`,
+      nome: el.descrizione,
+      quantita: el.quantita ?? 1,
+      messaggio: el.note || "Mi manca un'informazione — controlla prima di aggiungere.",
+    });
+  }
+
+  return {
+    lavorazioni,
+    nonTrovate,
+    informazioniExtra: estratto.data.informazioniExtra || [],
+    confidence: estratto.data.confidence,
+    ambigue,
+  };
+}
+
+/**
  * Bozza da testo/voce: match listino locale, senza prezzi inventati.
+ * Preferisce Field Assistant (NL) e integra il matcher diretto listino.
  */
 export function generaBozzaPreventivoLocale({ testo, clienti, listino }) {
   const testoNormalizzato = normalizzaTesto(testo);
   const cliente = trovaCliente(testoNormalizzato, clienti);
-  const lavorazioni = creaLavorazioniSuggerite(
-    testoNormalizzato,
-    Array.isArray(listino) ? listino : []
+  const elenco = Array.isArray(listino) ? listino : [];
+
+  const field = lavorazioniDaFieldAssistant(testo, elenco);
+  const dirette = creaLavorazioniSuggerite(testoNormalizzato, elenco);
+
+  // Unisci: field first, poi dirette non duplicate
+  const lavorazioni = [...field.lavorazioni];
+  const nomiField = new Set(
+    lavorazioni.map((l) => normalizzaTesto(l.nome))
   );
-  const nonTrovate = estraiVociNonTrovate(testo, lavorazioni);
+  for (const lav of dirette) {
+    const chiave = normalizzaTesto(lav.nome);
+    if (nomiField.has(chiave)) continue;
+    lavorazioni.push(lav);
+    nomiField.add(chiave);
+  }
+
+  const nonTrovateField = field.nonTrovate || [];
+  const nonTrovateLegacy = estraiVociNonTrovate(testo, lavorazioni);
+  const chiavi = new Set(nonTrovateField.map((n) => n.chiave));
+  const nonTrovate = [
+    ...nonTrovateField,
+    ...nonTrovateLegacy.filter((n) => !chiavi.has(n.chiave)),
+  ];
+
   const sconto = estraiPercentuale(testoNormalizzato, "sconto", 0);
   const iva = estraiPercentuale(testoNormalizzato, "iva", 22);
   const validita = estraiValidita(testoNormalizzato, 30);
@@ -279,6 +373,8 @@ export function generaBozzaPreventivoLocale({ testo, clienti, listino }) {
     cliente: cliente?.nome || "",
     lavorazioni,
     nonTrovate,
+    informazioniExtra: field.informazioniExtra || [],
+    confidence: field.confidence,
     sconto,
     iva,
     validita,
@@ -305,7 +401,8 @@ export function generaBozzaPreventivoLocale({ testo, clienti, listino }) {
 }
 
 export async function generaBozzaPreventivoAI({ testo, clienti, listino }) {
-  // Locale-only: nessun POST di anagrafica. Prezzi solo da listino.
+  // Prezzi solo da listino. Nessun POST di anagrafica cliente.
+  // L'endpoint AI Field (opzionale) arricchisce solo l'estrazione strutturata lato service UI.
   void import.meta.env.VITE_AI_ASSISTANT_ENDPOINT;
   return generaBozzaPreventivoLocale({ testo, clienti, listino });
 }
