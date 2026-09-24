@@ -189,7 +189,6 @@ export default function Agenda() {
       )}
 
       <AgendaToolbar
-        cantieriAttivi={cantieriAttivi}
         onNuovoLavoro={() => setLavoroSheetAperto(true)}
         onNuovaAttivita={apriNuovaAttivita}
         onRegistraGiornata={() => {
@@ -215,7 +214,7 @@ export default function Agenda() {
         onChiudi={() => setLavoroSheetAperto(false)}
         onSalva={creaLavoro}
         dataDefault={dataDefaultAttivita}
-        title="Nuovo cantiere"
+        title="Nuovo lavoro"
         descrizione="Pianifica senza uscire dall'agenda."
       />
 
@@ -229,8 +228,12 @@ export default function Agenda() {
         dataDefault={dataDefaultAttivita}
         valoriIniziali={prefillConsuntivo}
         onSalva={(payload) => {
-          registraGiornataLavorativa(payload);
+          const esito = registraGiornataLavorativa(payload);
+          if (esito && esito.success === false) {
+            return esito;
+          }
           setPrefillConsuntivo(null);
+          return esito || { success: true };
         }}
       />
 

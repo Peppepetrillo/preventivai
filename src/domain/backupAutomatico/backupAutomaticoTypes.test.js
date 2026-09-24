@@ -6,6 +6,7 @@ import {
   backupAutomaticoScaduto,
   calcolaProssimoBackup,
   calcolaStatoBackupAutomatico,
+  etichettaErroreBackupAutomatico,
   formattaDataOraBackup,
   normalizzaConfigBackupAutomatico,
 } from "./backupAutomaticoTypes";
@@ -95,5 +96,18 @@ describe("backupAutomaticoTypes — scadenza e stato", () => {
   it("formatta data/ora in italiano o em dash se assente", () => {
     expect(formattaDataOraBackup(null)).toBe("—");
     expect(formattaDataOraBackup("2026-08-20T14:30:00.000Z")).toMatch(/20\/08\/2026/);
+  });
+
+  it("etichettaErroreBackupAutomatico evita snake_case in UI", () => {
+    expect(etichettaErroreBackupAutomatico("quota_superata")).toBe(
+      "spazio sul dispositivo esaurito"
+    );
+    expect(etichettaErroreBackupAutomatico("config_save_failed")).toBe(
+      "impostazioni non salvate"
+    );
+    expect(etichettaErroreBackupAutomatico("codice_sconosciuto")).toBe(
+      "riprova più tardi"
+    );
+    expect(etichettaErroreBackupAutomatico("Errore disco")).toBe("Errore disco");
   });
 });

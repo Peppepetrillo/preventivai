@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import NumericInput from "../../../components/NumericInput";
 import DatePickerField from "../../agenda/components/DatePickerField";
+import { messaggioErroreWorkflow } from "../../preventivi/utils/messaggioErroreWorkflow";
 import {
   CATEGORIE_SPESA,
   ETICHETTE_CATEGORIA_SPESA,
@@ -26,8 +27,49 @@ const FORM_VUOTO = {
   listaSpesaId: "",
 };
 
+function formIniziale(spesa, prefill) {
+  if (spesa) {
+    return {
+      descrizione: spesa.descrizione || "",
+      importo: spesa.importo != null ? String(spesa.importo) : "",
+      data: spesa.data || "",
+      categoria: spesa.categoria || CATEGORIE_SPESA.altro,
+      fornitore: spesa.fornitore || "",
+      metodoPagamento: spesa.metodoPagamento || "",
+      giornataId: spesa.giornataId || "",
+      note: spesa.note || "",
+      materialeId: spesa.materialeId || "",
+      listaSpesaId: spesa.listaSpesaId || "",
+    };
+  }
+  if (prefill) {
+    return {
+      ...FORM_VUOTO,
+      ...prefill,
+      importo:
+        prefill.importo != null && prefill.importo !== ""
+          ? String(prefill.importo)
+          : "",
+      data: prefill.data || new Date().toLocaleDateString("it-IT"),
+    };
+  }
+  return {
+    ...FORM_VUOTO,
+    data: new Date().toLocaleDateString("it-IT"),
+  };
+}
+
+function chiaveRemount(spesa, prefill) {
+  if (spesa?.id) return `spesa-${spesa.id}`;
+  if (prefill && typeof prefill === "object") {
+    return `prefill-${prefill.materialeId || ""}-${prefill.listaSpesaId || ""}-${prefill.descrizione || ""}-${prefill.importo || ""}`;
+  }
+  return "spesa-nuova";
+}
+
 /**
  * Bottom sheet crea/modifica spesa cantiere (UX-Spese v1/v2).
+ * Remount on open/id/prefill → seed senza setState-in-effect.
  */
 export default function SpesaSheet({
   open,
@@ -39,52 +81,37 @@ export default function SpesaSheet({
   onSalva,
   onElimina,
 }) {
+  if (!open) return null;
+  return (
+    <SpesaSheetBody
+      key={chiaveRemount(spesa, prefill)}
+      onClose={onClose}
+      spesa={spesa}
+      prefill={prefill}
+      daMateriale={daMateriale}
+      cantiere={cantiere}
+      onSalva={onSalva}
+      onElimina={onElimina}
+    />
+  );
+}
+
+function SpesaSheetBody({
+  onClose,
+  spesa,
+  prefill,
+  daMateriale,
+  cantiere,
+  onSalva,
+  onElimina,
+}) {
   const inModifica = Boolean(spesa?.id);
-  const [form, setForm] = useState(FORM_VUOTO);
+  const [form, setForm] = useState(() => formIniziale(spesa, prefill));
   const [errore, setErrore] = useState("");
   const [confermaElimina, setConfermaElimina] = useState(false);
   const [salvataggioInCorso, setSalvataggioInCorso] = useState(false);
 
   const giornate = leggiProgrammazione(cantiere);
-
-  useEffect(() => {
-    if (!open) {
-      setSalvataggioInCorso(false);
-      return;
-    }
-    setErrore("");
-    setConfermaElimina(false);
-    setSalvataggioInCorso(false);
-    if (spesa) {
-      setForm({
-        descrizione: spesa.descrizione || "",
-        importo: spesa.importo != null ? String(spesa.importo) : "",
-        data: spesa.data || "",
-        categoria: spesa.categoria || CATEGORIE_SPESA.altro,
-        fornitore: spesa.fornitore || "",
-        metodoPagamento: spesa.metodoPagamento || "",
-        giornataId: spesa.giornataId || "",
-        note: spesa.note || "",
-        materialeId: spesa.materialeId || "",
-        listaSpesaId: spesa.listaSpesaId || "",
-      });
-    } else if (prefill) {
-      setForm({
-        ...FORM_VUOTO,
-        ...prefill,
-        importo:
-          prefill.importo != null && prefill.importo !== ""
-            ? String(prefill.importo)
-            : "",
-        data: prefill.data || new Date().toLocaleDateString("it-IT"),
-      });
-    } else {
-      setForm({
-        ...FORM_VUOTO,
-        data: new Date().toLocaleDateString("it-IT"),
-      });
-    }
-  }, [open, spesa, prefill]);
 
   function aggiorna(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
@@ -109,7 +136,7 @@ export default function SpesaSheet({
     }
 
     setSalvataggioInCorso(true);
-    onSalva?.({
+    const esito = onSalva?.({
       ...(inModifica ? { id: spesa.id } : {}),
       descrizione,
       data,
@@ -122,6 +149,13 @@ export default function SpesaSheet({
       materialeId: String(form.materialeId || "").trim(),
       listaSpesaId: String(form.listaSpesaId || "").trim(),
     });
+    if (esito && esito.success === false) {
+      setErrore(
+        messaggioErroreWorkflow(esito.error, "Impossibile salvare la spesa.")
+      );
+      setSalvataggioInCorso(false);
+      return;
+    }
     onClose?.();
   }
 
@@ -134,7 +168,7 @@ export default function SpesaSheet({
   return (
     <>
       <BottomSheet
-        open={open && !confermaElimina}
+        open={!confermaElimina}
         onClose={onClose}
         title={titoloSheet}
       >

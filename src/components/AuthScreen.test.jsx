@@ -46,4 +46,24 @@ describe("AuthScreen", () => {
     expect(onRegistrati).toHaveBeenCalledWith("nuovo@example.com", "password123");
     expect(onAccedi).not.toHaveBeenCalled();
   });
+
+  it("traduce errori cloud inglesi in italiano", async () => {
+    const user = userEvent.setup();
+    const onAccedi = vi
+      .fn()
+      .mockRejectedValue(new Error("Invalid login credentials"));
+    const onRegistrati = vi.fn();
+
+    render(
+      <AuthScreen errore="" onAccedi={onAccedi} onRegistrati={onRegistrati} />
+    );
+
+    await user.type(screen.getByLabelText(/email/i), "utente@example.com");
+    await user.type(screen.getByLabelText(/password/i), "password123");
+    await user.click(screen.getByRole("button", { name: /accedi/i }));
+
+    expect(
+      await screen.findByText(/email o password non corretti/i)
+    ).toBeInTheDocument();
+  });
 });

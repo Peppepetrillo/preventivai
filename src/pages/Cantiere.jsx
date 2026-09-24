@@ -49,6 +49,10 @@ export default function Cantiere() {
     completaLavoro,
     aggiungiFoto,
     eliminaFoto,
+    aggiungiProgettoElettrico,
+    sostituisciProgettoElettrico,
+    eliminaProgettoElettrico,
+    rinominaProgettoElettrico,
     aggiungiNotaDiario,
     aggiungiGiornata,
     aggiornaGiornata,
@@ -56,6 +60,10 @@ export default function Cantiere() {
     aggiungiGiornataRegistro,
     aggiornaGiornataRegistro,
     eliminaGiornataRegistro,
+    aggiungiGiornataManodopera,
+    aggiornaGiornataManodopera,
+    eliminaGiornataManodopera,
+    impostaPagatoManodopera,
     aggiungiPagamento,
     aggiornaPagamento,
     eliminaPagamento,
@@ -139,6 +147,7 @@ export default function Cantiere() {
         ) : null}
 
         <CantiereOverview
+          key={String(cantiereSelezionato.id)}
           cantiere={cantiereSelezionato}
           avanzamento={avanzamento}
           nuovaChecklist={nuovaChecklist}
@@ -155,6 +164,10 @@ export default function Cantiere() {
           onToggleMaterialeAcquistato={toggleMaterialeAcquistato}
           onAggiungiFoto={aggiungiFoto}
           onEliminaFoto={eliminaFoto}
+          onAggiungiProgettoElettrico={aggiungiProgettoElettrico}
+          onSostituisciProgettoElettrico={sostituisciProgettoElettrico}
+          onEliminaProgettoElettrico={eliminaProgettoElettrico}
+          onRinominaProgettoElettrico={rinominaProgettoElettrico}
           onAggiungiNotaDiario={aggiungiNotaDiario}
           onEliminaCantiere={gestisciElimina}
           onIniziaLavoro={iniziaLavoro}
@@ -171,6 +184,10 @@ export default function Cantiere() {
           onAggiungiGiornataRegistro={aggiungiGiornataRegistro}
           onAggiornaGiornataRegistro={aggiornaGiornataRegistro}
           onEliminaGiornataRegistro={eliminaGiornataRegistro}
+          onAggiungiGiornataManodopera={aggiungiGiornataManodopera}
+          onAggiornaGiornataManodopera={aggiornaGiornataManodopera}
+          onEliminaGiornataManodopera={eliminaGiornataManodopera}
+          onImpostaPagatoManodopera={impostaPagatoManodopera}
           onAggiungiPagamento={aggiungiPagamento}
           onAggiornaPagamento={aggiornaPagamento}
           onEliminaPagamento={eliminaPagamento}

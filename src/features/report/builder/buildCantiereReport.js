@@ -161,7 +161,7 @@ export function buildCantiereReport({
     lavoroDiretto: diretto,
     copertina: {
       logo: datiAzienda.logo || null,
-      nomeAzienda: datiAzienda.nomeDitta || "PreventivAI",
+      nomeAzienda: datiAzienda.nomeDitta || "",
       cliente: cantiere.cliente || "",
       indirizzo: cantiere.indirizzo || "",
       numeroCantiere:

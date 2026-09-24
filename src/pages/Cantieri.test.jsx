@@ -39,7 +39,7 @@ describe("UX-1.3 deep link creazione", () => {
         </Routes>
       </MemoryRouter>
     );
-    expect(screen.getByText(/Nuovo cantiere/i)).toBeInTheDocument();
+    expect(screen.getByText(/Nuovo lavoro/i)).toBeInTheDocument();
   });
 
   it("apre il form nuovo cliente con ?nuovo=1", () => {

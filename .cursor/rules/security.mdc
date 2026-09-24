@@ -1,0 +1,13 @@
+---
+description: Security and secrets for PreventivAI
+alwaysApply: true
+---
+
+# Security
+
+- Never commit `.env`, API secrets, service_role keys, or real customer data.
+- OpenAI / provider keys stay server-side (Edge Functions / Deno env only).
+- PIN stays hashed (`pinSecurity`); PIN is outside `APP_DATA_KEYS`.
+- Ask a human before changing auth, PIN/AppLock, Supabase contracts, or encryption.
+- AI payloads must avoid structured PII (cliente, telefono, email, CF, P.IVA, IBAN).
+- Soft-delete via cestino — do not convert to hard-delete without approval.

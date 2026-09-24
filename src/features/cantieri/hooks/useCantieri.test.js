@@ -107,7 +107,9 @@ describe("useCantieri", () => {
     });
 
     expect(result.current.cantiereSelezionato.stato).toBe("Completato");
-    expect(result.current.messaggio).toBe("Lavoro finito.");
+    expect(result.current.messaggio).toBe(
+      "Lavoro finito. Lo trovi in Lavori → Completati e in Storico."
+    );
   });
 
   it("avvia il lavoro impostando lo stato In corso", () => {
@@ -224,5 +226,55 @@ describe("useCantieri", () => {
     const salvati = JSON.parse(localStorage.getItem(STORAGE_KEYS.cantieri));
     expect(salvati).toHaveLength(2);
     expect(salvati.find((c) => c.id === "c-attivo").deletedAt).toBeTruthy();
+  });
+
+  it("cambio cantiereId resetta bozze checklist/materiale e messaggio", () => {
+    localStorage.setItem(
+      STORAGE_KEYS.cantieri,
+      JSON.stringify([
+        { id: "c-a", nome: "A", stato: "In corso", foto: [], checklist: [], materiali: [] },
+        { id: "c-b", nome: "B", stato: "Da iniziare", foto: [], checklist: [], materiali: [] },
+      ])
+    );
+
+    const { result, rerender } = renderHook(
+      ({ id }) => useCantieri({ cantiereId: id }),
+      { initialProps: { id: "c-a" } }
+    );
+
+    act(() => {
+      result.current.setNuovaChecklist("Voce bozza");
+    });
+    expect(result.current.nuovaChecklist).toBe("Voce bozza");
+
+    rerender({ id: "c-b" });
+
+    expect(result.current.nuovaChecklist).toBe("");
+    expect(result.current.cantiereSelezionato.id).toBe("c-b");
+  });
+
+  it("due aggiornamenti rapidi non perdono la prima scrittura (storage SoT)", () => {
+    const { result } = renderHook(() => useCantieri());
+
+    act(() => {
+      result.current.aggiornaCampoNuovoCantiere("nome", "Race");
+    });
+    act(() => {
+      result.current.aggiungiCantiere();
+    });
+
+    act(() => {
+      result.current.setNuovaChecklist("Prima");
+    });
+    act(() => {
+      // Due add sullo stesso snapshot React: entrambe devono restare in storage.
+      result.current.aggiungiChecklist();
+      result.current.aggiungiChecklist();
+    });
+
+    expect(result.current.cantiereSelezionato.checklist).toHaveLength(2);
+    expect(
+      result.current.cantiereSelezionato.checklist.map((v) => v.testo)
+    ).toEqual(["Prima", "Prima"]);
   });
 });

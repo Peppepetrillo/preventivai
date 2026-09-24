@@ -30,10 +30,7 @@ function TipologiaImpiantoSelector({ tipologiaImpianto, onSeleziona }) {
       >
         {TIPOLOGIA_IMPIANTO_OPZIONI.map((opzione) => {
           const attivo = selezione === opzione.id;
-          const label =
-            opzione.emoji && opzione.label
-              ? `${opzione.emoji} ${opzione.label}`
-              : opzione.label;
+          const label = opzione.label;
 
           return (
             <button
