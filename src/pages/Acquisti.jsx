@@ -222,6 +222,17 @@ export default function Acquisti() {
             <p className="ds-text-secondary mt-2">
               Prova un altro nome o togli il filtro.
             </p>
+            <button
+              type="button"
+              className="btn-secondary mt-5 inline-flex min-h-[48px] items-center justify-center px-5 font-bold"
+              data-testid="acquisti-azzera-filtri"
+              onClick={() => {
+                aggiornaRicerca("");
+                setFiltro(FILTRO_ACQUISTI.daComprare);
+              }}
+            >
+              Azzera ricerca e filtri
+            </button>
           </div>
         ) : vista === VISTA_ACQUISTI.perLavoro ? (
           <div className="space-y-6" data-testid="acquisti-vista-lavoro-list">
@@ -236,7 +247,7 @@ export default function Acquisti() {
           </div>
         ) : (
           <ul
-            className="space-y-3"
+            className="space-y-3 ds-card-grid"
             role="list"
             data-testid="acquisti-vista-tutto-list"
           >

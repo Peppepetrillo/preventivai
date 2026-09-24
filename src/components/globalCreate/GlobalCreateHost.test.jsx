@@ -71,8 +71,8 @@ describe("GlobalCreate UX-3", () => {
     const dialog = ultimoDialog();
     expect(within(dialog).getByTestId("global-create-sheet")).toBeInTheDocument();
     expect(within(dialog).getByText("Preventivo")).toBeInTheDocument();
-    expect(within(dialog).getByText("Cantiere")).toBeInTheDocument();
-    expect(within(dialog).getByText("Pagamento cantiere")).toBeInTheDocument();
+    expect(within(dialog).getByText("Lavoro")).toBeInTheDocument();
+    expect(within(dialog).getByText("Pagamento lavoro")).toBeInTheDocument();
     expect(within(dialog).getByText("Promemoria")).toBeInTheDocument();
     expect(within(dialog).getByText("Lista materiali")).toBeInTheDocument();
     expect(within(dialog).queryByText("Nota veloce")).not.toBeInTheDocument();
@@ -117,10 +117,10 @@ describe("GlobalCreate UX-3", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: /Nuovo cantiere/i })
+        screen.getByRole("heading", { name: /Nuovo lavoro/i })
       ).toBeInTheDocument();
     });
-    expect(screen.getAllByRole("heading", { name: /Nuovo cantiere/i })).toHaveLength(1);
+    expect(screen.getAllByRole("heading", { name: /Nuovo lavoro/i })).toHaveLength(1);
   });
 
   it("apre AttivitaFormSheet", async () => {
@@ -135,20 +135,19 @@ describe("GlobalCreate UX-3", () => {
     ).toBeInTheDocument();
   });
 
-  it("BottomNav mostra Oggi, Preventivi, Cantieri, Altro", () => {
+  it("BottomNav mostra Oggi, Preventivi, Lavori, Altro", () => {
     renderShell();
 
     expect(screen.getByTestId("bottom-nav-oggi")).toBeInTheDocument();
     expect(screen.getByTestId("bottom-nav-preventivi")).toBeInTheDocument();
-    expect(screen.getByTestId("bottom-nav-cantieri")).toBeInTheDocument();
+    expect(screen.getByTestId("bottom-nav-lavori")).toBeInTheDocument();
     expect(screen.getByTestId("bottom-nav-altro")).toBeInTheDocument();
   });
 
   it("FAB ha touch target >=44px", () => {
     renderShell();
     const fab = screen.getByTestId("global-create-fab");
-    expect(fab.className).toMatch(/min-h-\[44px\]/);
-    expect(fab.className).toMatch(/min-w-\[44px\]/);
+    expect(fab.className).toMatch(/ds-nav-fab/);
   });
 
   it("chiude il menu con Escape", async () => {

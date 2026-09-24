@@ -1,9 +1,9 @@
 ---
-description: PreventivAI Design System v1.0 — UI mobile-first per elettricisti
+description: PreventivAI Design System v2.0 — Light + Dark, mobile-first
 alwaysApply: true
 ---
 
-# PreventivAI Design System v1.0
+# PreventivAI Design System v2.0
 
 PreventivAI è uno **strumento di lavoro**. Ogni elemento grafico deve ridurre tempo, errori e stress. Mai aggiungere complessità.
 
@@ -19,49 +19,53 @@ Prima di aggiungere un componente: *"Fa risparmiare tempo all'elettricista?"* Se
 4. **Progressive Disclosure** — solo ciò che serve ora
 5. **Speed Over Decoration** — velocità > spettacolo
 
-## Tokens (usa CSS in `src/index.css`)
+## Temi
+
+`chiaro` · `scuro` · `sistema` — token in `src/index.css` via `html[data-theme]`.  
+Dettaglio: `docs/DESIGN-SYSTEM.md`.
+
+## Tokens (CSS in `src/index.css`)
 
 | Token | Valori |
 |-------|--------|
-| Spacing | 4 · 8 · 12 · 16 · 24 · 32 (`--space-1`…`--space-6`) — mai valori casuali |
-| Radius card | 20px (`--radius-card`) |
-| Radius input/button | 16px (`--radius-control`) |
+| Spacing | 4 · 8 · 12 · 16 · 24 · 32 (`--space-1`…`--space-6`) |
+| Radius card | 22px (`--radius-card`) |
+| Radius control | 16px (`--radius-control`) |
 | Badge | pill 999px |
-| Ombra | solo `--shadow-soft` |
+| Ombra | `--shadow-soft` / `--shadow-fab` |
 | Motion | 150–250ms, `--ease-standard` |
 
 ## Tipografia (classi DS)
 
-- Titolo pagina: `.ds-page-title` (24px / 700) — **non** `font-black`
-- Titolo card: `.ds-card-title` (18px / 600)
-- Info principale: `.ds-text-primary` (16px / 500)
-- Secondaria: `.ds-text-secondary` (14px / 400)
-- Badge: `.ds-badge` (12px / 500)
+- Titolo pagina: `.ds-page-title` — **non** `font-black`
+- Titolo card: `.ds-card-title`
+- KPI/numeri: `.ds-kpi-value`
+- Info principale: `.ds-text-primary`
+- Secondaria: `.ds-text-secondary`
+- Badge: `.ds-badge`
 
-## Colori semantici fissi
+## Colori semantici
 
-- Primary: giallo PreventivAI
-- Success: verde · Warning: ambra · Danger: rosso · Text: slate
-- **Badge stato (non cambiare):**
-  - In corso → blu (`.ds-badge-in-corso`)
-  - Da iniziare → grigio (`.ds-badge-da-iniziare`)
-  - Completato → verde (`.ds-badge-completato`)
-  - Sospeso → arancione (`.ds-badge-sospeso`)
+- Primary: blu elettrico (`--primary`)
+- Success / Warning / Danger / Info: token semantici
+- **Badge stato (non cambiare le classi):**
+  - In corso → `.ds-badge-in-corso`
+  - Da iniziare → `.ds-badge-da-iniziare`
+  - Completato → `.ds-badge-completato`
+  - Sospeso → `.ds-badge-sospeso`
 
 ## Pattern obbligatori
 
-- **Card**: titolo + info essenziali + badge opzionale; **intera superficie tappabile**; mai bottone "Apri"
-- **Ricerca**: sempre in alto; solo `SearchInput` / `.ds-search`
+- **Card**: titolo + info essenziali + badge opzionale; intera superficie tappabile
+- **Ricerca**: `SearchInput` / `.ds-search`
 - **Empty**: Titolo → Descrizione → CTA (`.ds-empty`)
-- **Bottoni**: solo `.btn-primary` / `.btn-secondary` / `.btn-danger`
-- **Icone**: solo Lucide — mai emoji
-- **Liste**: ordine fisso delle informazioni sulla card
+- **Bottoni**: `.btn-primary` / `.btn-secondary` / `.btn-danger`
+- **Icone**: solo Lucide
 - **Touch**: ≥44pt · Safe Area completa
 
 ## Non fare
 
-- Nuovi stili bottone/card/search
+- Nuovi stili bottone/card/search paralleli
 - Ombre pesanti o gradienti decorativi
-- Animazioni >250ms o fine a sé stesse
-- `font-black` salvo necessità reale di contrasto
+- Animazioni >250ms
 - Modificare dominio/repository/sync per sole ragioni UI

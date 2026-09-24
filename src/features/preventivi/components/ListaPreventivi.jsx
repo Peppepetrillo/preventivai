@@ -142,7 +142,7 @@ export default function ListaPreventivi() {
           })}
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3 ds-card-grid">
           {preventiviFiltrati.length === 0 && (
             <div className="pro-panel p-8 text-center ds-empty">
               <p className="ds-card-title">
@@ -164,7 +164,19 @@ export default function ListaPreventivi() {
                   <Plus size={18} aria-hidden="true" />
                   Nuovo preventivo
                 </Link>
-              ) : null}
+              ) : (
+                <button
+                  type="button"
+                  className="btn-secondary mt-4 inline-flex min-h-[48px] items-center justify-center px-6 font-bold"
+                  data-testid="preventivi-azzera-filtri"
+                  onClick={() => {
+                    setRicerca("");
+                    setSearchParams({}, { replace: true });
+                  }}
+                >
+                  Azzera ricerca e filtri
+                </button>
+              )}
             </div>
           )}
 

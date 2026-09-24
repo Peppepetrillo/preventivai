@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
@@ -6,6 +6,7 @@ import ConfirmDialog from "../../../components/ConfirmDialog";
 import NumericInput from "../../../components/NumericInput";
 import DatePickerField from "../../agenda/components/DatePickerField";
 import { formatEuro, normalizzaNumero } from "../../../utils/preventivi";
+import { messaggioErroreWorkflow } from "../../preventivi/utils/messaggioErroreWorkflow";
 import {
   ETICHETTE_METODO_PAGAMENTO,
   ETICHETTE_TIPO_PAGAMENTO,
@@ -21,8 +22,35 @@ const FORM_VUOTO = {
   note: "",
 };
 
+function formIniziale(pagamento, importoIniziale, tipoIniziale) {
+  if (pagamento) {
+    return {
+      importo: pagamento.importo != null ? String(pagamento.importo) : "",
+      data: pagamento.data || "",
+      tipo: pagamento.tipo || TIPI_PAGAMENTO.acconto,
+      metodo: pagamento.metodo || METODI_PAGAMENTO.contanti,
+      note: pagamento.note || "",
+    };
+  }
+  const importo =
+    importoIniziale != null && Number(importoIniziale) > 0
+      ? String(importoIniziale)
+      : "";
+  const tipo =
+    tipoIniziale && Object.values(TIPI_PAGAMENTO).includes(tipoIniziale)
+      ? tipoIniziale
+      : TIPI_PAGAMENTO.acconto;
+  return {
+    ...FORM_VUOTO,
+    data: new Date().toLocaleDateString("it-IT"),
+    importo,
+    tipo,
+  };
+}
+
 /**
  * Bottom sheet crea/modifica pagamento cantiere (UX-7.5).
+ * Remount on open/id → seed senza setState-in-effect.
  */
 export default function PagamentoSheet({
   open,
@@ -34,46 +62,41 @@ export default function PagamentoSheet({
   onSalva,
   onElimina,
 }) {
+  if (!open) return null;
+  return (
+    <PagamentoSheetBody
+      key={
+        pagamento?.id ??
+        `nuovo-${importoIniziale ?? ""}-${tipoIniziale ?? ""}`
+      }
+      onClose={onClose}
+      pagamento={pagamento}
+      rimanenza={rimanenza}
+      importoIniziale={importoIniziale}
+      tipoIniziale={tipoIniziale}
+      onSalva={onSalva}
+      onElimina={onElimina}
+    />
+  );
+}
+
+function PagamentoSheetBody({
+  onClose,
+  pagamento,
+  rimanenza,
+  importoIniziale,
+  tipoIniziale,
+  onSalva,
+  onElimina,
+}) {
   const inModifica = Boolean(pagamento?.id);
-  const [form, setForm] = useState(FORM_VUOTO);
+  const [form, setForm] = useState(() =>
+    formIniziale(pagamento, importoIniziale, tipoIniziale)
+  );
   const [errore, setErrore] = useState("");
   const [warningOverpay, setWarningOverpay] = useState(false);
   const [confermaElimina, setConfermaElimina] = useState(false);
   const [salvataggioInCorso, setSalvataggioInCorso] = useState(false);
-  useEffect(() => {
-    if (!open) {
-      setSalvataggioInCorso(false);
-      return;
-    }
-    setErrore("");
-    setWarningOverpay(false);
-    setConfermaElimina(false);
-    setSalvataggioInCorso(false);
-    if (pagamento) {
-      setForm({
-        importo: pagamento.importo != null ? String(pagamento.importo) : "",
-        data: pagamento.data || "",
-        tipo: pagamento.tipo || TIPI_PAGAMENTO.acconto,
-        metodo: pagamento.metodo || METODI_PAGAMENTO.contanti,
-        note: pagamento.note || "",
-      });
-    } else {
-      const importo =
-        importoIniziale != null && Number(importoIniziale) > 0
-          ? String(importoIniziale)
-          : "";
-      const tipo =
-        tipoIniziale && Object.values(TIPI_PAGAMENTO).includes(tipoIniziale)
-          ? tipoIniziale
-          : TIPI_PAGAMENTO.acconto;
-      setForm({
-        ...FORM_VUOTO,
-        data: new Date().toLocaleDateString("it-IT"),
-        importo,
-        tipo,
-      });
-    }
-  }, [open, pagamento, importoIniziale, tipoIniziale]);
 
   function aggiorna(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
@@ -106,7 +129,7 @@ export default function PagamentoSheet({
     }
 
     setSalvataggioInCorso(true);
-    onSalva?.({
+    const esito = onSalva?.({
       ...(inModifica ? { id: pagamento.id } : {}),
       data,
       importo,
@@ -114,6 +137,16 @@ export default function PagamentoSheet({
       metodo: form.metodo,
       note: String(form.note || "").trim(),
     });
+    if (esito && esito.success === false) {
+      setErrore(
+        messaggioErroreWorkflow(
+          esito.error,
+          "Impossibile salvare il pagamento."
+        )
+      );
+      setSalvataggioInCorso(false);
+      return;
+    }
     onClose?.();
   }
 
@@ -132,7 +165,7 @@ export default function PagamentoSheet({
   return (
     <>
       <BottomSheet
-        open={open && !confermaElimina}
+        open={!confermaElimina}
         onClose={onClose}
         title={titoloSheet}
         descrizione={descrizioneSheet}

@@ -129,7 +129,7 @@ export function risolviHeroCta({
   }
 
   if (s === STATI_PREVENTIVO.INVIATO && azioni.includes(AZIONI_PREVENTIVO.ACCETTA)) {
-    return { id: HERO_CTA.ACCETTA, label: "Cliente ha accettato" };
+    return { id: HERO_CTA.ACCETTA, label: "Segna accettato" };
   }
 
   if (s === STATI_PREVENTIVO.INVIATO) {
