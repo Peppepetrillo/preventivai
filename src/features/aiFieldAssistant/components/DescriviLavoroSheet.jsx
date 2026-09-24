@@ -184,12 +184,12 @@ export default function DescriviLavoroSheet({
               </button>
             </div>
             {richiedeRete ? (
-              <p className="text-xs text-amber-600 dark:text-amber-300">
+              <p className="ds-text-muted text-xs">
                 Il microfono richiede rete. Puoi scrivere a mano.
               </p>
             ) : null}
             {erroreVoce || errore ? (
-              <p className="text-sm text-red-600" role="alert">
+              <p className="text-sm text-[var(--danger)]" role="alert">
                 {errore || erroreVoce}
               </p>
             ) : null}
@@ -206,7 +206,7 @@ export default function DescriviLavoroSheet({
               </p>
               {nAmbigue + nMancanti > 0 ? (
                 <p className="text-sm text-[var(--warning)] mt-2 font-medium">
-                  ⚠️ {nAmbigue + nMancanti} elemento
+                  {nAmbigue + nMancanti} elemento
                   {nAmbigue + nMancanti === 1 ? "" : "i"} da verificare
                 </p>
               ) : null}

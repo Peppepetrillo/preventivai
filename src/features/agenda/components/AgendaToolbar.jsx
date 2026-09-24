@@ -33,7 +33,7 @@ export default function AgendaToolbar({
       <button
         type="button"
         onClick={() => setAperto(true)}
-        className="fixed z-30 right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] w-14 h-14 rounded-full bg-yellow-400 text-black shadow-[var(--shadow-soft)] flex items-center justify-center active:scale-95 transition-transform"
+                    className="fixed z-30 right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] ds-nav-fab"
         aria-label="Nuovo"
         data-testid="agenda-toolbar-plus"
       >

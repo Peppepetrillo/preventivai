@@ -190,12 +190,12 @@ export default function MemoMaterialiSheet({
               </button>
             </div>
             {richiedeRete ? (
-              <p className="text-xs text-amber-600 dark:text-amber-300">
+              <p className="ds-text-muted text-xs">
                 Il microfono richiede rete. Puoi scrivere a mano.
               </p>
             ) : null}
             {erroreVoce || errore ? (
-              <p className="text-sm text-red-600" role="alert">
+              <p className="text-sm text-[var(--danger)]" role="alert">
                 {errore || erroreVoce}
               </p>
             ) : null}
