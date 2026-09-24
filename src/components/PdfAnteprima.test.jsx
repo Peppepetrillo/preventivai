@@ -1,11 +1,12 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 
-import PdfAnteprima, {
+import PdfAnteprima from "./PdfAnteprima";
+import {
   condividiDaBlobUrl,
   scaricaDaBlobUrl,
-  urlPdfFitWidth
-} from "./PdfAnteprima";
+  urlPdfFitWidth,
+} from "./pdfAnteprimaUtils";
 
 const condividiBlob = vi.fn();
 const esportaBlob = vi.fn();
@@ -15,9 +16,42 @@ vi.mock("../utils/nativeExport", () => ({
   esportaBlob: (...args) => esportaBlob(...args),
 }));
 
+vi.mock("./pdfCanvasRenderer", () => ({
+  caricaDocumentoPdf: vi.fn(async () => ({
+    numPages: 1,
+    destroy: vi.fn(),
+    getPage: vi.fn(async () => ({
+      getViewport: ({ scale }) => ({
+        width: 400 * scale,
+        height: 560 * scale,
+      }),
+      render: () => ({ promise: Promise.resolve() }),
+    })),
+  })),
+  renderPaginePdfSuContenitore: vi.fn(async (_doc, contenitore) => {
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("data-pdf-page", "1");
+    contenitore.appendChild(canvas);
+    return { pagine: 1, zoomRender: 1 };
+  }),
+  deveRirenderizzarePerZoom: vi.fn(() => false),
+  leggiDevicePixelRatio: vi.fn(() => 2),
+  calcolaDimensioniCanvasPdf: vi.fn(() => ({
+    canvasWidth: 800,
+    canvasHeight: 1120,
+    cssWidth: 400,
+    cssHeight: 560,
+    viewportScale: 4,
+    scalaFit: 2,
+    zoomRender: 1,
+    zoomRenderEffettivo: 1,
+    dpr: 2,
+  })),
+}));
+
 describe("PdfAnteprima UX-001", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     condividiBlob.mockReset();
     esportaBlob.mockReset();
     condividiBlob.mockResolvedValue({ success: true, metodo: "share" });
@@ -25,7 +59,9 @@ describe("PdfAnteprima UX-001", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
+        ok: true,
         blob: async () => new Blob(["pdf"], { type: "application/pdf" }),
+        arrayBuffer: async () => new ArrayBuffer(8),
       }))
     );
   });
@@ -138,8 +174,6 @@ describe("PdfAnteprima UX-001", () => {
       expect(btn.className).toMatch(/pdf-anteprima-btn/);
     });
 
-    // CSS rule presente nel foglio (min-height 44px)
-    // Verifica strutturale: header Chiudi raggiungibile
     fireEvent.click(
       screen.getByRole("button", { name: /Chiudi anteprima PDF/i })
     );
@@ -157,6 +191,50 @@ describe("PdfAnteprima UX-001", () => {
       await Promise.resolve();
     });
     expect(document.body.style.overflow).toBe("hidden");
+    expect(document.body.style.touchAction).not.toBe("none");
+  });
+
+  it("con abilitaZoom usa canvas stage e controlli +/-", async () => {
+    render(
+      <PdfAnteprima
+        aperto
+        abilitaZoom
+        blobUrl="blob:test-pdf"
+        onChiudi={() => {}}
+      />
+    );
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId("pdf-anteprima")).toHaveAttribute(
+      "data-zoom-enabled",
+      "true"
+    );
+    expect(screen.getByTestId("pdf-anteprima-viewer")).toHaveAttribute(
+      "data-mode",
+      "canvas-zoom"
+    );
+    expect(screen.getByTestId("pdf-zoom-stage")).toBeInTheDocument();
+    expect(screen.getByTestId("pdf-anteprima-zoom-bar")).toBeInTheDocument();
+    expect(screen.getByTestId("pdf-anteprima-zoom-label")).toHaveTextContent(
+      "100%"
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("pdf-anteprima-zoom-in"));
+    });
+    expect(screen.getByTestId("pdf-anteprima-zoom-label")).toHaveTextContent(
+      "125%"
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("pdf-anteprima-zoom-out"));
+    });
+    expect(screen.getByTestId("pdf-anteprima-zoom-label")).toHaveTextContent(
+      "100%"
+    );
   });
 });
 
@@ -169,6 +247,7 @@ describe("PdfAnteprima condivisione", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
+        ok: true,
         blob: async () => new Blob(["pdf"], { type: "application/pdf" }),
       }))
     );

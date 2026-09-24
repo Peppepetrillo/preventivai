@@ -6,7 +6,7 @@ import { ROUTES } from "../app/routes";
 import Altro from "./Altro";
 
 describe("Altro UX-8.1", () => {
-  it("mostra l'hub con le voci principali in ordine", () => {
+  it("mostra l'hub con le voci principali raggruppate", () => {
     render(
       <MemoryRouter>
         <Altro />
@@ -14,6 +14,11 @@ describe("Altro UX-8.1", () => {
     );
 
     expect(screen.getByRole("heading", { name: /Altro/i })).toBeInTheDocument();
+    expect(screen.getByTestId("altro-sezione-lavoro")).toBeInTheDocument();
+    expect(screen.getByTestId("altro-sezione-strumenti")).toBeInTheDocument();
+    expect(screen.getByTestId("altro-sezione-personale")).toBeInTheDocument();
+    expect(screen.getByTestId("altro-sezione-sistema")).toBeInTheDocument();
+
     expect(screen.getByTestId("altro-link-agenda")).toHaveAttribute(
       "href",
       ROUTES.agenda
@@ -22,6 +27,14 @@ describe("Altro UX-8.1", () => {
       "href",
       ROUTES.clienti
     );
+    expect(screen.getByTestId("altro-link-operai")).toHaveAttribute(
+      "href",
+      ROUTES.operai
+    );
+    expect(screen.getByTestId("altro-link-manodopera")).toHaveAttribute(
+      "href",
+      ROUTES.manodopera
+    );
     expect(screen.getByTestId("altro-link-economia")).toHaveAttribute(
       "href",
       ROUTES.economia
@@ -29,6 +42,10 @@ describe("Altro UX-8.1", () => {
     expect(screen.getByTestId("altro-link-storico")).toHaveAttribute(
       "href",
       ROUTES.storico
+    );
+    expect(screen.getByTestId("altro-link-calcoli")).toHaveAttribute(
+      "href",
+      ROUTES.calcoliElettrici
     );
     expect(screen.getByTestId("altro-link-acquisti")).toHaveAttribute(
       "href",
@@ -54,9 +71,16 @@ describe("Altro UX-8.1", () => {
       "href",
       ROUTES.cestino
     );
-    expect(screen.getByText("Elementi eliminati di recente")).toBeInTheDocument();
-    expect(screen.getByText("I tuoi giorni")).toBeInTheDocument();
-    expect(screen.getByText("Rubrica clienti")).toBeInTheDocument();
+    expect(screen.getByText("Eliminati di recente")).toBeInTheDocument();
+    expect(screen.getByText("Calendario lavori")).toBeInTheDocument();
+    expect(screen.getByText("Rubrica")).toBeInTheDocument();
     expect(screen.getByText("Materiali da acquistare")).toBeInTheDocument();
+    expect(screen.getByTestId("prossimamente-section")).toBeInTheDocument();
+    expect(screen.getByText("Prossimamente")).toBeInTheDocument();
+    expect(screen.getByTestId("prossimamente-details")).toBeInTheDocument();
+    // Nessun link operativo finto nelle card roadmap
+    expect(screen.queryByTestId("prossimamente-voce-avanzata")).not.toHaveAttribute(
+      "href"
+    );
   });
 });

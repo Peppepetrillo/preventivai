@@ -17,13 +17,13 @@ export default function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 safe-bottom safe-top"
+      className="ds-dialog-backdrop fixed inset-0 z-[80] flex items-center justify-center p-4 safe-bottom safe-top"
       role="dialog"
       aria-modal="true"
       aria-labelledby={`${testId}-title`}
       data-testid={testId}
     >
-      <div className="pro-panel-strong w-full max-w-md max-h-[min(85dvh,520px)] overflow-y-auto p-5">
+      <div className="ds-dialog-panel w-full max-w-md max-h-[min(85dvh,520px)] overflow-y-auto p-5">
         <p id={`${testId}-title`} className="ds-card-title">
           {title}
         </p>
@@ -34,7 +34,7 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="btn-secondary min-h-[48px] flex-1 font-bold"
+            className="btn-secondary min-h-[48px] flex-1 font-semibold"
             data-testid={`${testId}-cancel`}
           >
             {cancelLabel}
@@ -42,7 +42,7 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className={`${danger ? "btn-danger" : "btn-primary"} min-h-[48px] flex-1 font-bold`}
+            className={`${danger ? "btn-danger" : "btn-primary"} min-h-[48px] flex-1 font-semibold`}
             data-testid={`${testId}-confirm`}
           >
             {confirmLabel}

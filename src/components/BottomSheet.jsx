@@ -59,14 +59,16 @@ export default function BottomSheet({
   return (
     <AnimatePresence>
       {open ? (
-        <div
-          className="fixed inset-0 flex items-end justify-center"
-          style={{ zIndex }}
-        >
+          <div
+            className="fixed inset-0 flex items-end md:items-center justify-center"
+            style={{ zIndex }}
+            data-testid="bottom-sheet-root"
+          >
           <motion.button
             type="button"
             aria-label="Chiudi finestra"
-            className="absolute inset-0 bg-black/60"
+            className="absolute inset-0"
+            style={{ background: "var(--overlay)" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -85,23 +87,24 @@ export default function BottomSheet({
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
-            className="relative w-full max-w-xl bg-[#0d1320] border border-white/10 rounded-t-[24px] shadow-[0_-20px_60px_rgba(0,0,0,0.5)] safe-bottom outline-none"
+            className="relative w-full max-w-xl ds-bottom-sheet safe-bottom outline-none"
             style={{ maxHeight: altezza === "auto" ? "88dvh" : altezza }}
+            data-testid="bottom-sheet-panel"
           >
             <div
               className="flex justify-center pt-3 pb-1 safe-top"
               aria-hidden="true"
             >
-              <span className="w-10 h-1 rounded-full bg-white/20" />
+              <span className="ds-bottom-sheet-handle" />
             </div>
 
             {title ? (
               <div className="px-5 pb-3">
-                <h2 id={titoloId} className="text-xl font-black">
+                <h2 id={titoloId} className="ds-card-title text-[20px]">
                   {title}
                 </h2>
                 {descrizione ? (
-                  <p id={descrizioneId} className="text-sm text-slate-400 mt-1">
+                  <p id={descrizioneId} className="ds-text-secondary mt-1">
                     {descrizione}
                   </p>
                 ) : null}

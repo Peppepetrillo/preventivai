@@ -112,6 +112,25 @@ describe("useSalvaEGeneraPdf UX-5.3", () => {
     );
   });
 
+  it("revoca blobUrl temporaneo dopo generazione (solo Blob in stato)", async () => {
+    const revoke = vi.fn();
+    globalThis.URL.revokeObjectURL = revoke;
+    generaPdfPreventivo.mockResolvedValue({
+      blob: new Blob(["pdf"], { type: "application/pdf" }),
+      blobUrl: "blob:mock-temp",
+      nomeFile: "PREV-1.pdf",
+    });
+    const { result } = renderHook(() => useSalvaEGeneraPdf());
+
+    await act(async () => {
+      await result.current.salvaEGeneraPdf(STATO);
+    });
+    await waitFor(() => {
+      expect(result.current.pdfGenerato).toBe(true);
+    });
+    expect(revoke).toHaveBeenCalledWith("blob:mock-temp");
+  });
+
   it("propaga clienteId al creaPreventivo", async () => {
     const { result } = renderHook(() => useSalvaEGeneraPdf());
 

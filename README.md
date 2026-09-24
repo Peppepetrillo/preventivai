@@ -61,6 +61,8 @@ Vedi `supabase/README.md`. Dataset sincronizzato: preventivi, cantieri, clienti,
 
 - Changelog: `CHANGELOG.md`
 - Checklist QA / Go-NoGo: `docs/RC3-RELEASE-CHECKLIST.md`
+- Lint cleanup backlog: `docs/TODO-LINT-SPRINT.md`
+- Cursor Cloud overnight: `docs/CLOUD-AGENT-OVERNIGHT.md`
 - Tag consigliato: `v1.0.0-rc3` (dopo commit di rilascio)
 
 ## Licenza

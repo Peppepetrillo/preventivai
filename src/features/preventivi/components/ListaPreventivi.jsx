@@ -142,7 +142,7 @@ export default function ListaPreventivi() {
           })}
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3 ds-card-grid">
           {preventiviFiltrati.length === 0 && (
             <div className="pro-panel p-8 text-center ds-empty">
               <p className="ds-card-title">
@@ -164,7 +164,19 @@ export default function ListaPreventivi() {
                   <Plus size={18} aria-hidden="true" />
                   Nuovo preventivo
                 </Link>
-              ) : null}
+              ) : (
+                <button
+                  type="button"
+                  className="btn-secondary mt-4 inline-flex min-h-[48px] items-center justify-center px-6 font-bold"
+                  data-testid="preventivi-azzera-filtri"
+                  onClick={() => {
+                    setRicerca("");
+                    setSearchParams({}, { replace: true });
+                  }}
+                >
+                  Azzera ricerca e filtri
+                </button>
+              )}
             </div>
           )}
 
@@ -176,7 +188,7 @@ export default function ListaPreventivi() {
               <Link
                 key={preventivo.id}
                 to={routePreventivo(preventivo.id)}
-                className="block pro-panel p-5 min-h-[88px] hover:border-yellow-300/45 transition active:scale-[0.99]"
+                className="ds-card-link block pro-panel p-5 min-h-[88px]"
                 data-testid={`preventivo-card-${preventivo.id}`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -184,19 +196,19 @@ export default function ListaPreventivi() {
                     <h2 className="ds-card-title truncate">
                       {preventivo.cliente || "Cliente"}
                     </h2>
-                    <p className="ds-text-secondary text-sm mt-1">
+                    <p className="ds-text-secondary mt-1">
                       {etichettaRigaStato(preventivo)}
                     </p>
-                    <p className="text-slate-500 text-xs mt-1">N. {numero}</p>
+                    <p className="ds-text-muted mt-1">N. {numero}</p>
                     <p
-                      className="text-emerald-300 text-2xl font-bold mt-3 tabular-nums"
+                      className="ds-kpi-value mt-3"
                       data-testid={`preventivo-card-totale-${preventivo.id}`}
                     >
                       {formatEuro(preventivo.totale)}
                     </p>
                   </div>
                   <span
-                    className={`ds-badge shrink-0 text-white ${classeColoreStatoPreventivo(preventivo.stato)}`}
+                    className={`ds-badge shrink-0 ${classeColoreStatoPreventivo(preventivo.stato)}`}
                   >
                     {statoUi}
                   </span>

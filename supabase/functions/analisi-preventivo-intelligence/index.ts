@@ -5,17 +5,24 @@
  *   OPENAI_API_KEY   (obbligatoria)
  *   OPENAI_MODEL     (opzionale, default gpt-4o-mini)
  *
- * Nessuna key nel client. Endpoint pubblico:
+ * Nessuna key nel client. Endpoint protetto da JWT sessione:
  *   ${VITE_SUPABASE_URL}/functions/v1/analisi-preventivo-intelligence
  * oppure VITE_AI_ASSISTANT_ENDPOINT puntato a questa URL.
+ * Richiede Authorization: Bearer <access_token> (+ apikey anon lato client).
  */
 
 import {
   AI_LIMITI,
+  AI_AZIONE,
+  FIELD_AI_AZIONI,
   costruisciSystemPrompt,
   costruisciUserPrompt,
+  costruisciSystemPromptField,
+  costruisciUserPromptField,
   validaRichiestaAnalisi,
+  validaRichiestaField,
   validaRispostaInsight,
+  validaRispostaField,
 } from "./contract.js";
 
 /** Origini tipiche Capacitor / Vite (senza aprire a tutto il web). */
@@ -159,6 +166,16 @@ Deno.serve(async (req) => {
     return json(req, 405, { ok: false, errore: "Metodo non consentito." });
   }
 
+  // Difesa in profondità: gateway verify_jwt=true; rifiuta comunque senza Bearer.
+  const auth = String(req.headers.get("Authorization") || "").trim();
+  if (!auth.toLowerCase().startsWith("bearer ")) {
+    return json(req, 401, {
+      ok: false,
+      codice: "non_autenticato",
+      errore: "Autenticazione richiesta.",
+    });
+  }
+
   const apiKey = String(Deno.env.get("OPENAI_API_KEY") || "").trim();
   if (!apiKey) {
     console.error("missing_openai_key");
@@ -211,6 +228,61 @@ Deno.serve(async (req) => {
       ok: false,
       codice: "payload_invalido",
       errore: "JSON non valido.",
+    });
+  }
+
+  const azione = String(body?.azione || "").trim();
+  const isField =
+    azione === FIELD_AI_AZIONI.estraiLavorazioni ||
+    azione === FIELD_AI_AZIONI.estraiMateriali;
+
+  if (isField) {
+    const validField = validaRichiestaField(body);
+    if (!validField.ok) {
+      return json(req, 400, {
+        ok: false,
+        codice: validField.codice,
+        errore: validField.messaggio,
+      });
+    }
+    const system = costruisciSystemPromptField(validField.tipo);
+    const user = costruisciUserPromptField(
+      validField.data.testo,
+      validField.tipo
+    );
+    const esitoModel = await chiamaOpenAI({
+      system,
+      user,
+      apiKey,
+      model,
+    });
+    if (!esitoModel.ok) {
+      const status = esitoModel.codice === "timeout" ? 504 : 502;
+      return json(req, status, {
+        ok: false,
+        codice: esitoModel.codice,
+        errore: "Non riesco a elaborare il contenuto.",
+      });
+    }
+    const validOut = validaRispostaField(esitoModel.parsed, validField.tipo);
+    if (!validOut.ok) {
+      return json(req, 502, {
+        ok: false,
+        codice: validOut.codice,
+        errore: "Risposta AI non valida.",
+      });
+    }
+    return json(req, 200, {
+      ok: true,
+      data: validOut.data,
+    });
+  }
+
+  if (azione && azione !== AI_AZIONE) {
+    return json(req, 400, {
+      ok: false,
+      codice: "azione_non_supportata",
+      errore: "Azione non supportata.",
     });
   }
 

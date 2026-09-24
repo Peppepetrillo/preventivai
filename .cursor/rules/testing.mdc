@@ -1,0 +1,20 @@
+---
+description: Testing expectations for PreventivAI agents
+alwaysApply: true
+---
+
+# Testing
+
+Before finishing significant work:
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+- Add focused tests next to changed domain/service/UI behavior.
+- Never delete/skip/weaken tests to get green.
+- Prefer Vitest + Testing Library patterns already in the repo.
+- For offline/sync/backup/security/PDF: cover readable legacy data, missing fields, invalid input, offline mode.
+- Do not mark manual device QA complete without evidence.

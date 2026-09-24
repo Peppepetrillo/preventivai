@@ -171,7 +171,7 @@ export function creaPreventivoPdfDocument(patch = {}) {
       installatoreImmagine: null,
       firmatario: "",
       dataFirma: "",
-      installatorePlaceholder: true,
+      installatorePlaceholder: false,
       ...(patch.firme || {}),
     },
     meta: {
