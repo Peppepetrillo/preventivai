@@ -1,9 +1,10 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import { Package, Plus, Sparkles, Undo2 } from "lucide-react";
+import { Mic, Package, Plus, Sparkles, Undo2 } from "lucide-react";
 
 import SearchInput from "../../../../components/SearchInput";
 import { calcolaTotali } from "../../../../utils/preventivi";
 import SelettoreMaterialeSheet from "../../../distinteMateriali/components/SelettoreMaterialeSheet";
+import DescriviLavoroSheet from "../../../aiFieldAssistant/components/DescriviLavoroSheet";
 import { categoriaCatalogoDaTipologia } from "../../tipologiaImpiantoConfig";
 import { creaLavorazioneDaCatalogoMateriale } from "../../lavorazionePreventivoUtils";
 import CarrelloPreventivo from "../../components/CarrelloPreventivo";
@@ -48,6 +49,7 @@ function StepComponi({
   const haVoci = lavorazioni.length > 0;
 
   const [expressOverride, setExpressOverride] = useState(null);
+  const [descriviAperto, setDescriviAperto] = useState(false);
   const [avanzateAperte, setAvanzateAperte] = useState(false);
   const [personalizzataAperta, setPersonalizzataAperta] = useState(false);
   const [materialeAperto, setMaterialeAperto] = useState(false);
@@ -116,6 +118,20 @@ function StepComponi({
     setExpressOverride(false);
     onImpostaExpressAutoOpen?.(false);
   }, [onImpostaExpressAutoOpen]);
+
+  const applicaDescriviLavoro = useCallback(
+    (nuoveLavorazioni) => {
+      if (!Array.isArray(nuoveLavorazioni) || !nuoveLavorazioni.length) return;
+      onAggiornaLavorazioni((correnti) => [
+        ...(Array.isArray(correnti) ? correnti : []),
+        ...nuoveLavorazioni,
+      ]);
+      setFeedbackExpress(
+        `Aggiunte ${nuoveLavorazioni.length} lavorazioni dall'assistente. Controlla il carrello.`
+      );
+    },
+    [onAggiornaLavorazioni]
+  );
 
   const applicaBozzaExpress = useCallback(
     ({
@@ -222,16 +238,28 @@ function StepComponi({
           <p className="text-sm text-slate-400 truncate">
             Cliente: <span className="text-white font-semibold">{cliente}</span>
           </p>
-          <button
-            type="button"
-            onClick={apriExpress}
-            className="shrink-0 min-h-11 px-3 py-2 rounded-[16px] bg-yellow-400/15 border border-yellow-300/30 text-yellow-100 text-sm font-semibold flex items-center gap-1.5"
-            data-testid="apri-express-componi"
-            aria-label="Apri preventivo vocale"
-          >
-            <Sparkles size={16} aria-hidden="true" />
-            Vocale
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setDescriviAperto(true)}
+              className="min-h-11 px-3 py-2 rounded-[16px] btn-secondary text-sm font-semibold flex items-center gap-1.5"
+              data-testid="apri-descrivi-lavoro"
+              aria-label="Descrivi il lavoro"
+            >
+              <Sparkles size={16} aria-hidden="true" />
+              Descrivi
+            </button>
+            <button
+              type="button"
+              onClick={apriExpress}
+              className="min-h-11 px-3 py-2 rounded-[16px] btn-secondary text-sm font-semibold flex items-center gap-1.5"
+              data-testid="apri-express-componi"
+              aria-label="Apri preventivo vocale"
+            >
+              <Mic size={16} aria-hidden="true" />
+              Vocale
+            </button>
+          </div>
         </div>
 
         <TipoLavoroSelector
@@ -382,6 +410,12 @@ function StepComponi({
         clienteCorrente={cliente}
         lavorazioniCorrenti={lavorazioni}
         onApplica={applicaBozzaExpress}
+      />
+
+      <DescriviLavoroSheet
+        open={descriviAperto}
+        onClose={() => setDescriviAperto(false)}
+        onConferma={applicaDescriviLavoro}
       />
 
       <CondizioniAvanzate

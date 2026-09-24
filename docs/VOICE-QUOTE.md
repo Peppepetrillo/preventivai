@@ -2,6 +2,8 @@
 
 UX name: **Preventivo vocale** (ex Express).
 
+Vedi anche: [AI Field Assistant](./AI-FIELD-ASSISTANT.md) (Descrivi + Memo materiali).
+
 ## Goal
 
 Electrician speaks → PreventivAI matches **local listino** → preview → **confirm** → draft quote.
@@ -10,11 +12,11 @@ Prices come **only** from the user’s listino. The AI never invents prices.
 
 ## Flow
 
-1. Home → **Preventivo vocale** (`/preventivi/nuovo?express=1`) or Componi → **Vocale**
+1. Home → **Preventivo vocale** (`/preventivi/nuovo?express=1`) or Componi → **Vocale** / **Descrivi**
 2. Dictate (Web Speech) or type
-3. **Analizza** → locale matcher (`generaBozzaPreventivoLocale`)
+3. **Analizza** → Field extract locale + matcher listino (`generaBozzaPreventivoLocale`)
 4. Preview: matched rows + unmatched (“Non trovo… nel tuo listino”)
-5. Actions on unmatched: Aggiungi al listino | Modifica | Ignora
+5. Actions on unmatched: Aggiungi al listino | Modifica | Ignora | scegli tra max 3 candidate
 6. **Conferma bozza** applies to wizard (still editable manually)
 
 ## States
@@ -34,7 +36,7 @@ Prices come **only** from the user’s listino. The AI never invents prices.
 
 ## Architecture
 
-- Matcher: `src/features/preventivi/assistentePreventivi.js`
+- Matcher: `src/features/preventivi/assistentePreventivi.js` (+ `aiFieldAssistant`)
 - Sheet: `src/features/preventivi/components/PreventivoExpress.jsx`
 - Hook: `src/hooks/useRiconoscimentoVocale.js`
 - Deep-link: `WizardPreventivo` reads `?express=1` / `?vocale=1`
