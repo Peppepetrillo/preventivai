@@ -1,9 +1,23 @@
 /**
  * Contratto condiviso PreventivAI Intelligence (client + Edge Function).
  * Modulo puro ESM — nessuna secret, nessun fetch.
+ *
+ * Azioni:
+ * - analisiPreventivoIntelligence (insight preventivo)
+ * - estraiLavorazioniCampo / estraiMaterialiCampo (Field Assistant)
  */
 
 export const AI_AZIONE = "analisiPreventivoIntelligence";
+
+export const FIELD_AI_AZIONI = Object.freeze({
+  estraiLavorazioni: "estraiLavorazioniCampo",
+  estraiMateriali: "estraiMaterialiCampo",
+});
+
+export const FIELD_TIPI = Object.freeze({
+  lavorazioni: "lavorazioni",
+  materiali: "materiali",
+});
 
 export const LIVELLI_CONFIDENZA = Object.freeze([
   "insufficiente",
@@ -22,6 +36,8 @@ export const AI_LIMITI = Object.freeze({
   /** Minimo ms tra due analisi AI nello stesso processo client. */
   minIntervalloClientMs: 2_500,
   maxOutputTokens: 900,
+  maxTestoFieldLen: 4_000,
+  maxElementiField: 40,
 });
 
 const PII_PATTERN =
@@ -238,4 +254,176 @@ export function costruisciUserPrompt(data) {
       vincoli: data.vincoli || {},
     },
   });
+}
+
+/**
+ * @param {unknown} body
+ * @returns {{ ok: true, data: object, tipo: string }|{ ok: false, codice: string, messaggio: string }}
+ */
+export function validaRichiestaField(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return {
+      ok: false,
+      codice: "payload_invalido",
+      messaggio: "Richiesta non valida.",
+    };
+  }
+  const azione = String(body.azione || "").trim();
+  const isLav = azione === FIELD_AI_AZIONI.estraiLavorazioni;
+  const isMat = azione === FIELD_AI_AZIONI.estraiMateriali;
+  if (!isLav && !isMat) {
+    return {
+      ok: false,
+      codice: "azione_non_supportata",
+      messaggio: "Azione non supportata.",
+    };
+  }
+  const testo = troncaStringa(body.testo, AI_LIMITI.maxTestoFieldLen);
+  if (!testo || testo.length < 3) {
+    return {
+      ok: false,
+      codice: "testo_mancante",
+      messaggio: "Testo troppo corto.",
+    };
+  }
+  const vietati = [
+    "cliente",
+    "clienteNome",
+    "indirizzo",
+    "telefono",
+    "email",
+    "codiceFiscale",
+    "iban",
+  ];
+  for (const chiave of vietati) {
+    if (Object.prototype.hasOwnProperty.call(body, chiave)) {
+      return {
+        ok: false,
+        codice: "pii_rifiutata",
+        messaggio: "Dati non ammessi nella richiesta.",
+      };
+    }
+  }
+  return {
+    ok: true,
+    data: { azione, testo },
+    tipo: isMat ? FIELD_TIPI.materiali : FIELD_TIPI.lavorazioni,
+  };
+}
+
+export function costruisciSystemPromptField(tipo) {
+  const focus =
+    tipo === FIELD_TIPI.materiali
+      ? "Estrai SOLO materiali elettrici con quantità e unità. Non inventare sezioni/modelli non detti."
+      : "Estrai SOLO lavorazioni da preventivo elettrico con quantità e unità. Non inventare lavorazioni non dette.";
+  return [
+    "Sei PreventivAI Field Assistant per elettricisti italiani.",
+    focus,
+    "NON inventare prezzi, costi, marche o modelli non espliciti nel testo.",
+    "Se manca un'informazione, metti l'elemento in elementiAmbigui con nota.",
+    "Rispondi SOLO con JSON valido secondo lo schema, senza markdown.",
+  ].join(" ");
+}
+
+export function costruisciUserPromptField(testo, tipo) {
+  return JSON.stringify({
+    istruzione: "Estrai elementi strutturati dal testo. Nessun prezzo.",
+    schema: {
+      tipo: tipo,
+      testoOriginale: "string",
+      elementi: [
+        {
+          descrizione: "string",
+          quantita: "number",
+          unita: "pz|m|mq|cad",
+          note: "string",
+          specifiche: ["string"],
+        },
+      ],
+      elementiAmbigui: ["same as elementi"],
+      elementiNonRiconosciuti: ["string"],
+      informazioniExtra: ["string"],
+      confidence: "alta|media|bassa",
+    },
+    testo,
+  });
+}
+
+/**
+ * @param {unknown} raw
+ * @param {string} tipoAtteso
+ */
+export function validaRispostaField(raw, tipoAtteso) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { ok: false, codice: "json_invalido" };
+  }
+  const tipo = String(raw.tipo || tipoAtteso || "").trim();
+  if (tipo !== FIELD_TIPI.lavorazioni && tipo !== FIELD_TIPI.materiali) {
+    return { ok: false, codice: "tipo_invalido" };
+  }
+  if (
+    Array.isArray(raw.elementi) &&
+    raw.elementi.some(
+      (el) =>
+        el &&
+        typeof el === "object" &&
+        (el.prezzo != null || el.importo != null || el.costo != null)
+    )
+  ) {
+    return { ok: false, codice: "prezzo_non_ammesso" };
+  }
+
+  const elementi = (Array.isArray(raw.elementi) ? raw.elementi : [])
+    .map((el) => {
+      if (!el || typeof el !== "object") return null;
+      const descrizione = troncaStringa(el.descrizione || el.nome, 160);
+      if (!descrizione) return null;
+      const q = Number(el.quantita);
+      return {
+        descrizione,
+        quantita: Number.isFinite(q) && q > 0 ? q : 1,
+        unita: troncaStringa(el.unita || "pz", 24) || "pz",
+        note: troncaStringa(el.note, 200),
+        specifiche: Array.isArray(el.specifiche)
+          ? el.specifiche.map((s) => troncaStringa(s, 80)).filter(Boolean).slice(0, 8)
+          : [],
+        ambiguo: Boolean(el.ambiguo),
+      };
+    })
+    .filter(Boolean)
+    .slice(0, AI_LIMITI.maxElementiField);
+
+  let confidence = String(raw.confidence || "").trim();
+  if (!["alta", "media", "bassa"].includes(confidence)) {
+    confidence = elementi.length ? "media" : "bassa";
+  }
+
+  return {
+    ok: true,
+    data: {
+      tipo,
+      testoOriginale: troncaStringa(raw.testoOriginale, AI_LIMITI.maxTestoFieldLen),
+      elementi,
+      elementiAmbigui: (Array.isArray(raw.elementiAmbigui) ? raw.elementiAmbigui : [])
+        .map((el) => {
+          if (!el || typeof el !== "object") return null;
+          const descrizione = troncaStringa(el.descrizione || el.nome, 160);
+          if (!descrizione) return null;
+          const q = Number(el.quantita);
+          return {
+            descrizione,
+            quantita: Number.isFinite(q) && q > 0 ? q : 1,
+            unita: troncaStringa(el.unita || "pz", 24) || "pz",
+            note: troncaStringa(el.note, 200),
+            specifiche: [],
+            ambiguo: true,
+          };
+        })
+        .filter(Boolean)
+        .slice(0, AI_LIMITI.maxElementiField),
+      elementiNonRiconosciuti: normalizzaListaStringhe(raw.elementiNonRiconosciuti, 12),
+      informazioniExtra: normalizzaListaStringhe(raw.informazioniExtra, 12),
+      confidence,
+    },
+  };
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link2, Plus, Share2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -61,6 +61,10 @@ export default function DistintaMaterialiEditor() {
   const [showCollegaCantiere, setShowCollegaCantiere] = useState(false);
   const [cantieriDisponibili, setCantieriDisponibili] = useState([]);
   const [suggerimentiSession, setSuggerimentiSession] = useState(null);
+  const [salvando, setSalvando] = useState(false);
+  const salvataggioInCorso = useRef(false);
+  /** Dopo crea→navigate, non cancellare il flash nel load effect. */
+  const mantieniFlashRef = useRef(false);
 
   const catalogo = useMemo(() => caricaCatalogoMateriali(), []);
 
@@ -70,12 +74,30 @@ export default function DistintaMaterialiEditor() {
       setDistintaId(null);
       setNonTrovata(false);
       setSavedDistinta(null);
+      setShowSelettore(false);
+      setShowManuale(false);
+      setShowAggiungiMenu(false);
+      setEditingVoce(null);
+      setShowCondividi(false);
+      setShowCollegaCantiere(false);
+      setSuggerimentiSession(null);
+      setErrore("");
+      setMessaggio("");
+      salvataggioInCorso.current = false;
+      setSalvando(false);
       return;
     }
     const d = trovaDistintaPerId(id);
     if (!d) {
       setNonTrovata(true);
       setDraft(emptyDraft());
+      setShowSelettore(false);
+      setShowManuale(false);
+      setShowAggiungiMenu(false);
+      setEditingVoce(null);
+      setSuggerimentiSession(null);
+      setErrore("");
+      setMessaggio("");
       return;
     }
     setNonTrovata(false);
@@ -86,6 +108,21 @@ export default function DistintaMaterialiEditor() {
       clienteNome: d.clienteNome || "",
       note: d.note || "",
       voci: Array.isArray(d.voci) ? d.voci : [] });
+    setShowSelettore(false);
+    setShowManuale(false);
+    setShowAggiungiMenu(false);
+    setEditingVoce(null);
+    setShowCondividi(false);
+    setShowCollegaCantiere(false);
+    setSuggerimentiSession(null);
+    if (mantieniFlashRef.current) {
+      mantieniFlashRef.current = false;
+    } else {
+      setErrore("");
+      setMessaggio("");
+    }
+    salvataggioInCorso.current = false;
+    setSalvando(false);
   }, [id, isNuova]);
 
   useEffect(() => {
@@ -131,8 +168,11 @@ export default function DistintaMaterialiEditor() {
   }, [savedDistinta, buildPayload, distintaId]);
 
   function handleSave() {
+    if (salvataggioInCorso.current) return;
     setErrore("");
     const payload = buildPayload();
+    salvataggioInCorso.current = true;
+    setSalvando(true);
     try {
       if (isNuova || !distintaId) {
         const created = creaDistintaMateriali(payload);
@@ -142,7 +182,13 @@ export default function DistintaMaterialiEditor() {
         }
         setSavedDistinta(created);
         setDistintaId(created.id);
-        flash("Distinta creata.");
+        mantieniFlashRef.current = true;
+        const collegata = Boolean(created?.collegamenti?.cantiereId);
+        flash(
+          collegata
+            ? "Distinta creata."
+            : "Distinta creata. Collega un cantiere per mandare i materiali in Acquisti."
+        );
         navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
           replace: true });
         return;
@@ -160,22 +206,41 @@ export default function DistintaMaterialiEditor() {
         clienteNome: finale.clienteNome || "",
         note: finale.note || "",
         voci: Array.isArray(finale.voci) ? finale.voci : [] });
-      flash(sync.ok ? "Salvata e sincronizzata sul cantiere." : "Salvata.");
+      if (sync.ok) {
+        flash("Salvata e sincronizzata sul cantiere.");
+      } else if (!finale?.collegamenti?.cantiereId) {
+        flash(
+          "Salvata. Collega un cantiere per mandare i materiali in Acquisti."
+        );
+      } else {
+        flash("Salvata.");
+      }
     } catch (e) {
       setErrore(e?.message || "Errore salvataggio");
+    } finally {
+      salvataggioInCorso.current = false;
+      setSalvando(false);
     }
   }
 
   function assicuratiSalvata() {
+    if (salvataggioInCorso.current && savedDistinta) return savedDistinta;
     const payload = buildPayload();
     if (isNuova || !distintaId) {
-      const created = creaDistintaMateriali(payload);
-      if (!created) return null;
-      setSavedDistinta(created);
-      setDistintaId(created.id);
-      navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
-        replace: true });
-      return created;
+      if (salvataggioInCorso.current) return savedDistinta;
+      salvataggioInCorso.current = true;
+      try {
+        const created = creaDistintaMateriali(payload);
+        if (!created) return null;
+        setSavedDistinta(created);
+        setDistintaId(created.id);
+        mantieniFlashRef.current = true;
+        navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
+          replace: true });
+        return created;
+      } finally {
+        salvataggioInCorso.current = false;
+      }
     }
     const updated = aggiornaDistintaMateriali(distintaId, payload);
     if (!updated) return null;
@@ -291,6 +356,7 @@ export default function DistintaMaterialiEditor() {
         }
         setSavedDistinta(created);
         setDistintaId(created.id);
+        mantieniFlashRef.current = true;
         navigate(ROUTES.distintaMateriali.replace(":id", created.id), {
           replace: true });
       } else {
@@ -488,10 +554,11 @@ export default function DistintaMaterialiEditor() {
         <button
           type="button"
           onClick={handleSave}
-          className="btn-primary w-full min-h-[52px] text-base font-bold"
+          disabled={salvando}
+          className="btn-primary w-full min-h-[52px] text-base font-bold disabled:opacity-40"
           data-testid="distinta-salva"
         >
-          Salva distinta
+          {salvando ? "Salvataggio…" : "Salva distinta"}
         </button>
       </div>
 

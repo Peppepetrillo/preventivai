@@ -133,12 +133,33 @@ export function duplicaPreventivo({
   datiPreventivo,
   cliente,
 }) {
+  const CAMPI_NON_COPIARE = new Set([
+    "cantiereId",
+    "inviatoAt",
+    "accettatoAt",
+    "convertitoAt",
+    "convertitoBy",
+    "rifiutatoAt",
+    "annullatoAt",
+    "dataAccettazione",
+    "incassato",
+    "noteIncasso",
+    "deletedAt",
+  ]);
+  const resto = Object.fromEntries(
+    Object.entries(datiPreventivo || {}).filter(
+      ([chiave]) => !CAMPI_NON_COPIARE.has(chiave)
+    )
+  );
+
   return {
-    ...datiPreventivo,
+    ...resto,
     id: new Date().getTime(),
     numero: creaProssimoNumeroPreventivo(archivio),
     cliente: `${cliente} - copia`,
     stato: "Bozza",
     data: new Date().toLocaleDateString("it-IT"),
+    cantiereId: null,
+    incassato: 0,
   };
 }

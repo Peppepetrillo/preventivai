@@ -63,9 +63,10 @@ describe("archivioPreventiviUtils", () => {
     expect(filtrati[0].id).toBe(3);
   });
 
-  it("mappa i colori stato noti", () => {
-    expect(classeColoreStatoPreventivo("Inviato")).toBe("bg-blue-500");
-    expect(classeColoreStatoPreventivo("Convertito")).toBe("bg-emerald-600");
-    expect(classeColoreStatoPreventivo("Sconosciuto")).toBe("bg-yellow-500");
+  it("mappa i badge stato DS noti", () => {
+    expect(classeColoreStatoPreventivo("Inviato")).toBe("ds-badge-inviato");
+    expect(classeColoreStatoPreventivo("Convertito")).toBe("ds-badge-accettato");
+    expect(classeColoreStatoPreventivo("Sconosciuto")).toBe("ds-badge-bozza");
+    expect(classeColoreStatoPreventivo("Rifiutato")).toBe("ds-badge-rifiutato");
   });
 });

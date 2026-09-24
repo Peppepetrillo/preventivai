@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import BottomSheet from "../../../components/BottomSheet";
 import { salvaClienti, leggiClientiTutti } from "../../../repositories/clientiRepository";
@@ -13,6 +13,8 @@ export default function NuovoClienteSheet({ open, onClose, onSalvato }) {
   const [email, setEmail] = useState("");
   const [mostraExtra, setMostraExtra] = useState(false);
   const [errore, setErrore] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const salvataggioInCorso = useRef(false);
 
   function resetForm() {
     setNome("");
@@ -20,6 +22,8 @@ export default function NuovoClienteSheet({ open, onClose, onSalvato }) {
     setEmail("");
     setMostraExtra(false);
     setErrore("");
+    setSalvando(false);
+    salvataggioInCorso.current = false;
   }
 
   function chiudi() {
@@ -28,6 +32,7 @@ export default function NuovoClienteSheet({ open, onClose, onSalvato }) {
   }
 
   function salva() {
+    if (salvataggioInCorso.current) return;
     const nomePulito = nome.trim();
 
     if (!nomePulito) {
@@ -35,8 +40,11 @@ export default function NuovoClienteSheet({ open, onClose, onSalvato }) {
       return;
     }
 
+    salvataggioInCorso.current = true;
+    setSalvando(true);
+
     const nuovoCliente = {
-      id: new Date().getTime(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       nome: nomePulito,
       telefono: telefono.trim(),
       email: email.trim(),
@@ -75,7 +83,7 @@ export default function NuovoClienteSheet({ open, onClose, onSalvato }) {
         <button
           type="button"
           onClick={() => setMostraExtra((valore) => !valore)}
-          className="text-sm text-yellow-200 font-bold"
+          className="text-sm text-yellow-200 font-bold min-h-[44px]"
           aria-expanded={mostraExtra}
         >
           {mostraExtra ? "▴ Nascondi dati opzionali" : "▾ Altri dati (opzionale)"}
@@ -120,9 +128,10 @@ export default function NuovoClienteSheet({ open, onClose, onSalvato }) {
         <button
           type="button"
           onClick={salva}
-          className="w-full btn-primary py-4 font-black"
+          disabled={salvando || !nome.trim()}
+          className="w-full btn-primary py-4 font-black min-h-[52px] disabled:opacity-40"
         >
-          Salva e seleziona
+          {salvando ? "Salvataggio…" : "Salva e seleziona"}
         </button>
       </div>
     </BottomSheet>

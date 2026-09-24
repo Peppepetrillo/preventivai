@@ -51,6 +51,7 @@ export default function CondivisioneSection({
   onVisualizzaPdf,
   inElaborazione = false,
   embedded = false,
+  onCondivisioneSuccess,
 }) {
   const [tick, setTick] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -85,11 +86,16 @@ export default function CondivisioneSection({
       refresh();
       if (esito?.success) {
         const canale = esito.fallback
-          ? ` (fallback ${esito.canale})`
+          ? esito.canale === "download"
+            ? " (salvato sul dispositivo)"
+            : esito.canale === "web_share"
+              ? " (condivisione di sistema)"
+              : ""
           : "";
         onMessaggio?.(
           `Condivisione ${TIPI_CONDIVISIONE_LABEL[esito.condivisione?.tipo] || ""} completata${canale}.`
         );
+        onCondivisioneSuccess?.(esito);
       } else if (esito?.error === "annullato") {
         onMessaggio?.("Condivisione annullata.");
       } else {

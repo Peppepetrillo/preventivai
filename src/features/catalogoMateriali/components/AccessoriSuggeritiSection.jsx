@@ -148,7 +148,7 @@ export default function AccessoriSuggeritiSection({
               {!readOnly ? (
                 <label className="mt-3 flex items-center gap-3">
                   <span className="ds-text-secondary text-xs shrink-0">
-                    Qty ×
+                    Q.tà ×
                   </span>
                   <NumericInput
                     className="w-24 min-h-[44px] rounded-[16px] border border-white/10 bg-black/30 px-3 text-white"
