@@ -59,8 +59,8 @@ export default function Dashboard() {
             {oggi.saluto}
             {oggi.nome ? ` ${oggi.nome}` : ""}
           </h1>
-          <p className="mt-2 ds-text-primary text-slate-300">{oggi.dataLabel}</p>
-          <p className="mt-1.5 ds-text-secondary" data-testid="home-frase">
+          <p className="mt-2 ds-text-secondary">{oggi.dataLabel}</p>
+          <p className="mt-1.5 ds-text-muted" data-testid="home-frase">
             {oggi.frase}
           </p>
         </header>
@@ -78,7 +78,7 @@ export default function Dashboard() {
           </Link>
           <Link
             to={`${ROUTES.preventiviNuovo}?express=1`}
-            className="w-full min-h-[44px] flex items-center justify-center gap-2 text-sm font-medium text-slate-300 hover:text-yellow-200 transition-colors"
+            className="btn-tertiary w-full"
             data-testid="home-preventivo-vocale"
             aria-label="Preventivo vocale rapido"
           >

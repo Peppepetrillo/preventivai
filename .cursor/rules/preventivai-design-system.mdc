@@ -1,15 +1,17 @@
 ---
-description: PreventivAI Design System v2.0 — Light + Dark, mobile-first
+description: PreventivAI Design System v2.1 — Light + Dark, contrasto e gerarchia
 alwaysApply: true
 ---
 
-# PreventivAI Design System v2.0
+# PreventivAI Design System v2.1
 
 PreventivAI è uno **strumento di lavoro**. Ogni elemento grafico deve ridurre tempo, errori e stress. Mai aggiungere complessità.
 
 ## Regola d'oro
 
 Prima di aggiungere un componente: *"Fa risparmiare tempo all'elettricista?"* Se no → non entra.
+
+Priorità: **leggibilità → gerarchia → rapidità → estetica**.
 
 ## Principles
 
@@ -18,6 +20,7 @@ Prima di aggiungere un componente: *"Fa risparmiare tempo all'elettricista?"* Se
 3. **Information First** — info prima, azioni dopo
 4. **Progressive Disclosure** — solo ciò che serve ora
 5. **Speed Over Decoration** — velocità > spettacolo
+6. **Dark = riferimento** — Light progettato a sé (non invertito)
 
 ## Temi
 
@@ -32,8 +35,9 @@ Dettaglio: `docs/DESIGN-SYSTEM.md`.
 | Radius card | 22px (`--radius-card`) |
 | Radius control | 16px (`--radius-control`) |
 | Badge | pill 999px |
-| Ombra | `--shadow-soft` / `--shadow-fab` |
+| Ombra | `--shadow-soft` (Light elevated) / `--shadow-fab` — Dark preferisce surface+border |
 | Motion | 150–250ms, `--ease-standard` |
+| Text | `--text-primary` · `--text-secondary` · `--text-muted` |
 
 ## Tipografia (classi DS)
 
@@ -42,30 +46,34 @@ Dettaglio: `docs/DESIGN-SYSTEM.md`.
 - KPI/numeri: `.ds-kpi-value`
 - Info principale: `.ds-text-primary`
 - Secondaria: `.ds-text-secondary`
+- Muted: `.ds-text-muted`
 - Badge: `.ds-badge`
 
 ## Colori semantici
 
 - Primary: blu elettrico (`--primary`)
 - Success / Warning / Danger / Info: token semantici
-- **Badge stato (non cambiare le classi):**
+- **Badge stato lavoro (non cambiare le classi):**
   - In corso → `.ds-badge-in-corso`
   - Da iniziare → `.ds-badge-da-iniziare`
   - Completato → `.ds-badge-completato`
   - Sospeso → `.ds-badge-sospeso`
+- **Badge preventivo:** `.ds-badge-bozza` · `inviato` · `accettato` · `rifiutato`
 
 ## Pattern obbligatori
 
-- **Card**: titolo + info essenziali + badge opzionale; intera superficie tappabile
+- **Card**: solo dove serve (lista, KPI, gruppo); intera superficie tappabile; niente card nested
 - **Ricerca**: `SearchInput` / `.ds-search`
 - **Empty**: Titolo → Descrizione → CTA (`.ds-empty`)
-- **Bottoni**: `.btn-primary` / `.btn-secondary` / `.btn-danger`
-- **Icone**: solo Lucide
-- **Touch**: ≥44pt · Safe Area completa
+- **Bottoni**: `.btn-primary` / `.btn-secondary` / `.btn-tertiary` / `.btn-danger`
+- **Icone**: solo Lucide — mai emoji
+- **Touch**: ≥44pt · CTA 48–52 · Safe Area completa
+- **Superfici**: bg ≠ card ≠ sheet ≠ input — distinguibili anche senza ombra
 
 ## Non fare
 
 - Nuovi stili bottone/card/search paralleli
-- Ombre pesanti o gradienti decorativi
+- Ombre pesanti, neon, glow, gradienti decorativi
 - Animazioni >250ms
+- Invertire Dark per ottenere Light
 - Modificare dominio/repository/sync per sole ragioni UI

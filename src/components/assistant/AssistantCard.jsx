@@ -1,27 +1,37 @@
-import { memo, useCallback } from "react";
+import { createElement, memo, useCallback } from "react";
+import {
+  AlertTriangle,
+  Camera,
+  CheckCircle2,
+  Clock,
+  Lightbulb,
+  StickyNote,
+  Wallet,
+  Wrench,
+} from "lucide-react";
 
 const ICONE_TIPO = {
-  checklist: "💡",
-  materiale: "🧰",
-  durata: "⏱️",
-  documentazione: "📷",
-  nota: "📝",
-  economico: "💰",
-  warning: "⚠️",
-  successo: "✅",
+  checklist: Lightbulb,
+  materiale: Wrench,
+  durata: Clock,
+  documentazione: Camera,
+  nota: StickyNote,
+  economico: Wallet,
+  warning: AlertTriangle,
+  successo: CheckCircle2,
 };
 
 const STILI_PRIORITA = {
   alta: {
-    badge: "bg-red-500/15 text-red-200 border-red-400/25",
+    badge: "ds-badge ds-badge-rifiutato",
     etichetta: "Alta",
   },
   media: {
-    badge: "bg-orange-500/15 text-orange-200 border-orange-400/25",
+    badge: "ds-badge ds-badge-sospeso",
     etichetta: "Media",
   },
   bassa: {
-    badge: "bg-slate-500/20 text-slate-300 border-white/10",
+    badge: "ds-badge ds-badge-neutral",
     etichetta: "Bassa",
   },
 };
@@ -37,7 +47,7 @@ const SOGLIA_CONFIDENCE_VISIBILE = 0.8;
 /**
  * @param {string} tipo
  * @param {string} priorita
- * @returns {string}
+ * @returns {typeof Lightbulb}
  */
 function iconaPerCard(tipo, priorita) {
   if (priorita === "alta" && tipo !== "durata") {
@@ -63,7 +73,7 @@ function etichettaAzione(action, tipo) {
 
 function AssistantCard({ card, onAction, etichettaPrimaria }) {
   const priorita = STILI_PRIORITA[card?.priorita] || STILI_PRIORITA.bassa;
-  const icona = iconaPerCard(card?.tipo, card?.priorita);
+  const IconComponent = iconaPerCard(card?.tipo, card?.priorita);
   const mostraConfidence =
     Number(card?.confidence) > SOGLIA_CONFIDENCE_VISIBILE;
   const percentuale = Math.round(Number(card?.confidence || 0) * 100);
@@ -85,31 +95,22 @@ function AssistantCard({ card, onAction, etichettaPrimaria }) {
       aria-label={`${card?.titolo || "Suggerimento"}, priorità ${priorita.etichetta}`}
     >
       <div className="flex items-start gap-3">
-        <div
-          className="w-11 h-11 rounded-[14px] bg-yellow-400/10 flex items-center justify-center text-xl shrink-0"
-          aria-hidden="true"
-        >
-          {icona}
+        <div className="ds-icon-tile" aria-hidden="true">
+          {createElement(IconComponent, { size: 20, strokeWidth: 2 })}
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span
-              className={`rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${priorita.badge}`}
-            >
-              {priorita.etichetta}
-            </span>
+            <span className={priorita.badge}>{priorita.etichetta}</span>
             {mostraConfidence ? (
-              <span className="text-xs font-bold text-emerald-300">
+              <span className="ds-text-muted font-semibold tabular-nums">
                 {percentuale}% confidenza
               </span>
             ) : null}
           </div>
 
-          <h3 className="text-lg font-black leading-snug">
-            {card?.titolo || "Suggerimento"}
-          </h3>
-          <p className="text-sm text-slate-400 mt-1 leading-relaxed">
+          <h3 className="ds-card-title">{card?.titolo || "Suggerimento"}</h3>
+          <p className="ds-text-secondary mt-1 leading-relaxed">
             {card?.descrizione || ""}
           </p>
 
@@ -117,7 +118,7 @@ function AssistantCard({ card, onAction, etichettaPrimaria }) {
             <button
               type="button"
               onClick={() => gestisciAzione(azionePrimaria)}
-              className="btn-primary px-4 py-3 min-h-[48px] text-sm font-black"
+              className="btn-primary px-4 py-3 min-h-[52px] text-sm font-semibold"
               aria-label={`${labelPrimaria}: ${card?.titolo || "suggerimento"}`}
             >
               {labelPrimaria}
@@ -126,7 +127,7 @@ function AssistantCard({ card, onAction, etichettaPrimaria }) {
             <button
               type="button"
               onClick={() => gestisciAzione("dismiss")}
-              className="btn-secondary px-4 py-3 min-h-[48px] text-sm font-black"
+              className="btn-secondary px-4 py-3 min-h-[48px] text-sm font-semibold"
               aria-label={`Ignora: ${card?.titolo || "suggerimento"}`}
             >
               Ignora

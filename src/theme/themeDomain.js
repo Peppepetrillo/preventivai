@@ -59,6 +59,10 @@ export function applicaTemaDom(temaEffettivo, doc = typeof document !== "undefin
   doc.documentElement.style.colorScheme = tema;
   const meta = doc.querySelector('meta[name="theme-color"]');
   if (meta) {
-    meta.setAttribute("content", tema === "dark" ? "#07111f" : "#e8eef6");
+    meta.setAttribute("content", tema === "dark" ? "#050d18" : "#d8e2ef");
   }
 }
+
+/** Colori theme-color meta allineati ai token --bg-app */
+export const THEME_COLOR_LIGHT = "#d8e2ef";
+export const THEME_COLOR_DARK = "#050d18";

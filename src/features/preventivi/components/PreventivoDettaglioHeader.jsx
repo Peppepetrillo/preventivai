@@ -39,7 +39,7 @@ export default function PreventivoDettaglioHeader({
           {linkCliente ? (
             <Link
               to={linkCliente}
-              className="ds-text-primary mt-2 inline-block hover:text-yellow-200"
+              className="ds-text-primary mt-2 inline-block"
               data-testid="preventivo-link-cliente"
             >
               {cliente || "Cliente"}
@@ -48,23 +48,23 @@ export default function PreventivoDettaglioHeader({
             <p className="ds-text-primary mt-2">{cliente || "Cliente"}</p>
           )}
           <p
-            className="ds-text-secondary text-sm mt-2"
+            className="ds-text-secondary mt-2"
             data-testid="preventivo-tipologia"
           >
             Tipologia: {tipologiaLabel}
           </p>
         </div>
         <span
-          className={`ds-badge shrink-0 text-white ${classeColoreStatoPreventivo(stato)}`}
+          className={`ds-badge shrink-0 ${classeColoreStatoPreventivo(stato)}`}
           data-testid="preventivo-stato-badge"
         >
           {etichettaStatoUi(stato)}
         </span>
       </div>
-      <div className="mt-5 pt-4 border-t border-white/[0.08]">
+      <div className="mt-5 pt-4 border-t" style={{ borderColor: "var(--line)" }}>
         <p className="ds-text-secondary">Totale IVA incl.</p>
         <p
-          className="text-3xl font-bold tracking-tight mt-1"
+          className="ds-kpi-value mt-1"
           data-testid="preventivo-totale-header"
         >
           {formatEuro(totale)}
