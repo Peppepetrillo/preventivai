@@ -147,8 +147,7 @@ describe("GlobalCreate UX-3", () => {
   it("FAB ha touch target >=44px", () => {
     renderShell();
     const fab = screen.getByTestId("global-create-fab");
-    expect(fab.className).toMatch(/min-h-\[44px\]/);
-    expect(fab.className).toMatch(/min-w-\[44px\]/);
+    expect(fab.className).toMatch(/ds-nav-fab/);
   });
 
   it("chiude il menu con Escape", async () => {

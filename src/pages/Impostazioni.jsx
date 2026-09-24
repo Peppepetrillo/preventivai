@@ -9,6 +9,9 @@ import {
   ChevronRight,
   LockKeyhole,
   LogOut,
+  Moon,
+  Sun,
+  Monitor,
   Trash2,
   Upload
 } from "lucide-react";
@@ -36,6 +39,8 @@ import {
   rifrescaStatoConfig
 } from "../domain/backupAutomatico";
 import { useCloudAuth } from "../contexts/cloudAuthContext";
+import { useTheme } from "../theme/ThemeProvider";
+import { ETICHETTE_TEMA, TEMA } from "../theme/themeDomain";
 import {
   disattivaPin,
   impostaPinSicuro,
@@ -46,8 +51,15 @@ import {
   validaFormatoPin
 } from "../services/pinSecurity";
 
+const ICONE_TEMA = {
+  [TEMA.chiaro]: Sun,
+  [TEMA.scuro]: Moon,
+  [TEMA.sistema]: Monitor,
+};
+
 export default function Impostazioni() {
   const cloudAuth = useCloudAuth();
+  const { preferenza, setPreferenza, temi } = useTheme();
 
   const [pinNuovo, setPinNuovo] = useState("");
   const [pinAttivo, setPinAttivo] = useState(() => pinEAttivo());
@@ -282,6 +294,42 @@ export default function Impostazioni() {
             aria-hidden="true"
           />
         </Link>
+
+        <div className="pro-panel p-5 mb-5" data-testid="impostazioni-tema">
+          <p className="section-label">Aspetto</p>
+          <h2 className="ds-card-title mt-1">Tema</h2>
+          <p className="ds-text-secondary mt-2">
+            Chiaro, scuro o come il sistema del telefono.
+          </p>
+          <div
+            className="mt-4 grid grid-cols-3 gap-2"
+            role="radiogroup"
+            aria-label="Tema interfaccia"
+          >
+            {temi.map((id) => {
+              const Icon = ICONE_TEMA[id];
+              const attivo = preferenza === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={attivo}
+                  data-testid={`tema-${id}`}
+                  onClick={() => setPreferenza(id)}
+                  className={`min-h-[52px] rounded-[var(--radius-control)] border px-2 py-3 flex flex-col items-center justify-center gap-1.5 text-sm font-semibold transition-colors ${
+                    attivo
+                      ? "border-[var(--primary)] bg-[var(--primary-muted)] text-[var(--primary-soft)]"
+                      : "border-[var(--line)] bg-[var(--panel-muted)] text-[var(--text-secondary)]"
+                  }`}
+                >
+                  <Icon size={18} aria-hidden="true" />
+                  {ETICHETTE_TEMA[id]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <div className="pro-panel p-5 mb-5">
           <div className="flex items-center gap-4 mb-5">

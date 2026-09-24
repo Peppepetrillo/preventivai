@@ -38,19 +38,19 @@ function destinazioneMovimento(movimento) {
 function MetricaCard({ label, valore, tono = "default", testId }) {
   const tonoClasse =
     tono === "positivo"
-      ? "text-emerald-300"
+      ? "text-[var(--success)]"
       : tono === "negativo"
-        ? "text-rose-300"
+        ? "text-[var(--danger)]"
         : tono === "saldo"
           ? valore >= 0
-            ? "text-emerald-300"
-            : "text-rose-300"
-          : "text-white";
+            ? "text-[var(--success)]"
+            : "text-[var(--danger)]"
+          : "text-[var(--text-primary)]";
 
   return (
     <div className="pro-panel p-4" data-testid={testId}>
       <p className="section-label">{label}</p>
-      <p className={`ds-card-title mt-2 tabular-nums ${tonoClasse}`}>
+      <p className={`ds-kpi-value mt-2 ${tonoClasse}`}>
         {formatEuro(valore)}
       </p>
     </div>

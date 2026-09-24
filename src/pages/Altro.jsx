@@ -150,7 +150,7 @@ function VoceHub({ voce }) {
       className="pro-panel p-5 flex items-center gap-4 min-h-[64px]"
       data-testid={voce.testId}
     >
-      <span className="inline-flex h-11 w-11 items-center justify-center rounded-[16px] bg-yellow-400/15 text-yellow-300 shrink-0">
+      <span className="ds-icon-tile">
         <Icon size={22} aria-hidden="true" />
       </span>
       <div className="min-w-0 flex-1">

@@ -76,7 +76,7 @@ const Manodopera = lazy(() => import("./pages/Manodopera"));
 
 function LoadingPage() {
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-[#070b14] text-white flex items-center justify-center px-5 safe-top safe-bottom">
+    <div className="min-h-screen min-h-[100dvh] flex items-center justify-center px-5 safe-top safe-bottom" style={{ background: "var(--bg-app)", color: "var(--text-primary)" }}>
       <div className="pro-panel-strong p-6 text-center">
         <p className="section-label">PreventivAI</p>
         <h1 className="ds-page-title mt-1">Caricamento...</h1>

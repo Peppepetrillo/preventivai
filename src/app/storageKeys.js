@@ -47,6 +47,8 @@ export const STORAGE_KEYS = {
   backupAutomaticoUltimo: "preventivai.backupAutomatico.ultimo",
   /** Anagrafica operai — locale; backup via BACKUP_DATA_KEYS; sync cloud non in questa release */
   operai: "preventivai.operai",
+  /** Preferenza tema UI (chiaro|scuro|sistema) — device-local */
+  tema: "preventivai.tema",
 };
 
 export const STORAGE_FALLBACKS = {
@@ -88,6 +90,7 @@ export const STORAGE_FALLBACKS = {
   },
   [STORAGE_KEYS.backupAutomaticoUltimo]: null,
   [STORAGE_KEYS.operai]: [],
+  [STORAGE_KEYS.tema]: "sistema",
 };
 
 export const APP_DATA_KEYS = {

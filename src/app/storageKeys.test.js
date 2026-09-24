@@ -9,6 +9,15 @@ import {
   CLOUD_SYNC_STORAGE_KEYS,
 } from "./storageKeys";
 
+describe("storageKeys — tema device-local", () => {
+  it("tema è native ma fuori APP_DATA_KEYS / BACKUP", () => {
+    expect(STORAGE_KEYS.tema in APP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.tema in BACKUP_DATA_KEYS).toBe(false);
+    expect(STORAGE_KEYS.tema in NATIVE_STORAGE_KEYS).toBe(true);
+    expect(STORAGE_FALLBACKS[STORAGE_KEYS.tema]).toBe("sistema");
+  });
+});
+
 describe("storageKeys — backup Operai P1", () => {
   it("operai in BACKUP_DATA_KEYS ma fuori APP_DATA_KEYS", () => {
     expect(STORAGE_KEYS.operai in APP_DATA_KEYS).toBe(false);
