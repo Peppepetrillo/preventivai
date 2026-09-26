@@ -1297,6 +1297,7 @@ function DettaglioPreventivoContenuto() {
         titolo={preventivo.numero || `PREV-${preventivo.id}`}
         nomeFile={`${preventivo.numero || `PREV-${preventivo.id}`}.pdf`}
         inElaborazione={pdfInElaborazione}
+        abilitaZoom
         onChiudi={chiudiAnteprimaPdf}
         onRigenera={() =>
           generaDocumentoPdf({ salva: false, apriAnteprima: true })

@@ -47,7 +47,10 @@ export default function GlobalCreateHost() {
     (form) => {
       const cantiere = creaLavoroPianificato(form);
       const aggiornati = [...cantieri, cantiere];
-      salvaCantieri(aggiornati);
+      const esito = salvaCantieri(aggiornati);
+      if (esito?.ok === false) {
+        return esito;
+      }
       setCantieri(aggiornati);
 
       if (cantiere.reminderEnabled) {
@@ -56,6 +59,7 @@ export default function GlobalCreateHost() {
           reminderMinutes: cantiere.reminderMinutes,
         });
       }
+      return { ok: true };
     },
     [cantieri, setCantieri]
   );

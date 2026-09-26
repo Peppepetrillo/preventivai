@@ -5,10 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTES } from "../../../app/routes";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import { leggiClienti } from "../../../repositories/clientiRepository";
-import {
-  eseguiNavigazioneIndietro,
-  setGuardiaNavigazioneIndietro,
-} from "../../../navigation/navigateBack";
+import { setGuardiaNavigazioneIndietro } from "../../../navigation/navigateBack";
 import { useSalvaEGeneraPdf } from "../hooks/useSalvaEGeneraPdf";
 import { useWizardContext } from "./useWizardContext";
 import { useWizardPreventivoState } from "./useWizardPreventivoState";
@@ -153,10 +150,9 @@ export default function WizardPreventivo() {
       navigate(pending.path);
       return;
     }
-    // Completa Back/edge/Android senza riattivare la guardia
-    eseguiNavigazioneIndietro(navigate, ROUTES.nuovoPreventivo, {
-      forceParent: true,
-    });
+    // Back/edge/Android: esci alla lista, non al parent di /nuovo-preventivo
+    // (parent = /preventivi/nuovo → riaprirebbe il wizard).
+    navigate(ROUTES.preventivi);
   }
 
   function gestisciIndietro() {

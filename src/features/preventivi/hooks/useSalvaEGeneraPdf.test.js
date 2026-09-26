@@ -11,7 +11,7 @@ vi.mock("@capacitor/core", () => ({
 
 vi.mock("../../../repositories/preventiviRepository", () => ({
   leggiPreventivi: vi.fn(() => []),
-  salvaNuovoPreventivo: vi.fn((p) => p),
+  salvaNuovoPreventivo: vi.fn((p) => Object.assign(Promise.resolve({ ok: true }), { ok: true, preventivo: p })),
   aggiornaPreventivo: vi.fn((_id, aggiorna) => {
     const corrente = {
       id: 1,
@@ -20,7 +20,7 @@ vi.mock("../../../repositories/preventiviRepository", () => ({
       stato: "Bozza",
       lavorazioni: [],
     };
-    return [aggiorna(corrente)];
+    return Object.assign([aggiorna(corrente)], { ok: true });
   }),
 }));
 

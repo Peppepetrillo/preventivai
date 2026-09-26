@@ -73,8 +73,12 @@ export default function Incassi() {
       if (isRecordCestinato(item)) return item;
       return perId.get(String(item.id)) || item;
     });
-    salvaPreventivi(prossimo);
+    const esito = salvaPreventivi(prossimo);
+    if (esito?.ok === false) {
+      return esito;
+    }
     setPreventivi(nuoviPreventiviAttivi);
+    return esito;
   }
 
   function aggiornaImporto(preventivoId, valore) {
@@ -91,15 +95,19 @@ export default function Incassi() {
 
     salvataggioInCorso.current = true;
     setSalvandoId(String(preventivo.id));
-    salvaListaPreventivi(
+    const esito = salvaListaPreventivi(
       preventivi.map((item) =>
         String(item.id) === String(preventivo.id)
           ? registraIncasso(item, importo)
           : item
       )
     );
-    aggiornaImporto(preventivo.id, "");
-    flash("Pagamento registrato.");
+    if (esito?.ok === false) {
+      flash("Impossibile salvare il pagamento. Riprova.");
+    } else {
+      aggiornaImporto(preventivo.id, "");
+      flash("Pagamento registrato.");
+    }
     salvataggioInCorso.current = false;
     setSalvandoId("");
   }
@@ -110,14 +118,18 @@ export default function Incassi() {
 
     salvataggioInCorso.current = true;
     setSalvandoId(String(preventivo.id));
-    salvaListaPreventivi(
+    const esito = salvaListaPreventivi(
       preventivi.map((item) =>
         String(item.id) === String(preventivo.id)
           ? segnaPreventivoSaldato(item)
           : item
       )
     );
-    flash("Segnato come saldato.");
+    if (esito?.ok === false) {
+      flash("Impossibile salvare. Riprova.");
+    } else {
+      flash("Segnato come saldato.");
+    }
     salvataggioInCorso.current = false;
     setSalvandoId("");
   }

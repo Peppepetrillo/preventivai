@@ -733,20 +733,22 @@ export function useCantieri({
       setMessaggio("Elaborazione immagine...");
       const nuovaFoto = await preparaFotoCantiere(file);
 
-      setCantieri((precedenti) => {
-        const aggiornati = precedenti.map((cantiere) =>
-          String(cantiere.id) === String(idTarget)
-            ? appendDiarioEvents(
-                aggiornaCantiere(cantiere, {
-                  foto: [...(cantiere.foto || []), nuovaFoto],
-                }),
-                [creaEventoFotoAggiunta(nuovaFoto)]
-              )
-            : cantiere
-        );
-        salvaCantieri(aggiornati);
-        return aggiornati;
-      });
+      const elencoAttuale = leggiCantieriTutti();
+      const aggiornati = elencoAttuale.map((cantiere) =>
+        String(cantiere.id) === String(idTarget)
+          ? appendDiarioEvents(
+              aggiornaCantiere(cantiere, {
+                foto: [...(cantiere.foto || []), nuovaFoto],
+              }),
+              [creaEventoFotoAggiunta(nuovaFoto)]
+            )
+          : cantiere
+      );
+      const esito = salvaListaCantieri(aggiornati);
+      if (esito?.ok === false) {
+        setMessaggio("Impossibile salvare la foto. Riprova.");
+        return;
+      }
       setMessaggio("Foto aggiunta con successo.");
     } catch (e) {
       console.error("Errore elaborazione foto:", e);

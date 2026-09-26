@@ -27,7 +27,13 @@ export async function ripristinaBackupCompleto(backup) {
 
   await Promise.all(
     Object.entries(CHIAVI_BACKUP).map(async ([chiave, fallback]) => {
-      const valore = backup.dati[chiave] ?? fallback;
+      // Chiave assente nel file → non toccare lo storage locale (evita wipe operai
+      // su backup pre-BACKUP_DATA_KEYS). Solo chiavi presenti vengono ripristinate.
+      if (!Object.prototype.hasOwnProperty.call(backup.dati, chiave)) {
+        return;
+      }
+      const grezzo = backup.dati[chiave];
+      const valore = grezzo === undefined || grezzo === null ? fallback : grezzo;
 
       await salvaStorage(chiave, valore);
       // No-op per chiavi fuori APP_DATA_KEYS (es. operai) — sync cloud invariato.

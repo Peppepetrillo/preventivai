@@ -89,6 +89,7 @@ export default function CantiereReportPanel({ cantiere }) {
         titolo="Anteprima report cantiere"
         nomeFile={nomeFile}
         inElaborazione={inElaborazione}
+        abilitaZoom
         onChiudi={() => setAnteprimaAperta(false)}
         onRigenera={() => genera({ apriAnteprima: true })}
         onScarica={() => scaricaDaBlobUrl(blobUrl, nomeFile)}

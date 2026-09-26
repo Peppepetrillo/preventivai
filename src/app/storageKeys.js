@@ -106,7 +106,7 @@ export const APP_DATA_KEYS = {
 /**
  * Dataset incluso in creaBackupCompleto / ripristinaBackupCompleto.
  * = APP_DATA_KEYS + operai (locale backup; NON sync cloud in 1.0).
- * Backup senza chiave operai restano validi (fallback []).
+ * Restore: chiavi assenti nel file non vengono toccate (preserve locale).
  */
 export const BACKUP_DATA_KEYS = {
   ...APP_DATA_KEYS,

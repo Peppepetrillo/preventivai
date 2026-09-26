@@ -198,7 +198,7 @@ describe("backup Operai P1 — export/import/idempotenza", () => {
     ]);
   });
 
-  it("backup vecchio senza chiave operai resta importabile (fallback [])", async () => {
+  it("backup vecchio senza chiave operai resta importabile e preserva operai locali", async () => {
     salvaOperai([
       {
         id: "op-local",
@@ -220,6 +220,37 @@ describe("backup Operai P1 — export/import/idempotenza", () => {
         [STORAGE_KEYS.datiAzienda]: {},
         [STORAGE_KEYS.listino]: [],
         [STORAGE_KEYS.esperienze]: [],
+      },
+    });
+
+    expect(leggiOperaiTutti()).toEqual([
+      expect.objectContaining({ id: "op-local", nome: "Solo" }),
+    ]);
+  });
+
+  it("backup con operai: [] esplicito svuota correttamente", async () => {
+    salvaOperai([
+      {
+        id: "op-wipe",
+        nome: "Da",
+        cognome: "Svuotare",
+        costoGiornata: 100,
+        attivo: true,
+      },
+    ]);
+
+    await ripristinaBackupCompleto({
+      app: "PreventivAI",
+      versione: 1,
+      creatoIl: "2026-01-01T00:00:00.000Z",
+      dati: {
+        [STORAGE_KEYS.clienti]: [],
+        [STORAGE_KEYS.cantieri]: [],
+        [STORAGE_KEYS.preventivi]: [],
+        [STORAGE_KEYS.datiAzienda]: {},
+        [STORAGE_KEYS.listino]: [],
+        [STORAGE_KEYS.esperienze]: [],
+        [STORAGE_KEYS.operai]: [],
       },
     });
 

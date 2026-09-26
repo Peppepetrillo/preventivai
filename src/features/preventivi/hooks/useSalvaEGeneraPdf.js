@@ -110,7 +110,11 @@ export function useSalvaEGeneraPdf() {
           tipoLavoro,
           tipologiaImpianto,
         });
-        aggiornaPreventivo(idEsistente, () => preventivo);
+        const esito = aggiornaPreventivo(idEsistente, () => preventivo);
+        if (esito?.ok === false) {
+          setErrore("Non è stato possibile salvare il preventivo. Riprova.");
+          return null;
+        }
       }
     }
 
@@ -129,7 +133,11 @@ export function useSalvaEGeneraPdf() {
         tipoLavoro,
         tipologiaImpianto,
       });
-      salvaNuovoPreventivo(preventivo);
+      const esito = salvaNuovoPreventivo(preventivo);
+      if (esito?.ok === false) {
+        setErrore("Non è stato possibile salvare il preventivo. Riprova.");
+        return null;
+      }
       idSalvatoRef.current = preventivo.id;
     }
 

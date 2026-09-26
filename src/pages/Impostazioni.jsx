@@ -463,9 +463,11 @@ export default function Impostazioni() {
             <div>
               <h2 className="text-2xl font-bold">Backup dati</h2>
               <p className="text-slate-400 mt-1">
-                Esporta o ripristina clienti, preventivi, cantieri, listino e dati
-                azienda. Distinte, liste spesa, firme e varianti restano solo su
-                questo dispositivo finché non vengono incluse nel backup cloud.
+                Esporta o ripristina clienti, preventivi, cantieri, operai,
+                listino e dati azienda. Distinte, liste spesa, firme e varianti
+                restano solo su questo dispositivo finché non vengono incluse
+                nel backup cloud. Un backup senza operai non cancella gli
+                operai già presenti sul dispositivo.
               </p>
             </div>
           </div>

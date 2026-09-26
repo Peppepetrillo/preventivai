@@ -21,6 +21,8 @@ Included in `APP_DATA_KEYS` / `creaBackupCompleto()`:
 
 **Changing phone + restore/sync:** CORE keys come back via cloud; operai come back via **file backup** restore (not cloud in 1.0).
 
+**Restore honesty (RC 1.0):** keys missing from a backup file are **not** overwritten with empty fallbacks. An older backup without `preventivai.operai` therefore does **not** wipe operai already on the device. An explicit `operai: []` in the file still clears them.
+
 ---
 
 ## SATELLITE (device-local today)

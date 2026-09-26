@@ -78,7 +78,12 @@ function NuovoLavoroForm({ onChiudi, onSalva, dataDefault }) {
     if (!form.titolo.trim() && !form.cliente.trim()) return;
     salvataggioInCorso.current = true;
     setSalvando(true);
-    onSalva?.(form);
+    const esito = onSalva?.(form);
+    if (esito && esito.ok === false) {
+      salvataggioInCorso.current = false;
+      setSalvando(false);
+      return;
+    }
     onChiudi?.();
   }
 
