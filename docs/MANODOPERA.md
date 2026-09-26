@@ -12,7 +12,7 @@ Gestione semplice di **operai → giornate/ore → costo → pagato/da pagare �
 |------|------|
 | **Altro → Operai** | Anagrafica (`/operai`) |
 | **Altro → Manodopera** | Riepilogo settimanale globale (`/manodopera`) |
-| **Cantiere → tab Giornate → Manodopera** | Registro costi sul cantiere |
+| **Cantiere → tab Giornate → Manodopera** | Registro costi + **Segna pagato** |
 
 ---
 
@@ -43,9 +43,11 @@ Source of truth: `cantiere.giornateManodopera[]` (viaggia con i cantieri).
 
 ```js
 {
-  id, cantiereId, operaioId, data, // DD/MM/YYYY
+  id, cantiereId, operaioId, data, // DD/MM/YYYY — giorno di lavoro
   ore, tipo: "giornata" | "ore",
-  costo, pagato,
+  costo,
+  pagato,          // stato pagamento (SoT)
+  pagatoIl,        // DD/MM/YYYY — data effettiva pagamento (opz.)
   createdAt, updatedAt
 }
 ```
@@ -61,47 +63,82 @@ Costo:
 
 ---
 
-## Pagato / Da pagare
+## Giornata ≠ pagamento
 
-Campo booleano `pagato` sulla giornata. Toggle idempotente (protezione doppio tap in UI).
+| Stato | Cosa significa | Economia |
+|-------|----------------|----------|
+| Giornata registrata, `pagato: false` | Lavoro fatto, costo teorico | **Nessuna** uscita |
+| `pagato: true` | Pagamento reale all’operaio | **Una** uscita in `spese[]` |
+
+Solo il pagamento reale genera l’uscita. Registrare la giornata **non** crea movimenti di cassa.
 
 ---
 
-## Aggregazioni
+## Pagamento → uscita Economia
 
-`riepilogoManodoperaService`:
+Flusso (Cantiere → Manodopera → tocco **Pagato**):
+
+1. `giornata.pagato = true` (+ `pagatoIl` = data odierna se assente)
+2. Creazione/upsert di **una** spesa:
+   - `categoria: "manodopera"`
+   - `origine: "manodopera"`
+   - `giornataManodoperaId` → link stabile alla giornata
+   - `operaioId`, descrizione `Manodopera — {nome}`
+   - `importo` = `giornata.costo`
+   - `data` = `pagatoIl` (data pagamento, non necessariamente data lavoro)
+3. Economia / Controllo economico leggono `spese[]` → l’uscita compare nei totali **una sola volta**
+
+Modulo: `src/features/manodopera/manodoperaPagamentoEconomia.js`  
+Hook: `useCantieri.impostaPagatoManodopera` → `registraPagamentoGiornataManodopera`.
+
+### Idempotenza
+
+- Doppio tap / ri-applica sullo stesso `pagato: true` → **non** crea seconda uscita
+- Se la spesa collegata esiste già → viene riusata/aggiornata (importo/descrizione)
+- `pagato: false` (toggle “da pagare”) → rimuove **solo** le spese con quel `giornataManodoperaId`
+- Eliminazione giornata pagata → rimuove anche l’uscita collegata
+
+### Anti doppio conteggio
+
+- `calcolaTotaleSpeseCantiere` / Economia / Controllo **non** sommano `giornateManodopera.costo`
+- Contano solo `spese[]`
+- Quindi: giornata €120 + spesa collegata €120 = **€120** in Economia (non €240)
+
+Spese manodopera **manuali** (senza `giornataManodoperaId`) restano distinte e non vengono toccate dal toggle.
+
+---
+
+## Date
+
+- **`data`** = giorno di lavoro sul cantiere  
+- **`pagatoIl`** = giorno in cui risulta pagato (usata come `spesa.data`)  
+  Se assente al momento del pagamento → data odierna (calendario dispositivo)
+
+---
+
+## Aggregazioni Manodopera (pagina Altro)
+
+`riepilogoManodoperaService` legge lo **stesso** `pagato` sulle giornate (nessuno stato parallelo):
 - filtra per settimana (lun→dom)
 - filtri opzionali operaio / cantiere
-- totali + per operaio + per cantiere
+- totali + per operaio + per cantiere (`pagato` / `daPagare`)
 
 ---
 
-## Integrazione economica — **NON effettuata in 1.0**
+## Backup / sync
 
-**Decisione:** manodopera **separata** da Spese/Economia.
-
-Motivo: esiste già `spese[].categoria === "manodopera"`. Sommare automaticamente `giornateManodopera.costo` in `calcolaTotaleSpeseCantiere` / margine **raddoppierebbe** i costi se l’utente registra anche una spesa.
-
-La sezione cantiere mostra i totali manodopera a scopo operativo e dichiara esplicitamente che non entrano in Economia.
-
-### Evoluzione futura (2.0)
-- Azione esplicita “Genera spesa da giornate” con link `giornataManodoperaId`
-- oppure flag “includi in economia” per giornata, con anti-duplicazione
+- Giornate + spese (incluso link `giornataManodoperaId`) vivono in `cantieri` → backup e sync cantieri
+- Anagrafica operai: backup locale sì, sync cloud no (1.0)
+- Backup pre-integrazione: giornate senza `pagatoIl` / spese senza link restano valide; al primo “Segna pagato” si crea il link
 
 ---
 
-## Progetti elettrici
-
-Inclusi in questo branch tip (da `cursor/progetti-elettrici-zoom-74ac`): multi-progetto, migrazione, IndexedDB, zoom.
-
----
-
-## Limiti 1.0
+## Limiti
 
 - No sync cloud anagrafica operai
 - No buste / contributi
-- No auto-spesa da giornate
-- Home: nessun widget (evita clutter; entry da Altro)
+- No widget Home dedicato
+- “Annulla pagamento” = toggle esistente da Pagato → Da pagare (rimuove uscita collegata). Nessuna UX aggiuntiva di storno bancario.
 
 ---
 
@@ -111,6 +148,7 @@ Inclusi in questo branch tip (da `cursor/progetti-elettrici-zoom-74ac`): multi-p
 src/features/manodopera/
   operaiDomain.js
   giornateManodoperaService.js
+  manodoperaPagamentoEconomia.js   ← sync pagamento ↔ spese
   riepilogoManodoperaService.js
   settimanaUtils.js
   components/

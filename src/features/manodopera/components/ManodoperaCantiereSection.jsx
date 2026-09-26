@@ -25,7 +25,7 @@ function formatEuro(n) {
 
 /**
  * Sezione manodopera nel tab Giornate del cantiere.
- * Non scrive in spese[] / economia.
+ * Pagato → una uscita Economia (spese); non pagato → nessun movimento.
  */
 export default function ManodoperaCantiereSection({
   cantiere,
@@ -138,9 +138,10 @@ export default function ManodoperaCantiereSection({
       ) : null}
 
       <p className="ds-text-secondary text-xs mt-3">
-        Questi importi non entrano automaticamente nelle Spese/Economia (niente
-        doppi conteggi).{" "}
-        <Link to={ROUTES.operai} className="text-yellow-300 underline">
+        Il costo della giornata resta operativo. Solo quando segni{" "}
+        <strong className="font-medium text-[var(--text-primary)]">Pagato</strong>{" "}
+        viene creata un&apos;uscita in Economia (una sola volta).{" "}
+        <Link to={ROUTES.operai} className="underline" style={{ color: "var(--primary)" }}>
           Gestisci operai
         </Link>
       </p>
@@ -186,8 +187,8 @@ export default function ManodoperaCantiereSection({
                             onClick={() => togglePagato(voce)}
                           >
                             {voce.pagato
-                              ? "✅ Pagato — tocca per segnare da pagare"
-                              : "⚠️ Da pagare — tocca per segnare pagato"}
+                              ? "Pagato — tocca per segnare da pagare"
+                              : "Da pagare — tocca per segnare pagato"}
                           </button>
                         </div>
                         <button

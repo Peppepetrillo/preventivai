@@ -5,9 +5,10 @@ import { aggiungiGiornataManodopera } from "./giornateManodoperaService";
 import { validaGiornataManodopera } from "./giornateManodoperaService";
 
 /**
- * Critico: registrare manodopera NON deve alterare spese / economia.
+ * Critico: registrare una giornata (anche con costo) NON crea uscite.
+ * Solo il pagamento reale (vedi manodoperaPagamentoEconomia.test.js) genera spesa.
  */
-describe("manodopera vs economia (no double count)", () => {
+describe("manodopera vs economia (no double count on create)", () => {
   it("aggiungere giornata manodopera non cambia totale spese", () => {
     const cantiere = {
       id: "c1",

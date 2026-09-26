@@ -5,7 +5,8 @@
  * Distinto da:
  * - programmazione[] (previsto)
  * - registroGiornate[] (consuntivo attività)
- * - spese[] (uscite economia — NON auto-generate da qui)
+ * - spese[] (uscite economia — create SOLO al pagamento reale,
+ *   vedi manodoperaPagamentoEconomia.js; mai al solo inserimento giornata)
  */
 
 import {
@@ -60,7 +61,8 @@ export function normalizzaGiornataManodopera(grezzo, cantiereId) {
   if (!Number.isFinite(costo)) return null;
 
   const ora = new Date().toISOString();
-  return {
+  /** @type {object} */
+  const giornata = {
     id: String(grezzo.id || "").trim() || nuovoId(),
     cantiereId: String(
       cantiereId != null && String(cantiereId)
@@ -76,6 +78,12 @@ export function normalizzaGiornataManodopera(grezzo, cantiereId) {
     createdAt: grezzo.createdAt || ora,
     updatedAt: grezzo.updatedAt || ora,
   };
+  // Data effettiva del pagamento (DD/MM/YYYY) — distinta da `data` giornata
+  const pagatoIl = String(grezzo.pagatoIl || "").trim();
+  if (giornata.pagato && pagatoIl) {
+    giornata.pagatoIl = pagatoIl;
+  }
+  return giornata;
 }
 
 /**
@@ -153,6 +161,7 @@ export function validaGiornataManodopera(input = {}, operaio = null) {
       tipo,
       costo,
       pagato: Boolean(input.pagato),
+      pagatoIl: input.pagatoIl,
       createdAt: input.createdAt,
       updatedAt: new Date().toISOString(),
     },
@@ -191,7 +200,7 @@ export function aggiornaGiornataManodopera(cantiere, giornataId, patch) {
   const giornateManodopera = lista.map((voce) => {
     if (String(voce.id) !== String(giornataId)) return voce;
     trovato = true;
-    return {
+    const merged = {
       ...voce,
       ...patch,
       id: voce.id,
@@ -199,6 +208,11 @@ export function aggiornaGiornataManodopera(cantiere, giornataId, patch) {
       createdAt: voce.createdAt,
       updatedAt: new Date().toISOString(),
     };
+    // pagatoIl vuoto = assente (giornata non pagata o reset)
+    if (!String(merged.pagatoIl || "").trim() || !merged.pagato) {
+      delete merged.pagatoIl;
+    }
+    return merged;
   });
   if (!trovato) return cantiere;
   return { ...cantiere, giornateManodopera };
@@ -216,19 +230,28 @@ export function eliminaGiornataManodopera(cantiere, giornataId) {
 }
 
 /**
- * Toggle pagato con protezione doppio tap (idempotente sul valore target).
+ * Toggle pagato puro (solo flag). Preferire
+ * `registraPagamentoGiornataManodopera` per sync Economia.
  * @param {object} cantiere
  * @param {string|number} giornataId
  * @param {boolean} pagato
  */
 export function impostaPagatoGiornataManodopera(cantiere, giornataId, pagato) {
+  const vuole = Boolean(pagato);
+  if (!vuole) {
+    return aggiornaGiornataManodopera(cantiere, giornataId, {
+      pagato: false,
+      pagatoIl: "",
+    });
+  }
   return aggiornaGiornataManodopera(cantiere, giornataId, {
-    pagato: Boolean(pagato),
+    pagato: true,
   });
 }
 
 /**
- * Riepilogo manodopera di un cantiere (non entra in spese/economia).
+ * Riepilogo manodopera di un cantiere (costo teorico / pagato).
+ * Le uscite Economia arrivano da spese[] collegate al pagamento.
  * @param {object|null} cantiere
  */
 export function riepilogoManodoperaCantiere(cantiere) {

@@ -80,9 +80,15 @@ import {
 import {
   aggiungiGiornataManodopera,
   aggiornaGiornataManodopera,
-  eliminaGiornataManodopera,
-  impostaPagatoGiornataManodopera,
+  leggiGiornateManodopera,
 } from "../../manodopera/giornateManodoperaService";
+import {
+  allineaEconomiaDopoGiornataManodopera,
+  eliminaGiornataManodoperaConEconomia,
+  registraPagamentoGiornataManodopera,
+} from "../../manodopera/manodoperaPagamentoEconomia";
+import { nomeCompletoOperaio } from "../../manodopera/operaiDomain";
+import { leggiOperaiTutti } from "../../../repositories/operaiRepository";
 import {
   aggiungiPagamento as aggiungiPagamentoDomain,
   aggiornaPagamento as aggiornaPagamentoDomain,
@@ -96,6 +102,18 @@ import {
   modificaSpesa as modificaSpesaDomain,
   rimuoviSpesaCantiere as rimuoviSpesaDomain,
 } from "../services/speseCantiereService";
+
+function ctxOperaioDaId(operaioId) {
+  const id = String(operaioId || "").trim();
+  if (!id) return {};
+  const operaio = (leggiOperaiTutti() || []).find(
+    (o) => String(o.id) === id
+  );
+  return {
+    operaio,
+    operaioNome: nomeCompletoOperaio(operaio),
+  };
+}
 
 const FORM_CANTIERE_INIZIALE = {
   nome: "",
@@ -1014,8 +1032,18 @@ export function useCantieri({
     if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
     const aggiornato = aggiornaCantiereConEventi(
       cantiereSelezionato.id,
-      (precedente) =>
-        aggiornaCantiere(aggiungiGiornataManodopera(precedente, giornata), {})
+      (precedente) => {
+        let next = aggiungiGiornataManodopera(precedente, giornata);
+        const id = giornata?.id;
+        if (id) {
+          next = allineaEconomiaDopoGiornataManodopera(
+            next,
+            id,
+            ctxOperaioDaId(giornata?.operaioId)
+          );
+        }
+        return aggiornaCantiere(next, {});
+      }
     );
     return esitoMutazione(aggiornato);
   }
@@ -1024,11 +1052,18 @@ export function useCantieri({
     if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
     const aggiornato = aggiornaCantiereConEventi(
       cantiereSelezionato.id,
-      (precedente) =>
-        aggiornaCantiere(
-          aggiornaGiornataManodopera(precedente, giornataId, patch),
-          {}
-        )
+      (precedente) => {
+        let next = aggiornaGiornataManodopera(precedente, giornataId, patch);
+        const g = leggiGiornateManodopera(next).find(
+          (voce) => String(voce.id) === String(giornataId)
+        );
+        next = allineaEconomiaDopoGiornataManodopera(
+          next,
+          giornataId,
+          ctxOperaioDaId(g?.operaioId || patch?.operaioId)
+        );
+        return aggiornaCantiere(next, {});
+      }
     );
     return esitoMutazione(aggiornato);
   }
@@ -1038,7 +1073,10 @@ export function useCantieri({
     const aggiornato = aggiornaCantiereConEventi(
       cantiereSelezionato.id,
       (precedente) =>
-        aggiornaCantiere(eliminaGiornataManodopera(precedente, giornataId), {})
+        aggiornaCantiere(
+          eliminaGiornataManodoperaConEconomia(precedente, giornataId),
+          {}
+        )
     );
     return esitoMutazione(aggiornato);
   }
@@ -1047,11 +1085,20 @@ export function useCantieri({
     if (!cantiereSelezionato) return { success: false, error: "nessun_cantiere" };
     const aggiornato = aggiornaCantiereConEventi(
       cantiereSelezionato.id,
-      (precedente) =>
-        aggiornaCantiere(
-          impostaPagatoGiornataManodopera(precedente, giornataId, pagato),
+      (precedente) => {
+        const g = leggiGiornateManodopera(precedente).find(
+          (voce) => String(voce.id) === String(giornataId)
+        );
+        return aggiornaCantiere(
+          registraPagamentoGiornataManodopera(
+            precedente,
+            giornataId,
+            pagato,
+            ctxOperaioDaId(g?.operaioId)
+          ),
           {}
-        )
+        );
+      }
     );
     return esitoMutazione(aggiornato);
   }
