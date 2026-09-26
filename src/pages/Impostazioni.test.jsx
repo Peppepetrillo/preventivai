@@ -6,6 +6,7 @@ import { ROUTES } from "../app/routes";
 import { STORAGE_KEYS } from "../app/storageKeys";
 import { salvaStorage } from "../utils/storage";
 import Impostazioni from "./Impostazioni";
+import { ThemeProvider } from "../theme/ThemeProvider";
 
 vi.mock("../contexts/cloudAuthContext", () => ({
   useCloudAuth: () => ({
@@ -18,6 +19,20 @@ vi.mock("../contexts/cloudAuthContext", () => ({
   }),
 }));
 
+vi.mock("../services/cloudSyncService", () => ({
+  salvaDatoCloud: vi.fn(),
+  salvaDatoCloudImmediato: vi.fn(),
+}));
+
+function renderImpostazioni() {
+  return render(
+    <MemoryRouter>
+      <ThemeProvider>
+        <Impostazioni />
+      </ThemeProvider>
+    </MemoryRouter>
+  );
+}
 const esportaBlob = vi.fn();
 const nomeFileBackup = vi.fn(() => "preventivai-backup-2026-08-20.json");
 const creaBackupCompleto = vi.fn(() => ({
@@ -51,11 +66,7 @@ describe("Impostazioni UX-1", () => {
   });
 
   it("link Dati azienda e Cestino", () => {
-    render(
-      <MemoryRouter>
-        <Impostazioni />
-      </MemoryRouter>
-    );
+    renderImpostazioni();
     expect(screen.getByTestId("impostazioni-link-dati-azienda")).toHaveAttribute(
       "href",
       ROUTES.datiAzienda
@@ -65,12 +76,17 @@ describe("Impostazioni UX-1", () => {
     expect(screen.getByText(/Cestino/i)).toBeInTheDocument();
   });
 
+  it("permmette di scegliere tema chiaro/scuro/sistema", () => {
+    renderImpostazioni();
+    expect(screen.getByTestId("impostazioni-tema")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("tema-chiaro"));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    fireEvent.click(screen.getByTestId("tema-scuro"));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  });
+
   it("non mostra più i link hub spostati in Altro", () => {
-    render(
-      <MemoryRouter>
-        <Impostazioni />
-      </MemoryRouter>
-    );
+    renderImpostazioni();
     expect(screen.queryByTestId("impostazioni-link-archivio")).not.toBeInTheDocument();
     expect(screen.queryByTestId("impostazioni-link-listino")).not.toBeInTheDocument();
     expect(screen.queryByTestId("impostazioni-link-acquisti")).not.toBeInTheDocument();
@@ -88,11 +104,7 @@ describe("Impostazioni UX-6.6 export backup", () => {
   it("usa esportaBlob con Blob JSON e nomeFileBackup", async () => {
     esportaBlob.mockResolvedValue({ success: true, metodo: "download" });
 
-    render(
-      <MemoryRouter>
-        <Impostazioni />
-      </MemoryRouter>
-    );
+    renderImpostazioni();
 
     fireEvent.click(screen.getByTestId("esporta-backup"));
 
@@ -113,11 +125,7 @@ describe("Impostazioni UX-6.6 export backup", () => {
   it("dopo share riuscito mostra messaggio di condivisione", async () => {
     esportaBlob.mockResolvedValue({ success: true, metodo: "share" });
 
-    render(
-      <MemoryRouter>
-        <Impostazioni />
-      </MemoryRouter>
-    );
+    renderImpostazioni();
 
     fireEvent.click(screen.getByTestId("esporta-backup"));
 
@@ -131,11 +139,7 @@ describe("Impostazioni UX-6.6 export backup", () => {
   it("se share annullato non mostra errore tecnico", async () => {
     esportaBlob.mockResolvedValue({ success: false, error: "annullato" });
 
-    render(
-      <MemoryRouter>
-        <Impostazioni />
-      </MemoryRouter>
-    );
+    renderImpostazioni();
 
     fireEvent.click(screen.getByTestId("esporta-backup"));
 
@@ -148,11 +152,7 @@ describe("Impostazioni UX-6.6 export backup", () => {
   it("su errore reale mostra feedback di errore", async () => {
     esportaBlob.mockResolvedValue({ success: false, error: "share_fallito" });
 
-    render(
-      <MemoryRouter>
-        <Impostazioni />
-      </MemoryRouter>
-    );
+    renderImpostazioni();
 
     fireEvent.click(screen.getByTestId("esporta-backup"));
 
@@ -171,11 +171,7 @@ describe("Impostazioni UX-7.2 backup automatico", () => {
   });
 
   it("mostra sezione backup automatico con frequenze", () => {
-    render(
-      <MemoryRouter>
-        <Impostazioni />
-      </MemoryRouter>
-    );
+    renderImpostazioni();
 
     expect(screen.getByTestId("backup-automatico-sezione")).toBeInTheDocument();
     expect(screen.getByTestId("backup-auto-freq-disattivato")).toBeInTheDocument();
@@ -196,11 +192,7 @@ describe("Impostazioni UX-7.2 backup automatico", () => {
     });
     esportaBlob.mockResolvedValue({ success: true, metodo: "share" });
 
-    render(
-      <MemoryRouter>
-        <Impostazioni />
-      </MemoryRouter>
-    );
+    renderImpostazioni();
 
     fireEvent.click(screen.getByTestId("esporta-backup-automatico"));
 
@@ -214,11 +206,7 @@ describe("Impostazioni UX-7.2 backup automatico", () => {
   });
 
   it("messaggio chiaro se nessun backup automatico disponibile", async () => {
-    render(
-      <MemoryRouter>
-        <Impostazioni />
-      </MemoryRouter>
-    );
+    renderImpostazioni();
 
     fireEvent.click(screen.getByTestId("esporta-backup-automatico"));
 
@@ -231,11 +219,7 @@ describe("Impostazioni UX-7.2 backup automatico", () => {
   });
 
   it("cambia frequenza backup automatico", async () => {
-    render(
-      <MemoryRouter>
-        <Impostazioni />
-      </MemoryRouter>
-    );
+    renderImpostazioni();
 
     fireEvent.click(screen.getByTestId("backup-auto-freq-giornaliero"));
 
@@ -252,11 +236,7 @@ describe("Impostazioni UX-7.2 backup automatico", () => {
       dati: { clienti: [] },
     });
 
-    render(
-      <MemoryRouter>
-        <Impostazioni />
-      </MemoryRouter>
-    );
+    renderImpostazioni();
 
     fireEvent.click(screen.getByTestId("ripristina-backup-automatico"));
     expect(screen.getByTestId("conferma-ripristino-backup-auto")).toBeInTheDocument();

@@ -3,16 +3,7 @@
  * 90–100 verde · 70–89 arancione · 0–69 rosso
  */
 
-/**
- * @param {number} score
- * @returns {"verde"|"arancione"|"rosso"}
- */
-export function fasciaScoreQualita(score) {
-  const n = Number(score);
-  if (!Number.isFinite(n) || n >= 90) return "verde";
-  if (n >= 70) return "arancione";
-  return "rosso";
-}
+import { fasciaScoreQualita } from "./qualityScore";
 
 const STILI = {
   verde: {

@@ -24,7 +24,7 @@ import {
 } from "../../repositories/cantieriRepository";
 import { notificationService } from "../../services/notificationService";
 import GlobalCreateSheet from "./GlobalCreateSheet";
-import { useGlobalCreate } from "./GlobalCreateContext";
+import { useGlobalCreate } from "./useGlobalCreate";
 
 /**
  * Host globale: menu Nuovo + sheet annidati (cantiere, promemoria).
@@ -47,7 +47,10 @@ export default function GlobalCreateHost() {
     (form) => {
       const cantiere = creaLavoroPianificato(form);
       const aggiornati = [...cantieri, cantiere];
-      salvaCantieri(aggiornati);
+      const esito = salvaCantieri(aggiornati);
+      if (esito?.ok === false) {
+        return esito;
+      }
       setCantieri(aggiornati);
 
       if (cantiere.reminderEnabled) {
@@ -56,6 +59,7 @@ export default function GlobalCreateHost() {
           reminderMinutes: cantiere.reminderMinutes,
         });
       }
+      return { ok: true };
     },
     [cantieri, setCantieri]
   );
@@ -99,8 +103,8 @@ export default function GlobalCreateHost() {
       },
       {
         id: "lavoro",
-        label: "Cantiere",
-        subtitle: "Nuovo cantiere o intervento",
+        label: "Lavoro",
+        subtitle: "Nuovo lavoro: cantiere o intervento",
         icon: HardHat,
         testId: "global-create-lavoro",
         onPress: () => {
@@ -110,7 +114,7 @@ export default function GlobalCreateHost() {
       },
       {
         id: "pagamento",
-        label: "Pagamento cantiere",
+        label: "Pagamento lavoro",
         subtitle: "Registra un pagamento ricevuto",
         icon: Wallet,
         testId: "global-create-pagamento",

@@ -44,7 +44,7 @@ export function trovaPreventivo(id, opzioni = { includiCestinati: true }) {
 }
 
 export function salvaNuovoPreventivo(preventivo) {
-  salvaPreventivi([...leggiPreventiviTutti(), preventivo]);
+  return salvaPreventivi([...leggiPreventiviTutti(), preventivo]);
 }
 
 export function aggiornaPreventivo(id, aggiorna) {
@@ -53,8 +53,15 @@ export function aggiornaPreventivo(id, aggiorna) {
     String(preventivo.id) === String(id) ? aggiorna(preventivo) : preventivo
   );
 
-  salvaPreventivi(preventiviAggiornati);
-  return preventiviAggiornati;
+  const esito = salvaPreventivi(preventiviAggiornati);
+  if (esito?.ok === false) {
+    // Non restituire []: i caller usano l'array come SoT UI.
+    return Object.assign(preventivi.slice(), {
+      ok: false,
+      error: esito.error,
+    });
+  }
+  return Object.assign(preventiviAggiornati, { ok: true });
 }
 
 export function eliminaPreventivo(id) {

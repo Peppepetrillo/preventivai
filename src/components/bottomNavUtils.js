@@ -45,6 +45,9 @@ const ALTRO_HUB_ROUTES = [
   ROUTES.impostazioni,
   ROUTES.datiAzienda,
   ROUTES.cestino,
+  ROUTES.operai,
+  ROUTES.manodopera,
+  ROUTES.calcoliElettrici,
 ];
 
 /**
@@ -54,6 +57,7 @@ export function isAltroHubRoute(pathname = "") {
   const path = String(pathname || "");
   if (ALTRO_HUB_ROUTES.includes(path)) return true;
   if (path.startsWith("/cliente/")) return true;
+  if (path.startsWith(`${ROUTES.calcoliElettrici}/`)) return true;
   return false;
 }
 

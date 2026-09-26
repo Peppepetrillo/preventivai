@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle, FileText, HardHat, Plus, Wallet } from "lucide-react";
 import PageWrapper from "../components/PageWrapper";
 import PageBackLink from "../components/PageBackLink";
 import NumericInput from "../components/NumericInput";
 import { APP_EVENTS } from "../app/events";
-import { routeCantierePagamenti, routePreventivo } from "../app/routes";
+import { routeCantierePagamenti, routePreventivo, ROUTES } from "../app/routes";
 import { useDatiLocaliSincronizzati } from "../hooks/useDatiLocaliSincronizzati";
 import { leggiPreventivi, leggiPreventiviTutti, salvaPreventivi } from "../repositories/preventiviRepository";
 import { isRecordCestinato } from "../domain/cestino";
@@ -47,12 +47,22 @@ export default function Incassi() {
     [APP_EVENTS.preventiviAggiornati]
   );
   const [importi, setImporti] = useState({});
+  const [messaggio, setMessaggio] = useState("");
+  const [salvandoId, setSalvandoId] = useState("");
+  const salvataggioInCorso = useRef(false);
+  const flashTimer = useRef(null);
 
   const preventiviOperativi = useMemo(
     () => (preventivi || []).filter(isPreventivoOperativoIncassi),
     [preventivi]
   );
   const riepilogo = riepilogaIncassi(preventiviOperativi);
+
+  function flash(testo) {
+    if (flashTimer.current) window.clearTimeout(flashTimer.current);
+    setMessaggio(testo);
+    flashTimer.current = window.setTimeout(() => setMessaggio(""), 2200);
+  }
 
   function salvaListaPreventivi(nuoviPreventiviAttivi) {
     const tutti = leggiPreventiviTutti();
@@ -63,8 +73,12 @@ export default function Incassi() {
       if (isRecordCestinato(item)) return item;
       return perId.get(String(item.id)) || item;
     });
-    salvaPreventivi(prossimo);
+    const esito = salvaPreventivi(prossimo);
+    if (esito?.ok === false) {
+      return esito;
+    }
     setPreventivi(nuoviPreventiviAttivi);
+    return esito;
   }
 
   function aggiornaImporto(preventivoId, valore) {
@@ -75,28 +89,49 @@ export default function Incassi() {
 
   function registraPagamento(preventivo) {
     if (!isPreventivoOperativoIncassi(preventivo)) return;
+    if (salvataggioInCorso.current) return;
     const importo = normalizzaNumero(importi[preventivo.id]);
     if (importo <= 0) return;
 
-    salvaListaPreventivi(
+    salvataggioInCorso.current = true;
+    setSalvandoId(String(preventivo.id));
+    const esito = salvaListaPreventivi(
       preventivi.map((item) =>
         String(item.id) === String(preventivo.id)
           ? registraIncasso(item, importo)
           : item
       )
     );
-    aggiornaImporto(preventivo.id, "");
+    if (esito?.ok === false) {
+      flash("Impossibile salvare il pagamento. Riprova.");
+    } else {
+      aggiornaImporto(preventivo.id, "");
+      flash("Pagamento registrato.");
+    }
+    salvataggioInCorso.current = false;
+    setSalvandoId("");
   }
 
   function segnaSaldato(preventivo) {
     if (!isPreventivoOperativoIncassi(preventivo)) return;
-    salvaListaPreventivi(
+    if (salvataggioInCorso.current) return;
+
+    salvataggioInCorso.current = true;
+    setSalvandoId(String(preventivo.id));
+    const esito = salvaListaPreventivi(
       preventivi.map((item) =>
         String(item.id) === String(preventivo.id)
           ? segnaPreventivoSaldato(item)
           : item
       )
     );
+    if (esito?.ok === false) {
+      flash("Impossibile salvare. Riprova.");
+    } else {
+      flash("Segnato come saldato.");
+    }
+    salvataggioInCorso.current = false;
+    setSalvandoId("");
   }
 
   return (
@@ -112,6 +147,16 @@ export default function Incassi() {
             pagamenti si registrano nel tab Pagamenti del cantiere.
           </p>
         </section>
+
+        {messaggio ? (
+          <div
+            className="pro-panel px-3.5 py-3 mb-4 text-sm text-yellow-100 border-yellow-300/30"
+            role="status"
+            data-testid="incassi-feedback"
+          >
+            {messaggio}
+          </div>
+        ) : null}
 
         <section className="grid gap-3 sm:grid-cols-3 mb-6">
           <div className="pro-panel p-4">
@@ -133,9 +178,31 @@ export default function Incassi() {
 
         <section className="grid gap-3" data-testid="incassi-lista-operativa">
           {preventiviOperativi.length === 0 && (
-            <div className="pro-panel p-6 text-center text-slate-400">
-              Nessun preventivo da gestire qui. I pagamenti dei lavori in
-              cantiere sono nel tab Pagamenti del cantiere.
+            <div className="pro-panel ds-empty" data-testid="incassi-vuoto">
+              <div className="ds-empty-icon" aria-hidden="true">
+                <Wallet size={28} />
+              </div>
+              <p className="ds-card-title">Nessun preventivo da incassare</p>
+              <p className="ds-text-secondary mt-2 max-w-sm mx-auto">
+                Qui gestisci solo i preventivi non ancora in cantiere. I
+                pagamenti dei lavori aperti sono nel tab Pagamenti del cantiere.
+              </p>
+              <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  to={ROUTES.preventivi}
+                  className="btn-primary inline-flex items-center justify-center min-h-[48px] px-5 font-bold"
+                  data-testid="incassi-vuoto-cta-preventivi"
+                >
+                  Apri preventivi
+                </Link>
+                <Link
+                  to={ROUTES.cantieri}
+                  className="btn-secondary inline-flex items-center justify-center min-h-[48px] px-5 font-bold"
+                  data-testid="incassi-vuoto-cta-cantieri"
+                >
+                  Apri cantieri
+                </Link>
+              </div>
             </div>
           )}
 
@@ -177,14 +244,18 @@ export default function Incassi() {
                     <button
                       type="button"
                       onClick={() => registraPagamento(preventivo)}
-                      className="btn-primary px-4 py-3"
+                      disabled={salvandoId === String(preventivo.id)}
+                      className="btn-primary px-4 py-3 min-h-[48px] disabled:opacity-40"
                     >
-                      Registra pagamento
+                      {salvandoId === String(preventivo.id)
+                        ? "Salvataggio…"
+                        : "Registra pagamento"}
                     </button>
                     <button
                       type="button"
                       onClick={() => segnaSaldato(preventivo)}
-                      className="btn-secondary px-4 py-3"
+                      disabled={salvandoId === String(preventivo.id)}
+                      className="btn-secondary px-4 py-3 min-h-[48px] disabled:opacity-40"
                     >
                       Segna saldato
                     </button>

@@ -11,7 +11,7 @@ vi.mock("@capacitor/core", () => ({
 
 vi.mock("../../../repositories/preventiviRepository", () => ({
   leggiPreventivi: vi.fn(() => []),
-  salvaNuovoPreventivo: vi.fn((p) => p),
+  salvaNuovoPreventivo: vi.fn((p) => Object.assign(Promise.resolve({ ok: true }), { ok: true, preventivo: p })),
   aggiornaPreventivo: vi.fn((_id, aggiorna) => {
     const corrente = {
       id: 1,
@@ -20,7 +20,7 @@ vi.mock("../../../repositories/preventiviRepository", () => ({
       stato: "Bozza",
       lavorazioni: [],
     };
-    return [aggiorna(corrente)];
+    return Object.assign([aggiorna(corrente)], { ok: true });
   }),
 }));
 
@@ -110,6 +110,25 @@ describe("useSalvaEGeneraPdf UX-5.3", () => {
     expect(result.current.preventivoSalvato).toEqual(
       expect.objectContaining({ cliente: "Mario Rossi", clienteId: 99 })
     );
+  });
+
+  it("revoca blobUrl temporaneo dopo generazione (solo Blob in stato)", async () => {
+    const revoke = vi.fn();
+    globalThis.URL.revokeObjectURL = revoke;
+    generaPdfPreventivo.mockResolvedValue({
+      blob: new Blob(["pdf"], { type: "application/pdf" }),
+      blobUrl: "blob:mock-temp",
+      nomeFile: "PREV-1.pdf",
+    });
+    const { result } = renderHook(() => useSalvaEGeneraPdf());
+
+    await act(async () => {
+      await result.current.salvaEGeneraPdf(STATO);
+    });
+    await waitFor(() => {
+      expect(result.current.pdfGenerato).toBe(true);
+    });
+    expect(revoke).toHaveBeenCalledWith("blob:mock-temp");
   });
 
   it("propaga clienteId al creaPreventivo", async () => {

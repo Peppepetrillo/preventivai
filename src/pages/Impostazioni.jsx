@@ -9,6 +9,9 @@ import {
   ChevronRight,
   LockKeyhole,
   LogOut,
+  Moon,
+  Sun,
+  Monitor,
   Trash2,
   Upload
 } from "lucide-react";
@@ -28,6 +31,7 @@ import {
   ETICHETTE_FREQUENZA,
   ETICHETTE_STATO,
   FREQUENZE_BACKUP,
+  etichettaErroreBackupAutomatico,
   formattaDataOraBackup,
   impostaFrequenzaBackupAutomatico,
   leggiConfigBackupAutomatico,
@@ -35,6 +39,8 @@ import {
   rifrescaStatoConfig
 } from "../domain/backupAutomatico";
 import { useCloudAuth } from "../contexts/cloudAuthContext";
+import { useTheme } from "../theme/ThemeProvider";
+import { ETICHETTE_TEMA, TEMA } from "../theme/themeDomain";
 import {
   disattivaPin,
   impostaPinSicuro,
@@ -45,8 +51,15 @@ import {
   validaFormatoPin
 } from "../services/pinSecurity";
 
+const ICONE_TEMA = {
+  [TEMA.chiaro]: Sun,
+  [TEMA.scuro]: Moon,
+  [TEMA.sistema]: Monitor,
+};
+
 export default function Impostazioni() {
   const cloudAuth = useCloudAuth();
+  const { preferenza, setPreferenza, temi } = useTheme();
 
   const [pinNuovo, setPinNuovo] = useState("");
   const [pinAttivo, setPinAttivo] = useState(() => pinEAttivo());
@@ -282,13 +295,51 @@ export default function Impostazioni() {
           />
         </Link>
 
+        <div className="pro-panel p-5 mb-5" data-testid="impostazioni-tema">
+          <p className="section-label">Aspetto</p>
+          <h2 className="ds-card-title mt-1">Tema</h2>
+          <p className="ds-text-secondary mt-2">
+            Chiaro, scuro o come il sistema del telefono.
+          </p>
+          <div
+            className="mt-4 grid grid-cols-3 gap-2"
+            role="radiogroup"
+            aria-label="Tema interfaccia"
+          >
+            {temi.map((id) => {
+              const Icon = ICONE_TEMA[id];
+              const attivo = preferenza === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={attivo}
+                  data-testid={`tema-${id}`}
+                  onClick={() => setPreferenza(id)}
+                  className={`min-h-[52px] rounded-[var(--radius-control)] border px-2 py-3 flex flex-col items-center justify-center gap-1.5 text-sm font-semibold transition-colors ${
+                    attivo
+                      ? "border-[var(--primary)] bg-[var(--primary-muted)] text-[var(--primary-soft)]"
+                      : "border-[var(--line)] bg-[var(--panel-muted)] text-[var(--text-secondary)]"
+                  }`}
+                >
+                  <Icon size={18} aria-hidden="true" />
+                  {ETICHETTE_TEMA[id]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="pro-panel p-5 mb-5">
           <div className="flex items-center gap-4 mb-5">
             <Cloud size={28} />
             <div>
               <h2 className="text-2xl font-bold">Cloud Supabase</h2>
               <p className="text-slate-400 mt-1">
-                Account, sincronizzazione e sessione.
+                Sincronizza i dati principali (clienti, preventivi, cantieri,
+                listino, azienda). Distinte, firme, varianti e liste acquisti
+                restano solo su questo dispositivo.
               </p>
             </div>
           </div>
@@ -320,7 +371,8 @@ export default function Impostazioni() {
             </div>
           ) : (
             <div className="rounded-[14px] border border-white/10 bg-black/[0.18] p-4 text-slate-400">
-              Configura `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` per attivare il cloud.
+              Cloud non configurato su questo dispositivo. Contatta chi gestisce
+              l&apos;installazione per attivare la sincronizzazione.
             </div>
           )}
         </div>
@@ -411,7 +463,11 @@ export default function Impostazioni() {
             <div>
               <h2 className="text-2xl font-bold">Backup dati</h2>
               <p className="text-slate-400 mt-1">
-                Esporta o ripristina clienti, preventivi, listino e dati azienda.
+                Esporta o ripristina clienti, preventivi, cantieri, operai,
+                listino e dati azienda. Distinte, liste spesa, firme e varianti
+                restano solo su questo dispositivo finché non vengono incluse
+                nel backup cloud. Un backup senza operai non cancella gli
+                operai già presenti sul dispositivo.
               </p>
             </div>
           </div>
@@ -446,7 +502,9 @@ export default function Impostazioni() {
             <div>
               <p className="section-label">Backup automatico</p>
               <p className="ds-text-secondary text-sm mt-2 leading-relaxed">
-                Il backup automatico salva una copia locale dei tuoi dati.
+                Il backup automatico salva una copia locale dei dati principali
+                (clienti, preventivi, cantieri, listino, azienda). Distinte, liste
+                spesa, firme e varianti restano solo su questo dispositivo.
                 Per conservare il file fuori dall&apos;app usa Esporta backup.
               </p>
             </div>
@@ -505,7 +563,7 @@ export default function Impostazioni() {
               <p className="text-sm text-red-200/90 leading-relaxed">
                 Salvataggio locale non riuscito
                 {configBackupAuto.ultimoErrore
-                  ? ` (${configBackupAuto.ultimoErrore}).`
+                  ? ` (${etichettaErroreBackupAutomatico(configBackupAuto.ultimoErrore)}).`
                   : "."}{" "}
                 Usa Esporta backup per una copia fuori dall&apos;app.
               </p>

@@ -51,5 +51,9 @@
 	<string>PreventivAI usa la fotocamera per acquisire foto del cantiere.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>PreventivAI accede alle foto per caricare il logo della ditta e immagini di cantiere.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>PreventivAI usa il microfono per il Preventivo vocale: dettare lavorazioni e quantità senza digitare in cantiere.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>PreventivAI usa il riconoscimento vocale per trasformare ciò che dici in una bozza di preventivo dal tuo listino.</string>
 </dict>
 </plist>

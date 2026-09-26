@@ -81,7 +81,7 @@ describe("BottomNav UX-4.3 — editor distinta full screen", () => {
       target: { value: "Distinta UX" },
     });
     fireEvent.click(salva);
-    expect(screen.getByText(/Distinta creata|Salvata/i)).toBeInTheDocument();
+    expect(screen.getByText(/Distinta creata|Collega un cantiere|Salvata/i)).toBeInTheDocument();
   });
 
   it("navigazione editor → lista ripristina BottomNav", () => {

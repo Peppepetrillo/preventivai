@@ -200,7 +200,7 @@ export function calcolaOggi(input = {}) {
   const riepilogo = [
     {
       id: "cantieri-aperti",
-      etichetta: "Cantieri aperti",
+      etichetta: "Lavori aperti",
       conteggio: cantieriAperti.length,
       link: ROUTES.cantieri,
     },

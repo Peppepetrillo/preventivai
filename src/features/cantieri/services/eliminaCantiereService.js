@@ -20,6 +20,7 @@ import {
   salvaCantieri,
 } from "../../../repositories/cantieriRepository";
 import { eliminaStorageFotoCantieri } from "./cantieriFotoService";
+import { pulisciProgettoElettricoCantiere } from "./progettoElettricoService";
 
 function stessoId(a, b) {
   return String(a) === String(b);
@@ -59,6 +60,12 @@ export function eliminaCantiereConPulizia(cantiere) {
   const cantiereId = cantiere.id;
   void notificationService.cancelNotificheCantiereCompleto(cantiere);
   eliminaStorageFotoCantieri(cantiere.foto || []);
+  void pulisciProgettoElettricoCantiere(
+    cantiereId,
+    Array.isArray(cantiere.progettiElettrici)
+      ? cantiere.progettiElettrici
+      : cantiere.progettoElettrico || null
+  );
 
   const cantieri = leggiCantieriTutti().filter(
     (voce) => !stessoId(voce?.id, cantiereId)

@@ -49,10 +49,34 @@ const Agenda = lazy(() => import("./pages/Agenda"));
 const Altro = lazy(() => import("./pages/Altro"));
 const Economia = lazy(() => import("./pages/Economia"));
 const Storico = lazy(() => import("./pages/Storico"));
+const CalcoliElettrici = lazy(() => import("./pages/CalcoliElettrici"));
+const CalcoloOhmPage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloOhmPage")
+);
+const CalcoloPotenzaPage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloPotenzaPage")
+);
+const CalcoloCadutaPage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloCadutaPage")
+);
+const CalcoloSezionePage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloSezionePage")
+);
+const CalcoloConsumoPage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloConsumoPage")
+);
+const CalcoloConversioniPage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloConversioniPage")
+);
+const CalcoloCaricoPage = lazy(() =>
+  import("./features/calcoliElettrici/pages/CalcoloCaricoPage")
+);
+const Operai = lazy(() => import("./pages/Operai"));
+const Manodopera = lazy(() => import("./pages/Manodopera"));
 
 function LoadingPage() {
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-[#070b14] text-white flex items-center justify-center px-5 safe-top safe-bottom">
+    <div className="min-h-screen min-h-[100dvh] flex items-center justify-center px-5 safe-top safe-bottom" style={{ background: "var(--bg-app)", color: "var(--text-primary)" }}>
       <div className="pro-panel-strong p-6 text-center">
         <p className="section-label">PreventivAI</p>
         <h1 className="ds-page-title mt-1">Caricamento...</h1>
@@ -171,6 +195,39 @@ function AppShell() {
                 path={ROUTES.storico}
                 element={<Storico />}
               />
+
+              <Route
+                path={ROUTES.calcoliElettrici}
+                element={<CalcoliElettrici />}
+              />
+              <Route path={ROUTES.calcoliOhm} element={<CalcoloOhmPage />} />
+              <Route
+                path={ROUTES.calcoliPotenza}
+                element={<CalcoloPotenzaPage />}
+              />
+              <Route
+                path={ROUTES.calcoliCaduta}
+                element={<CalcoloCadutaPage />}
+              />
+              <Route
+                path={ROUTES.calcoliSezione}
+                element={<CalcoloSezionePage />}
+              />
+              <Route
+                path={ROUTES.calcoliConsumo}
+                element={<CalcoloConsumoPage />}
+              />
+              <Route
+                path={ROUTES.calcoliConversioni}
+                element={<CalcoloConversioniPage />}
+              />
+              <Route
+                path={ROUTES.calcoliCarico}
+                element={<CalcoloCaricoPage />}
+              />
+
+              <Route path={ROUTES.operai} element={<Operai />} />
+              <Route path={ROUTES.manodopera} element={<Manodopera />} />
 
               <Route
                 path={ROUTES.impostazioni}

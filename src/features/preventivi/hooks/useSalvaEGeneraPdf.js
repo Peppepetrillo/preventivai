@@ -110,7 +110,11 @@ export function useSalvaEGeneraPdf() {
           tipoLavoro,
           tipologiaImpianto,
         });
-        aggiornaPreventivo(idEsistente, () => preventivo);
+        const esito = aggiornaPreventivo(idEsistente, () => preventivo);
+        if (esito?.ok === false) {
+          setErrore("Non è stato possibile salvare il preventivo. Riprova.");
+          return null;
+        }
       }
     }
 
@@ -129,7 +133,11 @@ export function useSalvaEGeneraPdf() {
         tipoLavoro,
         tipologiaImpianto,
       });
-      salvaNuovoPreventivo(preventivo);
+      const esito = salvaNuovoPreventivo(preventivo);
+      if (esito?.ok === false) {
+        setErrore("Non è stato possibile salvare il preventivo. Riprova.");
+        return null;
+      }
       idSalvatoRef.current = preventivo.id;
     }
 
@@ -172,6 +180,14 @@ export function useSalvaEGeneraPdf() {
     if (esito?.blob) {
       setPdfBlob(esito.blob);
       setPdfNomeFile(esito.nomeFile || "");
+    }
+    // Wizard tiene solo il Blob: revoca URL temporaneo del motore PDF.
+    if (esito?.blobUrl && typeof URL !== "undefined") {
+      try {
+        URL.revokeObjectURL(esito.blobUrl);
+      } catch {
+        // ignore
+      }
     }
 
     setPdfGenerato(true);
