@@ -90,7 +90,7 @@ export default function ScelgaModalitaPreventivo() {
         ) : null}
       </p>
 
-      <div className="space-y-4">
+      <div className="space-y-4 ds-hub-grid">
         <button
           type="button"
           onClick={() => scegli("intelligente")}

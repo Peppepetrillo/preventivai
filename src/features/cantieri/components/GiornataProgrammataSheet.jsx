@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
 
 import BottomSheet from "../../../components/BottomSheet";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import NumericInput from "../../../components/NumericInput";
 import DatePickerField from "../../agenda/components/DatePickerField";
+import { messaggioErroreWorkflow } from "../../preventivi/utils/messaggioErroreWorkflow";
 import {
   STATI_GIORNATA,
   ETICHETTE_STATO_GIORNATA,
@@ -20,8 +21,26 @@ const FORM_VUOTO = {
   stato: STATI_GIORNATA.programmata,
 };
 
+function formIniziale(giornata) {
+  if (giornata) {
+    return {
+      data: giornata.data || "",
+      operai: String(giornata.operai ?? 1),
+      orePreviste: String(giornata.orePreviste ?? 0),
+      attivita: giornata.attivita || "",
+      note: giornata.note || "",
+      stato: giornata.stato || STATI_GIORNATA.programmata,
+    };
+  }
+  return {
+    ...FORM_VUOTO,
+    data: new Date().toLocaleDateString("it-IT"),
+  };
+}
+
 /**
  * Sheet crea/modifica giornata programmata (UX-7.3).
+ * Remount on open/id → seed senza setState-in-effect.
  */
 export default function GiornataProgrammataSheet({
   open,
@@ -30,36 +49,24 @@ export default function GiornataProgrammataSheet({
   onSalva,
   onElimina,
 }) {
+  if (!open) return null;
+  return (
+    <GiornataProgrammataBody
+      key={giornata?.id ?? "nuova-giornata"}
+      onClose={onClose}
+      giornata={giornata}
+      onSalva={onSalva}
+      onElimina={onElimina}
+    />
+  );
+}
+
+function GiornataProgrammataBody({ onClose, giornata, onSalva, onElimina }) {
   const inModifica = Boolean(giornata?.id);
-  const [form, setForm] = useState(FORM_VUOTO);
+  const [form, setForm] = useState(() => formIniziale(giornata));
   const [errore, setErrore] = useState("");
   const [confermaElimina, setConfermaElimina] = useState(false);
   const [salvataggioInCorso, setSalvataggioInCorso] = useState(false);
-
-  useEffect(() => {
-    if (!open) {
-      setSalvataggioInCorso(false);
-      return;
-    }
-    setErrore("");
-    setConfermaElimina(false);
-    setSalvataggioInCorso(false);
-    if (giornata) {
-      setForm({
-        data: giornata.data || "",
-        operai: String(giornata.operai ?? 1),
-        orePreviste: String(giornata.orePreviste ?? 0),
-        attivita: giornata.attivita || "",
-        note: giornata.note || "",
-        stato: giornata.stato || STATI_GIORNATA.programmata,
-      });
-    } else {
-      setForm({
-        ...FORM_VUOTO,
-        data: new Date().toLocaleDateString("it-IT"),
-      });
-    }
-  }, [open, giornata]);
 
   function aggiorna(campo, valore) {
     setForm((prev) => ({ ...prev, [campo]: valore }));
@@ -75,7 +82,7 @@ export default function GiornataProgrammataSheet({
     const operai = Math.max(1, Math.round(Number(form.operai) || 1));
     const orePreviste = Math.max(0, Number(form.orePreviste) || 0);
     setSalvataggioInCorso(true);
-    onSalva?.({
+    const esito = onSalva?.({
       ...(inModifica ? { id: giornata.id } : {}),
       data,
       operai,
@@ -84,6 +91,16 @@ export default function GiornataProgrammataSheet({
       note: String(form.note || "").trim(),
       stato: form.stato || STATI_GIORNATA.programmata,
     });
+    if (esito && esito.success === false) {
+      setErrore(
+        messaggioErroreWorkflow(
+          esito.error,
+          "Impossibile salvare la giornata."
+        )
+      );
+      setSalvataggioInCorso(false);
+      return;
+    }
     onClose?.();
   }
 
@@ -95,7 +112,7 @@ export default function GiornataProgrammataSheet({
   return (
     <>
       <BottomSheet
-        open={open && !confermaElimina}
+        open={!confermaElimina}
         onClose={onClose}
         title={inModifica ? "Modifica giornata" : "Nuova giornata"}
       >

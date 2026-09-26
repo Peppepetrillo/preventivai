@@ -1,6 +1,30 @@
 import { useState } from "react";
 import { Cloud, LockKeyhole, LogIn, UserPlus } from "lucide-react";
 
+function messaggioAccessoCloud(errore) {
+  const raw = String(errore?.message || "").trim();
+  const low = raw.toLowerCase();
+  if (low.includes("invalid login") || low.includes("invalid credentials")) {
+    return "Email o password non corretti.";
+  }
+  if (low.includes("email not confirmed")) {
+    return "Conferma l'email prima di accedere.";
+  }
+  if (
+    low.includes("user already registered") ||
+    low.includes("already been registered")
+  ) {
+    return "Questa email è già registrata.";
+  }
+  if (low.includes("password") && (low.includes("least") || low.includes("short"))) {
+    return "La password è troppo corta.";
+  }
+  if (/\b(error|invalid|failed|unable|network|fetch)\b/i.test(raw)) {
+    return "Accesso non riuscito. Controlla i dati e riprova.";
+  }
+  return raw || "Accesso non riuscito.";
+}
+
 export default function AuthScreen({ errore, onAccedi, onRegistrati }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,13 +40,15 @@ export default function AuthScreen({ errore, onAccedi, onRegistrati }) {
     try {
       if (modalita === "registrazione") {
         await onRegistrati(email, password);
-        setMessaggio("Account creato. Controlla la mail se Supabase richiede conferma.");
+        setMessaggio(
+          "Account creato. Controlla la mail se è richiesta una conferma."
+        );
         return;
       }
 
       await onAccedi(email, password);
     } catch (erroreAuth) {
-      setMessaggio(erroreAuth.message || "Accesso non riuscito.");
+      setMessaggio(messaggioAccessoCloud(erroreAuth));
     } finally {
       setCaricamento(false);
     }

@@ -137,6 +137,16 @@ export function normalizzaSpesaCantiere(grezzo, cantiere = {}) {
   const listaSpesaId = String(grezzo.listaSpesaId || "").trim();
   if (listaSpesaId) spesa.listaSpesaId = listaSpesaId;
 
+  // Link pagamento manodopera → giornata (anti-duplicazione Economia)
+  const giornataManodoperaId = String(grezzo.giornataManodoperaId || "").trim();
+  if (giornataManodoperaId) spesa.giornataManodoperaId = giornataManodoperaId;
+
+  const operaioId = String(grezzo.operaioId || "").trim();
+  if (operaioId) spesa.operaioId = operaioId;
+
+  const origine = String(grezzo.origine || "").trim();
+  if (origine) spesa.origine = origine;
+
   return spesa;
 }
 

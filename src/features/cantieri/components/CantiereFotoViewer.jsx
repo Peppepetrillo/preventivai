@@ -1,9 +1,12 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 
+import { usePinchZoomPan } from "../utils/usePinchZoomPan";
+
 /**
  * Viewer foto cantiere full-screen (Web + Capacitor).
  * Nessun window.open: l'immagine resta nell'app.
+ * Pinch / pan / doppio tap quando `abilitaZoom` (progetti elettrici).
  */
 export default function CantiereFotoViewer({
   open,
@@ -12,9 +15,17 @@ export default function CantiereFotoViewer({
   loading = false,
   errore = "",
   onClose,
+  abilitaZoom = false,
 }) {
+  const zoom = usePinchZoomPan({ enabled: open && abilitaZoom && Boolean(src) });
+
+  const resetZoom = zoom.reset;
+
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open) {
+      resetZoom();
+      return undefined;
+    }
 
     function onKeyDown(evento) {
       if (evento.key === "Escape") {
@@ -24,7 +35,16 @@ export default function CantiereFotoViewer({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open, onClose, resetZoom]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
 
   if (!open) return null;
 
@@ -35,6 +55,7 @@ export default function CantiereFotoViewer({
       aria-modal="true"
       aria-label={titolo}
       data-testid="cantiere-foto-viewer"
+      data-zoom-enabled={abilitaZoom ? "true" : "false"}
     >
       <div className="flex items-center justify-end shrink-0 px-3 pt-2 pb-1">
         <button
@@ -48,7 +69,19 @@ export default function CantiereFotoViewer({
         </button>
       </div>
 
-      <div className="flex-1 min-h-0 flex items-center justify-center px-3 pb-4">
+      <div
+        className="flex-1 min-h-0 flex items-center justify-center px-3 pb-4"
+        {...(abilitaZoom
+          ? {
+              ref: zoom.containerRef,
+              onTouchStart: zoom.onTouchStart,
+              onTouchMove: zoom.onTouchMove,
+              onTouchEnd: zoom.onTouchEnd,
+              style: zoom.stageStyle,
+            }
+          : {})}
+        data-testid="cantiere-foto-viewer-stage"
+      >
         {loading ? (
           <p className="ds-text-secondary text-center" role="status">
             Caricamento foto...
@@ -63,10 +96,14 @@ export default function CantiereFotoViewer({
 
         {!loading && !errore && src ? (
           <img
+            ref={abilitaZoom ? zoom.contentRef : undefined}
             src={src}
             alt={titolo}
-            className="max-h-full max-w-full object-contain"
+            className="max-h-full max-w-full object-contain select-none"
+            draggable={false}
+            style={abilitaZoom ? zoom.contentStyle : undefined}
             data-testid="cantiere-foto-viewer-img"
+            data-zoomed={zoom.isZoomed ? "true" : "false"}
           />
         ) : null}
       </div>

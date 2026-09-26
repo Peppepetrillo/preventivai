@@ -90,7 +90,7 @@ export function filtraPreventiviPerStato(preventivi, filtro) {
 }
 
 /**
- * Classe Tailwind del badge stato preventivo.
+ * Classe DS del badge stato preventivo (soft, leggibile light/dark).
  * @param {string=} stato
  * @returns {string}
  */
@@ -99,19 +99,18 @@ export function classeColoreStatoPreventivo(stato) {
 
   switch (s) {
     case STATI_PREVENTIVO.BOZZA:
-      return "bg-yellow-500";
+      return "ds-badge-bozza";
     case STATI_PREVENTIVO.INVIATO:
-      return "bg-blue-500";
+      return "ds-badge-inviato";
     case STATI_PREVENTIVO.ACCETTATO:
-      return "bg-green-500";
     case STATI_PREVENTIVO.CONVERTITO:
-      return "bg-emerald-600";
+      return "ds-badge-accettato";
     case STATI_PREVENTIVO.LAVORO_COMPLETATO:
-      return "bg-slate-700";
+      return "ds-badge-neutral";
     case STATI_PREVENTIVO.RIFIUTATO:
     case STATI_PREVENTIVO.ANNULLATO:
-      return "bg-red-500";
+      return "ds-badge-rifiutato";
     default:
-      return "bg-slate-500";
+      return "ds-badge-bozza";
   }
 }

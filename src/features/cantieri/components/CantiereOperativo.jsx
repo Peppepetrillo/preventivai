@@ -4,6 +4,7 @@ import {
   CheckCircle,
   Circle,
   GripVertical,
+  Mic,
   Package,
   Pencil,
   Plus,
@@ -15,6 +16,7 @@ import BottomSheet from "../../../components/BottomSheet";
 import SwipeableRow from "../../../components/SwipeableRow";
 import SelettoreMaterialeSheet from "../../distinteMateriali/components/SelettoreMaterialeSheet";
 import VoceDistintaSheet from "../../distinteMateriali/components/VoceDistintaSheet";
+import MemoMaterialiSheet from "../../aiFieldAssistant/components/MemoMaterialiSheet";
 import { formatEuro } from "../../../utils/preventivi";
 import {
   analizzaCostiMateriale,
@@ -106,12 +108,21 @@ export default function CantiereOperativo({
   const undoTimer = useRef(null);
 
   const [menuMateriale, setMenuMateriale] = useState(false);
+  const [memoMaterialiAperto, setMemoMaterialiAperto] = useState(false);
   const [showCatalogo, setShowCatalogo] = useState(false);
   const [showManuale, setShowManuale] = useState(false);
 
   useEffect(() => {
     setNotaLocale(cantiere.note || "");
   }, [cantiere.id, cantiere.note]);
+
+  useEffect(() => {
+    setMenuMateriale(false);
+    setShowCatalogo(false);
+    setShowManuale(false);
+    setUndoMateriale(null);
+    setFlashIds(new Set());
+  }, [cantiere.id]);
 
   useEffect(() => {
     return () => {
@@ -364,15 +375,26 @@ export default function CantiereOperativo({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setMenuMateriale(true)}
-          className="w-full btn-secondary min-h-[48px] mb-4 flex items-center justify-center gap-2 font-bold"
-          data-testid="cantiere-aggiungi-materiale"
-        >
-          <Plus size={18} aria-hidden="true" />
-          Aggiungi materiale
-        </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+          <button
+            type="button"
+            onClick={() => setMenuMateriale(true)}
+            className="w-full btn-secondary min-h-[48px] flex items-center justify-center gap-2 font-bold"
+            data-testid="cantiere-aggiungi-materiale"
+          >
+            <Plus size={18} aria-hidden="true" />
+            Aggiungi materiale
+          </button>
+          <button
+            type="button"
+            onClick={() => setMemoMaterialiAperto(true)}
+            className="w-full btn-primary min-h-[48px] flex items-center justify-center gap-2 font-bold"
+            data-testid="cantiere-memo-materiali"
+          >
+            <Mic size={18} aria-hidden="true" />
+            Memo materiali
+          </button>
+        </div>
 
         {materiali.length > 0 ? (
           <div
@@ -528,7 +550,7 @@ export default function CantiereOperativo({
                                   spesaCollegata
                                 )
                               }
-                              className="text-xs font-semibold text-emerald-300 min-h-[32px]"
+                              className="text-xs font-semibold text-emerald-300 min-h-[44px]"
                               data-testid={`cantiere-materiale-spesa-registrata-${materiale.id}`}
                             >
                               {analisi.numeroSpese > 1
@@ -542,7 +564,7 @@ export default function CantiereOperativo({
                                   forzaNuova: true,
                                 })
                               }
-                              className="text-xs font-medium text-slate-400 min-h-[32px]"
+                              className="text-xs font-medium text-slate-400 min-h-[44px]"
                               data-testid={`cantiere-materiale-altra-spesa-${materiale.id}`}
                             >
                               Registra altra spesa
@@ -552,7 +574,7 @@ export default function CantiereOperativo({
                           <button
                             type="button"
                             onClick={() => onRegistraSpesaDaMateriale(materiale)}
-                            className="text-xs font-semibold text-yellow-200 min-h-[32px]"
+                            className="text-xs font-semibold text-yellow-200 min-h-[44px]"
                             data-testid={`cantiere-materiale-registra-spesa-${materiale.id}`}
                           >
                             Registra spesa
@@ -595,12 +617,12 @@ export default function CantiereOperativo({
             role="status"
           >
             <p className="text-sm text-emerald-50 font-semibold truncate">
-              ✔ {undoMateriale.nome} comprato
+              {undoMateriale.nome} comprato
             </p>
             <button
               type="button"
               onClick={annullaComprato}
-              className="shrink-0 text-sm font-black text-yellow-200 min-h-[40px] px-2"
+              className="shrink-0 text-sm font-black text-yellow-200 min-h-[44px] px-2"
             >
               Annulla
             </button>
@@ -715,7 +737,7 @@ export default function CantiereOperativo({
                       onEliminaFoto(fotoVoce.id);
                     }
                   }}
-                  className="absolute top-1.5 right-1.5 min-h-[36px] min-w-[36px] rounded-full bg-black/70 text-red-100 flex items-center justify-center"
+                  className="absolute top-1.5 right-1.5 min-h-[44px] min-w-[44px] rounded-full bg-black/70 text-red-100 flex items-center justify-center"
                   aria-label="Elimina foto"
                 >
                   <Trash2 size={14} />
@@ -786,6 +808,16 @@ export default function CantiereOperativo({
         titolo="Materiale libero"
         onSalva={(payload) => {
           confermaMateriale(payload, "manuale");
+        }}
+      />
+
+      <MemoMaterialiSheet
+        open={memoMaterialiAperto}
+        onClose={() => setMemoMaterialiAperto(false)}
+        onConferma={(payloadList) => {
+          for (const payload of payloadList || []) {
+            confermaMateriale(payload, "memo_vocale");
+          }
         }}
       />
     </div>

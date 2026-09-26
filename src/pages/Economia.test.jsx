@@ -59,6 +59,8 @@ describe("Economia v0 pagina", () => {
     expect(screen.getByRole("heading", { name: /Economia/i })).toBeInTheDocument();
     expect(screen.getByTestId("economia-entrate")).toBeInTheDocument();
     expect(screen.getByTestId("economia-uscite")).toBeInTheDocument();
+    expect(screen.getByTestId("economia-dettaglio-categorie")).toBeInTheDocument();
+    expect(screen.getByTestId("economia-uscita-cat-materiali")).toBeInTheDocument();
     expect(screen.getByTestId("economia-link-storico")).toHaveAttribute(
       "href",
       ROUTES.storico
@@ -80,5 +82,20 @@ describe("Economia v0 pagina", () => {
     const uscita = screen.getByTestId("economia-movimento-uscita-c-rossi-s1");
     expect(uscita).toHaveAttribute("data-cantiere-id", "c-rossi");
     expect(uscita.getAttribute("href")).toContain("sezione-spese");
+  });
+
+  it("empty state ha CTA verso cantieri", () => {
+    vi.mocked(leggiCantieri).mockReturnValue([]);
+    render(
+      <MemoryRouter initialEntries={[ROUTES.economia]}>
+        <Economia />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByTestId("economia-vuoto")).toBeInTheDocument();
+    expect(screen.getByTestId("economia-vuoto-cta-cantieri")).toHaveAttribute(
+      "href",
+      ROUTES.cantieri
+    );
   });
 });
